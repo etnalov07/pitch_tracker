@@ -197,7 +197,7 @@ const Subtitle = styled.p`
 
 const ErrorMessage = styled.div`
   background-color: ${theme.colors.red[50]};
-  border: 1px solid ${theme.colors.red[200]};
+  border: 1px solid ${theme.colors.primary[200]};
   color: ${theme.colors.red[700]};
   padding: ${theme.spacing.md};
   border-radius: ${theme.borderRadius.md};

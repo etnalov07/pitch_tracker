@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from '@emotion/styled';
 import { theme } from '../styles/theme';
@@ -25,13 +25,7 @@ const LiveGame: React.FC = () => {
   const [batterId] = useState('batter-id-1');
   const [pitcherId] = useState('pitcher-id-1');
 
-  useEffect(() => {
-    if (gameId) {
-      loadGameData();
-    }
-  }, [gameId]);
-
-  const loadGameData = async () => {
+  const loadGameData = useCallback(async () => {
     try {
       setLoading(true);
       const gameData = await gameService.getGameById(gameId!);
@@ -41,7 +35,13 @@ const LiveGame: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [gameId]);
+
+  useEffect(() => {
+    if (gameId) {
+      loadGameData();
+    }
+  }, [gameId, loadGameData]);
 
   const handleLocationSelect = (x: number, y: number) => {
     setPitchLocation({ x, y });

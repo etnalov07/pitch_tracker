@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { theme } from '../../styles/theme';
 import { BatterHistory as BatterHistoryType } from '../../types';
@@ -15,11 +15,7 @@ const BatterHistory: React.FC<BatterHistoryProps> = ({ batterId, pitcherId, limi
   const [loading, setLoading] = useState(true);
   const [showAllTime, setShowAllTime] = useState(false);
 
-  useEffect(() => {
-    loadHistory();
-  }, [batterId, pitcherId, showAllTime]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     try {
       setLoading(true);
       const data = await analyticsService.getBatterHistory(
@@ -33,7 +29,11 @@ const BatterHistory: React.FC<BatterHistoryProps> = ({ batterId, pitcherId, limi
     } finally {
       setLoading(false);
     }
-  };
+  }, [batterId, pitcherId, showAllTime, limit]);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
 
   if (loading) {
     return (
