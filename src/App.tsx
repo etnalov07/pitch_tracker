@@ -1,51 +1,84 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import LiveGame from './pages/LiveGame';
-import { authService } from './services/authService';
+import Login from './pages/Login/Login';
+import Dashboard from './pages/Dashboard/Dashboard';
+import Teams from './pages/Teams/Teams';
+import TeamDetail from './pages/TeamDetail/TeamDetail';
+import GameSetup from './pages/GameSetup/GameSetup';
+import GameHistory from './pages/GameHistory/GameHistory';
+import LiveGame from './pages/LiveGame/LiveGame';
+import { useAppSelector } from './state';
 
 // Protected Route component
 const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
-  const isAuthenticated = authService.isAuthenticated();
-  return isAuthenticated ? children : <Navigate to="/login" />;
-};
-
-// Dashboard placeholder (you'll build this later)
-const Dashboard: React.FC = () => {
-  return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Dashboard</h1>
-      <p>Welcome to Baseball Tracker!</p>
-      <p>Select a game to start tracking...</p>
-      <button onClick={() => authService.logout()}>Logout</button>
-    </div>
-  );
+    const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+    return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
 function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/game/:gameId"
-          element={
-            <ProtectedRoute>
-              <LiveGame />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </Router>
-  );
+    return (
+        <Router>
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route
+                    path="/"
+                    element={
+                        <ProtectedRoute>
+                            <Dashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/game/:gameId"
+                    element={
+                        <ProtectedRoute>
+                            <LiveGame />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/teams"
+                    element={
+                        <ProtectedRoute>
+                            <Teams />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/teams/new"
+                    element={
+                        <ProtectedRoute>
+                            <Teams />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/teams/:teamId"
+                    element={
+                        <ProtectedRoute>
+                            <TeamDetail />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/games/new"
+                    element={
+                        <ProtectedRoute>
+                            <GameSetup />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/games/history"
+                    element={
+                        <ProtectedRoute>
+                            <GameHistory />
+                        </ProtectedRoute>
+                    }
+                />
+            </Routes>
+        </Router>
+    );
 }
 
 export default App;
