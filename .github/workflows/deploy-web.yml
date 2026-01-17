@@ -22,16 +22,16 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '18'
-                  cache: 'yarn'
+                  cache: 'npm'
 
             - name: Install dependencies
-              run: yarn install --frozen-lockfile
+              run: npm ci
 
             - name: Build shared package
-              run: yarn workspace @pitch-tracker/shared build
+              run: npm run build --workspace=@pitch-tracker/shared
 
             - name: Build web app
-              run: yarn workspace @pitch-tracker/web build
+              run: npm run build --workspace=@pitch-tracker/web
               env:
                   REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
 

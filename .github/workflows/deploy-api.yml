@@ -22,23 +22,23 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: '18'
-                  cache: 'yarn'
+                  cache: 'npm'
 
             - name: Install dependencies
-              run: yarn install --frozen-lockfile
+              run: npm ci
 
             - name: Build shared package
-              run: yarn workspace @pitch-tracker/shared build
+              run: npm run build --workspace=@pitch-tracker/shared
 
             - name: Build API
-              run: yarn workspace @pitch-tracker/api build
+              run: npm run build --workspace=@pitch-tracker/api
 
             - name: Create deployment package
               run: |
                   mkdir -p deploy
                   cp -r packages/api/dist/* deploy/
                   cp packages/api/package.json deploy/
-                  cp yarn.lock deploy/
+                  cp package-lock.json deploy/
                   # Copy shared package dist for runtime
                   mkdir -p deploy/node_modules/@pitch-tracker/shared
                   cp -r packages/shared/dist deploy/node_modules/@pitch-tracker/shared/
@@ -47,7 +47,7 @@ jobs:
             - name: Install production dependencies in deploy folder
               run: |
                   cd deploy
-                  yarn install --production
+                  npm ci --production
 
             - name: Deploy via FTP to Namecheap
               uses: SamKirkland/FTP-Deploy-Action@v4.3.5

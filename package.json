@@ -6,14 +6,14 @@
         "packages/*"
     ],
     "scripts": {
-        "dev:web": "yarn workspace @pitch-tracker/web start",
-        "dev:api": "yarn workspace @pitch-tracker/api dev",
-        "build:web": "yarn workspace @pitch-tracker/web build",
-        "build:api": "yarn workspace @pitch-tracker/api build",
-        "build:shared": "yarn workspace @pitch-tracker/shared build",
-        "build": "yarn build:shared && yarn build:api && yarn build:web",
-        "lint": "yarn workspaces run lint",
-        "test": "yarn workspaces run test"
+        "dev:web": "npm run start --workspace=@pitch-tracker/web",
+        "dev:api": "npm run dev --workspace=@pitch-tracker/api",
+        "build:web": "npm run build --workspace=@pitch-tracker/web",
+        "build:api": "npm run build --workspace=@pitch-tracker/api",
+        "build:shared": "npm run build --workspace=@pitch-tracker/shared",
+        "build": "npm run build:shared && npm run build:api && npm run build:web",
+        "lint": "npm run lint --workspaces --if-present",
+        "test": "npm run test --workspaces --if-present"
     },
     "devDependencies": {
         "typescript": "^5.9.3"
