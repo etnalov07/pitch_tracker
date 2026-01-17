@@ -1,0 +1,60 @@
+name: Deploy API
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - 'packages/api/**'
+            - 'packages/shared/**'
+            - '.github/workflows/deploy-api.yml'
+    workflow_dispatch:
+
+jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '18'
+                  cache: 'yarn'
+
+            - name: Install dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Build shared package
+              run: yarn workspace @pitch-tracker/shared build
+
+            - name: Build API
+              run: yarn workspace @pitch-tracker/api build
+
+            - name: Prepare deployment files
+              run: |
+                  mkdir -p deploy
+                  cp -r packages/api/dist deploy/
+                  cp packages/api/package.json deploy/
+                  cp packages/api/.env.example deploy/.env.example 2>/dev/null || true
+                  # Copy shared package dist for runtime
+                  mkdir -p deploy/node_modules/@pitch-tracker/shared
+                  cp -r packages/shared/dist deploy/node_modules/@pitch-tracker/shared/
+                  cp packages/shared/package.json deploy/node_modules/@pitch-tracker/shared/
+
+            - name: Deploy to FTP
+              uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+              with:
+                  server: ftp.bvolante.com
+                  username: ${{ secrets.FTP_USERNAME }}
+                  password: ${{ secrets.FTP_PASSWORD }}
+                  local-dir: ./deploy/
+                  server-dir: /public_html/bt_api/
+                  dangerous-clean-slate: false
+                  exclude: |
+                      **/.git*
+                      **/.git*/**
+                      **/node_modules/**
+                      !**/node_modules/@pitch-tracker/**

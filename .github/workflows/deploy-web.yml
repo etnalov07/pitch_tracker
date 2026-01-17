@@ -1,0 +1,46 @@
+name: Deploy Web App
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - 'packages/web/**'
+            - 'packages/shared/**'
+            - '.github/workflows/deploy-web.yml'
+    workflow_dispatch:
+
+jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '18'
+                  cache: 'yarn'
+
+            - name: Install dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Build shared package
+              run: yarn workspace @pitch-tracker/shared build
+
+            - name: Build web app
+              run: yarn workspace @pitch-tracker/web build
+              env:
+                  REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
+
+            - name: Deploy to FTP
+              uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+              with:
+                  server: ftp.bvolante.com
+                  username: ${{ secrets.FTP_USERNAME }}
+                  password: ${{ secrets.FTP_PASSWORD }}
+                  local-dir: ./packages/web/build/
+                  server-dir: /public_html/bt_web/
+                  dangerous-clean-slate: false

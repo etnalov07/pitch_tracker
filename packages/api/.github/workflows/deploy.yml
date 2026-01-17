@@ -1,0 +1,113 @@
+name: Deploy to Webhost
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+          cache: 'npm'
+
+      - name: Install dependencies (including devDependencies for build)
+        run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp -r dist/* deploy/
+          cp package.json deploy/
+          cp package-lock.json deploy/
+
+      - name: Install production dependencies in deploy folder
+        run: |
+          cd deploy
+          npm ci --production
+
+      - name: Deploy via FTP to Namecheap
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./deploy/
+          server-dir: ./${{ secrets.APP_DIRECTORY || 'bt_api' }}/
+          dangerous-clean-slate: false
+          log-level: verbose
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.env*
+
+      - name: Setup application on Namecheap
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 21098
+          debug: true
+          script: |
+            set -x  # Enable bash verbose mode
+            echo "===== Starting deployment setup ====="
+            echo "Current directory: $(pwd)"
+            echo "Home directory: $HOME"
+
+            # Source Node.js environment (Namecheap cPanel creates this)
+            if [ -f ~/.bashrc ]; then
+              source ~/.bashrc
+            fi
+
+            # Load nvm if available
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+            # Check Node.js and npm availability
+            echo "Node.js version: $(node --version 2>&1 || echo 'not found')"
+            echo "npm version: $(npm --version 2>&1 || echo 'not found')"
+            echo "npm location: $(which npm 2>&1 || echo 'not found')"
+
+            # Navigate to application directory
+            echo "Navigating to application directory..."
+            cd ~/${{ secrets.APP_DIRECTORY || 'bt_api' }}
+            echo "Current directory: $(pwd)"
+
+            # List files to verify deployment
+            echo "Files in deployment directory:"
+            ls -la
+
+            # Check if package.json exists
+            if [ -f "package.json" ]; then
+              echo "package.json found"
+            else
+              echo "ERROR: package.json not found!"
+              exit 1
+            fi
+
+            # Install production dependencies
+            echo "Installing production dependencies..."
+            npm install --production --verbose
+
+            # Run database migrations if you have them
+            # npm run migrate
+
+            # Namecheap automatically restarts Node.js apps when files change
+            echo "===== Deployment completed successfully ====="
+            echo "Note: Namecheap will automatically restart your Node.js application"
