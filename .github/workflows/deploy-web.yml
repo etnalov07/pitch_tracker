@@ -15,7 +15,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - name: Checkout repository
+            - name: Checkout code
               uses: actions/checkout@v4
 
             - name: Setup Node.js
@@ -35,12 +35,19 @@ jobs:
               env:
                   REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
 
-            - name: Deploy to FTP
+            - name: Deploy via FTP to Namecheap
               uses: SamKirkland/FTP-Deploy-Action@v4.3.5
               with:
-                  server: ftp.bvolante.com
+                  server: ${{ secrets.FTP_SERVER }}
                   username: ${{ secrets.FTP_USERNAME }}
                   password: ${{ secrets.FTP_PASSWORD }}
+                  protocol: ftps
+                  port: 21
                   local-dir: ./packages/web/build/
-                  server-dir: /public_html/bt_web/
+                  server-dir: ./${{ secrets.WEB_DIRECTORY || 'bt_web' }}/
                   dangerous-clean-slate: false
+                  log-level: verbose
+                  exclude: |
+                      **/.git*
+                      **/.git*/**
+                      **/.env*
