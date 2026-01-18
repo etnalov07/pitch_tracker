@@ -114,7 +114,7 @@ const GameHistory: React.FC = () => {
 
     const filteredGames = games
         .filter((g) => filter === 'all' || g.status === filter)
-        .sort((a, b) => new Date(b.gameDate).getTime() - new Date(a.gameDate).getTime());
+        .sort((a, b) => new Date(b.game_date).getTime() - new Date(a.game_date).getTime());
 
     const handleDelete = async (gameId: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -189,26 +189,26 @@ const GameHistory: React.FC = () => {
                                 <GameRow key={game.id} onClick={() => navigate(`/game/${game.id}`)}>
                                     <Td>
                                         <DateCell>
-                                            <DateText>{formatDate(game.gameDate)}</DateText>
-                                            <TimeText>{formatTime(game.gameDate)}</TimeText>
+                                            <DateText>{formatDate(game.game_date)}</DateText>
+                                            <TimeText>{formatTime(game.game_date)}</TimeText>
                                         </DateCell>
                                     </Td>
                                     <Td>
                                         <MatchupCell>
-                                            <TeamText>{getTeamName(game.awayteam_id)}</TeamText>
+                                            <TeamText>{getTeamName(game.away_team_id)}</TeamText>
                                             <AtText>@</AtText>
-                                            <TeamText>{getTeamName(game.hometeam_id)}</TeamText>
+                                            <TeamText>{getTeamName(game.home_team_id)}</TeamText>
                                         </MatchupCell>
                                     </Td>
                                     <Td>
                                         {game.status === 'completed' || game.status === 'in_progress' ? (
                                             <ScoreCell>
                                                 <ScoreTeam>
-                                                    <ScoreValue>{game.awayScore ?? 0}</ScoreValue>
+                                                    <ScoreValue>{game.away_score ?? 0}</ScoreValue>
                                                 </ScoreTeam>
                                                 <ScoreDivider>-</ScoreDivider>
                                                 <ScoreTeam>
-                                                    <ScoreValue>{game.homeScore ?? 0}</ScoreValue>
+                                                    <ScoreValue>{game.home_score ?? 0}</ScoreValue>
                                                 </ScoreTeam>
                                             </ScoreCell>
                                         ) : (
@@ -223,9 +223,9 @@ const GameHistory: React.FC = () => {
                                             {game.status === 'in_progress' && <LiveDot />}
                                             {getStatusLabel(game.status)}
                                         </StatusBadge>
-                                        {game.status === 'in_progress' && game.currentInning && (
+                                        {game.status === 'in_progress' && game.current_inning && (
                                             <InningText>
-                                                {game.inningHalf === 'top' ? 'Top' : 'Bot'} {game.currentInning}
+                                                {game.inning_half === 'top' ? 'Top' : 'Bot'} {game.current_inning}
                                             </InningText>
                                         )}
                                     </Td>

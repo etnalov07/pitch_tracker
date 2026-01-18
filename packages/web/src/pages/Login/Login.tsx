@@ -27,7 +27,6 @@ const Login: React.FC = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
-        username: '',
         first_name: '',
         last_name: '',
     });
@@ -64,7 +63,6 @@ const Login: React.FC = () => {
                 registerUser({
                     email: formData.email,
                     password: formData.password,
-                    username: formData.username,
                     first_name: formData.first_name,
                     last_name: formData.last_name,
                 })
@@ -84,19 +82,6 @@ const Login: React.FC = () => {
                 <Form onSubmit={handleSubmit}>
                     {!isLogin && (
                         <>
-                            <FormGroup>
-                                <Label htmlFor="username">Username</Label>
-                                <Input
-                                    type="text"
-                                    id="username"
-                                    name="username"
-                                    value={formData.username}
-                                    onChange={handleChange}
-                                    required={!isLogin}
-                                    placeholder="johndoe"
-                                />
-                            </FormGroup>
-
                             <FormRow>
                                 <FormGroup>
                                     <Label htmlFor="first_name">First Name</Label>

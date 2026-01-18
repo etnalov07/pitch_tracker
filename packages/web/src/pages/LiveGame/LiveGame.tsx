@@ -81,13 +81,13 @@ const LiveGame: React.FC = () => {
         try {
             await dispatch(
                 logPitch({
-                    atBatId: currentAtBat.id,
-                    pitchNumber: pitches.length + 1,
-                    pitchType,
+                    at_bat_id: currentAtBat.id,
+                    pitch_number: pitches.length + 1,
+                    pitch_type: pitchType,
                     velocity: velocity ? parseFloat(velocity) : undefined,
-                    locationX: pitchLocation.x,
-                    locationY: pitchLocation.y,
-                    result: pitchResult,
+                    location_x: pitchLocation.x,
+                    location_y: pitchLocation.y,
+                    pitch_result: pitchResult,
                 })
             ).unwrap();
 
@@ -155,13 +155,13 @@ const LiveGame: React.FC = () => {
         try {
             await dispatch(
                 createAtBat({
-                    gameId,
-                    inningId: 'temp-inning-id', // In real app, get from current game state
-                    batterId,
-                    pitcherId,
+                    game_id: gameId,
+                    inning_id: 'temp-inning-id', // In real app, get from current game state
+                    batter_id: batterId,
+                    pitcher_id: pitcherId,
                     balls: 0,
                     strikes: 0,
-                    outs: 0,
+                    outs_before: 0,
                 })
             ).unwrap();
         } catch (error: any) {
@@ -190,15 +190,15 @@ const LiveGame: React.FC = () => {
                 <GameHeader>
                     <TeamInfo>
                         <TeamName>Home Team</TeamName>
-                        <Score>{game.homeScore || 0}</Score>
+                        <Score>{game.home_score || 0}</Score>
                     </TeamInfo>
                     <GameInfo>
-                        <Inning>Inning {game.currentInning || 1}</Inning>
-                        <InningHalf>{game.inningHalf || 'top'}</InningHalf>
+                        <Inning>Inning {game.current_inning || 1}</Inning>
+                        <InningHalf>{game.inning_half || 'top'}</InningHalf>
                     </GameInfo>
                     <TeamInfo>
                         <TeamName>Away Team</TeamName>
-                        <Score>{game.awayScore || 0}</Score>
+                        <Score>{game.away_score || 0}</Score>
                     </TeamInfo>
                 </GameHeader>
 
@@ -209,7 +209,7 @@ const LiveGame: React.FC = () => {
                             <CountValue>
                                 {currentAtBat.balls}-{currentAtBat.strikes}
                             </CountValue>
-                            <OutsDisplay>{currentAtBat.outs} Outs</OutsDisplay>
+                            <OutsDisplay>{currentAtBat.outs_before} Outs</OutsDisplay>
                         </CountDisplay>
 
                         <StrikeZone onLocationSelect={handleLocationSelect} previousPitches={pitches} />

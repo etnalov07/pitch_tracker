@@ -53,8 +53,8 @@ const BatterHistory: React.FC<BatterHistoryProps> = ({ batterId, pitcherId, limi
         );
     }
 
-    const { stats, atBats } = history;
-    const avg = stats.avg !== undefined ? stats.avg.toFixed(3) : '---';
+    const { stats, at_bats: atBats } = history;
+    const avg = stats.batting_average !== undefined ? stats.batting_average.toFixed(3) : '---';
 
     return (
         <Container>
@@ -68,7 +68,7 @@ const BatterHistory: React.FC<BatterHistoryProps> = ({ batterId, pitcherId, limi
             <StatsGrid>
                 <StatCard>
                     <StatLabel>AB</StatLabel>
-                    <StatValue>{stats.totalAtBats}</StatValue>
+                    <StatValue>{stats.total_abs}</StatValue>
                 </StatCard>
                 <StatCard>
                     <StatLabel>H</StatLabel>
@@ -111,18 +111,18 @@ const BatterHistory: React.FC<BatterHistoryProps> = ({ batterId, pitcherId, limi
                                         <DetailLabel>Pitches:</DetailLabel>
                                         <DetailValue>{ab.pitches?.length || 0}</DetailValue>
                                     </Detail>
-                                    {ab.rbis !== undefined && ab.rbis > 0 && (
+                                    {ab.rbi !== undefined && ab.rbi > 0 && (
                                         <Detail>
                                             <DetailLabel>RBI:</DetailLabel>
-                                            <DetailValue highlight>{ab.rbis}</DetailValue>
+                                            <DetailValue highlight>{ab.rbi}</DetailValue>
                                         </Detail>
                                     )}
                                 </AtBatDetails>
                                 {ab.pitches && ab.pitches.length > 0 && (
                                     <PitchSequence>
                                         {ab.pitches.map((pitch, pIdx) => (
-                                            <PitchBadge key={pitch.id || pIdx} result={pitch.result}>
-                                                {pitch.pitchType.substring(0, 2).toUpperCase()}
+                                            <PitchBadge key={pitch.id || pIdx} result={pitch.pitch_result}>
+                                                {pitch.pitch_type.substring(0, 2).toUpperCase()}
                                                 {pitch.velocity ? ` ${pitch.velocity}` : ''}
                                             </PitchBadge>
                                         ))}

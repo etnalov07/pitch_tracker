@@ -39,7 +39,7 @@ export const gamesApi = {
         return response.data;
     },
 
-    endGame: async (id: string, finalData: { homeScore: number; awayScore: number }): Promise<Game> => {
+    endGame: async (id: string, finalData: { home_score: number; away_score: number }): Promise<Game> => {
         const response = await api.post<Game>(`/games/${id}/end`, finalData);
         return response.data;
     },

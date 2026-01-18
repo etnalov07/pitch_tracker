@@ -10,7 +10,7 @@ import {
     updatePlayer,
     deletePlayer,
 } from '../../state';
-import { Player, PlayerPosition, HandednessType } from '../../types';
+import { Player, PlayerPosition, HandednessType, ThrowingHand } from '../../types';
 import {
     Container,
     Header,
@@ -77,7 +77,7 @@ const TeamDetail: React.FC = () => {
         jersey_number: '',
         primary_position: 'UTIL' as PlayerPosition,
         bats: 'R' as HandednessType,
-        throws: 'R' as HandednessType,
+        throws: 'R' as ThrowingHand,
     };
     const [formData, setFormData] = useState(initialFormData);
 

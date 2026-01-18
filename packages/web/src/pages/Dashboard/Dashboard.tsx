@@ -159,18 +159,18 @@ const Dashboard: React.FC = () => {
                                     <GameStatus color={getStatusColor(game.status)}>{getStatusLabel(game.status)}</GameStatus>
                                     <GameTeams>
                                         <TeamRow>
-                                            <TeamName>{getTeamName(game.awayteam_id)}</TeamName>
-                                            <Score>{game.awayScore ?? 0}</Score>
+                                            <TeamName>{getTeamName(game.away_team_id)}</TeamName>
+                                            <Score>{game.away_score ?? 0}</Score>
                                         </TeamRow>
                                         <TeamRow>
-                                            <TeamName>{getTeamName(game.hometeam_id)}</TeamName>
-                                            <Score>{game.homeScore ?? 0}</Score>
+                                            <TeamName>{getTeamName(game.home_team_id)}</TeamName>
+                                            <Score>{game.home_score ?? 0}</Score>
                                         </TeamRow>
                                     </GameTeams>
                                     <GameInfo>
-                                        {game.currentInning && (
+                                        {game.current_inning && (
                                             <InningInfo>
-                                                {game.inningHalf === 'top' ? 'Top' : 'Bot'} {game.currentInning}
+                                                {game.inning_half === 'top' ? 'Top' : 'Bot'} {game.current_inning}
                                             </InningInfo>
                                         )}
                                     </GameInfo>
@@ -201,9 +201,9 @@ const Dashboard: React.FC = () => {
                                 <GameList>
                                     {upcomingGames.map((game) => (
                                         <GameListItem key={game.id} onClick={() => navigate(`/game/${game.id}`)}>
-                                            <GameDate>{formatDate(game.gameDate)}</GameDate>
+                                            <GameDate>{formatDate(game.game_date)}</GameDate>
                                             <GameMatchup>
-                                                {getTeamName(game.awayteam_id)} @ {getTeamName(game.hometeam_id)}
+                                                {getTeamName(game.away_team_id)} @ {getTeamName(game.home_team_id)}
                                             </GameMatchup>
                                             <GameLocation>{game.location || 'TBD'}</GameLocation>
                                             <GameStatusBadge color={getStatusColor(game.status)}>
@@ -224,12 +224,12 @@ const Dashboard: React.FC = () => {
                                 <GameList>
                                     {completedGames.slice(0, 5).map((game) => (
                                         <GameListItem key={game.id} onClick={() => navigate(`/game/${game.id}`)}>
-                                            <GameDate>{formatDate(game.gameDate)}</GameDate>
+                                            <GameDate>{formatDate(game.game_date)}</GameDate>
                                             <GameMatchup>
-                                                {getTeamName(game.awayteam_id)} @ {getTeamName(game.hometeam_id)}
+                                                {getTeamName(game.away_team_id)} @ {getTeamName(game.home_team_id)}
                                             </GameMatchup>
                                             <GameScore>
-                                                {game.awayScore} - {game.homeScore}
+                                                {game.away_score} - {game.home_score}
                                             </GameScore>
                                             <GameStatusBadge color={getStatusColor(game.status)}>
                                                 {getStatusLabel(game.status)}

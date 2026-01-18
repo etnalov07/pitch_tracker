@@ -87,7 +87,7 @@ export const startGame = createAsyncThunk('games/start', async (gameId: string, 
 
 export const endGame = createAsyncThunk(
     'games/end',
-    async ({ gameId, finalData }: { gameId: string; finalData: { homeScore: number; awayScore: number } }, { rejectWithValue }) => {
+    async ({ gameId, finalData }: { gameId: string; finalData: { home_score: number; away_score: number } }, { rejectWithValue }) => {
         try {
             return await gamesApi.endGame(gameId, finalData);
         } catch (error: any) {

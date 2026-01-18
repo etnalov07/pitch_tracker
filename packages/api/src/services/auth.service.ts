@@ -1,7 +1,7 @@
 import { query } from '../config/database';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
-import { User, UserResponse, RegisterData, LoginCredentials } from '../types';
+import { UserWithPassword, UserResponse, RegisterData, LoginCredentials } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class AuthService {
@@ -51,7 +51,7 @@ export class AuthService {
       throw new Error('Invalid email or password');
     }
 
-    const user: User = result.rows[0];
+    const user: UserWithPassword = result.rows[0];
 
     // Verify password
     const isValidPassword = await comparePassword(password, user.password_hash);

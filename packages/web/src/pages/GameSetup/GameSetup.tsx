@@ -52,10 +52,10 @@ const GameSetup: React.FC = () => {
     const [error, setError] = useState('');
 
     const [formData, setFormData] = useState({
-        hometeam_id: '',
-        awayteam_id: '',
-        gameDate: new Date().toISOString().split('T')[0],
-        gameTime: '18:00',
+        home_team_id: '',
+        away_team_id: '',
+        game_date: new Date().toISOString().split('T')[0],
+        game_time: '18:00',
         location: '',
     });
 
@@ -74,28 +74,28 @@ const GameSetup: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.hometeam_id) {
+        if (!formData.home_team_id) {
             setError('Please select a home team');
             return;
         }
-        if (!formData.awayteam_id) {
+        if (!formData.away_team_id) {
             setError('Please select an away team');
             return;
         }
-        if (formData.hometeam_id === formData.awayteam_id) {
+        if (formData.home_team_id === formData.away_team_id) {
             setError('Home and away teams must be different');
             return;
         }
 
         try {
             setSubmitting(true);
-            const gameDateTime = new Date(`${formData.gameDate}T${formData.gameTime}`);
+            const game_dateTime = new Date(`${formData.game_date}T${formData.game_time}`);
 
             const newGame = await dispatch(
                 createGame({
-                    hometeam_id: formData.hometeam_id,
-                    awayteam_id: formData.awayteam_id,
-                    gameDate: gameDateTime.toISOString(),
+                    home_team_id: formData.home_team_id,
+                    away_team_id: formData.away_team_id,
+                    game_date: game_dateTime.toISOString(),
                     location: formData.location.trim() || undefined,
                 })
             ).unwrap();
@@ -152,10 +152,10 @@ const GameSetup: React.FC = () => {
                                 <TeamsRow>
                                     <TeamSelectGroup>
                                         <Label>Away Team</Label>
-                                        <TeamSelect name="awayteam_id" value={formData.awayteam_id} onChange={handleChange}>
+                                        <TeamSelect name="away_team_id" value={formData.away_team_id} onChange={handleChange}>
                                             <option value="">Select away team...</option>
                                             {teams
-                                                .filter((t) => t.id !== formData.hometeam_id)
+                                                .filter((t) => t.id !== formData.home_team_id)
                                                 .map((team) => (
                                                     <option key={team.id} value={team.id}>
                                                         {team.city ? `${team.city} ` : ''}
@@ -163,9 +163,9 @@ const GameSetup: React.FC = () => {
                                                     </option>
                                                 ))}
                                         </TeamSelect>
-                                        {formData.awayteam_id && (
+                                        {formData.away_team_id && (
                                             <SelectedTeamPreview>
-                                                <TeamBadge>{getTeamName(formData.awayteam_id)}</TeamBadge>
+                                                <TeamBadge>{getTeamName(formData.away_team_id)}</TeamBadge>
                                             </SelectedTeamPreview>
                                         )}
                                     </TeamSelectGroup>
@@ -174,10 +174,10 @@ const GameSetup: React.FC = () => {
 
                                     <TeamSelectGroup>
                                         <Label>Home Team</Label>
-                                        <TeamSelect name="hometeam_id" value={formData.hometeam_id} onChange={handleChange}>
+                                        <TeamSelect name="home_team_id" value={formData.home_team_id} onChange={handleChange}>
                                             <option value="">Select home team...</option>
                                             {teams
-                                                .filter((t) => t.id !== formData.awayteam_id)
+                                                .filter((t) => t.id !== formData.away_team_id)
                                                 .map((team) => (
                                                     <option key={team.id} value={team.id}>
                                                         {team.city ? `${team.city} ` : ''}
@@ -185,9 +185,9 @@ const GameSetup: React.FC = () => {
                                                     </option>
                                                 ))}
                                         </TeamSelect>
-                                        {formData.hometeam_id && (
+                                        {formData.home_team_id && (
                                             <SelectedTeamPreview>
-                                                <TeamBadge isHome>{getTeamName(formData.hometeam_id)}</TeamBadge>
+                                                <TeamBadge isHome>{getTeamName(formData.home_team_id)}</TeamBadge>
                                             </SelectedTeamPreview>
                                         )}
                                     </TeamSelectGroup>
@@ -201,23 +201,23 @@ const GameSetup: React.FC = () => {
 
                                 <FormRow>
                                     <FormGroup>
-                                        <Label htmlFor="gameDate">Date</Label>
+                                        <Label htmlFor="game_date">Date</Label>
                                         <Input
                                             type="date"
-                                            id="gameDate"
-                                            name="gameDate"
-                                            value={formData.gameDate}
+                                            id="game_date"
+                                            name="game_date"
+                                            value={formData.game_date}
                                             onChange={handleChange}
                                         />
                                     </FormGroup>
 
                                     <FormGroup>
-                                        <Label htmlFor="gameTime">Time</Label>
+                                        <Label htmlFor="game_time">Time</Label>
                                         <Input
                                             type="time"
-                                            id="gameTime"
-                                            name="gameTime"
-                                            value={formData.gameTime}
+                                            id="game_time"
+                                            name="game_time"
+                                            value={formData.game_time}
                                             onChange={handleChange}
                                         />
                                     </FormGroup>
@@ -236,16 +236,16 @@ const GameSetup: React.FC = () => {
                                 </FormGroup>
                             </GameDetailsSection>
 
-                            {formData.hometeam_id && formData.awayteam_id && (
+                            {formData.home_team_id && formData.away_team_id && (
                                 <GamePreview>
                                     <PreviewTitle>Game Preview</PreviewTitle>
                                     <PreviewMatchup>
-                                        <PreviewTeam>{getTeamName(formData.awayteam_id)}</PreviewTeam>
+                                        <PreviewTeam>{getTeamName(formData.away_team_id)}</PreviewTeam>
                                         <PreviewAt>@</PreviewAt>
-                                        <PreviewTeam>{getTeamName(formData.hometeam_id)}</PreviewTeam>
+                                        <PreviewTeam>{getTeamName(formData.home_team_id)}</PreviewTeam>
                                     </PreviewMatchup>
                                     <PreviewDetails>
-                                        {new Date(`${formData.gameDate}T${formData.gameTime}`).toLocaleDateString('en-US', {
+                                        {new Date(`${formData.game_date}T${formData.game_time}`).toLocaleDateString('en-US', {
                                             weekday: 'long',
                                             month: 'long',
                                             day: 'numeric',
@@ -262,7 +262,7 @@ const GameSetup: React.FC = () => {
                                 <CancelButton type="button" onClick={() => navigate('/')}>
                                     Cancel
                                 </CancelButton>
-                                <SubmitButton type="submit" disabled={submitting || !formData.hometeam_id || !formData.awayteam_id}>
+                                <SubmitButton type="submit" disabled={submitting || !formData.home_team_id || !formData.away_team_id}>
                                     {submitting ? 'Creating...' : 'Create Game'}
                                 </SubmitButton>
                             </FormActions>

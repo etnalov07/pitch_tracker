@@ -54,14 +54,14 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({ onLocationSelect, previousPitch
                     {/* Previous pitches */}
                     {previousPitches.map(
                         (pitch, idx) =>
-                            pitch.locationX !== undefined &&
-                            pitch.locationY !== undefined && (
+                            pitch.location_x !== undefined &&
+                            pitch.location_y !== undefined && (
                                 <PitchMarker
                                     key={pitch.id || idx}
-                                    x={pitch.locationX}
-                                    y={pitch.locationY}
-                                    color={getPitchColor(pitch.result)}
-                                    title={`${pitch.pitchType} - ${pitch.result} (${pitch.velocity || 'N/A'} mph)`}
+                                    x={pitch.location_x}
+                                    y={pitch.location_y}
+                                    color={getPitchColor(pitch.pitch_result)}
+                                    title={`${pitch.pitch_type} - ${pitch.pitch_result} (${pitch.velocity || 'N/A'} mph)`}
                                 >
                                     {idx + 1}
                                 </PitchMarker>
