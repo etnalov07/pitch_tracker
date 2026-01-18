@@ -38,10 +38,12 @@ jobs:
                   mkdir -p deploy
                   cp -r packages/api/dist/* deploy/
                   cp packages/api/package.json deploy/
-                  # Copy shared package dist for runtime
-                  mkdir -p deploy/node_modules/@pitch-tracker/shared
-                  cp -r packages/shared/dist deploy/node_modules/@pitch-tracker/shared/
-                  cp packages/shared/package.json deploy/node_modules/@pitch-tracker/shared/
+                  # Copy shared package to a vendor directory (not node_modules)
+                  mkdir -p deploy/vendor/@pitch-tracker/shared
+                  cp -r packages/shared/dist deploy/vendor/@pitch-tracker/shared/
+                  cp packages/shared/package.json deploy/vendor/@pitch-tracker/shared/
+                  # Update package.json to reference vendor path instead of workspace
+                  sed -i 's|"@pitch-tracker/shared": "1.0.0"|"@pitch-tracker/shared": "file:./vendor/@pitch-tracker/shared"|' deploy/package.json
 
             - name: Install production dependencies in deploy folder
               run: |
@@ -64,7 +66,6 @@ jobs:
                       **/.git*
                       **/.git*/**
                       **/node_modules/**
-                      !**/node_modules/@pitch-tracker/**
                       **/.env*
 
             - name: Setup application on Namecheap
