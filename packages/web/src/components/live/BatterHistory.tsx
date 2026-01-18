@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
 import styled from '@emotion/styled';
+import React, { useEffect, useState, useCallback } from 'react';
+import { analyticsService } from '../../services/pitchService';
 import { theme } from '../../styles/theme';
 import { BatterHistory as BatterHistoryType } from '../../types';
-import { analyticsService } from '../../services/pitchService';
 
 interface BatterHistoryProps {
     batterId: string;

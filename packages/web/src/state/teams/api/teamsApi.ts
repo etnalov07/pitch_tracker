@@ -28,7 +28,6 @@ export const teamsApi = {
 
     getTeamRoster: async (team_id: string): Promise<Player[]> => {
         const response = await api.get<{ players: Player[] }>(`/teams/${team_id}/players`);
-        console.log('API Roster Response:', response.data);
         return response.data.players;
     },
 

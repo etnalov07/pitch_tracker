@@ -101,8 +101,8 @@ const GameSetup: React.FC = () => {
             ).unwrap();
 
             navigate(`/game/${newGame.id}`);
-        } catch (err: any) {
-            setError(err || 'Failed to create game');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to create game');
         } finally {
             setSubmitting(false);
         }
@@ -262,7 +262,10 @@ const GameSetup: React.FC = () => {
                                 <CancelButton type="button" onClick={() => navigate('/')}>
                                     Cancel
                                 </CancelButton>
-                                <SubmitButton type="submit" disabled={submitting || !formData.home_team_id || !formData.away_team_id}>
+                                <SubmitButton
+                                    type="submit"
+                                    disabled={submitting || !formData.home_team_id || !formData.away_team_id}
+                                >
                                     {submitting ? 'Creating...' : 'Create Game'}
                                 </SubmitButton>
                             </FormActions>

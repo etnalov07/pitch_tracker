@@ -1,5 +1,5 @@
-import api from './api';
 import { AtBat, Pitch, Play, BatterHistory, PitchLocationHeatMap, SprayChart } from '../types';
+import api from './api';
 
 export const pitchService = {
     // Create new at-bat

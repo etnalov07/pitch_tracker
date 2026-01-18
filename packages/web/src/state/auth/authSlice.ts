@@ -43,8 +43,9 @@ export const loginUser = createAsyncThunk('auth/login', async (credentials: Logi
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         return response;
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Login failed');
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Login failed';
+        return rejectWithValue(message);
     }
 });
 
@@ -55,8 +56,9 @@ export const registerUser = createAsyncThunk('auth/register', async (data: Regis
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         return response;
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Registration failed');
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Registration failed';
+        return rejectWithValue(message);
     }
 });
 
@@ -65,8 +67,9 @@ export const fetchUserProfile = createAsyncThunk('auth/fetchProfile', async (_, 
         const user = await authApi.getProfile();
         localStorage.setItem('user', JSON.stringify(user));
         return user;
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to fetch profile');
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to fetch profile';
+        return rejectWithValue(message);
     }
 });
 

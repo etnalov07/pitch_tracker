@@ -88,8 +88,8 @@ const Teams: React.FC = () => {
             ).unwrap();
             setFormData({ name: '', abbreviation: '', city: '' });
             setShowCreateForm(false);
-        } catch (err: any) {
-            setLocalError(err || 'Failed to create team');
+        } catch (err: unknown) {
+            setLocalError(err instanceof Error ? err.message : 'Failed to create team');
         } finally {
             setSubmitting(false);
         }
@@ -102,8 +102,8 @@ const Teams: React.FC = () => {
 
         try {
             await dispatch(deleteTeam(team_id)).unwrap();
-        } catch (err: any) {
-            alert(err || 'Failed to delete team');
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : 'Failed to delete team');
         }
     };
 

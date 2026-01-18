@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { theme } from '../../styles/theme';
-import StrikeZone from '../../components/live/StrikeZone';
 import BatterHistory from '../../components/live/BatterHistory';
-import { PitchType, PitchResult } from '../../types';
+import StrikeZone from '../../components/live/StrikeZone';
 import {
     useAppDispatch,
     useAppSelector,
@@ -14,6 +12,8 @@ import {
     setCurrentAtBat,
     clearPitches,
 } from '../../state';
+import { theme } from '../../styles/theme';
+import { PitchType, PitchResult } from '../../types';
 import {
     Container,
     LeftPanel,
@@ -123,9 +123,8 @@ const LiveGame: React.FC = () => {
             } else if (pitchResult === 'in_play') {
                 // Coach will record play details separately
             }
-        } catch (error: any) {
-            console.error('Failed to log pitch:', error);
-            alert(error || 'Failed to log pitch');
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : 'Failed to log pitch');
         }
     };
 
@@ -143,9 +142,8 @@ const LiveGame: React.FC = () => {
             dispatch(setCurrentAtBat(null));
             dispatch(clearPitches());
             alert(`At-bat ended: ${result}`);
-        } catch (error: any) {
-            console.error('Failed to end at-bat:', error);
-            alert(error || 'Failed to end at-bat');
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : 'Failed to end at-bat');
         }
     };
 
@@ -164,9 +162,8 @@ const LiveGame: React.FC = () => {
                     outs_before: 0,
                 })
             ).unwrap();
-        } catch (error: any) {
-            console.error('Failed to start at-bat:', error);
-            alert(error || 'Failed to start at-bat');
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : 'Failed to start at-bat');
         }
     };
 

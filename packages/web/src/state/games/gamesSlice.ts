@@ -2,6 +2,11 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Game, Team, Player, AtBat, Pitch, Play } from '../../types';
 import { gamesApi } from './api/gamesApi';
 
+const getErrorMessage = (error: unknown, fallback: string): string => {
+    if (error instanceof Error) return error.message;
+    return fallback;
+};
+
 interface GameState {
     game: Game;
     homeTeam: Team;
@@ -36,24 +41,24 @@ const initialState: GamesSliceState = {
 export const fetchAllGames = createAsyncThunk('games/fetchAll', async (_, { rejectWithValue }) => {
     try {
         return await gamesApi.getAllGames();
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to fetch games');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch games'));
     }
 });
 
 export const fetchGameById = createAsyncThunk('games/fetchById', async (gameId: string, { rejectWithValue }) => {
     try {
         return await gamesApi.getGameById(gameId);
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to fetch game');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch game'));
     }
 });
 
 export const createGame = createAsyncThunk('games/create', async (gameData: Partial<Game>, { rejectWithValue }) => {
     try {
         return await gamesApi.createGame(gameData);
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to create game');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to create game'));
     }
 });
 
@@ -62,8 +67,8 @@ export const updateGame = createAsyncThunk(
     async ({ id, data }: { id: string; data: Partial<Game> }, { rejectWithValue }) => {
         try {
             return await gamesApi.updateGame(id, data);
-        } catch (error: any) {
-            return rejectWithValue(error.response?.data?.error || 'Failed to update game');
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to update game'));
         }
     }
 );
@@ -72,26 +77,29 @@ export const deleteGame = createAsyncThunk('games/delete', async (gameId: string
     try {
         await gamesApi.deleteGame(gameId);
         return gameId;
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to delete game');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to delete game'));
     }
 });
 
 export const startGame = createAsyncThunk('games/start', async (gameId: string, { rejectWithValue }) => {
     try {
         return await gamesApi.startGame(gameId);
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to start game');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to start game'));
     }
 });
 
 export const endGame = createAsyncThunk(
     'games/end',
-    async ({ gameId, finalData }: { gameId: string; finalData: { home_score: number; away_score: number } }, { rejectWithValue }) => {
+    async (
+        { gameId, finalData }: { gameId: string; finalData: { home_score: number; away_score: number } },
+        { rejectWithValue }
+    ) => {
         try {
             return await gamesApi.endGame(gameId, finalData);
-        } catch (error: any) {
-            return rejectWithValue(error.response?.data?.error || 'Failed to end game');
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to end game'));
         }
     }
 );
@@ -99,24 +107,24 @@ export const endGame = createAsyncThunk(
 export const advanceInning = createAsyncThunk('games/advanceInning', async (gameId: string, { rejectWithValue }) => {
     try {
         return await gamesApi.advanceInning(gameId);
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to advance inning');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to advance inning'));
     }
 });
 
 export const fetchCurrentGameState = createAsyncThunk('games/fetchCurrentState', async (gameId: string, { rejectWithValue }) => {
     try {
         return await gamesApi.getCurrentGameState(gameId);
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to fetch game state');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch game state'));
     }
 });
 
 export const createAtBat = createAsyncThunk('games/createAtBat', async (atBatData: Partial<AtBat>, { rejectWithValue }) => {
     try {
         return await gamesApi.createAtBat(atBatData);
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to create at-bat');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to create at-bat'));
     }
 });
 
@@ -125,8 +133,8 @@ export const updateAtBat = createAsyncThunk(
     async ({ id, data }: { id: string; data: Partial<AtBat> }, { rejectWithValue }) => {
         try {
             return await gamesApi.updateAtBat(id, data);
-        } catch (error: any) {
-            return rejectWithValue(error.response?.data?.error || 'Failed to update at-bat');
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to update at-bat'));
         }
     }
 );
@@ -134,16 +142,16 @@ export const updateAtBat = createAsyncThunk(
 export const logPitch = createAsyncThunk('games/logPitch', async (pitchData: Partial<Pitch>, { rejectWithValue }) => {
     try {
         return await gamesApi.logPitch(pitchData);
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to log pitch');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to log pitch'));
     }
 });
 
 export const recordPlay = createAsyncThunk('games/recordPlay', async (playData: Partial<Play>, { rejectWithValue }) => {
     try {
         return await gamesApi.recordPlay(playData);
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to record play');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to record play'));
     }
 });
 

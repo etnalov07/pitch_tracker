@@ -1,12 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
-import Teams from './pages/Teams/Teams';
-import TeamDetail from './pages/TeamDetail/TeamDetail';
-import GameSetup from './pages/GameSetup/GameSetup';
 import GameHistory from './pages/GameHistory/GameHistory';
+import GameSetup from './pages/GameSetup/GameSetup';
 import LiveGame from './pages/LiveGame/LiveGame';
+import Login from './pages/Login/Login';
+import TeamDetail from './pages/TeamDetail/TeamDetail';
+import Teams from './pages/Teams/Teams';
 import { useAppSelector } from './state';
 
 // Protected Route component

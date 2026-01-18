@@ -346,13 +346,13 @@ export const EmptyTitle = styled.h3({
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.gray[800],
-    margin: '0 0 ${theme.spacing.sm} 0',
+    margin: `0 0 ${theme.spacing.sm} 0`,
 });
 
 export const EmptyText = styled.p({
     fontSize: theme.fontSize.base,
     color: theme.colors.gray[600],
-    margin: '0 0 ${theme.spacing.xl} 0',
+    margin: `0 0 ${theme.spacing.xl} 0`,
 });
 
 export const CreateButton = styled.button({

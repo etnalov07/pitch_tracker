@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { theme } from '../../styles/theme';
 import { useAppDispatch, useAppSelector, fetchAllGames, fetchAllTeams, deleteGame } from '../../state';
+import { theme } from '../../styles/theme';
 import type { GameStatus as GameStatusType } from '../../types';
 import {
     Container,
@@ -124,8 +124,8 @@ const GameHistory: React.FC = () => {
 
         try {
             await dispatch(deleteGame(gameId)).unwrap();
-        } catch (err: any) {
-            alert(err || 'Failed to delete game');
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : 'Failed to delete game');
         }
     };
 

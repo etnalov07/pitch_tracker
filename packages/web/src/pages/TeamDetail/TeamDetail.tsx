@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { theme } from '../../styles/theme';
 import {
     useAppDispatch,
     useAppSelector,
@@ -10,6 +9,7 @@ import {
     updatePlayer,
     deletePlayer,
 } from '../../state';
+import { theme } from '../../styles/theme';
 import { Player, PlayerPosition, HandednessType, ThrowingHand } from '../../types';
 import {
     Container,
@@ -64,8 +64,6 @@ const TeamDetail: React.FC = () => {
     const { team_id } = useParams<{ team_id: string }>();
 
     const { selectedTeam: team, roster: players = [], loading } = useAppSelector((state) => state.teams);
-    console.log('Selected Team:', team);
-    console.log('Roster:', players);
     const [showAddPlayer, setShowAddPlayer] = useState(false);
     const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -127,8 +125,8 @@ const TeamDetail: React.FC = () => {
                 await dispatch(addPlayerToTeam({ team_id: team_id!, playerData })).unwrap();
             }
             resetForm();
-        } catch (err: any) {
-            setError(typeof err === 'string' ? err : err?.message || 'Failed to save player');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to save player');
         } finally {
             setSubmitting(false);
         }
@@ -154,8 +152,8 @@ const TeamDetail: React.FC = () => {
 
         try {
             await dispatch(deletePlayer(player_id)).unwrap();
-        } catch (err: any) {
-            alert(typeof err === 'string' ? err : err?.message || 'Failed to remove player');
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : 'Failed to remove player');
         }
     };
 
@@ -258,7 +256,12 @@ const TeamDetail: React.FC = () => {
 
                                 <FormGroup>
                                     <Label htmlFor="primary_position">Position</Label>
-                                    <Select id="primary_position" name="primary_position" value={formData.primary_position} onChange={handleChange}>
+                                    <Select
+                                        id="primary_position"
+                                        name="primary_position"
+                                        value={formData.primary_position}
+                                        onChange={handleChange}
+                                    >
                                         {POSITIONS.map((pos) => (
                                             <option key={pos} value={pos}>
                                                 {pos}

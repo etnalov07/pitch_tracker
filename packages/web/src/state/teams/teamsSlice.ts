@@ -2,6 +2,11 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Team, Player } from '../../types';
 import { teamsApi } from './api/teamsApi';
 
+const getErrorMessage = (error: unknown, fallback: string): string => {
+    if (error instanceof Error) return error.message;
+    return fallback;
+};
+
 interface TeamsState {
     teamList: Team[];
     selectedTeam: Team | null;
@@ -24,24 +29,24 @@ const initialState: TeamsState = {
 export const fetchAllTeams = createAsyncThunk('teams/fetchAll', async (_, { rejectWithValue }) => {
     try {
         return await teamsApi.getAllTeams();
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to fetch teams');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch teams'));
     }
 });
 
 export const fetchTeamById = createAsyncThunk('teams/fetchById', async (team_id: string, { rejectWithValue }) => {
     try {
         return await teamsApi.getTeamById(team_id);
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to fetch team');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch team'));
     }
 });
 
 export const createTeam = createAsyncThunk('teams/create', async (teamData: Partial<Team>, { rejectWithValue }) => {
     try {
         return await teamsApi.createTeam(teamData);
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to create team');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to create team'));
     }
 });
 
@@ -50,8 +55,8 @@ export const updateTeam = createAsyncThunk(
     async ({ id, data }: { id: string; data: Partial<Team> }, { rejectWithValue }) => {
         try {
             return await teamsApi.updateTeam(id, data);
-        } catch (error: any) {
-            return rejectWithValue(error.response?.data?.error || 'Failed to update team');
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to update team'));
         }
     }
 );
@@ -60,18 +65,17 @@ export const deleteTeam = createAsyncThunk('teams/delete', async (team_id: strin
     try {
         await teamsApi.deleteTeam(team_id);
         return team_id;
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to delete team');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to delete team'));
     }
 });
 
 export const fetchTeamRoster = createAsyncThunk('teams/fetchRoster', async (team_id: string, { rejectWithValue }) => {
     try {
         const response = await teamsApi.getTeamRoster(team_id);
-        console.log('Fetched Roster:', response);
         return response;
-    } catch (error: any) {
-        return rejectWithValue(error.response?.data?.error || 'Failed to fetch roster');
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch roster'));
     }
 });
 
@@ -80,9 +84,8 @@ export const addPlayerToTeam = createAsyncThunk(
     async ({ team_id, playerData }: { team_id: string; playerData: Partial<Player> }, { rejectWithValue }) => {
         try {
             return await teamsApi.addPlayer(team_id, playerData);
-        } catch (error: any) {
-            const msg = error.response?.data?.error || error.response?.data?.message || 'Failed to add player';
-            return rejectWithValue(msg);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to add player'));
         }
     }
 );
@@ -92,9 +95,8 @@ export const updatePlayer = createAsyncThunk(
     async ({ player_id, playerData }: { player_id: string; playerData: Partial<Player> }, { rejectWithValue }) => {
         try {
             return await teamsApi.updatePlayer(player_id, playerData);
-        } catch (error: any) {
-            const msg = error.response?.data?.error || error.response?.data?.message || 'Failed to update player';
-            return rejectWithValue(msg);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to update player'));
         }
     }
 );
@@ -103,9 +105,8 @@ export const deletePlayer = createAsyncThunk('teams/deletePlayer', async (player
     try {
         await teamsApi.deletePlayer(player_id);
         return player_id;
-    } catch (error: any) {
-        const msg = error.response?.data?.error || error.response?.data?.message || 'Failed to delete player';
-        return rejectWithValue(msg);
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to delete player'));
     }
 });
 
@@ -133,7 +134,6 @@ const teamsSlice = createSlice({
             })
             .addCase(fetchAllTeams.fulfilled, (state, action) => {
                 state.loading = false;
-                console.log('Fetched Teams:', action.payload);
                 state.teamList = action.payload;
             })
             .addCase(fetchAllTeams.rejected, (state, action) => {
