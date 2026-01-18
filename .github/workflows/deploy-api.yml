@@ -38,7 +38,6 @@ jobs:
                   mkdir -p deploy
                   cp -r packages/api/dist/* deploy/
                   cp packages/api/package.json deploy/
-                  cp package-lock.json deploy/
                   # Copy shared package dist for runtime
                   mkdir -p deploy/node_modules/@pitch-tracker/shared
                   cp -r packages/shared/dist deploy/node_modules/@pitch-tracker/shared/
@@ -47,7 +46,7 @@ jobs:
             - name: Install production dependencies in deploy folder
               run: |
                   cd deploy
-                  npm ci --production
+                  npm install --omit=dev
 
             - name: Deploy via FTP to Namecheap
               uses: SamKirkland/FTP-Deploy-Action@v4.3.5
