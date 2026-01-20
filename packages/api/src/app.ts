@@ -4,14 +4,16 @@ import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 
 // Import routes (to be created)
-import authRoutes from './routes/auth.routes';
-import teamRoutes from './routes/team.routes';
-import playerRoutes from './routes/player.routes';
-import gameRoutes from './routes/game.routes';
+import analyticsRoutes from './routes/analytics.routes';
 import atBatRoutes from './routes/atBat.routes';
+import authRoutes from './routes/auth.routes';
+import gamePitcherRoutes from './routes/gamePitcher.routes';
+import gameRoutes from './routes/game.routes';
+import opponentLineupRoutes from './routes/opponentLineup.routes';
 import pitchRoutes from './routes/pitch.routes';
 import playRoutes from './routes/play.routes';
-import analyticsRoutes from './routes/analytics.routes';
+import playerRoutes from './routes/player.routes';
+import teamRoutes from './routes/team.routes';
 
 const app: Application = express();
 
@@ -46,14 +48,16 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // API Routes (prefixed with /bt-api for Namecheap routing)
-app.use('/bt-api/auth', authRoutes);
-app.use('/bt-api/teams', teamRoutes);
-app.use('/bt-api/players', playerRoutes);
-app.use('/bt-api/games', gameRoutes);
-app.use('/bt-api/at-bats', atBatRoutes);
-app.use('/bt-api/pitches', pitchRoutes);
-app.use('/bt-api/plays', playRoutes);
 app.use('/bt-api/analytics', analyticsRoutes);
+app.use('/bt-api/at-bats', atBatRoutes);
+app.use('/bt-api/auth', authRoutes);
+app.use('/bt-api/game-pitchers', gamePitcherRoutes);
+app.use('/bt-api/games', gameRoutes);
+app.use('/bt-api/opponent-lineup', opponentLineupRoutes);
+app.use('/bt-api/pitches', pitchRoutes);
+app.use('/bt-api/players', playerRoutes);
+app.use('/bt-api/plays', playRoutes);
+app.use('/bt-api/teams', teamRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

@@ -206,7 +206,7 @@ const teamsSlice = createSlice({
             })
             .addCase(fetchTeamRoster.fulfilled, (state, action) => {
                 state.rosterLoading = false;
-                state.roster = action.payload;
+                state.roster = action.payload.players;
             })
             .addCase(fetchTeamRoster.rejected, (state, action) => {
                 state.rosterLoading = false;

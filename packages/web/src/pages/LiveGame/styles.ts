@@ -269,3 +269,97 @@ export const ErrorContainer = styled.div({
     fontSize: theme.fontSize.xl,
     color: theme.colors.red[600],
 });
+
+export const PlayerDisplay = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: theme.spacing.md,
+    backgroundColor: 'white',
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.md,
+    boxShadow: theme.shadows.sm,
+});
+
+export const PlayerInfo = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+});
+
+export const PlayerLabel = styled.span({
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[500],
+    textTransform: 'uppercase',
+});
+
+export const PlayerName = styled.span({
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[900],
+});
+
+export const PlayerNumber = styled.span({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
+    backgroundColor: theme.colors.primary[100],
+    color: theme.colors.primary[700],
+    fontWeight: theme.fontWeight.bold,
+    fontSize: theme.fontSize.base,
+});
+
+export const ChangeButton = styled.button({
+    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+    backgroundColor: theme.colors.gray[100],
+    color: theme.colors.gray[700],
+    border: `1px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    cursor: 'pointer',
+
+    '&:hover': {
+        backgroundColor: theme.colors.gray[200],
+    },
+});
+
+export const PlayersRow = styled.div({
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+});
+
+export const SetupPrompt = styled.div({
+    textAlign: 'center',
+    padding: theme.spacing.xl,
+    backgroundColor: theme.colors.yellow[50],
+    border: `1px solid ${theme.colors.yellow[200]}`,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.lg,
+});
+
+export const SetupText = styled.p({
+    fontSize: theme.fontSize.base,
+    color: theme.colors.yellow[800],
+    marginBottom: theme.spacing.md,
+});
+
+export const SetupButton = styled.button({
+    padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+    backgroundColor: theme.colors.yellow[500],
+    color: 'white',
+    border: 'none',
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+
+    '&:hover': {
+        backgroundColor: theme.colors.yellow[600],
+    },
+});

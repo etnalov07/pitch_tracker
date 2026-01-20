@@ -104,9 +104,15 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const getTeamName = (team_id: string) => {
+    const getTeamName = (team_id: string | null | undefined) => {
+        if (!team_id) return 'Unknown Team';
         const team = teams.find((t) => t.id === team_id);
         return team?.name || 'Unknown Team';
+    };
+
+    const getOpponentName = (game: (typeof games)[0]) => {
+        if (game.opponent_name) return game.opponent_name;
+        return getTeamName(game.away_team_id);
     };
 
     const formatDate = (dateString: string) => {
@@ -159,7 +165,7 @@ const Dashboard: React.FC = () => {
                                     <GameStatus color={getStatusColor(game.status)}>{getStatusLabel(game.status)}</GameStatus>
                                     <GameTeams>
                                         <TeamRow>
-                                            <TeamName>{getTeamName(game.away_team_id)}</TeamName>
+                                            <TeamName>{getOpponentName(game)}</TeamName>
                                             <Score>{game.away_score ?? 0}</Score>
                                         </TeamRow>
                                         <TeamRow>
@@ -203,7 +209,7 @@ const Dashboard: React.FC = () => {
                                         <GameListItem key={game.id} onClick={() => navigate(`/game/${game.id}`)}>
                                             <GameDate>{formatDate(game.game_date)}</GameDate>
                                             <GameMatchup>
-                                                {getTeamName(game.away_team_id)} @ {getTeamName(game.home_team_id)}
+                                                {getOpponentName(game)} @ {getTeamName(game.home_team_id)}
                                             </GameMatchup>
                                             <GameLocation>{game.location || 'TBD'}</GameLocation>
                                             <GameStatusBadge color={getStatusColor(game.status)}>
@@ -226,7 +232,7 @@ const Dashboard: React.FC = () => {
                                         <GameListItem key={game.id} onClick={() => navigate(`/game/${game.id}`)}>
                                             <GameDate>{formatDate(game.game_date)}</GameDate>
                                             <GameMatchup>
-                                                {getTeamName(game.away_team_id)} @ {getTeamName(game.home_team_id)}
+                                                {getOpponentName(game)} @ {getTeamName(game.home_team_id)}
                                             </GameMatchup>
                                             <GameScore>
                                                 {game.away_score} - {game.home_score}

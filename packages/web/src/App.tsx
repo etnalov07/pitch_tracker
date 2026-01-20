@@ -5,6 +5,7 @@ import GameHistory from './pages/GameHistory/GameHistory';
 import GameSetup from './pages/GameSetup/GameSetup';
 import LiveGame from './pages/LiveGame/LiveGame';
 import Login from './pages/Login/Login';
+import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
 import TeamDetail from './pages/TeamDetail/TeamDetail';
 import Teams from './pages/Teams/Teams';
 import { useAppSelector } from './state';
@@ -33,6 +34,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <LiveGame />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/game/:gameId/lineup"
+                    element={
+                        <ProtectedRoute>
+                            <OpponentLineup />
                         </ProtectedRoute>
                     }
                 />

@@ -46,14 +46,18 @@ const GameSetup: React.FC = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
-    const { teamList: teams, loading } = useAppSelector((state) => state.teams);
+    const { user } = useAppSelector((state) => state.auth);
+    const { teamList: allTeams, loading } = useAppSelector((state) => state.teams);
+
+    // Filter to only show user's teams
+    const userTeams = allTeams.filter((team) => team.owner_id === user?.id);
 
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
 
     const [formData, setFormData] = useState({
         home_team_id: '',
-        away_team_id: '',
+        opponent_name: '',
         game_date: new Date().toISOString().split('T')[0],
         game_time: '18:00',
         location: '',
@@ -62,6 +66,16 @@ const GameSetup: React.FC = () => {
     useEffect(() => {
         dispatch(fetchAllTeams());
     }, [dispatch]);
+
+    // Auto-select team if user has only one
+    useEffect(() => {
+        if (userTeams.length === 1 && !formData.home_team_id) {
+            setFormData((prev) => ({
+                ...prev,
+                home_team_id: userTeams[0].id,
+            }));
+        }
+    }, [userTeams, formData.home_team_id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({
@@ -75,15 +89,11 @@ const GameSetup: React.FC = () => {
         e.preventDefault();
 
         if (!formData.home_team_id) {
-            setError('Please select a home team');
+            setError('Please select your team');
             return;
         }
-        if (!formData.away_team_id) {
-            setError('Please select an away team');
-            return;
-        }
-        if (formData.home_team_id === formData.away_team_id) {
-            setError('Home and away teams must be different');
+        if (!formData.opponent_name.trim()) {
+            setError('Please enter the opponent team name');
             return;
         }
 
@@ -94,13 +104,14 @@ const GameSetup: React.FC = () => {
             const newGame = await dispatch(
                 createGame({
                     home_team_id: formData.home_team_id,
-                    away_team_id: formData.away_team_id,
+                    opponent_name: formData.opponent_name.trim(),
                     game_date: game_dateTime.toISOString(),
                     location: formData.location.trim() || undefined,
                 })
             ).unwrap();
 
-            navigate(`/game/${newGame.id}`);
+            // Navigate to opponent lineup setup
+            navigate(`/game/${newGame.id}/lineup`);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Failed to create game');
         } finally {
@@ -109,7 +120,7 @@ const GameSetup: React.FC = () => {
     };
 
     const getTeamName = (team_id: string) => {
-        const team = teams.find((t) => t.id === team_id);
+        const team = userTeams.find((t) => t.id === team_id);
         return team ? `${team.city ? team.city + ' ' : ''}${team.name}` : '';
     };
 
@@ -131,15 +142,12 @@ const GameSetup: React.FC = () => {
             </Header>
 
             <Content>
-                {teams.length < 2 ? (
+                {userTeams.length === 0 ? (
                     <WarningCard>
                         <WarningIcon>&#9888;</WarningIcon>
-                        <WarningTitle>Not Enough Teams</WarningTitle>
-                        <WarningText>
-                            You need at least 2 teams to create a game. You currently have {teams.length} team
-                            {teams.length !== 1 ? 's' : ''}.
-                        </WarningText>
-                        <CreateTeamButton onClick={() => navigate('/teams')}>Manage Teams</CreateTeamButton>
+                        <WarningTitle>No Teams Found</WarningTitle>
+                        <WarningText>You need to create a team before you can start a game.</WarningText>
+                        <CreateTeamButton onClick={() => navigate('/teams/new')}>Create Team</CreateTeamButton>
                     </WarningCard>
                 ) : (
                     <FormCard>
@@ -147,25 +155,21 @@ const GameSetup: React.FC = () => {
 
                         <Form onSubmit={handleSubmit}>
                             <TeamSelectionSection>
-                                <SectionTitle>Select Teams</SectionTitle>
+                                <SectionTitle>Teams</SectionTitle>
 
                                 <TeamsRow>
                                     <TeamSelectGroup>
-                                        <Label>Away Team</Label>
-                                        <TeamSelect name="away_team_id" value={formData.away_team_id} onChange={handleChange}>
-                                            <option value="">Select away team...</option>
-                                            {teams
-                                                .filter((t) => t.id !== formData.home_team_id)
-                                                .map((team) => (
-                                                    <option key={team.id} value={team.id}>
-                                                        {team.city ? `${team.city} ` : ''}
-                                                        {team.name}
-                                                    </option>
-                                                ))}
-                                        </TeamSelect>
-                                        {formData.away_team_id && (
+                                        <Label>Opponent</Label>
+                                        <Input
+                                            type="text"
+                                            name="opponent_name"
+                                            value={formData.opponent_name}
+                                            onChange={handleChange}
+                                            placeholder="Enter opponent team name..."
+                                        />
+                                        {formData.opponent_name && (
                                             <SelectedTeamPreview>
-                                                <TeamBadge>{getTeamName(formData.away_team_id)}</TeamBadge>
+                                                <TeamBadge>{formData.opponent_name}</TeamBadge>
                                             </SelectedTeamPreview>
                                         )}
                                     </TeamSelectGroup>
@@ -173,22 +177,35 @@ const GameSetup: React.FC = () => {
                                     <VsText>@</VsText>
 
                                     <TeamSelectGroup>
-                                        <Label>Home Team</Label>
-                                        <TeamSelect name="home_team_id" value={formData.home_team_id} onChange={handleChange}>
-                                            <option value="">Select home team...</option>
-                                            {teams
-                                                .filter((t) => t.id !== formData.away_team_id)
-                                                .map((team) => (
-                                                    <option key={team.id} value={team.id}>
-                                                        {team.city ? `${team.city} ` : ''}
-                                                        {team.name}
-                                                    </option>
-                                                ))}
-                                        </TeamSelect>
-                                        {formData.home_team_id && (
-                                            <SelectedTeamPreview>
-                                                <TeamBadge isHome>{getTeamName(formData.home_team_id)}</TeamBadge>
-                                            </SelectedTeamPreview>
+                                        <Label>Your Team</Label>
+                                        {userTeams.length === 1 ? (
+                                            <>
+                                                <Input type="text" value={getTeamName(userTeams[0].id)} disabled />
+                                                <SelectedTeamPreview>
+                                                    <TeamBadge isHome>{getTeamName(userTeams[0].id)}</TeamBadge>
+                                                </SelectedTeamPreview>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <TeamSelect
+                                                    name="home_team_id"
+                                                    value={formData.home_team_id}
+                                                    onChange={handleChange}
+                                                >
+                                                    <option value="">Select your team...</option>
+                                                    {userTeams.map((team) => (
+                                                        <option key={team.id} value={team.id}>
+                                                            {team.city ? `${team.city} ` : ''}
+                                                            {team.name}
+                                                        </option>
+                                                    ))}
+                                                </TeamSelect>
+                                                {formData.home_team_id && (
+                                                    <SelectedTeamPreview>
+                                                        <TeamBadge isHome>{getTeamName(formData.home_team_id)}</TeamBadge>
+                                                    </SelectedTeamPreview>
+                                                )}
+                                            </>
                                         )}
                                     </TeamSelectGroup>
                                 </TeamsRow>
@@ -236,11 +253,11 @@ const GameSetup: React.FC = () => {
                                 </FormGroup>
                             </GameDetailsSection>
 
-                            {formData.home_team_id && formData.away_team_id && (
+                            {formData.home_team_id && formData.opponent_name && (
                                 <GamePreview>
                                     <PreviewTitle>Game Preview</PreviewTitle>
                                     <PreviewMatchup>
-                                        <PreviewTeam>{getTeamName(formData.away_team_id)}</PreviewTeam>
+                                        <PreviewTeam>{formData.opponent_name}</PreviewTeam>
                                         <PreviewAt>@</PreviewAt>
                                         <PreviewTeam>{getTeamName(formData.home_team_id)}</PreviewTeam>
                                     </PreviewMatchup>
@@ -264,9 +281,9 @@ const GameSetup: React.FC = () => {
                                 </CancelButton>
                                 <SubmitButton
                                     type="submit"
-                                    disabled={submitting || !formData.home_team_id || !formData.away_team_id}
+                                    disabled={submitting || !formData.home_team_id || !formData.opponent_name.trim()}
                                 >
-                                    {submitting ? 'Creating...' : 'Create Game'}
+                                    {submitting ? 'Creating...' : 'Continue to Lineup'}
                                 </SubmitButton>
                             </FormActions>
                         </Form>

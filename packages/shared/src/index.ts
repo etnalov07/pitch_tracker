@@ -92,7 +92,8 @@ export type InningHalf = 'top' | 'bottom';
 export interface Game {
     id: string;
     home_team_id: string;
-    away_team_id: string;
+    away_team_id?: string | null;
+    opponent_name?: string;
     game_date: string;
     game_time?: string;
     location?: string;
@@ -108,7 +109,46 @@ export interface Game {
 
 export interface GameWithTeams extends Game {
     home_team: Team;
-    away_team: Team;
+    away_team?: Team;
+}
+
+// ============================================================================
+// Opponent Lineup Types
+// ============================================================================
+
+export interface OpponentLineupPlayer {
+    id: string;
+    game_id: string;
+    player_name: string;
+    batting_order: number;
+    position?: string;
+    bats: HandednessType;
+    is_starter: boolean;
+    replaced_by_id?: string | null;
+    inning_entered?: number | null;
+    created_at: string;
+}
+
+export interface OpponentLineupWithSub extends OpponentLineupPlayer {
+    replaced_by?: OpponentLineupPlayer;
+}
+
+// ============================================================================
+// Game Pitchers Types
+// ============================================================================
+
+export interface GamePitcher {
+    id: string;
+    game_id: string;
+    player_id: string;
+    pitching_order: number;
+    inning_entered: number;
+    inning_exited?: number | null;
+    created_at: string;
+}
+
+export interface GamePitcherWithPlayer extends GamePitcher {
+    player: Player;
 }
 
 // ============================================================================
@@ -125,6 +165,7 @@ export interface Inning {
     runs_scored: number;
     hits?: number;
     errors?: number;
+    is_opponent_batting?: boolean;
     created_at: string;
 }
 
@@ -136,7 +177,8 @@ export interface AtBat {
     id: string;
     game_id: string;
     inning_id: string;
-    batter_id: string;
+    batter_id?: string;
+    opponent_batter_id?: string;
     pitcher_id: string;
     batting_order?: number;
     balls: number;
@@ -181,7 +223,8 @@ export interface Pitch {
     at_bat_id: string;
     game_id: string;
     pitcher_id: string;
-    batter_id: string;
+    batter_id?: string;
+    opponent_batter_id?: string;
     pitch_number: number;
     pitch_type: PitchType;
     velocity?: number;
@@ -331,5 +374,23 @@ export interface GamesResponse {
 
 export interface GameResponse {
     game: Game;
+    message?: string;
+}
+
+export interface OpponentLineupResponse {
+    lineup: OpponentLineupPlayer[];
+}
+
+export interface OpponentLineupPlayerResponse {
+    player: OpponentLineupPlayer;
+    message?: string;
+}
+
+export interface GamePitchersResponse {
+    pitchers: GamePitcherWithPlayer[];
+}
+
+export interface GamePitcherResponse {
+    pitcher: GamePitcher;
     message?: string;
 }

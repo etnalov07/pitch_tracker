@@ -4,22 +4,27 @@ import { v4 as uuidv4 } from 'uuid';
 
 export class GameService {
   async createGame(userId: string, gameData: Partial<Game>): Promise<Game> {
-    const { home_team_id, away_team_id, game_date, game_time, location } = gameData;
+    const { home_team_id, away_team_id, opponent_name, game_date, game_time, location } = gameData;
 
-    if (!home_team_id || !away_team_id) {
-      throw new Error('home_team_id and away_team_id are required');
+    if (!home_team_id) {
+      throw new Error('home_team_id is required');
     }
 
-    if (home_team_id === away_team_id) {
+    // Either away_team_id or opponent_name must be provided
+    if (!away_team_id && !opponent_name) {
+      throw new Error('Either away_team_id or opponent_name is required');
+    }
+
+    if (away_team_id && home_team_id === away_team_id) {
       throw new Error('Home and away teams must be different');
     }
 
     const gameId = uuidv4();
     const result = await query(
-      `INSERT INTO games (id, home_team_id, away_team_id, game_date, game_time, location, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [gameId, home_team_id, away_team_id, game_date, game_time, location, userId]
+      [gameId, home_team_id, away_team_id || null, opponent_name || null, game_date, game_time, location, userId]
     );
 
     return result.rows[0];
@@ -27,12 +32,13 @@ export class GameService {
 
   async getGameById(gameId: string): Promise<any> {
     const gameResult = await query(
-      `SELECT g.*, 
-              ht.name as home_team_name, 
-              at.name as away_team_name
+      `SELECT g.*,
+              ht.name as home_team_name,
+              at.name as away_team_name,
+              COALESCE(at.name, g.opponent_name) as opponent_display_name
        FROM games g
        JOIN teams ht ON g.home_team_id = ht.id
-       JOIN teams at ON g.away_team_id = at.id
+       LEFT JOIN teams at ON g.away_team_id = at.id
        WHERE g.id = $1`,
       [gameId]
     );
@@ -46,12 +52,13 @@ export class GameService {
 
   async getGamesByTeam(team_id: string): Promise<Game[]> {
     const result = await query(
-      `SELECT g.*, 
-              ht.name as home_team_name, 
-              at.name as away_team_name
+      `SELECT g.*,
+              ht.name as home_team_name,
+              at.name as away_team_name,
+              COALESCE(at.name, g.opponent_name) as opponent_display_name
        FROM games g
        JOIN teams ht ON g.home_team_id = ht.id
-       JOIN teams at ON g.away_team_id = at.id
+       LEFT JOIN teams at ON g.away_team_id = at.id
        WHERE g.home_team_id = $1 OR g.away_team_id = $1
        ORDER BY g.game_date DESC, g.game_time DESC`,
       [team_id]
@@ -63,7 +70,7 @@ export class GameService {
     return await transaction(async (client) => {
       // Update game status
       const gameResult = await client.query(
-        `UPDATE games 
+        `UPDATE games
          SET status = 'in_progress', current_inning = 1, inning_half = 'top'
          WHERE id = $1
          RETURNING *`,
@@ -73,11 +80,14 @@ export class GameService {
       const game = gameResult.rows[0];
 
       // Create first inning (top of 1st)
+      // In top of inning, opponent bats (is_opponent_batting = true)
+      // User's team (home_team) pitches
       const inningId = uuidv4();
+      const isOpponentBatting = true; // Top of inning = opponent bats
       await client.query(
-        `INSERT INTO innings (id, game_id, inning_number, half, batting_team_id, pitching_team_id)
-         VALUES ($1, $2, 1, 'top', $3, $4)`,
-        [inningId, gameId, game.away_team_id, game.home_team_id]
+        `INSERT INTO innings (id, game_id, inning_number, half, batting_team_id, pitching_team_id, is_opponent_batting)
+         VALUES ($1, $2, 1, 'top', $3, $4, $5)`,
+        [inningId, gameId, game.away_team_id || game.home_team_id, game.home_team_id, isOpponentBatting]
       );
 
       return game;
@@ -115,7 +125,7 @@ export class GameService {
 
       // Update game
       const gameResult = await client.query(
-        `UPDATE games 
+        `UPDATE games
          SET current_inning = $1, inning_half = $2
          WHERE id = $3
          RETURNING *`,
@@ -123,14 +133,17 @@ export class GameService {
       );
 
       // Create new inning record
+      // Top of inning = opponent bats (is_opponent_batting = true)
+      // Bottom of inning = user's team bats (is_opponent_batting = false)
       const inningId = uuidv4();
-      const battingteam_id = newHalf === 'top' ? game.away_team_id : game.home_team_id;
-      const pitchingteam_id = newHalf === 'top' ? game.home_team_id : game.away_team_id;
+      const isOpponentBatting = newHalf === 'top';
+      const battingTeamId = newHalf === 'top' ? (game.away_team_id || game.home_team_id) : game.home_team_id;
+      const pitchingTeamId = newHalf === 'top' ? game.home_team_id : (game.away_team_id || game.home_team_id);
 
       await client.query(
-        `INSERT INTO innings (id, game_id, inning_number, half, batting_team_id, pitching_team_id)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [inningId, gameId, newInning, newHalf, battingteam_id, pitchingteam_id]
+        `INSERT INTO innings (id, game_id, inning_number, half, batting_team_id, pitching_team_id, is_opponent_batting)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [inningId, gameId, newInning, newHalf, battingTeamId, pitchingTeamId, isOpponentBatting]
       );
 
       return gameResult.rows[0];

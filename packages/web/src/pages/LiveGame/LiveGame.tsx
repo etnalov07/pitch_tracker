@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import BatterSelector from '../../components/game/BatterSelector';
+import PitcherSelector from '../../components/game/PitcherSelector';
 import BatterHistory from '../../components/live/BatterHistory';
 import StrikeZone from '../../components/live/StrikeZone';
 import {
@@ -13,7 +15,7 @@ import {
     clearPitches,
 } from '../../state';
 import { theme } from '../../styles/theme';
-import { PitchType, PitchResult } from '../../types';
+import { PitchType, PitchResult, OpponentLineupPlayer, GamePitcherWithPlayer } from '../../types';
 import {
     Container,
     LeftPanel,
@@ -44,11 +46,22 @@ import {
     StartAtBatButton,
     LoadingContainer,
     ErrorContainer,
+    PlayerDisplay,
+    PlayerInfo,
+    PlayerLabel,
+    PlayerName,
+    PlayerNumber,
+    ChangeButton,
+    PlayersRow,
+    SetupPrompt,
+    SetupText,
+    SetupButton,
 } from './styles';
 
 const LiveGame: React.FC = () => {
     const { gameId } = useParams<{ gameId: string }>();
     const dispatch = useAppDispatch();
+    const navigate = useNavigate();
 
     const { selectedGame: game, currentAtBat, pitches, loading } = useAppSelector((state) => state.games);
 
@@ -58,9 +71,14 @@ const LiveGame: React.FC = () => {
     const [velocity, setVelocity] = useState<string>('');
     const [pitchResult, setPitchResult] = useState<PitchResult>('ball');
 
-    // Temporary IDs for demo (in real app, you'd fetch these from game state)
-    const [batterId] = useState('batter-id-1');
-    const [pitcherId] = useState('pitcher-id-1');
+    // Current pitcher and batter
+    const [currentPitcher, setCurrentPitcher] = useState<GamePitcherWithPlayer | null>(null);
+    const [currentBatter, setCurrentBatter] = useState<OpponentLineupPlayer | null>(null);
+    const [currentBattingOrder, setCurrentBattingOrder] = useState(1);
+
+    // Modal visibility
+    const [showPitcherSelector, setShowPitcherSelector] = useState(false);
+    const [showBatterSelector, setShowBatterSelector] = useState(false);
 
     useEffect(() => {
         if (gameId) {
@@ -141,6 +159,8 @@ const LiveGame: React.FC = () => {
             // Reset for next at-bat
             dispatch(setCurrentAtBat(null));
             dispatch(clearPitches());
+            // Advance to next batter
+            advanceBattingOrder();
             alert(`At-bat ended: ${result}`);
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : 'Failed to end at-bat');
@@ -148,15 +168,18 @@ const LiveGame: React.FC = () => {
     };
 
     const handleStartAtBat = async () => {
-        if (!gameId) return;
+        if (!gameId || !currentPitcher || !currentBatter) {
+            alert('Please select both a pitcher and a batter first');
+            return;
+        }
 
         try {
             await dispatch(
                 createAtBat({
                     game_id: gameId,
                     inning_id: 'temp-inning-id', // In real app, get from current game state
-                    batter_id: batterId,
-                    pitcher_id: pitcherId,
+                    batter_id: currentBatter.id,
+                    pitcher_id: currentPitcher.player_id,
                     balls: 0,
                     strikes: 0,
                     outs_before: 0,
@@ -167,6 +190,23 @@ const LiveGame: React.FC = () => {
         }
     };
 
+    const handlePitcherSelected = (pitcher: GamePitcherWithPlayer) => {
+        setCurrentPitcher(pitcher);
+        setShowPitcherSelector(false);
+    };
+
+    const handleBatterSelected = (batter: OpponentLineupPlayer) => {
+        setCurrentBatter(batter);
+        setShowBatterSelector(false);
+    };
+
+    const advanceBattingOrder = () => {
+        // Advance to next batter in lineup (1-9, then wrap to 1)
+        const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+        setCurrentBattingOrder(nextOrder);
+        setCurrentBatter(null); // Clear batter so user selects the next one
+    };
+
     if (loading) {
         return <LoadingContainer>Loading game...</LoadingContainer>;
     }
@@ -175,29 +215,85 @@ const LiveGame: React.FC = () => {
         return <ErrorContainer>Game not found</ErrorContainer>;
     }
 
+    const needsSetup = !currentPitcher || !currentBatter;
+
     return (
         <Container>
             {/* Left Panel - Batter History */}
             <LeftPanel>
-                <BatterHistory batterId={batterId} pitcherId={pitcherId} />
+                <BatterHistory batterId={currentBatter?.id || ''} pitcherId={currentPitcher?.player_id || ''} />
             </LeftPanel>
 
             {/* Main Panel - Strike Zone & Pitch Entry */}
             <MainPanel>
                 <GameHeader>
                     <TeamInfo>
-                        <TeamName>Home Team</TeamName>
-                        <Score>{game.home_score || 0}</Score>
+                        <TeamName>{game.opponent_name || 'Away Team'}</TeamName>
+                        <Score>{game.away_score || 0}</Score>
                     </TeamInfo>
                     <GameInfo>
                         <Inning>Inning {game.current_inning || 1}</Inning>
                         <InningHalf>{game.inning_half || 'top'}</InningHalf>
                     </GameInfo>
                     <TeamInfo>
-                        <TeamName>Away Team</TeamName>
-                        <Score>{game.away_score || 0}</Score>
+                        <TeamName>Your Team</TeamName>
+                        <Score>{game.home_score || 0}</Score>
                     </TeamInfo>
                 </GameHeader>
+
+                {/* Pitcher and Batter Display */}
+                <PlayersRow>
+                    <PlayerDisplay>
+                        <PlayerInfo>
+                            <PlayerLabel>Pitcher</PlayerLabel>
+                            {currentPitcher ? (
+                                <>
+                                    <PlayerNumber>{currentPitcher.player?.jersey_number || '#'}</PlayerNumber>
+                                    <PlayerName>
+                                        {currentPitcher.player?.first_name} {currentPitcher.player?.last_name}
+                                    </PlayerName>
+                                </>
+                            ) : (
+                                <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
+                            )}
+                        </PlayerInfo>
+                        <ChangeButton onClick={() => setShowPitcherSelector(true)}>
+                            {currentPitcher ? 'Change' : 'Select'}
+                        </ChangeButton>
+                    </PlayerDisplay>
+
+                    <PlayerDisplay>
+                        <PlayerInfo>
+                            <PlayerLabel>Batter (#{currentBattingOrder})</PlayerLabel>
+                            {currentBatter ? (
+                                <>
+                                    <PlayerName>{currentBatter.player_name}</PlayerName>
+                                </>
+                            ) : (
+                                <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
+                            )}
+                        </PlayerInfo>
+                        <ChangeButton onClick={() => setShowBatterSelector(true)}>
+                            {currentBatter ? 'Change' : 'Select'}
+                        </ChangeButton>
+                    </PlayerDisplay>
+                </PlayersRow>
+
+                {/* Setup Prompt if no lineup */}
+                {needsSetup && !currentAtBat && (
+                    <SetupPrompt>
+                        <SetupText>
+                            {!currentPitcher && !currentBatter
+                                ? 'Select your pitcher and the opponent batter to start tracking pitches.'
+                                : !currentPitcher
+                                  ? 'Select your pitcher to continue.'
+                                  : 'Select the opponent batter to continue.'}
+                        </SetupText>
+                        {!currentBatter && (
+                            <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Opponent Lineup</SetupButton>
+                        )}
+                    </SetupPrompt>
+                )}
 
                 {currentAtBat ? (
                     <>
@@ -295,10 +391,33 @@ const LiveGame: React.FC = () => {
                 ) : (
                     <NoAtBatContainer>
                         <NoAtBatText>No active at-bat</NoAtBatText>
-                        <StartAtBatButton onClick={handleStartAtBat}>Start New At-Bat</StartAtBatButton>
+                        <StartAtBatButton onClick={handleStartAtBat} disabled={needsSetup}>
+                            Start New At-Bat
+                        </StartAtBatButton>
                     </NoAtBatContainer>
                 )}
             </MainPanel>
+
+            {/* Pitcher Selector Modal */}
+            {showPitcherSelector && gameId && game.home_team_id && (
+                <PitcherSelector
+                    gameId={gameId}
+                    teamId={game.home_team_id}
+                    currentInning={game.current_inning || 1}
+                    onPitcherSelected={handlePitcherSelected}
+                    onClose={() => setShowPitcherSelector(false)}
+                />
+            )}
+
+            {/* Batter Selector Modal */}
+            {showBatterSelector && gameId && (
+                <BatterSelector
+                    gameId={gameId}
+                    currentBattingOrder={currentBattingOrder}
+                    onBatterSelected={handleBatterSelected}
+                    onClose={() => setShowBatterSelector(false)}
+                />
+            )}
         </Container>
     );
 };

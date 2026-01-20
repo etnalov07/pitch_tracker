@@ -331,42 +331,40 @@ const TeamDetail: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {players
-                                    .sort((a, b) => (a.jersey_number || 99) - (b.jersey_number || 99))
-                                    .map((player) => (
-                                        <tr key={player.id}>
-                                            <Td>
-                                                <JerseyNumber>{player.jersey_number || '-'}</JerseyNumber>
-                                            </Td>
-                                            <Td>
-                                                <PlayerName>
-                                                    {player.first_name} {player.last_name}
-                                                </PlayerName>
-                                            </Td>
-                                            <Td>
-                                                <PositionBadge color={getPositionColor(player.primary_position)}>
-                                                    {player.primary_position}
-                                                </PositionBadge>
-                                            </Td>
-                                            <Td>
-                                                <Handedness>
-                                                    {player.bats}/{player.throws}
-                                                </Handedness>
-                                            </Td>
-                                            <Td>
-                                                <ActionButtons>
-                                                    <EditButton onClick={() => handleEdit(player)}>Edit</EditButton>
-                                                    <RemoveButton
-                                                        onClick={() =>
-                                                            handleDelete(player.id, `${player.first_name} ${player.last_name}`)
-                                                        }
-                                                    >
-                                                        Remove
-                                                    </RemoveButton>
-                                                </ActionButtons>
-                                            </Td>
-                                        </tr>
-                                    ))}
+                                {players.map((player) => (
+                                    <tr key={player.id}>
+                                        <Td>
+                                            <JerseyNumber>{player.jersey_number || '-'}</JerseyNumber>
+                                        </Td>
+                                        <Td>
+                                            <PlayerName>
+                                                {player.first_name} {player.last_name}
+                                            </PlayerName>
+                                        </Td>
+                                        <Td>
+                                            <PositionBadge color={getPositionColor(player.primary_position)}>
+                                                {player.primary_position}
+                                            </PositionBadge>
+                                        </Td>
+                                        <Td>
+                                            <Handedness>
+                                                {player.bats}/{player.throws}
+                                            </Handedness>
+                                        </Td>
+                                        <Td>
+                                            <ActionButtons>
+                                                <EditButton onClick={() => handleEdit(player)}>Edit</EditButton>
+                                                <RemoveButton
+                                                    onClick={() =>
+                                                        handleDelete(player.id, `${player.first_name} ${player.last_name}`)
+                                                    }
+                                                >
+                                                    Remove
+                                                </RemoveButton>
+                                            </ActionButtons>
+                                        </Td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </RosterTable>
                     )}

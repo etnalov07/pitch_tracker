@@ -59,9 +59,15 @@ const GameHistory: React.FC = () => {
         dispatch(fetchAllTeams());
     }, [dispatch]);
 
-    const getTeamName = (team_id: string) => {
+    const getTeamName = (team_id: string | null | undefined) => {
+        if (!team_id) return 'Unknown Team';
         const team = teams.find((t) => t.id === team_id);
         return team?.name || 'Unknown Team';
+    };
+
+    const getOpponentName = (game: (typeof games)[0]) => {
+        if (game.opponent_name) return game.opponent_name;
+        return getTeamName(game.away_team_id);
     };
 
     const getStatusColor = (status: GameStatusType) => {
@@ -195,7 +201,7 @@ const GameHistory: React.FC = () => {
                                     </Td>
                                     <Td>
                                         <MatchupCell>
-                                            <TeamText>{getTeamName(game.away_team_id)}</TeamText>
+                                            <TeamText>{getOpponentName(game)}</TeamText>
                                             <AtText>@</AtText>
                                             <TeamText>{getTeamName(game.home_team_id)}</TeamText>
                                         </MatchupCell>

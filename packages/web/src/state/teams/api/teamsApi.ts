@@ -1,5 +1,5 @@
 import api from '../../../services/api';
-import { Team, Player } from '../../../types';
+import { Team, Player, TeamWithPlayers } from '../../../types';
 
 export const teamsApi = {
     getAllTeams: async (): Promise<Team[]> => {
@@ -26,9 +26,9 @@ export const teamsApi = {
         await api.delete(`/teams/${id}`);
     },
 
-    getTeamRoster: async (team_id: string): Promise<Player[]> => {
-        const response = await api.get<{ players: Player[] }>(`/teams/${team_id}/players`);
-        return response.data.players;
+    getTeamRoster: async (team_id: string): Promise<TeamWithPlayers> => {
+        const response = await api.get<{ team: TeamWithPlayers }>(`/teams/${team_id}/players`);
+        return response.data.team;
     },
 
     addPlayer: async (team_id: string, playerData: Partial<Player>): Promise<Player> => {
