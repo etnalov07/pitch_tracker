@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import api from '../../services/api';
 import {
     useAppDispatch,
     useAppSelector,
@@ -10,7 +11,7 @@ import {
     deletePlayer,
 } from '../../state';
 import { theme } from '../../styles/theme';
-import { Player, PlayerPosition, HandednessType, ThrowingHand } from '../../types';
+import { Player, PlayerPosition, HandednessType, ThrowingHand, PitchType } from '../../types';
 import {
     Container,
     Header,
@@ -53,10 +54,27 @@ import {
     LoadingText,
     ErrorText,
     BackLink,
+    PitchTypesSection,
+    PitchTypesLabel,
+    PitchTypesGrid,
+    PitchTypeCheckbox,
 } from './styles';
 
 const POSITIONS: PlayerPosition[] = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'UTIL'];
 const HANDEDNESS: HandednessType[] = ['R', 'L', 'S'];
+
+const PITCH_TYPES: { value: PitchType; label: string }[] = [
+    { value: 'fastball', label: 'Fastball' },
+    { value: '4-seam', label: '4-Seam' },
+    { value: '2-seam', label: '2-Seam' },
+    { value: 'cutter', label: 'Cutter' },
+    { value: 'sinker', label: 'Sinker' },
+    { value: 'slider', label: 'Slider' },
+    { value: 'curveball', label: 'Curveball' },
+    { value: 'changeup', label: 'Changeup' },
+    { value: 'splitter', label: 'Splitter' },
+    { value: 'knuckleball', label: 'Knuckle' },
+];
 
 const TeamDetail: React.FC = () => {
     const navigate = useNavigate();
@@ -78,6 +96,7 @@ const TeamDetail: React.FC = () => {
         throws: 'R' as ThrowingHand,
     };
     const [formData, setFormData] = useState(initialFormData);
+    const [selectedPitchTypes, setSelectedPitchTypes] = useState<PitchType[]>([]);
 
     useEffect(() => {
         if (team_id) {
@@ -96,9 +115,16 @@ const TeamDetail: React.FC = () => {
 
     const resetForm = () => {
         setFormData(initialFormData);
+        setSelectedPitchTypes([]);
         setShowAddPlayer(false);
         setEditingPlayer(null);
         setError('');
+    };
+
+    const handlePitchTypeToggle = (pitchType: PitchType) => {
+        setSelectedPitchTypes((prev) =>
+            prev.includes(pitchType) ? prev.filter((pt) => pt !== pitchType) : [...prev, pitchType]
+        );
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -119,11 +145,21 @@ const TeamDetail: React.FC = () => {
                 throws: formData.throws,
             };
 
+            let playerId: string;
+
             if (editingPlayer) {
                 await dispatch(updatePlayer({ player_id: editingPlayer.id, playerData })).unwrap();
+                playerId = editingPlayer.id;
             } else {
-                await dispatch(addPlayerToTeam({ team_id: team_id!, playerData })).unwrap();
+                const result = await dispatch(addPlayerToTeam({ team_id: team_id!, playerData })).unwrap();
+                playerId = result.id;
             }
+
+            // If player is a pitcher, save their pitch types
+            if (formData.primary_position === 'P' && selectedPitchTypes.length > 0) {
+                await api.put(`/players/${playerId}/pitch-types`, { pitch_types: selectedPitchTypes });
+            }
+
             resetForm();
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Failed to save player');
@@ -132,7 +168,7 @@ const TeamDetail: React.FC = () => {
         }
     };
 
-    const handleEdit = (player: Player) => {
+    const handleEdit = async (player: Player) => {
         setEditingPlayer(player);
         setFormData({
             first_name: player.first_name,
@@ -142,6 +178,19 @@ const TeamDetail: React.FC = () => {
             bats: player.bats,
             throws: player.throws,
         });
+
+        // Load pitch types if player is a pitcher
+        if (player.primary_position === 'P') {
+            try {
+                const response = await api.get<{ pitch_types: string[] }>(`/players/${player.id}/pitch-types`);
+                setSelectedPitchTypes((response.data.pitch_types || []) as PitchType[]);
+            } catch {
+                setSelectedPitchTypes([]);
+            }
+        } else {
+            setSelectedPitchTypes([]);
+        }
+
         setShowAddPlayer(true);
     };
 
@@ -294,6 +343,28 @@ const TeamDetail: React.FC = () => {
                                     </Select>
                                 </FormGroup>
                             </FormRow>
+
+                            {/* Pitch Types Selection - Only shown for pitchers */}
+                            {formData.primary_position === 'P' && (
+                                <PitchTypesSection>
+                                    <PitchTypesLabel>Pitch Types (select all that apply)</PitchTypesLabel>
+                                    <PitchTypesGrid>
+                                        {PITCH_TYPES.map(({ value, label }) => (
+                                            <PitchTypeCheckbox
+                                                key={value}
+                                                checked={selectedPitchTypes.includes(value)}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedPitchTypes.includes(value)}
+                                                    onChange={() => handlePitchTypeToggle(value)}
+                                                />
+                                                {label}
+                                            </PitchTypeCheckbox>
+                                        ))}
+                                    </PitchTypesGrid>
+                                </PitchTypesSection>
+                            )}
 
                             <FormActions>
                                 <CancelButton type="button" onClick={resetForm}>

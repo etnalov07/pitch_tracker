@@ -68,7 +68,7 @@ export class PlayerService {
 
   async getPlayerStats(player_id: string): Promise<any> {
     const statsResult = await query(
-      `SELECT 
+      `SELECT
          COUNT(ab.id) as total_at_bats,
          COUNT(CASE WHEN ab.result IN ('single', 'double', 'triple', 'home_run') THEN 1 END) as hits,
          COUNT(CASE WHEN ab.result = 'strikeout' THEN 1 END) as strikeouts,
@@ -81,14 +81,117 @@ export class PlayerService {
     );
 
     const stats = statsResult.rows[0];
-    const battingAverage = stats.total_at_bats > 0 
-      ? (stats.hits / stats.total_at_bats).toFixed(3) 
+    const battingAverage = stats.total_at_bats > 0
+      ? (stats.hits / stats.total_at_bats).toFixed(3)
       : '0.000';
 
     return {
       ...stats,
       batting_average: battingAverage,
     };
+  }
+
+  // Get only pitchers from a team
+  async getPitchersByTeam(team_id: string): Promise<Player[]> {
+    const result = await query(
+      `SELECT * FROM players
+       WHERE team_id = $1 AND is_active = true AND primary_position = 'P'
+       ORDER BY jersey_number, last_name`,
+      [team_id]
+    );
+    return result.rows;
+  }
+
+  // Pitcher pitch types management
+  async getPitcherPitchTypes(player_id: string): Promise<string[]> {
+    const result = await query(
+      `SELECT pitch_type FROM pitcher_pitch_types WHERE player_id = $1 ORDER BY pitch_type`,
+      [player_id]
+    );
+    return result.rows.map((row: { pitch_type: string }) => row.pitch_type);
+  }
+
+  async setPitcherPitchTypes(player_id: string, pitch_types: string[]): Promise<string[]> {
+    // Delete existing pitch types
+    await query('DELETE FROM pitcher_pitch_types WHERE player_id = $1', [player_id]);
+
+    // Insert new pitch types
+    for (const pitch_type of pitch_types) {
+      const id = uuidv4();
+      await query(
+        'INSERT INTO pitcher_pitch_types (id, player_id, pitch_type) VALUES ($1, $2, $3)',
+        [id, player_id, pitch_type]
+      );
+    }
+
+    return pitch_types;
+  }
+
+  async getPlayerWithPitchTypes(player_id: string): Promise<any> {
+    const player = await this.getPlayerById(player_id);
+    if (!player) return null;
+
+    const pitch_types = await this.getPitcherPitchTypes(player_id);
+    return { ...player, pitch_types };
+  }
+
+  async getPitchersWithPitchTypes(team_id: string): Promise<any[]> {
+    const pitchers = await this.getPitchersByTeam(team_id);
+    const results = [];
+
+    for (const pitcher of pitchers) {
+      const pitch_types = await this.getPitcherPitchTypes(pitcher.id);
+      results.push({ ...pitcher, pitch_types });
+    }
+
+    return results;
+  }
+
+  // Get pitcher stats for current game (live tally)
+  async getPitcherGameStats(pitcher_id: string, game_id: string): Promise<any> {
+    const result = await query(
+      `SELECT
+         pitch_type,
+         pitch_result,
+         COUNT(*) as count
+       FROM pitches
+       WHERE pitcher_id = $1 AND game_id = $2
+       GROUP BY pitch_type, pitch_result`,
+      [pitcher_id, game_id]
+    );
+
+    const stats = {
+      pitcher_id,
+      game_id,
+      total_pitches: 0,
+      strikes: 0,
+      balls: 0,
+      pitch_type_breakdown: {} as { [key: string]: { total: number; strikes: number; balls: number } },
+    };
+
+    for (const row of result.rows) {
+      const { pitch_type, pitch_result, count } = row;
+      const pitchCount = parseInt(count);
+
+      // Initialize pitch type if not exists
+      if (!stats.pitch_type_breakdown[pitch_type]) {
+        stats.pitch_type_breakdown[pitch_type] = { total: 0, strikes: 0, balls: 0 };
+      }
+
+      stats.total_pitches += pitchCount;
+      stats.pitch_type_breakdown[pitch_type].total += pitchCount;
+
+      // Count as strike if not a ball (in_play, called_strike, swinging_strike, foul all count as strikes)
+      if (pitch_result === 'ball') {
+        stats.balls += pitchCount;
+        stats.pitch_type_breakdown[pitch_type].balls += pitchCount;
+      } else {
+        stats.strikes += pitchCount;
+        stats.pitch_type_breakdown[pitch_type].strikes += pitchCount;
+      }
+    }
+
+    return stats;
   }
 }
 

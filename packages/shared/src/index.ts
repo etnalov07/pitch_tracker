@@ -82,6 +82,33 @@ export interface Player {
     updated_at?: string;
 }
 
+export interface PitcherPitchType {
+    id: string;
+    player_id: string;
+    pitch_type: string;
+    created_at: string;
+}
+
+export interface PlayerWithPitchTypes extends Player {
+    pitch_types?: string[];
+}
+
+// Pitcher statistics for live game display
+export interface PitcherGameStats {
+    pitcher_id: string;
+    game_id: string;
+    total_pitches: number;
+    strikes: number;
+    balls: number;
+    pitch_type_breakdown: {
+        [pitch_type: string]: {
+            total: number;
+            strikes: number;
+            balls: number;
+        };
+    };
+}
+
 // ============================================================================
 // Game Types
 // ============================================================================

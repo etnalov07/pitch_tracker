@@ -348,3 +348,50 @@ export const BackLink = styled.button({
         textDecoration: 'underline',
     },
 });
+
+// Pitch Type Selection for Pitchers
+export const PitchTypesSection = styled.div({
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.gray[50],
+    borderRadius: theme.borderRadius.md,
+    border: `1px solid ${theme.colors.gray[200]}`,
+});
+
+export const PitchTypesLabel = styled.label({
+    display: 'block',
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[700],
+    marginBottom: theme.spacing.sm,
+});
+
+export const PitchTypesGrid = styled.div({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+    gap: theme.spacing.sm,
+});
+
+export const PitchTypeCheckbox = styled.label<{ checked: boolean }>((props) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    backgroundColor: props.checked ? theme.colors.primary[50] : 'white',
+    border: `2px solid ${props.checked ? theme.colors.primary[500] : theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    cursor: 'pointer',
+    fontSize: theme.fontSize.sm,
+    fontWeight: props.checked ? theme.fontWeight.semibold : theme.fontWeight.normal,
+    color: props.checked ? theme.colors.primary[700] : theme.colors.gray[700],
+    transition: 'all 0.15s',
+
+    '&:hover': {
+        borderColor: theme.colors.primary[400],
+        backgroundColor: theme.colors.primary[50],
+    },
+
+    'input': {
+        display: 'none',
+    },
+}));

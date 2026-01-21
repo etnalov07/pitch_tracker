@@ -147,9 +147,9 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch team roster (pitchers)
-                const rosterResponse = await api.get<{ players: Player[] }>(`/players/team/${teamId}`);
-                setRoster(rosterResponse.data.players || []);
+                // Fetch team pitchers only (position = 'P')
+                const rosterResponse = await api.get<{ pitchers: Player[] }>(`/players/pitchers/team/${teamId}`);
+                setRoster(rosterResponse.data.pitchers || []);
 
                 // Fetch game pitchers (who has pitched in this game)
                 const pitchersResponse = await api.get<{ pitchers: GamePitcherWithPlayer[] }>(`/game-pitchers/game/${gameId}`);
@@ -189,17 +189,10 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
 
     const currentPitcher = gamePitchers.find((p) => !p.inning_exited);
 
-    // Filter roster to show pitchers (P position) first, then others
-    const sortedRoster = [...roster].sort((a, b) => {
-        if (a.primary_position === 'P' && b.primary_position !== 'P') return -1;
-        if (a.primary_position !== 'P' && b.primary_position === 'P') return 1;
-        return 0;
-    });
-
     // Players who have already pitched today
     const usedPitcherIds = new Set(gamePitchers.map((p) => p.player_id));
-    const usedPitchers = sortedRoster.filter((p) => usedPitcherIds.has(p.id));
-    const availablePitchers = sortedRoster.filter((p) => !usedPitcherIds.has(p.id));
+    const usedPitchers = roster.filter((p) => usedPitcherIds.has(p.id));
+    const availablePitchers = roster.filter((p) => !usedPitcherIds.has(p.id));
 
     return (
         <Overlay onClick={onClose}>
@@ -212,7 +205,7 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
                 {loading ? (
                     <EmptyMessage>Loading pitchers...</EmptyMessage>
                 ) : roster.length === 0 ? (
-                    <EmptyMessage>No players on roster. Add players to your team first.</EmptyMessage>
+                    <EmptyMessage>No pitchers on roster. Add players with position 'P' to your team.</EmptyMessage>
                 ) : (
                     <>
                         {usedPitchers.length > 0 && (

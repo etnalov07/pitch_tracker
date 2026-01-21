@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import BatterSelector from '../../components/game/BatterSelector';
 import PitcherSelector from '../../components/game/PitcherSelector';
 import BatterHistory from '../../components/live/BatterHistory';
+import PitcherStats from '../../components/live/PitcherStats';
 import StrikeZone from '../../components/live/StrikeZone';
 import {
     useAppDispatch,
@@ -91,6 +92,9 @@ const LiveGame: React.FC = () => {
     // Current inning
     const [currentInning, setCurrentInning] = useState<InningType | null>(null);
 
+    // Trigger to refresh pitcher stats after each pitch
+    const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
+
     useEffect(() => {
         if (gameId) {
             dispatch(fetchGameById(gameId));
@@ -151,6 +155,9 @@ const LiveGame: React.FC = () => {
                     strikes: newStrikes,
                 })
             );
+
+            // Refresh pitcher stats
+            setStatsRefreshTrigger((prev) => prev + 1);
 
             // Reset form
             setPitchLocation(null);
@@ -263,10 +270,20 @@ const LiveGame: React.FC = () => {
 
     const needsSetup = !currentPitcher || !currentBatter;
 
+    const pitcherName = currentPitcher?.player
+        ? `${currentPitcher.player.first_name} ${currentPitcher.player.last_name}`
+        : undefined;
+
     return (
         <Container>
-            {/* Left Panel - Batter History */}
+            {/* Left Panel - Batter History & Pitcher Stats */}
             <LeftPanel>
+                <PitcherStats
+                    pitcherId={currentPitcher?.player_id || ''}
+                    gameId={gameId || ''}
+                    pitcherName={pitcherName}
+                    refreshTrigger={statsRefreshTrigger}
+                />
                 <BatterHistory batterId={currentBatter?.id || ''} pitcherId={currentPitcher?.player_id || ''} />
             </LeftPanel>
 
