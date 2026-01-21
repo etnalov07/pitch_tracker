@@ -5,6 +5,7 @@ import PitcherSelector from '../../components/game/PitcherSelector';
 import BatterHistory from '../../components/live/BatterHistory';
 import PitcherStats from '../../components/live/PitcherStats';
 import StrikeZone from '../../components/live/StrikeZone';
+import api from '../../services/api';
 import {
     useAppDispatch,
     useAppSelector,
@@ -19,7 +20,6 @@ import {
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { theme } from '../../styles/theme';
 import { PitchType, PitchResult, OpponentLineupPlayer, GamePitcherWithPlayer, Inning as InningType } from '../../types';
-import api from '../../services/api';
 import {
     Container,
     LeftPanel,
@@ -129,8 +129,8 @@ const LiveGame: React.FC = () => {
                     // If we have a lineup and no current batter, set the first batter
                     if (lineup.length > 0) {
                         const firstBatter = lineup.find((p) => p.batting_order === 1);
-                        if (firstBatter && !currentBatter) {
-                            setCurrentBatter(firstBatter);
+                        if (firstBatter) {
+                            setCurrentBatter((prev) => (prev ? prev : firstBatter));
                         }
                     }
                 })
@@ -147,9 +147,9 @@ const LiveGame: React.FC = () => {
                 .then((response) => {
                     const types = (response.data.pitch_types || []) as PitchType[];
                     setPitcherPitchTypes(types);
-                    // Set default pitch type to first available, or fastball
-                    if (types.length > 0 && !types.includes(pitchType)) {
-                        setPitchType(types[0]);
+                    // Set default pitch type to first available if current selection not in pitcher's repertoire
+                    if (types.length > 0) {
+                        setPitchType((prev) => (types.includes(prev) ? prev : types[0]));
                     }
                 })
                 .catch(() => setPitcherPitchTypes([]));
@@ -159,9 +159,8 @@ const LiveGame: React.FC = () => {
     }, [currentPitcher?.player_id]);
 
     // Filter pitch types: use pitcher's types if available, otherwise show all
-    const availablePitchTypes = pitcherPitchTypes.length > 0
-        ? ALL_PITCH_TYPES.filter((pt) => pitcherPitchTypes.includes(pt.value))
-        : ALL_PITCH_TYPES;
+    const availablePitchTypes =
+        pitcherPitchTypes.length > 0 ? ALL_PITCH_TYPES.filter((pt) => pitcherPitchTypes.includes(pt.value)) : ALL_PITCH_TYPES;
 
     const handleLocationSelect = (x: number, y: number) => {
         setPitchLocation({ x, y });
@@ -527,7 +526,9 @@ const LiveGame: React.FC = () => {
                                 </LogButton>
 
                                 {pitchResult === 'in_play' && (
-                                    <EndAtBatButton onClick={() => handleEndAtBat('in_play')}>Record Play & End At-Bat</EndAtBatButton>
+                                    <EndAtBatButton onClick={() => handleEndAtBat('in_play')}>
+                                        Record Play & End At-Bat
+                                    </EndAtBatButton>
                                 )}
                             </PitchForm>
                         </StrikeZoneRow>

@@ -24,9 +24,7 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcherId, gameId, pitcherN
 
         try {
             setLoading(true);
-            const response = await api.get<{ stats: PitcherGameStats }>(
-                `/players/${pitcherId}/game-stats/${gameId}`
-            );
+            const response = await api.get<{ stats: PitcherGameStats }>(`/players/${pitcherId}/game-stats/${gameId}`);
             setStats(response.data.stats);
         } catch (error) {
             console.error('Failed to load pitcher stats:', error);
@@ -73,9 +71,7 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcherId, gameId, pitcherN
         );
     }
 
-    const strikePercentage = stats.total_pitches > 0
-        ? Math.round((stats.strikes / stats.total_pitches) * 100)
-        : 0;
+    const strikePercentage = stats.total_pitches > 0 ? Math.round((stats.strikes / stats.total_pitches) * 100) : 0;
 
     return (
         <Container>
