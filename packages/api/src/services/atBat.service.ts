@@ -3,21 +3,26 @@ import { AtBat } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class AtBatService {
-  async createAtBat(atBatData: Partial<AtBat>): Promise<AtBat> {
-    const { game_id, inning_id, batter_id, pitcher_id, batting_order, outs_before } = atBatData;
+  async createAtBat(atBatData: Partial<AtBat> & { opponent_batter_id?: string }): Promise<AtBat> {
+    const { game_id, inning_id, batter_id, opponent_batter_id, pitcher_id, batting_order, outs_before } = atBatData;
 
-    if (!game_id || !inning_id || !batter_id || !pitcher_id || outs_before === undefined) {
-      throw new Error('game_id, inning_id, batter_id, pitcher_id, and outs_before are required');
+    // Either batter_id (own team) or opponent_batter_id (opponent) is required
+    if (!game_id || !inning_id || !pitcher_id || outs_before === undefined) {
+      throw new Error('game_id, inning_id, pitcher_id, and outs_before are required');
+    }
+
+    if (!batter_id && !opponent_batter_id) {
+      throw new Error('Either batter_id or opponent_batter_id is required');
     }
 
     const atBatId = uuidv4();
     const result = await query(
       `INSERT INTO at_bats (
-        id, game_id, inning_id, batter_id, pitcher_id, batting_order, outs_before, outs_after
+        id, game_id, inning_id, batter_id, pitcher_id, opponent_batter_id, batting_order, outs_before, outs_after
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *`,
-      [atBatId, game_id, inning_id, batter_id, pitcher_id, batting_order, outs_before, outs_before]
+      [atBatId, game_id, inning_id, batter_id || null, pitcher_id, opponent_batter_id || null, batting_order, outs_before, outs_before]
     );
 
     return result.rows[0];

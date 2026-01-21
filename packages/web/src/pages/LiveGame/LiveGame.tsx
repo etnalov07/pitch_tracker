@@ -8,6 +8,7 @@ import {
     useAppDispatch,
     useAppSelector,
     fetchGameById,
+    startGame,
     logPitch,
     createAtBat,
     updateAtBat,
@@ -57,6 +58,12 @@ import {
     SetupPrompt,
     SetupText,
     SetupButton,
+    TopBar,
+    BackButton,
+    GameStatus,
+    StartGameButton,
+    StartGamePrompt,
+    StartGameText,
 } from './styles';
 
 const LiveGame: React.FC = () => {
@@ -189,7 +196,7 @@ const LiveGame: React.FC = () => {
                 createAtBat({
                     game_id: gameId,
                     inning_id: currentInning.id,
-                    batter_id: currentBatter.id,
+                    opponent_batter_id: currentBatter.id,
                     pitcher_id: currentPitcher.player_id,
                     balls: 0,
                     strikes: 0,
@@ -218,6 +225,24 @@ const LiveGame: React.FC = () => {
         setCurrentBatter(null); // Clear batter so user selects the next one
     };
 
+    const handleStartGame = async () => {
+        if (!gameId) return;
+
+        try {
+            await dispatch(startGame(gameId)).unwrap();
+            // Refresh game and fetch the newly created inning
+            dispatch(fetchGameById(gameId));
+            const inning = await gamesApi.getCurrentInning(gameId);
+            setCurrentInning(inning);
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : 'Failed to start game');
+        }
+    };
+
+    const handleBackToDashboard = () => {
+        navigate('/');
+    };
+
     if (loading) {
         return <LoadingContainer>Loading game...</LoadingContainer>;
     }
@@ -237,6 +262,21 @@ const LiveGame: React.FC = () => {
 
             {/* Main Panel - Strike Zone & Pitch Entry */}
             <MainPanel>
+                <TopBar>
+                    <BackButton onClick={handleBackToDashboard}>← Back to Dashboard</BackButton>
+                    <GameStatus status={game.status}>
+                        {game.status === 'scheduled' ? 'Scheduled' : game.status === 'in_progress' ? 'In Progress' : 'Completed'}
+                    </GameStatus>
+                </TopBar>
+
+                {/* Show Start Game prompt if game hasn't started */}
+                {game.status === 'scheduled' && (
+                    <StartGamePrompt>
+                        <StartGameText>Game is scheduled but not yet started. Click below to begin tracking.</StartGameText>
+                        <StartGameButton onClick={handleStartGame}>Start Game</StartGameButton>
+                    </StartGamePrompt>
+                )}
+
                 <GameHeader>
                     <TeamInfo>
                         <TeamName>{game.opponent_name || 'Away Team'}</TeamName>

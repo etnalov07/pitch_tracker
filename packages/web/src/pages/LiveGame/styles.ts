@@ -363,3 +363,78 @@ export const SetupButton = styled.button({
         backgroundColor: theme.colors.yellow[600],
     },
 });
+
+export const TopBar = styled.div({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+});
+
+export const BackButton = styled.button({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    backgroundColor: 'transparent',
+    color: theme.colors.gray[600],
+    border: `1px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    cursor: 'pointer',
+
+    '&:hover': {
+        backgroundColor: theme.colors.gray[100],
+        color: theme.colors.gray[800],
+    },
+});
+
+export const GameStatus = styled.span<{ status?: string }>((props) => ({
+    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+    borderRadius: theme.borderRadius.full,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    backgroundColor:
+        props.status === 'in_progress'
+            ? theme.colors.green[100]
+            : props.status === 'completed'
+              ? theme.colors.gray[200]
+              : theme.colors.yellow[100],
+    color:
+        props.status === 'in_progress'
+            ? theme.colors.green[700]
+            : props.status === 'completed'
+              ? theme.colors.gray[700]
+              : theme.colors.yellow[700],
+}));
+
+export const StartGameButton = styled.button({
+    padding: `${theme.spacing.md} ${theme.spacing.xl}`,
+    backgroundColor: theme.colors.green[600],
+    color: 'white',
+    border: 'none',
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+
+    '&:hover': {
+        backgroundColor: theme.colors.green[700],
+    },
+});
+
+export const StartGamePrompt = styled.div({
+    textAlign: 'center',
+    padding: theme.spacing['2xl'],
+    backgroundColor: 'white',
+    borderRadius: theme.borderRadius.xl,
+    boxShadow: theme.shadows.md,
+    marginBottom: theme.spacing.xl,
+});
+
+export const StartGameText = styled.p({
+    fontSize: theme.fontSize.lg,
+    color: theme.colors.gray[600],
+    marginBottom: theme.spacing.lg,
+});
