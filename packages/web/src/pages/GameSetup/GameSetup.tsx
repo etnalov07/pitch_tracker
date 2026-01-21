@@ -110,6 +110,10 @@ const GameSetup: React.FC = () => {
                 })
             ).unwrap();
 
+            if (!newGame || !newGame.id) {
+                throw new Error('Failed to create game');
+            }
+
             // Navigate to opponent lineup setup
             navigate(`/game/${newGame.id}/lineup`);
         } catch (err: unknown) {

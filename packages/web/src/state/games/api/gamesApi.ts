@@ -11,46 +11,46 @@ interface GameState {
 
 export const gamesApi = {
     getAllGames: async (): Promise<Game[]> => {
-        const response = await api.get<Game[]>('/games');
+        const response = await api.get<Game[]>('/game');
         return response.data;
     },
 
     getGameById: async (id: string): Promise<Game> => {
-        const response = await api.get<Game>(`/games/${id}`);
+        const response = await api.get<Game>(`/game/${id}`);
         return response.data;
     },
 
     createGame: async (gameData: Partial<Game>): Promise<Game> => {
-        const response = await api.post<Game>('/games', gameData);
+        const response = await api.post<Game>('/game', gameData);
         return response.data;
     },
 
     updateGame: async (id: string, gameData: Partial<Game>): Promise<Game> => {
-        const response = await api.put<Game>(`/games/${id}`, gameData);
+        const response = await api.put<Game>(`/game/${id}`, gameData);
         return response.data;
     },
 
     deleteGame: async (id: string): Promise<void> => {
-        await api.delete(`/games/${id}`);
+        await api.delete(`/game/${id}`);
     },
 
     startGame: async (id: string): Promise<Game> => {
-        const response = await api.post<Game>(`/games/${id}/start`);
+        const response = await api.post<Game>(`/game/${id}/start`);
         return response.data;
     },
 
     endGame: async (id: string, finalData: { home_score: number; away_score: number }): Promise<Game> => {
-        const response = await api.post<Game>(`/games/${id}/end`, finalData);
+        const response = await api.post<Game>(`/game/${id}/end`, finalData);
         return response.data;
     },
 
     advanceInning: async (id: string): Promise<Game> => {
-        const response = await api.post<Game>(`/games/${id}/advance-inning`);
+        const response = await api.post<Game>(`/game/${id}/advance-inning`);
         return response.data;
     },
 
     getCurrentGameState: async (id: string): Promise<GameState> => {
-        const response = await api.get<GameState>(`/games/${id}/state`);
+        const response = await api.get<GameState>(`/game/${id}/state`);
         return response.data;
     },
 
