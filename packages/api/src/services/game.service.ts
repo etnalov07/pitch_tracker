@@ -66,6 +66,22 @@ export class GameService {
     return result.rows;
   }
 
+  async getGamesByUser(userId: string): Promise<Game[]> {
+    const result = await query(
+      `SELECT g.*,
+              ht.name as home_team_name,
+              at.name as away_team_name,
+              COALESCE(at.name, g.opponent_name) as opponent_display_name
+       FROM games g
+       JOIN teams ht ON g.home_team_id = ht.id
+       LEFT JOIN teams at ON g.away_team_id = at.id
+       WHERE g.created_by = $1 OR ht.owner_id = $1
+       ORDER BY g.game_date DESC, g.game_time DESC`,
+      [userId]
+    );
+    return result.rows;
+  }
+
   async startGame(gameId: string): Promise<Game> {
     return await transaction(async (client) => {
       // Update game status

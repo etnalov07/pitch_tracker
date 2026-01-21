@@ -43,6 +43,20 @@ export class GameController {
     }
   }
 
+  async getMyGames(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const games = await gameService.getGamesByUser(req.user.id);
+      res.status(200).json({ games });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async startGame(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;

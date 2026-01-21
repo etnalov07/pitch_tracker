@@ -11,69 +11,69 @@ interface GameState {
 
 export const gamesApi = {
     getAllGames: async (): Promise<Game[]> => {
-        const response = await api.get<Game[]>('/game');
-        return response.data;
+        const response = await api.get<{ games: Game[] }>('/games/my-games');
+        return response.data.games;
     },
 
     getGameById: async (id: string): Promise<Game> => {
-        const response = await api.get<Game>(`/game/${id}`);
-        return response.data;
+        const response = await api.get<{ game: Game }>(`/games/${id}`);
+        return response.data.game;
     },
 
     createGame: async (gameData: Partial<Game>): Promise<Game> => {
-        const response = await api.post<Game>('/game', gameData);
-        return response.data;
+        const response = await api.post<{ game: Game }>('/games', gameData);
+        return response.data.game;
     },
 
     updateGame: async (id: string, gameData: Partial<Game>): Promise<Game> => {
-        const response = await api.put<Game>(`/game/${id}`, gameData);
-        return response.data;
+        const response = await api.put<{ game: Game }>(`/games/${id}`, gameData);
+        return response.data.game;
     },
 
     deleteGame: async (id: string): Promise<void> => {
-        await api.delete(`/game/${id}`);
+        await api.delete(`/games/${id}`);
     },
 
     startGame: async (id: string): Promise<Game> => {
-        const response = await api.post<Game>(`/game/${id}/start`);
-        return response.data;
+        const response = await api.post<{ game: Game }>(`/games/${id}/start`);
+        return response.data.game;
     },
 
     endGame: async (id: string, finalData: { home_score: number; away_score: number }): Promise<Game> => {
-        const response = await api.post<Game>(`/game/${id}/end`, finalData);
-        return response.data;
+        const response = await api.post<{ game: Game }>(`/games/${id}/end`, finalData);
+        return response.data.game;
     },
 
     advanceInning: async (id: string): Promise<Game> => {
-        const response = await api.post<Game>(`/game/${id}/advance-inning`);
-        return response.data;
+        const response = await api.post<{ game: Game }>(`/games/${id}/advance-inning`);
+        return response.data.game;
     },
 
     getCurrentGameState: async (id: string): Promise<GameState> => {
-        const response = await api.get<GameState>(`/game/${id}/state`);
+        const response = await api.get<GameState>(`/games/${id}/state`);
         return response.data;
     },
 
     // At-Bat operations
     createAtBat: async (atBatData: Partial<AtBat>): Promise<AtBat> => {
-        const response = await api.post<AtBat>('/at-bats', atBatData);
-        return response.data;
+        const response = await api.post<{ atBat: AtBat }>('/at-bats', atBatData);
+        return response.data.atBat;
     },
 
     updateAtBat: async (id: string, atBatData: Partial<AtBat>): Promise<AtBat> => {
-        const response = await api.put<AtBat>(`/at-bats/${id}`, atBatData);
-        return response.data;
+        const response = await api.put<{ atBat: AtBat }>(`/at-bats/${id}`, atBatData);
+        return response.data.atBat;
     },
 
     // Pitch operations
     logPitch: async (pitchData: Partial<Pitch>): Promise<Pitch> => {
-        const response = await api.post<Pitch>('/pitches', pitchData);
-        return response.data;
+        const response = await api.post<{ pitch: Pitch }>('/pitches', pitchData);
+        return response.data.pitch;
     },
 
     // Play operations
     recordPlay: async (playData: Partial<Play>): Promise<Play> => {
-        const response = await api.post<Play>('/plays', playData);
-        return response.data;
+        const response = await api.post<{ play: Play }>('/plays', playData);
+        return response.data.play;
     },
 };
