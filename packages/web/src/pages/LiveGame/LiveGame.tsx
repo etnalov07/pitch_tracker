@@ -109,16 +109,26 @@ const LiveGame: React.FC = () => {
             return;
         }
 
+        if (!currentPitcher || !currentBatter) {
+            alert('Pitcher and batter must be selected');
+            return;
+        }
+
         try {
             await dispatch(
                 logPitch({
                     at_bat_id: currentAtBat.id,
+                    game_id: gameId!,
+                    pitcher_id: currentPitcher.player_id,
+                    opponent_batter_id: currentBatter.id,
                     pitch_number: pitches.length + 1,
                     pitch_type: pitchType,
                     velocity: velocity ? parseFloat(velocity) : undefined,
                     location_x: pitchLocation.x,
                     location_y: pitchLocation.y,
                     pitch_result: pitchResult,
+                    balls_before: currentAtBat.balls,
+                    strikes_before: currentAtBat.strikes,
                 })
             ).unwrap();
 

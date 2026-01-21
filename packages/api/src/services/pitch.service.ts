@@ -3,12 +3,13 @@ import { Pitch } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class PitchService {
-  async logPitch(pitchData: Partial<Pitch>): Promise<Pitch> {
+  async logPitch(pitchData: Partial<Pitch> & { opponent_batter_id?: string }): Promise<Pitch> {
     const {
       at_bat_id,
       game_id,
       pitcher_id,
       batter_id,
+      opponent_batter_id,
       pitch_type,
       velocity,
       location_x,
@@ -19,8 +20,13 @@ export class PitchService {
       pitch_result,
     } = pitchData;
 
-    if (!at_bat_id || !game_id || !pitcher_id || !batter_id || !pitch_type || !pitch_result) {
+    // Either batter_id (own team) or opponent_batter_id (opponent) is required
+    if (!at_bat_id || !game_id || !pitcher_id || !pitch_type || !pitch_result) {
       throw new Error('Required fields missing');
+    }
+
+    if (!batter_id && !opponent_batter_id) {
+      throw new Error('Either batter_id or opponent_batter_id is required');
     }
 
     return await transaction(async (client) => {
@@ -35,14 +41,14 @@ export class PitchService {
       const pitchId = uuidv4();
       const pitchResult = await client.query(
         `INSERT INTO pitches (
-          id, at_bat_id, game_id, pitcher_id, batter_id, pitch_number,
+          id, at_bat_id, game_id, pitcher_id, batter_id, opponent_batter_id, pitch_number,
           pitch_type, velocity, location_x, location_y, zone,
           balls_before, strikes_before, pitch_result
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING *`,
         [
-          pitchId, at_bat_id, game_id, pitcher_id, batter_id, pitchNumber,
+          pitchId, at_bat_id, game_id, pitcher_id, batter_id || null, opponent_batter_id || null, pitchNumber,
           pitch_type, velocity, location_x, location_y, zone,
           balls_before, strikes_before, pitch_result,
         ]
