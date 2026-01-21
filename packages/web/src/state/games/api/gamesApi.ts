@@ -1,5 +1,5 @@
 import api from '../../../services/api';
-import { Game, Team, Player, AtBat, Pitch, Play } from '../../../types';
+import { Game, Team, Player, AtBat, Pitch, Play, Inning } from '../../../types';
 
 interface GameState {
     game: Game;
@@ -47,6 +47,15 @@ export const gamesApi = {
     advanceInning: async (id: string): Promise<Game> => {
         const response = await api.post<{ game: Game }>(`/games/${id}/advance-inning`);
         return response.data.game;
+    },
+
+    getCurrentInning: async (id: string): Promise<Inning | null> => {
+        try {
+            const response = await api.get<{ inning: Inning }>(`/games/${id}/current-inning`);
+            return response.data.inning;
+        } catch {
+            return null;
+        }
     },
 
     getCurrentGameState: async (id: string): Promise<GameState> => {

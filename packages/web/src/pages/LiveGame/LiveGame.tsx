@@ -14,8 +14,9 @@ import {
     setCurrentAtBat,
     clearPitches,
 } from '../../state';
+import { gamesApi } from '../../state/games/api/gamesApi';
 import { theme } from '../../styles/theme';
-import { PitchType, PitchResult, OpponentLineupPlayer, GamePitcherWithPlayer } from '../../types';
+import { PitchType, PitchResult, OpponentLineupPlayer, GamePitcherWithPlayer, Inning as InningType } from '../../types';
 import {
     Container,
     LeftPanel,
@@ -80,9 +81,14 @@ const LiveGame: React.FC = () => {
     const [showPitcherSelector, setShowPitcherSelector] = useState(false);
     const [showBatterSelector, setShowBatterSelector] = useState(false);
 
+    // Current inning
+    const [currentInning, setCurrentInning] = useState<InningType | null>(null);
+
     useEffect(() => {
         if (gameId) {
             dispatch(fetchGameById(gameId));
+            // Fetch current inning
+            gamesApi.getCurrentInning(gameId).then(setCurrentInning);
         }
     }, [dispatch, gameId]);
 
@@ -173,11 +179,16 @@ const LiveGame: React.FC = () => {
             return;
         }
 
+        if (!currentInning) {
+            alert('No current inning found. Please start the game first.');
+            return;
+        }
+
         try {
             await dispatch(
                 createAtBat({
                     game_id: gameId,
-                    inning_id: 'temp-inning-id', // In real app, get from current game state
+                    inning_id: currentInning.id,
                     batter_id: currentBatter.id,
                     pitcher_id: currentPitcher.player_id,
                     balls: 0,

@@ -107,6 +107,22 @@ export class GameController {
       next(error);
     }
   }
+
+  async getCurrentInning(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const inning = await gameService.getCurrentInning(id as string);
+
+      if (!inning) {
+        res.status(404).json({ error: 'No current inning found' });
+        return;
+      }
+
+      res.status(200).json({ inning });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new GameController();

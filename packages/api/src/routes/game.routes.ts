@@ -16,5 +16,6 @@ router.put('/:id/score', gameController.updateScore.bind(gameController));
 router.post('/:id/advance-inning', gameController.advanceInning.bind(gameController));
 router.post('/:id/end', gameController.endGame.bind(gameController));
 router.get('/:id/innings', gameController.getGameInnings.bind(gameController));
+router.get('/:id/current-inning', gameController.getCurrentInning.bind(gameController));
 
 export default router;
