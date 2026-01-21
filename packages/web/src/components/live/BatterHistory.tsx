@@ -54,7 +54,8 @@ const BatterHistory: React.FC<BatterHistoryProps> = ({ batterId, pitcherId, limi
     }
 
     const { stats, at_bats: atBats } = history;
-    const avg = stats.batting_average !== undefined ? stats.batting_average.toFixed(3) : '---';
+    const avg =
+        stats.batting_average !== undefined && stats.batting_average !== null ? Number(stats.batting_average).toFixed(3) : '---';
 
     return (
         <Container>
