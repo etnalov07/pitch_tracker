@@ -105,6 +105,8 @@ export interface PitcherGameStats {
             total: number;
             strikes: number;
             balls: number;
+            top_velocity: number | null;
+            avg_velocity: number | null;
         };
     };
 }

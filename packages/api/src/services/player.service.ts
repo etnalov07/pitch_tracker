@@ -149,7 +149,8 @@ export class PlayerService {
 
   // Get pitcher stats for current game (live tally)
   async getPitcherGameStats(pitcher_id: string, game_id: string): Promise<any> {
-    const result = await query(
+    // Get pitch counts by type and result
+    const countResult = await query(
       `SELECT
          pitch_type,
          pitch_result,
@@ -160,22 +161,35 @@ export class PlayerService {
       [pitcher_id, game_id]
     );
 
+    // Get velocity stats by pitch type
+    const velocityResult = await query(
+      `SELECT
+         pitch_type,
+         MAX(velocity) as top_velocity,
+         AVG(velocity) as avg_velocity
+       FROM pitches
+       WHERE pitcher_id = $1 AND game_id = $2 AND velocity IS NOT NULL
+       GROUP BY pitch_type`,
+      [pitcher_id, game_id]
+    );
+
     const stats = {
       pitcher_id,
       game_id,
       total_pitches: 0,
       strikes: 0,
       balls: 0,
-      pitch_type_breakdown: {} as { [key: string]: { total: number; strikes: number; balls: number } },
+      pitch_type_breakdown: {} as { [key: string]: { total: number; strikes: number; balls: number; top_velocity: number | null; avg_velocity: number | null } },
     };
 
-    for (const row of result.rows) {
+    // Process count results
+    for (const row of countResult.rows) {
       const { pitch_type, pitch_result, count } = row;
       const pitchCount = parseInt(count);
 
       // Initialize pitch type if not exists
       if (!stats.pitch_type_breakdown[pitch_type]) {
-        stats.pitch_type_breakdown[pitch_type] = { total: 0, strikes: 0, balls: 0 };
+        stats.pitch_type_breakdown[pitch_type] = { total: 0, strikes: 0, balls: 0, top_velocity: null, avg_velocity: null };
       }
 
       stats.total_pitches += pitchCount;
@@ -188,6 +202,15 @@ export class PlayerService {
       } else {
         stats.strikes += pitchCount;
         stats.pitch_type_breakdown[pitch_type].strikes += pitchCount;
+      }
+    }
+
+    // Add velocity stats to pitch type breakdown
+    for (const row of velocityResult.rows) {
+      const { pitch_type, top_velocity, avg_velocity } = row;
+      if (stats.pitch_type_breakdown[pitch_type]) {
+        stats.pitch_type_breakdown[pitch_type].top_velocity = top_velocity ? parseFloat(top_velocity) : null;
+        stats.pitch_type_breakdown[pitch_type].avg_velocity = avg_velocity ? parseFloat(parseFloat(avg_velocity).toFixed(1)) : null;
       }
     }
 

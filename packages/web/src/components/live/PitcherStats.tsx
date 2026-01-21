@@ -119,6 +119,22 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcherId, gameId, pitcherN
                                     <small>B</small>
                                 </PitchTypeStat>
                             </PitchTypeStats>
+                            {(data.top_velocity || data.avg_velocity) && (
+                                <VelocityStats>
+                                    {data.top_velocity && (
+                                        <VelocityStat>
+                                            <VelocityValue>{data.top_velocity}</VelocityValue>
+                                            <VelocityLabel>Top</VelocityLabel>
+                                        </VelocityStat>
+                                    )}
+                                    {data.avg_velocity && (
+                                        <VelocityStat>
+                                            <VelocityValue>{data.avg_velocity}</VelocityValue>
+                                            <VelocityLabel>Avg</VelocityLabel>
+                                        </VelocityStat>
+                                    )}
+                                </VelocityStats>
+                            )}
                         </PitchTypeCard>
                     ))}
                 </BreakdownGrid>
@@ -277,6 +293,32 @@ const EmptyText = styled.p`
     font-size: ${theme.fontSize.sm};
     font-style: italic;
     padding: ${theme.spacing.lg};
+`;
+
+const VelocityStats = styled.div`
+    display: flex;
+    gap: ${theme.spacing.md};
+    margin-top: ${theme.spacing.xs};
+    padding-top: ${theme.spacing.xs};
+    border-top: 1px dashed ${theme.colors.gray[300]};
+`;
+
+const VelocityStat = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`;
+
+const VelocityValue = styled.span`
+    font-size: ${theme.fontSize.sm};
+    font-weight: ${theme.fontWeight.bold};
+    color: ${theme.colors.primary[600]};
+`;
+
+const VelocityLabel = styled.span`
+    font-size: 10px;
+    color: ${theme.colors.gray[500]};
+    text-transform: uppercase;
 `;
 
 export default PitcherStats;

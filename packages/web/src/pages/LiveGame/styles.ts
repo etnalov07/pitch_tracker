@@ -17,6 +17,13 @@ export const LeftPanel = styled.div({
     backgroundColor: 'white',
     borderRight: `1px solid ${theme.colors.gray[200]}`,
     overflowY: 'auto',
+    position: 'sticky',
+    top: 0,
+    height: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.md,
+    padding: theme.spacing.md,
 });
 
 export const MainPanel = styled.div({
@@ -103,9 +110,25 @@ export const OutsDisplay = styled.span({
     fontWeight: theme.fontWeight.medium,
 });
 
+export const StrikeZoneRow = styled.div({
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+
+    [`@media (min-width: ${theme.breakpoints.md})`]: {
+        gridTemplateColumns: '1fr 1fr',
+        alignItems: 'start',
+    },
+});
+
+export const StrikeZoneContainer = styled.div({
+    display: 'flex',
+    justifyContent: 'center',
+});
+
 export const PitchForm = styled.div({
-    marginTop: theme.spacing.xl,
-    padding: theme.spacing.xl,
+    padding: theme.spacing.lg,
     backgroundColor: 'white',
     borderRadius: theme.borderRadius.xl,
     boxShadow: theme.shadows.md,

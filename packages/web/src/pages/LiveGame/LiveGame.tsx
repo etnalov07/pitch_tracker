@@ -19,6 +19,7 @@ import {
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { theme } from '../../styles/theme';
 import { PitchType, PitchResult, OpponentLineupPlayer, GamePitcherWithPlayer, Inning as InningType } from '../../types';
+import api from '../../services/api';
 import {
     Container,
     LeftPanel,
@@ -34,6 +35,8 @@ import {
     CountLabel,
     CountValue,
     OutsDisplay,
+    StrikeZoneRow,
+    StrikeZoneContainer,
     PitchForm,
     FormRow,
     FormGroup,
@@ -67,6 +70,20 @@ import {
     StartGameText,
 } from './styles';
 
+const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
+    { value: 'fastball', label: 'Fastball' },
+    { value: '4-seam', label: '4-Seam' },
+    { value: '2-seam', label: '2-Seam' },
+    { value: 'cutter', label: 'Cutter' },
+    { value: 'sinker', label: 'Sinker' },
+    { value: 'slider', label: 'Slider' },
+    { value: 'curveball', label: 'Curveball' },
+    { value: 'changeup', label: 'Changeup' },
+    { value: 'splitter', label: 'Splitter' },
+    { value: 'knuckleball', label: 'Knuckleball' },
+    { value: 'other', label: 'Other' },
+];
+
 const LiveGame: React.FC = () => {
     const { gameId } = useParams<{ gameId: string }>();
     const dispatch = useAppDispatch();
@@ -95,13 +112,56 @@ const LiveGame: React.FC = () => {
     // Trigger to refresh pitcher stats after each pitch
     const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
 
+    // Pitcher's available pitch types
+    const [pitcherPitchTypes, setPitcherPitchTypes] = useState<PitchType[]>([]);
+
+    // Opponent lineup for auto-advancing batters
+    const [opponentLineup, setOpponentLineup] = useState<OpponentLineupPlayer[]>([]);
+
     useEffect(() => {
         if (gameId) {
             dispatch(fetchGameById(gameId));
+            // Fetch opponent lineup for auto-advancing
+            api.get<{ lineup: OpponentLineupPlayer[] }>(`/opponent-lineup/game/${gameId}`)
+                .then((response) => {
+                    const lineup = response.data.lineup || [];
+                    setOpponentLineup(lineup);
+                    // If we have a lineup and no current batter, set the first batter
+                    if (lineup.length > 0) {
+                        const firstBatter = lineup.find((p) => p.batting_order === 1);
+                        if (firstBatter && !currentBatter) {
+                            setCurrentBatter(firstBatter);
+                        }
+                    }
+                })
+                .catch((err) => console.error('Failed to load opponent lineup:', err));
             // Fetch current inning
             gamesApi.getCurrentInning(gameId).then(setCurrentInning);
         }
     }, [dispatch, gameId]);
+
+    // Load pitcher's pitch types when pitcher changes
+    useEffect(() => {
+        if (currentPitcher?.player_id) {
+            api.get<{ pitch_types: string[] }>(`/players/${currentPitcher.player_id}/pitch-types`)
+                .then((response) => {
+                    const types = (response.data.pitch_types || []) as PitchType[];
+                    setPitcherPitchTypes(types);
+                    // Set default pitch type to first available, or fastball
+                    if (types.length > 0 && !types.includes(pitchType)) {
+                        setPitchType(types[0]);
+                    }
+                })
+                .catch(() => setPitcherPitchTypes([]));
+        } else {
+            setPitcherPitchTypes([]);
+        }
+    }, [currentPitcher?.player_id]);
+
+    // Filter pitch types: use pitcher's types if available, otherwise show all
+    const availablePitchTypes = pitcherPitchTypes.length > 0
+        ? ALL_PITCH_TYPES.filter((pt) => pitcherPitchTypes.includes(pt.value))
+        : ALL_PITCH_TYPES;
 
     const handleLocationSelect = (x: number, y: number) => {
         setPitchLocation({ x, y });
@@ -239,7 +299,14 @@ const LiveGame: React.FC = () => {
         // Advance to next batter in lineup (1-9, then wrap to 1)
         const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
         setCurrentBattingOrder(nextOrder);
-        setCurrentBatter(null); // Clear batter so user selects the next one
+
+        // Auto-select the next batter from the lineup if available
+        const nextBatter = opponentLineup.find((p) => p.batting_order === nextOrder);
+        if (nextBatter) {
+            setCurrentBatter(nextBatter);
+        } else {
+            setCurrentBatter(null); // Clear batter if not found in lineup
+        }
     };
 
     const handleStartGame = async () => {
@@ -383,88 +450,87 @@ const LiveGame: React.FC = () => {
                             <OutsDisplay>{currentAtBat.outs_before} Outs</OutsDisplay>
                         </CountDisplay>
 
-                        <StrikeZone onLocationSelect={handleLocationSelect} previousPitches={pitches} />
+                        <StrikeZoneRow>
+                            <StrikeZoneContainer>
+                                <StrikeZone onLocationSelect={handleLocationSelect} previousPitches={pitches} />
+                            </StrikeZoneContainer>
 
-                        <PitchForm>
-                            <FormRow>
+                            <PitchForm>
+                                <FormRow>
+                                    <FormGroup>
+                                        <Label>Pitch Type</Label>
+                                        <Select value={pitchType} onChange={(e) => setPitchType(e.target.value as PitchType)}>
+                                            {availablePitchTypes.map(({ value, label }) => (
+                                                <option key={value} value={value}>
+                                                    {label}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    </FormGroup>
+
+                                    <FormGroup>
+                                        <Label>Velocity (mph)</Label>
+                                        <Input
+                                            type="number"
+                                            value={velocity}
+                                            onChange={(e) => setVelocity(e.target.value)}
+                                            placeholder="85"
+                                            min="0"
+                                            max="120"
+                                        />
+                                    </FormGroup>
+                                </FormRow>
+
                                 <FormGroup>
-                                    <Label>Pitch Type</Label>
-                                    <Select value={pitchType} onChange={(e) => setPitchType(e.target.value as PitchType)}>
-                                        <option value="fastball">Fastball</option>
-                                        <option value="2-seam">2-Seam</option>
-                                        <option value="4-seam">4-Seam</option>
-                                        <option value="cutter">Cutter</option>
-                                        <option value="sinker">Sinker</option>
-                                        <option value="slider">Slider</option>
-                                        <option value="curveball">Curveball</option>
-                                        <option value="changeup">Changeup</option>
-                                        <option value="splitter">Splitter</option>
-                                        <option value="other">Other</option>
-                                    </Select>
+                                    <Label>Result</Label>
+                                    <ResultButtons>
+                                        <ResultButton
+                                            active={pitchResult === 'ball'}
+                                            onClick={() => setPitchResult('ball')}
+                                            color={theme.colors.gray[400]}
+                                        >
+                                            Ball
+                                        </ResultButton>
+                                        <ResultButton
+                                            active={pitchResult === 'called_strike'}
+                                            onClick={() => setPitchResult('called_strike')}
+                                            color={theme.colors.green[500]}
+                                        >
+                                            Called Strike
+                                        </ResultButton>
+                                        <ResultButton
+                                            active={pitchResult === 'swinging_strike'}
+                                            onClick={() => setPitchResult('swinging_strike')}
+                                            color={theme.colors.red[500]}
+                                        >
+                                            Swinging Strike
+                                        </ResultButton>
+                                        <ResultButton
+                                            active={pitchResult === 'foul'}
+                                            onClick={() => setPitchResult('foul')}
+                                            color={theme.colors.yellow[500]}
+                                        >
+                                            Foul
+                                        </ResultButton>
+                                        <ResultButton
+                                            active={pitchResult === 'in_play'}
+                                            onClick={() => setPitchResult('in_play')}
+                                            color={theme.colors.primary[600]}
+                                        >
+                                            In Play
+                                        </ResultButton>
+                                    </ResultButtons>
                                 </FormGroup>
 
-                                <FormGroup>
-                                    <Label>Velocity (mph)</Label>
-                                    <Input
-                                        type="number"
-                                        value={velocity}
-                                        onChange={(e) => setVelocity(e.target.value)}
-                                        placeholder="85"
-                                        min="0"
-                                        max="120"
-                                    />
-                                </FormGroup>
-                            </FormRow>
+                                <LogButton onClick={handleLogPitch} disabled={!pitchLocation}>
+                                    Log Pitch
+                                </LogButton>
 
-                            <FormGroup>
-                                <Label>Result</Label>
-                                <ResultButtons>
-                                    <ResultButton
-                                        active={pitchResult === 'ball'}
-                                        onClick={() => setPitchResult('ball')}
-                                        color={theme.colors.gray[400]}
-                                    >
-                                        Ball
-                                    </ResultButton>
-                                    <ResultButton
-                                        active={pitchResult === 'called_strike'}
-                                        onClick={() => setPitchResult('called_strike')}
-                                        color={theme.colors.green[500]}
-                                    >
-                                        Called Strike
-                                    </ResultButton>
-                                    <ResultButton
-                                        active={pitchResult === 'swinging_strike'}
-                                        onClick={() => setPitchResult('swinging_strike')}
-                                        color={theme.colors.red[500]}
-                                    >
-                                        Swinging Strike
-                                    </ResultButton>
-                                    <ResultButton
-                                        active={pitchResult === 'foul'}
-                                        onClick={() => setPitchResult('foul')}
-                                        color={theme.colors.yellow[500]}
-                                    >
-                                        Foul
-                                    </ResultButton>
-                                    <ResultButton
-                                        active={pitchResult === 'in_play'}
-                                        onClick={() => setPitchResult('in_play')}
-                                        color={theme.colors.primary[600]}
-                                    >
-                                        In Play
-                                    </ResultButton>
-                                </ResultButtons>
-                            </FormGroup>
-
-                            <LogButton onClick={handleLogPitch} disabled={!pitchLocation}>
-                                Log Pitch
-                            </LogButton>
-
-                            {pitchResult === 'in_play' && (
-                                <EndAtBatButton onClick={() => handleEndAtBat('in_play')}>Record Play & End At-Bat</EndAtBatButton>
-                            )}
-                        </PitchForm>
+                                {pitchResult === 'in_play' && (
+                                    <EndAtBatButton onClick={() => handleEndAtBat('in_play')}>Record Play & End At-Bat</EndAtBatButton>
+                                )}
+                            </PitchForm>
+                        </StrikeZoneRow>
                     </>
                 ) : (
                     <NoAtBatContainer>
