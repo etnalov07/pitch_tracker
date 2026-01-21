@@ -1,5 +1,5 @@
-import api from './api';
 import { Game, Team, Player } from '../types';
+import api from './api';
 
 export const gameService = {
     // Get all games

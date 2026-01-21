@@ -391,7 +391,7 @@ export const PitchTypeCheckbox = styled.label<{ checked: boolean }>((props) => (
         backgroundColor: theme.colors.primary[50],
     },
 
-    'input': {
+    input: {
         display: 'none',
     },
 }));

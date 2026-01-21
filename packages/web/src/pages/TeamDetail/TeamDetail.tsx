@@ -122,7 +122,7 @@ const TeamDetail: React.FC = () => {
     };
 
     const handlePitchTypeToggle = (pitchType: PitchType) => {
-        setSelectedPitchTypes((prev) =>
+        setSelectedPitchTypes((prev): PitchType[] =>
             prev.includes(pitchType) ? prev.filter((pt) => pt !== pitchType) : [...prev, pitchType]
         );
     };
@@ -350,10 +350,7 @@ const TeamDetail: React.FC = () => {
                                     <PitchTypesLabel>Pitch Types (select all that apply)</PitchTypesLabel>
                                     <PitchTypesGrid>
                                         {PITCH_TYPES.map(({ value, label }) => (
-                                            <PitchTypeCheckbox
-                                                key={value}
-                                                checked={selectedPitchTypes.includes(value)}
-                                            >
+                                            <PitchTypeCheckbox key={value} checked={selectedPitchTypes.includes(value)}>
                                                 <input
                                                     type="checkbox"
                                                     checked={selectedPitchTypes.includes(value)}

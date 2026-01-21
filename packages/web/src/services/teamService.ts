@@ -1,5 +1,5 @@
-import api from './api';
 import { Team, Player } from '../types';
+import api from './api';
 
 export const teamService = {
     // Get all teams for current user
