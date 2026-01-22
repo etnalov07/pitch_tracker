@@ -184,6 +184,8 @@ CREATE TABLE public.pitches (
     velocity numeric(5,2),
     location_x numeric(5,4),
     location_y numeric(5,4),
+    target_location_x numeric(5,4),
+    target_location_y numeric(5,4),
     zone character varying(20),
     balls_before integer NOT NULL,
     strikes_before integer NOT NULL,

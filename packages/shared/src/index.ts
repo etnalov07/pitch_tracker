@@ -259,6 +259,8 @@ export interface Pitch {
     velocity?: number;
     location_x?: number;
     location_y?: number;
+    target_location_x?: number;
+    target_location_y?: number;
     zone?: string;
     balls_before: number;
     strikes_before: number;

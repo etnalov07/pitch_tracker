@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import BatterSelector from '../../components/game/BatterSelector';
 import PitcherSelector from '../../components/game/PitcherSelector';
+import BaseballDiamond, { HitType, HitLocation } from '../../components/live/BaseballDiamond';
 import BatterHistory from '../../components/live/BatterHistory';
 import PitcherStats from '../../components/live/PitcherStats';
 import StrikeZone from '../../components/live/StrikeZone';
@@ -34,7 +35,6 @@ import {
     CountDisplay,
     CountLabel,
     CountValue,
-    OutsDisplay,
     StrikeZoneRow,
     StrikeZoneContainer,
     PitchForm,
@@ -46,7 +46,6 @@ import {
     ResultButtons,
     ResultButton,
     LogButton,
-    EndAtBatButton,
     NoAtBatContainer,
     NoAtBatText,
     StartAtBatButton,
@@ -68,6 +67,28 @@ import {
     StartGameButton,
     StartGamePrompt,
     StartGameText,
+    OutsContainer,
+    OutsLabel,
+    OutIndicator,
+    InningChangeOverlay,
+    InningChangeModal,
+    InningChangeText,
+    InningChangeSubtext,
+    InningChangeDismiss,
+    DiamondModalOverlay,
+    DiamondModal,
+    DiamondModalHeader,
+    DiamondModalTitle,
+    DiamondModalClose,
+    HitTypeSelector,
+    HitTypeButton,
+    DiamondInstructions,
+    DiamondContainer,
+    DiamondResultSection,
+    DiamondResultTitle,
+    DiamondResultGrid,
+    DiamondResultButton,
+    OpenDiamondButton,
 } from './styles';
 
 const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
@@ -93,6 +114,7 @@ const LiveGame: React.FC = () => {
 
     // Pitch form state
     const [pitchLocation, setPitchLocation] = useState<{ x: number; y: number } | null>(null);
+    const [targetLocation, setTargetLocation] = useState<{ x: number; y: number } | null>(null);
     const [pitchType, setPitchType] = useState<PitchType>('fastball');
     const [velocity, setVelocity] = useState<string>('');
     const [pitchResult, setPitchResult] = useState<PitchResult>('ball');
@@ -117,6 +139,18 @@ const LiveGame: React.FC = () => {
 
     // Opponent lineup for auto-advancing batters
     const [opponentLineup, setOpponentLineup] = useState<OpponentLineupPlayer[]>([]);
+
+    // Out tracking
+    const [currentOuts, setCurrentOuts] = useState(0);
+
+    // Inning change notification
+    const [showInningChange, setShowInningChange] = useState(false);
+    const [inningChangeInfo, setInningChangeInfo] = useState<{ inning: number; half: string } | null>(null);
+
+    // Baseball diamond modal for in-play recording
+    const [showDiamondModal, setShowDiamondModal] = useState(false);
+    const [hitType, setHitType] = useState<HitType>('line_drive');
+    const [hitLocation, setHitLocation] = useState<HitLocation | null>(null);
 
     useEffect(() => {
         if (gameId) {
@@ -166,6 +200,14 @@ const LiveGame: React.FC = () => {
         setPitchLocation({ x, y });
     };
 
+    const handleTargetSelect = (x: number, y: number) => {
+        setTargetLocation({ x, y });
+    };
+
+    const handleTargetClear = () => {
+        setTargetLocation(null);
+    };
+
     const handleLogPitch = async () => {
         if (!currentAtBat || !pitchLocation) {
             alert('Please select a pitch location');
@@ -189,6 +231,8 @@ const LiveGame: React.FC = () => {
                     velocity: velocity ? parseFloat(velocity) : undefined,
                     location_x: pitchLocation.x,
                     location_y: pitchLocation.y,
+                    target_location_x: targetLocation?.x,
+                    target_location_y: targetLocation?.y,
                     pitch_result: pitchResult,
                     balls_before: currentAtBat.balls,
                     strikes_before: currentAtBat.strikes,
@@ -220,6 +264,7 @@ const LiveGame: React.FC = () => {
 
             // Reset form
             setPitchLocation(null);
+            setTargetLocation(null);
             setVelocity('');
 
             // Check for end of at-bat
@@ -235,25 +280,100 @@ const LiveGame: React.FC = () => {
         }
     };
 
+    // Helper function to determine if a result is an out
+    const isOutResult = (result: string): boolean => {
+        const outResults = [
+            'strikeout',
+            'groundout',
+            'flyout',
+            'lineout',
+            'popout',
+            'double_play',
+            'triple_play',
+            'fielders_choice',
+            'force_out',
+            'tag_out',
+            'caught_stealing',
+            'sacrifice_fly',
+            'sacrifice_bunt',
+        ];
+        return outResults.includes(result);
+    };
+
+    // Get number of outs for a result (e.g., double play = 2)
+    const getOutsForResult = (result: string): number => {
+        if (result === 'double_play') return 2;
+        if (result === 'triple_play') return 3;
+        if (isOutResult(result)) return 1;
+        return 0;
+    };
+
     const handleEndAtBat = async (result: string) => {
         if (!currentAtBat) return;
 
         try {
+            const outsFromPlay = getOutsForResult(result);
+            const newOutCount = currentOuts + outsFromPlay;
+
             await dispatch(
                 updateAtBat({
                     id: currentAtBat.id,
-                    data: { result },
+                    data: {
+                        result,
+                        outs_after: Math.min(newOutCount, 3),
+                    },
                 })
             ).unwrap();
+
             // Reset for next at-bat
             dispatch(setCurrentAtBat(null));
             dispatch(clearPitches());
-            // Advance to next batter
-            advanceBattingOrder();
-            alert(`At-bat ended: ${result}`);
+
+            // Handle out tracking and inning advancement
+            if (outsFromPlay > 0) {
+                if (newOutCount >= 3) {
+                    // 3 outs - advance to next half-inning
+                    setCurrentOuts(0);
+                    try {
+                        const updatedGame = await gamesApi.advanceInning(gameId!);
+                        // Refresh game state
+                        dispatch(fetchGameById(gameId!));
+                        // Fetch new inning
+                        const newInning = await gamesApi.getCurrentInning(gameId!);
+                        setCurrentInning(newInning);
+                        // Show inning change notification
+                        setInningChangeInfo({
+                            inning: updatedGame.current_inning,
+                            half: updatedGame.inning_half,
+                        });
+                        setShowInningChange(true);
+                        // Reset batting order to top when inning changes
+                        setCurrentBattingOrder(1);
+                        const firstBatter = opponentLineup.find((p) => p.batting_order === 1);
+                        setCurrentBatter(firstBatter || null);
+                    } catch (error) {
+                        console.error('Failed to advance inning:', error);
+                    }
+                } else {
+                    setCurrentOuts(newOutCount);
+                    // Advance to next batter
+                    advanceBattingOrder();
+                }
+            } else {
+                // Not an out (walk, hit, etc.) - advance to next batter
+                advanceBattingOrder();
+            }
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : 'Failed to end at-bat');
         }
+    };
+
+    const handleDiamondResult = async (result: string) => {
+        // Close the modal and reset state
+        setShowDiamondModal(false);
+        setHitLocation(null);
+        // End the at-bat with the selected result
+        await handleEndAtBat(result);
     };
 
     const handleStartAtBat = async () => {
@@ -276,7 +396,7 @@ const LiveGame: React.FC = () => {
                     pitcher_id: currentPitcher.player_id,
                     balls: 0,
                     strikes: 0,
-                    outs_before: 0,
+                    outs_before: currentOuts,
                 })
             ).unwrap();
         } catch (error: unknown) {
@@ -377,7 +497,12 @@ const LiveGame: React.FC = () => {
                     </TeamInfo>
                     <GameInfo>
                         <Inning>Inning {game.current_inning || 1}</Inning>
-                        <InningHalf>{game.inning_half || 'top'}</InningHalf>
+                        <InningHalf>{game.inning_half === 'top' ? '▲ Top' : '▼ Bottom'}</InningHalf>
+                        <OutsContainer>
+                            <OutsLabel>Outs</OutsLabel>
+                            <OutIndicator active={currentOuts >= 1} />
+                            <OutIndicator active={currentOuts >= 2} />
+                        </OutsContainer>
                     </GameInfo>
                     <TeamInfo>
                         <TeamName>Your Team</TeamName>
@@ -446,12 +571,17 @@ const LiveGame: React.FC = () => {
                             <CountValue>
                                 {currentAtBat.balls}-{currentAtBat.strikes}
                             </CountValue>
-                            <OutsDisplay>{currentAtBat.outs_before} Outs</OutsDisplay>
                         </CountDisplay>
 
                         <StrikeZoneRow>
                             <StrikeZoneContainer>
-                                <StrikeZone onLocationSelect={handleLocationSelect} previousPitches={pitches} />
+                                <StrikeZone
+                                    onLocationSelect={handleLocationSelect}
+                                    onTargetSelect={handleTargetSelect}
+                                    onTargetClear={handleTargetClear}
+                                    targetLocation={targetLocation}
+                                    previousPitches={pitches}
+                                />
                             </StrikeZoneContainer>
 
                             <PitchForm>
@@ -526,9 +656,9 @@ const LiveGame: React.FC = () => {
                                 </LogButton>
 
                                 {pitchResult === 'in_play' && (
-                                    <EndAtBatButton onClick={() => handleEndAtBat('in_play')}>
-                                        Record Play & End At-Bat
-                                    </EndAtBatButton>
+                                    <OpenDiamondButton onClick={() => setShowDiamondModal(true)}>
+                                        <span>&#9918;</span> Record Hit Location & Result
+                                    </OpenDiamondButton>
                                 )}
                             </PitchForm>
                         </StrikeZoneRow>
@@ -562,6 +692,131 @@ const LiveGame: React.FC = () => {
                     onBatterSelected={handleBatterSelected}
                     onClose={() => setShowBatterSelector(false)}
                 />
+            )}
+
+            {/* Inning Change Notification */}
+            {showInningChange && inningChangeInfo && (
+                <InningChangeOverlay>
+                    <InningChangeModal>
+                        <InningChangeText>
+                            {inningChangeInfo.half === 'top' ? '▲' : '▼'}{' '}
+                            {inningChangeInfo.half.charAt(0).toUpperCase() + inningChangeInfo.half.slice(1)} of{' '}
+                            {inningChangeInfo.inning}
+                        </InningChangeText>
+                        <InningChangeSubtext>3 outs recorded. Moving to next half-inning.</InningChangeSubtext>
+                        <InningChangeDismiss onClick={() => setShowInningChange(false)}>Continue</InningChangeDismiss>
+                    </InningChangeModal>
+                </InningChangeOverlay>
+            )}
+
+            {/* Baseball Diamond Modal for In-Play Recording */}
+            {showDiamondModal && (
+                <DiamondModalOverlay>
+                    <DiamondModal>
+                        <DiamondModalHeader>
+                            <DiamondModalTitle>Record Hit Location</DiamondModalTitle>
+                            <DiamondModalClose
+                                onClick={() => {
+                                    setShowDiamondModal(false);
+                                    setHitLocation(null);
+                                }}
+                            >
+                                &times;
+                            </DiamondModalClose>
+                        </DiamondModalHeader>
+
+                        <HitTypeSelector>
+                            <HitTypeButton
+                                active={hitType === 'fly_ball'}
+                                hitColor={theme.colors.primary[500]}
+                                onClick={() => setHitType('fly_ball')}
+                            >
+                                Fly Ball
+                            </HitTypeButton>
+                            <HitTypeButton
+                                active={hitType === 'line_drive'}
+                                hitColor={theme.colors.red[500]}
+                                onClick={() => setHitType('line_drive')}
+                            >
+                                Line Drive
+                            </HitTypeButton>
+                            <HitTypeButton
+                                active={hitType === 'ground_ball'}
+                                hitColor={theme.colors.yellow[600]}
+                                onClick={() => setHitType('ground_ball')}
+                            >
+                                Ground Ball
+                            </HitTypeButton>
+                        </HitTypeSelector>
+
+                        <DiamondInstructions>Click on the field to mark where the ball was hit</DiamondInstructions>
+
+                        <DiamondContainer>
+                            <BaseballDiamond
+                                hitType={hitType}
+                                selectedLocation={hitLocation}
+                                onLocationSelect={(location) => setHitLocation(location)}
+                            />
+                        </DiamondContainer>
+
+                        <DiamondResultSection>
+                            <DiamondResultTitle>Select Result {!hitLocation && '(select location first)'}</DiamondResultTitle>
+                            <DiamondResultGrid>
+                                {/* Hit Results */}
+                                <DiamondResultButton disabled={!hitLocation} onClick={() => handleDiamondResult('single')}>
+                                    Single
+                                </DiamondResultButton>
+                                <DiamondResultButton disabled={!hitLocation} onClick={() => handleDiamondResult('double')}>
+                                    Double
+                                </DiamondResultButton>
+                                <DiamondResultButton disabled={!hitLocation} onClick={() => handleDiamondResult('triple')}>
+                                    Triple
+                                </DiamondResultButton>
+                                <DiamondResultButton disabled={!hitLocation} onClick={() => handleDiamondResult('home_run')}>
+                                    Home Run
+                                </DiamondResultButton>
+                                {/* Out Results */}
+                                <DiamondResultButton disabled={!hitLocation} isOut onClick={() => handleDiamondResult('groundout')}>
+                                    Groundout
+                                </DiamondResultButton>
+                                <DiamondResultButton disabled={!hitLocation} isOut onClick={() => handleDiamondResult('flyout')}>
+                                    Flyout
+                                </DiamondResultButton>
+                                <DiamondResultButton disabled={!hitLocation} isOut onClick={() => handleDiamondResult('lineout')}>
+                                    Lineout
+                                </DiamondResultButton>
+                                <DiamondResultButton disabled={!hitLocation} isOut onClick={() => handleDiamondResult('popout')}>
+                                    Popout
+                                </DiamondResultButton>
+                                {/* Other Results */}
+                                <DiamondResultButton disabled={!hitLocation} onClick={() => handleDiamondResult('error')}>
+                                    Error
+                                </DiamondResultButton>
+                                <DiamondResultButton
+                                    disabled={!hitLocation}
+                                    isOut
+                                    onClick={() => handleDiamondResult('fielders_choice')}
+                                >
+                                    FC
+                                </DiamondResultButton>
+                                <DiamondResultButton
+                                    disabled={!hitLocation}
+                                    isOut
+                                    onClick={() => handleDiamondResult('double_play')}
+                                >
+                                    DP
+                                </DiamondResultButton>
+                                <DiamondResultButton
+                                    disabled={!hitLocation}
+                                    isOut
+                                    onClick={() => handleDiamondResult('sacrifice_fly')}
+                                >
+                                    Sac Fly
+                                </DiamondResultButton>
+                            </DiamondResultGrid>
+                        </DiamondResultSection>
+                    </DiamondModal>
+                </DiamondModalOverlay>
             )}
         </Container>
     );

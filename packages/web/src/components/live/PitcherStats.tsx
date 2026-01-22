@@ -73,6 +73,9 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcherId, gameId, pitcherN
 
     const strikePercentage = stats.total_pitches > 0 ? Math.round((stats.strikes / stats.total_pitches) * 100) : 0;
 
+    // Sort pitch types by total pitches (descending)
+    const sortedPitchTypes = Object.entries(stats.pitch_type_breakdown).sort(([, a], [, b]) => b.total - a.total);
+
     return (
         <Container>
             <Header>
@@ -97,43 +100,41 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcherId, gameId, pitcherN
 
             <BreakdownSection>
                 <SectionTitle>By Pitch Type</SectionTitle>
-                <BreakdownGrid>
-                    {Object.entries(stats.pitch_type_breakdown).map(([pitchType, data]) => (
-                        <PitchTypeCard key={pitchType}>
-                            <PitchTypeName>{formatPitchType(pitchType)}</PitchTypeName>
-                            <PitchTypeStats>
-                                <PitchTypeStat>
-                                    <span>{data.total}</span>
-                                    <small>Total</small>
-                                </PitchTypeStat>
-                                <PitchTypeStat highlight>
-                                    <span>{data.strikes}</span>
-                                    <small>K</small>
-                                </PitchTypeStat>
-                                <PitchTypeStat>
-                                    <span>{data.balls}</span>
-                                    <small>B</small>
-                                </PitchTypeStat>
-                            </PitchTypeStats>
-                            {(data.top_velocity || data.avg_velocity) && (
-                                <VelocityStats>
-                                    {data.top_velocity && (
-                                        <VelocityStat>
-                                            <VelocityValue>{data.top_velocity}</VelocityValue>
-                                            <VelocityLabel>Top</VelocityLabel>
-                                        </VelocityStat>
-                                    )}
-                                    {data.avg_velocity && (
-                                        <VelocityStat>
-                                            <VelocityValue>{data.avg_velocity}</VelocityValue>
-                                            <VelocityLabel>Avg</VelocityLabel>
-                                        </VelocityStat>
-                                    )}
-                                </VelocityStats>
-                            )}
-                        </PitchTypeCard>
-                    ))}
-                </BreakdownGrid>
+                <StatsTable>
+                    <thead>
+                        <tr>
+                            <Th align="left">Type</Th>
+                            <Th align="right">Ball</Th>
+                            <Th align="right">Strike</Th>
+                            <Th align="right">%</Th>
+                            <Th align="right">Top</Th>
+                            <Th align="right">Avg</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sortedPitchTypes.map(([pitchType, data]) => {
+                            const pctStrike = data.total > 0 ? Math.round((data.strikes / data.total) * 100) : 0;
+                            return (
+                                <tr key={pitchType}>
+                                    <Td align="left">
+                                        <PitchTypeBadge>{formatPitchType(pitchType)}</PitchTypeBadge>
+                                    </Td>
+                                    <Td align="right">{data.balls}</Td>
+                                    <Td align="right" highlight>
+                                        {data.strikes}
+                                    </Td>
+                                    <Td align="right">{pctStrike}</Td>
+                                    <Td align="right" velocity>
+                                        {data.top_velocity ?? '-'}
+                                    </Td>
+                                    <Td align="right" velocity>
+                                        {data.avg_velocity ?? '-'}
+                                    </Td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </StatsTable>
             </BreakdownSection>
         </Container>
     );
@@ -231,49 +232,56 @@ const SectionTitle = styled.h4`
     margin: 0;
 `;
 
-const BreakdownGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: ${theme.spacing.sm};
-`;
-
-const PitchTypeCard = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: ${theme.spacing.sm};
-    background-color: ${theme.colors.gray[50]};
-    border: 1px solid ${theme.colors.gray[200]};
-    border-radius: ${theme.borderRadius.md};
-`;
-
-const PitchTypeName = styled.div`
+const StatsTable = styled.table`
+    width: 100%;
+    border-collapse: collapse;
     font-size: ${theme.fontSize.sm};
+
+    thead tr {
+        border-bottom: 2px solid ${theme.colors.gray[200]};
+    }
+
+    tbody tr {
+        border-bottom: 1px solid ${theme.colors.gray[100]};
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &:hover {
+            background-color: ${theme.colors.gray[50]};
+        }
+    }
+`;
+
+const Th = styled.th<{ align?: 'left' | 'right' | 'center' }>`
+    padding: ${theme.spacing.sm} ${theme.spacing.xs};
+    text-align: ${(props) => props.align || 'left'};
+    font-weight: ${theme.fontWeight.semibold};
+    color: ${theme.colors.gray[600]};
+    text-transform: uppercase;
+    font-size: ${theme.fontSize.xs};
+`;
+
+const Td = styled.td<{ align?: 'left' | 'right' | 'center'; highlight?: boolean; velocity?: boolean }>`
+    padding: ${theme.spacing.sm} ${theme.spacing.xs};
+    text-align: ${(props) => props.align || 'left'};
+    color: ${(props) => {
+        if (props.highlight) return theme.colors.green[600];
+        if (props.velocity) return theme.colors.primary[600];
+        return theme.colors.gray[800];
+    }};
+    font-weight: ${(props) => (props.highlight || props.velocity ? theme.fontWeight.semibold : theme.fontWeight.normal)};
+`;
+
+const PitchTypeBadge = styled.span`
+    display: inline-block;
     font-weight: ${theme.fontWeight.bold};
     color: ${theme.colors.primary[700]};
-    margin-bottom: ${theme.spacing.xs};
-`;
-
-const PitchTypeStats = styled.div`
-    display: flex;
-    gap: ${theme.spacing.sm};
-`;
-
-const PitchTypeStat = styled.div<{ highlight?: boolean }>`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    span {
-        font-size: ${theme.fontSize.sm};
-        font-weight: ${theme.fontWeight.semibold};
-        color: ${(props) => (props.highlight ? theme.colors.green[600] : theme.colors.gray[800])};
-    }
-
-    small {
-        font-size: ${theme.fontSize.xs};
-        color: ${theme.colors.gray[500]};
-    }
+    background-color: ${theme.colors.primary[50]};
+    padding: 2px ${theme.spacing.sm};
+    border-radius: ${theme.borderRadius.sm};
+    font-size: ${theme.fontSize.xs};
 `;
 
 const LoadingText = styled.p`
@@ -289,32 +297,6 @@ const EmptyText = styled.p`
     font-size: ${theme.fontSize.sm};
     font-style: italic;
     padding: ${theme.spacing.lg};
-`;
-
-const VelocityStats = styled.div`
-    display: flex;
-    gap: ${theme.spacing.md};
-    margin-top: ${theme.spacing.xs};
-    padding-top: ${theme.spacing.xs};
-    border-top: 1px dashed ${theme.colors.gray[300]};
-`;
-
-const VelocityStat = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-`;
-
-const VelocityValue = styled.span`
-    font-size: ${theme.fontSize.sm};
-    font-weight: ${theme.fontWeight.bold};
-    color: ${theme.colors.primary[600]};
-`;
-
-const VelocityLabel = styled.span`
-    font-size: 10px;
-    color: ${theme.colors.gray[500]};
-    text-transform: uppercase;
 `;
 
 export default PitcherStats;

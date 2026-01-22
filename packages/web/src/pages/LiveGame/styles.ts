@@ -461,3 +461,260 @@ export const StartGameText = styled.p({
     color: theme.colors.gray[600],
     marginBottom: theme.spacing.lg,
 });
+
+// Outs display with visual indicators
+export const OutsContainer = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+});
+
+export const OutsLabel = styled.span({
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.primary[200],
+    textTransform: 'uppercase',
+    marginRight: theme.spacing.xs,
+});
+
+export const OutIndicator = styled.div<{ active: boolean }>((props) => ({
+    width: '12px',
+    height: '12px',
+    borderRadius: '50%',
+    backgroundColor: props.active ? theme.colors.yellow[400] : 'rgba(255, 255, 255, 0.3)',
+    border: `2px solid ${props.active ? theme.colors.yellow[500] : 'rgba(255, 255, 255, 0.4)'}`,
+    transition: 'all 0.2s',
+}));
+
+// At-bat result buttons for in-play scenarios
+export const InPlayResultsContainer = styled.div({
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.gray[50],
+    borderRadius: theme.borderRadius.md,
+    border: `1px solid ${theme.colors.gray[200]}`,
+});
+
+export const InPlayResultsTitle = styled.div({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[700],
+    marginBottom: theme.spacing.sm,
+});
+
+export const InPlayResultsGrid = styled.div({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: theme.spacing.sm,
+});
+
+export const InPlayResultButton = styled.button<{ isOut?: boolean }>((props) => ({
+    padding: theme.spacing.sm,
+    backgroundColor: props.isOut ? theme.colors.red[50] : theme.colors.green[50],
+    color: props.isOut ? theme.colors.red[700] : theme.colors.green[700],
+    border: `1px solid ${props.isOut ? theme.colors.red[200] : theme.colors.green[200]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+
+    '&:hover': {
+        backgroundColor: props.isOut ? theme.colors.red[100] : theme.colors.green[100],
+        borderColor: props.isOut ? theme.colors.red[300] : theme.colors.green[300],
+    },
+}));
+
+// Inning change notification
+export const InningChangeOverlay = styled.div({
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+});
+
+export const InningChangeModal = styled.div({
+    backgroundColor: 'white',
+    padding: theme.spacing['2xl'],
+    borderRadius: theme.borderRadius.xl,
+    textAlign: 'center',
+    boxShadow: theme.shadows.xl,
+});
+
+export const InningChangeText = styled.div({
+    fontSize: theme.fontSize['2xl'],
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.gray[900],
+    marginBottom: theme.spacing.md,
+});
+
+export const InningChangeSubtext = styled.div({
+    fontSize: theme.fontSize.base,
+    color: theme.colors.gray[600],
+    marginBottom: theme.spacing.lg,
+});
+
+export const InningChangeDismiss = styled.button({
+    padding: `${theme.spacing.sm} ${theme.spacing.xl}`,
+    backgroundColor: theme.colors.primary[600],
+    color: 'white',
+    border: 'none',
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+
+    '&:hover': {
+        backgroundColor: theme.colors.primary[700],
+    },
+});
+
+// Baseball Diamond Modal for In-Play recording
+export const DiamondModalOverlay = styled.div({
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+});
+
+export const DiamondModal = styled.div({
+    backgroundColor: 'white',
+    padding: theme.spacing.xl,
+    borderRadius: theme.borderRadius.xl,
+    boxShadow: theme.shadows.xl,
+    maxWidth: '500px',
+    width: '90%',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+});
+
+export const DiamondModalHeader = styled.div({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+});
+
+export const DiamondModalTitle = styled.h3({
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.gray[900],
+    margin: 0,
+});
+
+export const DiamondModalClose = styled.button({
+    padding: theme.spacing.sm,
+    backgroundColor: 'transparent',
+    border: 'none',
+    fontSize: theme.fontSize.xl,
+    color: theme.colors.gray[500],
+    cursor: 'pointer',
+
+    '&:hover': {
+        color: theme.colors.gray[700],
+    },
+});
+
+export const HitTypeSelector = styled.div({
+    display: 'flex',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+});
+
+export const HitTypeButton = styled.button<{ active: boolean; hitColor: string }>((props) => ({
+    flex: 1,
+    padding: theme.spacing.sm,
+    backgroundColor: props.active ? props.hitColor : theme.colors.gray[100],
+    color: props.active ? 'white' : theme.colors.gray[700],
+    border: `2px solid ${props.active ? props.hitColor : theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+
+    '&:hover': {
+        backgroundColor: props.active ? props.hitColor : theme.colors.gray[200],
+    },
+}));
+
+export const DiamondInstructions = styled.p({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[600],
+    textAlign: 'center',
+    marginBottom: theme.spacing.md,
+});
+
+export const DiamondContainer = styled.div({
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.lg,
+});
+
+export const DiamondResultSection = styled.div({
+    borderTop: `1px solid ${theme.colors.gray[200]}`,
+    paddingTop: theme.spacing.lg,
+});
+
+export const DiamondResultTitle = styled.div({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[700],
+    marginBottom: theme.spacing.sm,
+});
+
+export const DiamondResultGrid = styled.div({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(4, 1fr)',
+    gap: theme.spacing.sm,
+});
+
+export const DiamondResultButton = styled.button<{ isOut?: boolean; disabled?: boolean }>((props) => ({
+    padding: theme.spacing.sm,
+    backgroundColor: props.disabled ? theme.colors.gray[100] : props.isOut ? theme.colors.red[50] : theme.colors.green[50],
+    color: props.disabled ? theme.colors.gray[400] : props.isOut ? theme.colors.red[700] : theme.colors.green[700],
+    border: `1px solid ${props.disabled ? theme.colors.gray[200] : props.isOut ? theme.colors.red[200] : theme.colors.green[200]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
+    cursor: props.disabled ? 'not-allowed' : 'pointer',
+    transition: 'all 0.2s',
+    opacity: props.disabled ? 0.6 : 1,
+
+    '&:hover': {
+        backgroundColor: props.disabled ? theme.colors.gray[100] : props.isOut ? theme.colors.red[100] : theme.colors.green[100],
+    },
+}));
+
+export const OpenDiamondButton = styled.button({
+    width: '100%',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.primary[600],
+    color: 'white',
+    border: 'none',
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+    marginTop: theme.spacing.md,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+
+    '&:hover': {
+        backgroundColor: theme.colors.primary[700],
+    },
+});
