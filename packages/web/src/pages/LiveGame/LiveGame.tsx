@@ -586,14 +586,14 @@ const LiveGame: React.FC = () => {
                     <BackButton onClick={handleBackToDashboard}>← Back to Dashboard</BackButton>
                     <TopBarRight>
                         <GameStatus status={game.status}>
-                            {game.status === 'scheduled' ? 'Scheduled' : game.status === 'in_progress' ? 'In Progress' : 'Completed'}
+                            {game.status === 'scheduled'
+                                ? 'Scheduled'
+                                : game.status === 'in_progress'
+                                  ? 'In Progress'
+                                  : 'Completed'}
                         </GameStatus>
-                        {game.status === 'in_progress' && (
-                            <EndGameButton onClick={handleEndGame}>End Game</EndGameButton>
-                        )}
-                        {game.status === 'completed' && (
-                            <ResumeGameButton onClick={handleResumeGame}>Resume Game</ResumeGameButton>
-                        )}
+                        {game.status === 'in_progress' && <EndGameButton onClick={handleEndGame}>End Game</EndGameButton>}
+                        {game.status === 'completed' && <ResumeGameButton onClick={handleResumeGame}>Resume Game</ResumeGameButton>}
                     </TopBarRight>
                 </TopBar>
 
@@ -641,10 +641,7 @@ const LiveGame: React.FC = () => {
                                 <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
                             )}
                         </PlayerInfo>
-                        <ChangeButton
-                            onClick={() => setShowPitcherSelector(true)}
-                            disabled={game.status === 'completed'}
-                        >
+                        <ChangeButton onClick={() => setShowPitcherSelector(true)} disabled={game.status === 'completed'}>
                             {currentPitcher ? 'Change' : 'Select'}
                         </ChangeButton>
                     </PlayerDisplay>
@@ -660,10 +657,7 @@ const LiveGame: React.FC = () => {
                                 <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
                             )}
                         </PlayerInfo>
-                        <ChangeButton
-                            onClick={() => setShowBatterSelector(true)}
-                            disabled={game.status === 'completed'}
-                        >
+                        <ChangeButton onClick={() => setShowBatterSelector(true)} disabled={game.status === 'completed'}>
                             {currentBatter ? 'Change' : 'Select'}
                         </ChangeButton>
                     </PlayerDisplay>
@@ -841,10 +835,7 @@ const LiveGame: React.FC = () => {
                         <NoAtBatText>
                             {game.status === 'completed' ? 'Game completed - Resume to continue tracking' : 'No active at-bat'}
                         </NoAtBatText>
-                        <StartAtBatButton
-                            onClick={handleStartAtBat}
-                            disabled={needsSetup || game.status === 'completed'}
-                        >
+                        <StartAtBatButton onClick={handleStartAtBat} disabled={needsSetup || game.status === 'completed'}>
                             Start New At-Bat
                         </StartAtBatButton>
                     </NoAtBatContainer>
