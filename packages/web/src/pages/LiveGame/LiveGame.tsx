@@ -366,19 +366,43 @@ const LiveGame: React.FC = () => {
                         setShowInningChange(true);
                         // Reset batting order to top when inning changes
                         setCurrentBattingOrder(1);
-                        const firstBatter = opponentLineup.find((p) => p.batting_order === 1);
-                        setCurrentBatter(firstBatter || null);
+                        const firstBatter = opponentLineup.find((p) => p.batting_order === 1 && !p.replaced_by_id);
+                        if (firstBatter) {
+                            setCurrentBatter(firstBatter);
+                            // Auto-start the next at-bat
+                            await startAtBatForBatter(firstBatter, 0, newInning);
+                        } else {
+                            setCurrentBatter(null);
+                        }
                     } catch (error) {
                         console.error('Failed to advance inning:', error);
                     }
                 } else {
                     setCurrentOuts(newOutCount);
-                    // Advance to next batter
-                    advanceBattingOrder();
+                    // Advance to next batter and auto-start at-bat
+                    const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+                    setCurrentBattingOrder(nextOrder);
+                    const nextBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
+                    if (nextBatter) {
+                        setCurrentBatter(nextBatter);
+                        // Auto-start the next at-bat
+                        await startAtBatForBatter(nextBatter, newOutCount, currentInning);
+                    } else {
+                        setCurrentBatter(null);
+                    }
                 }
             } else {
-                // Not an out (walk, hit, etc.) - advance to next batter
-                advanceBattingOrder();
+                // Not an out (walk, hit, etc.) - advance to next batter and auto-start
+                const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+                setCurrentBattingOrder(nextOrder);
+                const nextBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
+                if (nextBatter) {
+                    setCurrentBatter(nextBatter);
+                    // Auto-start the next at-bat
+                    await startAtBatForBatter(nextBatter, currentOuts, currentInning);
+                } else {
+                    setCurrentBatter(null);
+                }
             }
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : 'Failed to end at-bat');
@@ -393,6 +417,31 @@ const LiveGame: React.FC = () => {
         await handleEndAtBat(result);
     };
 
+    // Helper to start an at-bat for a specific batter
+    const startAtBatForBatter = async (batter: OpponentLineupPlayer, outs: number, inning: typeof currentInning) => {
+        if (!gameId || !currentPitcher || !inning) {
+            return false;
+        }
+
+        try {
+            await dispatch(
+                createAtBat({
+                    game_id: gameId,
+                    inning_id: inning.id,
+                    opponent_batter_id: batter.id,
+                    pitcher_id: currentPitcher.player_id,
+                    balls: 0,
+                    strikes: 0,
+                    outs_before: outs,
+                })
+            ).unwrap();
+            return true;
+        } catch (error) {
+            console.error('Failed to start at-bat:', error);
+            return false;
+        }
+    };
+
     const handleStartAtBat = async () => {
         if (!gameId || !currentPitcher || !currentBatter) {
             alert('Please select both a pitcher and a batter first');
@@ -404,20 +453,9 @@ const LiveGame: React.FC = () => {
             return;
         }
 
-        try {
-            await dispatch(
-                createAtBat({
-                    game_id: gameId,
-                    inning_id: currentInning.id,
-                    opponent_batter_id: currentBatter.id,
-                    pitcher_id: currentPitcher.player_id,
-                    balls: 0,
-                    strikes: 0,
-                    outs_before: currentOuts,
-                })
-            ).unwrap();
-        } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : 'Failed to start at-bat');
+        const success = await startAtBatForBatter(currentBatter, currentOuts, currentInning);
+        if (!success) {
+            alert('Failed to start at-bat');
         }
     };
 
@@ -429,20 +467,6 @@ const LiveGame: React.FC = () => {
     const handleBatterSelected = (batter: OpponentLineupPlayer) => {
         setCurrentBatter(batter);
         setShowBatterSelector(false);
-    };
-
-    const advanceBattingOrder = () => {
-        // Advance to next batter in lineup (1-9, then wrap to 1)
-        const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
-        setCurrentBattingOrder(nextOrder);
-
-        // Auto-select the next batter from the lineup if available
-        const nextBatter = opponentLineup.find((p) => p.batting_order === nextOrder);
-        if (nextBatter) {
-            setCurrentBatter(nextBatter);
-        } else {
-            setCurrentBatter(null); // Clear batter if not found in lineup
-        }
     };
 
     const handleStartGame = async () => {
