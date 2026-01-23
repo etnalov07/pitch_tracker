@@ -111,6 +111,59 @@ export interface PitcherGameStats {
     };
 }
 
+// Pitcher game log statistics (per pitch type)
+export interface PitchTypeGameStats {
+    pitch_type: string;
+    count: number;
+    strikes: number;
+    balls: number;
+    strike_percentage: number;
+    target_accuracy_percentage: number | null;
+    top_velocity: number | null;
+    avg_velocity: number | null;
+}
+
+// Pitcher game log entry
+export interface PitcherGameLog {
+    game_id: string;
+    game_date: string;
+    opponent_name: string;
+    location: string | null;
+    game_status: GameStatus;
+    batters_faced: number;
+    total_pitches: number;
+    balls: number;
+    strikes: number;
+    strike_percentage: number;
+    target_accuracy_percentage: number | null;
+    pitch_type_breakdown: PitchTypeGameStats[];
+}
+
+// Full pitcher profile with career stats and game logs
+export interface PitcherProfile {
+    pitcher_id: string;
+    first_name: string;
+    last_name: string;
+    jersey_number: number | null;
+    throws: ThrowingHand;
+    team_id: string;
+    team_name: string;
+    pitch_types: string[];
+    career_stats: {
+        total_games: number;
+        total_pitches: number;
+        total_batters_faced: number;
+        overall_strike_percentage: number;
+        overall_target_accuracy: number | null;
+    };
+    game_logs: PitcherGameLog[];
+}
+
+export interface PitcherGameLogsResponse {
+    game_logs: PitcherGameLog[];
+    total_count: number;
+}
+
 // ============================================================================
 // Game Types
 // ============================================================================

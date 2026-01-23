@@ -6,6 +6,7 @@ import GameSetup from './pages/GameSetup/GameSetup';
 import LiveGame from './pages/LiveGame/LiveGame';
 import Login from './pages/Login/Login';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
+import PitcherProfile from './pages/PitcherProfile';
 import TeamDetail from './pages/TeamDetail/TeamDetail';
 import Teams from './pages/Teams/Teams';
 import { useAppSelector } from './state';
@@ -66,6 +67,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <TeamDetail />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/teams/:team_id/pitcher/:pitcher_id"
+                    element={
+                        <ProtectedRoute>
+                            <PitcherProfile />
                         </ProtectedRoute>
                     }
                 />

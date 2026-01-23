@@ -47,6 +47,7 @@ import {
     Handedness,
     ActionButtons,
     EditButton,
+    ProfileButton,
     RemoveButton,
     EmptyState,
     EmptyText,
@@ -421,6 +422,13 @@ const TeamDetail: React.FC = () => {
                                         </Td>
                                         <Td>
                                             <ActionButtons>
+                                                {player.primary_position === 'P' && (
+                                                    <ProfileButton
+                                                        onClick={() => navigate(`/teams/${team_id}/pitcher/${player.id}`)}
+                                                    >
+                                                        Profile
+                                                    </ProfileButton>
+                                                )}
                                                 <EditButton onClick={() => handleEdit(player)}>Edit</EditButton>
                                                 <RemoveButton
                                                     onClick={() =>

@@ -14,6 +14,8 @@ router.get('/batter/:batterId/spray-chart', analyticsController.getBatterSprayCh
 
 // Pitcher analytics
 router.get('/pitcher/:pitcherId/tendencies', analyticsController.getPitcherTendencies.bind(analyticsController));
+router.get('/pitcher/:pitcherId/game-logs', analyticsController.getPitcherGameLogs.bind(analyticsController));
+router.get('/pitcher/:pitcherId/profile', analyticsController.getPitcherProfile.bind(analyticsController));
 
 // Game state
 router.get('/game/:gameId/state', analyticsController.getGameState.bind(analyticsController));

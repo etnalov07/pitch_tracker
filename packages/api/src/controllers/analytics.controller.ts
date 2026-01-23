@@ -87,6 +87,33 @@ export class AnalyticsController {
       next(error);
     }
   }
+
+  async getPitcherGameLogs(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { pitcherId } = req.params;
+      const { limit = '10', offset = '0' } = req.query;
+
+      const gameLogs = await analyticsService.getPitcherGameLogs(
+        pitcherId as string,
+        parseInt(limit as string),
+        parseInt(offset as string)
+      );
+
+      res.status(200).json(gameLogs);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPitcherProfile(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { pitcherId } = req.params;
+      const profile = await analyticsService.getPitcherProfile(pitcherId as string);
+      res.status(200).json({ profile });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new AnalyticsController();

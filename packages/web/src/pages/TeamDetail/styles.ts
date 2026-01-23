@@ -280,6 +280,21 @@ export const EditButton = styled.button({
     },
 });
 
+export const ProfileButton = styled.button({
+    background: 'none',
+    border: `1px solid ${theme.colors.green[400]}`,
+    color: theme.colors.green[600],
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
+    cursor: 'pointer',
+    fontWeight: theme.fontWeight.medium,
+
+    '&:hover': {
+        background: theme.colors.green[50],
+    },
+});
+
 export const RemoveButton = styled.button({
     background: 'none',
     border: `1px solid ${theme.colors.red[300]}`,

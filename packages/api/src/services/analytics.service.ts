@@ -226,7 +226,7 @@ export class AnalyticsService {
   // Batter vs pitcher matchup stats
   async getMatchupStats(batterId: string, pitcherId: string): Promise<any> {
     const result = await query(
-      `SELECT 
+      `SELECT
         COUNT(ab.id) as total_at_bats,
         COUNT(CASE WHEN ab.result IN ('single', 'double', 'triple', 'home_run') THEN 1 END) as hits,
         COUNT(CASE WHEN ab.result = 'strikeout' THEN 1 END) as strikeouts,
@@ -237,8 +237,241 @@ export class AnalyticsService {
       WHERE ab.batter_id = $1 AND ab.pitcher_id = $2`,
       [batterId, pitcherId]
     );
-    
+
     return result.rows[0];
+  }
+
+  // Threshold for target accuracy (within 0.15 units ~ half ball width)
+  private readonly TARGET_ACCURACY_THRESHOLD = 0.15;
+
+  // Get pitcher game logs with per-game statistics
+  async getPitcherGameLogs(pitcherId: string, limit: number = 10, offset: number = 0): Promise<any> {
+    // Get games where this pitcher pitched
+    const gamesResult = await query(`
+      SELECT DISTINCT
+        g.id as game_id,
+        g.game_date,
+        COALESCE(g.opponent_name, at.name) as opponent_name,
+        g.location,
+        g.status as game_status
+      FROM games g
+      LEFT JOIN teams at ON g.away_team_id = at.id
+      JOIN pitches p ON p.game_id = g.id AND p.pitcher_id = $1
+      ORDER BY g.game_date DESC
+      LIMIT $2 OFFSET $3
+    `, [pitcherId, limit, offset]);
+
+    const gameLogs = [];
+
+    for (const game of gamesResult.rows) {
+      // Get aggregate stats for this game
+      const statsResult = await query(`
+        SELECT
+          COUNT(DISTINCT ab.opponent_batter_id) as batters_faced,
+          COUNT(*) as total_pitches,
+          COUNT(CASE WHEN p.pitch_result = 'ball' THEN 1 END) as balls,
+          COUNT(CASE WHEN p.pitch_result != 'ball' THEN 1 END) as strikes,
+          COUNT(CASE
+            WHEN p.target_location_x IS NOT NULL
+            AND p.target_location_y IS NOT NULL
+            AND p.location_x IS NOT NULL
+            AND p.location_y IS NOT NULL
+            AND SQRT(
+              POWER(p.location_x - p.target_location_x, 2) +
+              POWER(p.location_y - p.target_location_y, 2)
+            ) <= $3
+            THEN 1
+          END) as accurate_pitches,
+          COUNT(CASE
+            WHEN p.target_location_x IS NOT NULL
+            AND p.target_location_y IS NOT NULL
+            THEN 1
+          END) as targeted_pitches
+        FROM pitches p
+        LEFT JOIN at_bats ab ON p.at_bat_id = ab.id
+        WHERE p.pitcher_id = $1 AND p.game_id = $2
+      `, [pitcherId, game.game_id, this.TARGET_ACCURACY_THRESHOLD]);
+
+      const stats = statsResult.rows[0];
+      const totalPitches = parseInt(stats.total_pitches) || 0;
+      const strikes = parseInt(stats.strikes) || 0;
+      const strike_percentage = totalPitches > 0
+        ? Math.round((strikes / totalPitches) * 100)
+        : 0;
+      const targetedPitches = parseInt(stats.targeted_pitches) || 0;
+      const accuratePitches = parseInt(stats.accurate_pitches) || 0;
+      const target_accuracy_percentage = targetedPitches > 0
+        ? Math.round((accuratePitches / targetedPitches) * 100)
+        : null;
+
+      // Get pitch type breakdown for this game
+      const pitchTypeResult = await query(`
+        SELECT
+          p.pitch_type,
+          COUNT(*) as count,
+          COUNT(CASE WHEN p.pitch_result != 'ball' THEN 1 END) as strikes,
+          COUNT(CASE WHEN p.pitch_result = 'ball' THEN 1 END) as balls,
+          MAX(p.velocity) as top_velocity,
+          AVG(p.velocity) as avg_velocity,
+          COUNT(CASE
+            WHEN p.target_location_x IS NOT NULL
+            AND p.target_location_y IS NOT NULL
+            AND p.location_x IS NOT NULL
+            AND p.location_y IS NOT NULL
+            AND SQRT(
+              POWER(p.location_x - p.target_location_x, 2) +
+              POWER(p.location_y - p.target_location_y, 2)
+            ) <= $3
+            THEN 1
+          END) as accurate_pitches,
+          COUNT(CASE
+            WHEN p.target_location_x IS NOT NULL
+            AND p.target_location_y IS NOT NULL
+            THEN 1
+          END) as targeted_pitches
+        FROM pitches p
+        WHERE p.pitcher_id = $1 AND p.game_id = $2
+        GROUP BY p.pitch_type
+        ORDER BY count DESC
+      `, [pitcherId, game.game_id, this.TARGET_ACCURACY_THRESHOLD]);
+
+      const pitch_type_breakdown = pitchTypeResult.rows.map(row => {
+        const count = parseInt(row.count) || 0;
+        const rowStrikes = parseInt(row.strikes) || 0;
+        const rowTargeted = parseInt(row.targeted_pitches) || 0;
+        const rowAccurate = parseInt(row.accurate_pitches) || 0;
+
+        return {
+          pitch_type: row.pitch_type,
+          count,
+          strikes: rowStrikes,
+          balls: parseInt(row.balls) || 0,
+          strike_percentage: count > 0
+            ? Math.round((rowStrikes / count) * 100)
+            : 0,
+          target_accuracy_percentage: rowTargeted > 0
+            ? Math.round((rowAccurate / rowTargeted) * 100)
+            : null,
+          top_velocity: row.top_velocity ? parseFloat(row.top_velocity) : null,
+          avg_velocity: row.avg_velocity ? parseFloat(parseFloat(row.avg_velocity).toFixed(1)) : null,
+        };
+      });
+
+      gameLogs.push({
+        game_id: game.game_id,
+        game_date: game.game_date,
+        opponent_name: game.opponent_name || 'Unknown',
+        location: game.location,
+        game_status: game.game_status,
+        batters_faced: parseInt(stats.batters_faced) || 0,
+        total_pitches: totalPitches,
+        balls: parseInt(stats.balls) || 0,
+        strikes,
+        strike_percentage,
+        target_accuracy_percentage,
+        pitch_type_breakdown,
+      });
+    }
+
+    // Get total count for pagination
+    const countResult = await query(`
+      SELECT COUNT(DISTINCT g.id) as total
+      FROM games g
+      JOIN pitches p ON p.game_id = g.id AND p.pitcher_id = $1
+    `, [pitcherId]);
+
+    return {
+      game_logs: gameLogs,
+      total_count: parseInt(countResult.rows[0].total) || 0,
+    };
+  }
+
+  // Get full pitcher profile with career stats and recent game logs
+  async getPitcherProfile(pitcherId: string): Promise<any> {
+    // Get player info with team
+    const playerResult = await query(`
+      SELECT
+        p.id as pitcher_id,
+        p.first_name,
+        p.last_name,
+        p.jersey_number,
+        p.throws,
+        p.team_id,
+        t.name as team_name
+      FROM players p
+      JOIN teams t ON p.team_id = t.id
+      WHERE p.id = $1
+    `, [pitcherId]);
+
+    if (playerResult.rows.length === 0) {
+      throw new Error('Pitcher not found');
+    }
+
+    const player = playerResult.rows[0];
+
+    // Get pitch types
+    const pitchTypesResult = await query(`
+      SELECT pitch_type FROM pitcher_pitch_types
+      WHERE player_id = $1 ORDER BY pitch_type
+    `, [pitcherId]);
+    const pitch_types = pitchTypesResult.rows.map((r: any) => r.pitch_type);
+
+    // Get career stats
+    const careerResult = await query(`
+      SELECT
+        COUNT(DISTINCT p.game_id) as total_games,
+        COUNT(*) as total_pitches,
+        COUNT(DISTINCT ab.opponent_batter_id) as total_batters_faced,
+        COUNT(CASE WHEN p.pitch_result != 'ball' THEN 1 END) as total_strikes,
+        COUNT(CASE
+          WHEN p.target_location_x IS NOT NULL
+          AND p.target_location_y IS NOT NULL
+          AND p.location_x IS NOT NULL
+          AND p.location_y IS NOT NULL
+          AND SQRT(
+            POWER(p.location_x - p.target_location_x, 2) +
+            POWER(p.location_y - p.target_location_y, 2)
+          ) <= $2
+          THEN 1
+        END) as accurate_pitches,
+        COUNT(CASE
+          WHEN p.target_location_x IS NOT NULL
+          AND p.target_location_y IS NOT NULL
+          THEN 1
+        END) as targeted_pitches
+      FROM pitches p
+      LEFT JOIN at_bats ab ON p.at_bat_id = ab.id
+      WHERE p.pitcher_id = $1
+    `, [pitcherId, this.TARGET_ACCURACY_THRESHOLD]);
+
+    const career = careerResult.rows[0];
+    const totalPitches = parseInt(career.total_pitches) || 0;
+    const totalStrikes = parseInt(career.total_strikes) || 0;
+    const targetedPitches = parseInt(career.targeted_pitches) || 0;
+    const accuratePitches = parseInt(career.accurate_pitches) || 0;
+
+    const overall_strike_percentage = totalPitches > 0
+      ? Math.round((totalStrikes / totalPitches) * 100)
+      : 0;
+    const overall_target_accuracy = targetedPitches > 0
+      ? Math.round((accuratePitches / targetedPitches) * 100)
+      : null;
+
+    // Get recent game logs (last 10)
+    const gameLogsData = await this.getPitcherGameLogs(pitcherId, 10, 0);
+
+    return {
+      ...player,
+      pitch_types,
+      career_stats: {
+        total_games: parseInt(career.total_games) || 0,
+        total_pitches: totalPitches,
+        total_batters_faced: parseInt(career.total_batters_faced) || 0,
+        overall_strike_percentage,
+        overall_target_accuracy,
+      },
+      game_logs: gameLogsData.game_logs,
+    };
   }
 }
 

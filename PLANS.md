@@ -66,18 +66,22 @@
   5. Record **result** (ball, strike, in play, etc.)
 - More natural flow that matches how a coach thinks about pitching
 
-### 7) Pitcher Profile - Game Logs
-- Add historical game logs to pitcher profile page
-- Per-game statistics:
-  - Batters faced
-  - Total pitches
-  - Balls / Strikes / Strike %
-  - Breakdown by pitch type:
-    - Count thrown
-    - Strike %
-    - Desired location accuracy %
-    - Top/Avg velocity
-- Ability to drill down into individual games
+### ~~7) Pitcher Profile - Game Logs~~ ✅ DONE
+- ~~Add historical game logs to pitcher profile page~~
+- ~~Per-game statistics:~~
+  - ~~Batters faced~~
+  - ~~Total pitches~~
+  - ~~Balls / Strikes / Strike %~~
+  - ~~Breakdown by pitch type:~~
+    - ~~Count thrown~~
+    - ~~Strike %~~
+    - ~~Desired location accuracy %~~
+    - ~~Top/Avg velocity~~
+- ~~Ability to drill down into individual games~~
+- Route: `/teams/:team_id/pitcher/:pitcher_id`
+- Profile button added to TeamDetail roster for pitchers
+- Career stats card with games, pitches, batters faced, strike %, accuracy
+- Game logs table with drill-down modal for pitch type breakdown
 
 ### 8) Batter Scouting Notes
 - Keep notes on each batter's tendencies
