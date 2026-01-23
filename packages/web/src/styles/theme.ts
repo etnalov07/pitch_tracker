@@ -80,14 +80,14 @@ export const theme = {
         full: '9999px',
     },
     fontSize: {
-        xs: '0.7rem',
-        sm: '0.8rem',
-        base: '0.875rem',
-        lg: '1rem',
-        xl: '1.125rem',
-        '2xl': '1.25rem',
-        '3xl': '1.5rem',
-        '4xl': '1.875rem',
+        xs: '0.5rem', // 8px
+        sm: '0.5625rem', // 9px
+        base: '0.625rem', // 10px
+        lg: '0.7rem', // 11px
+        xl: '0.8rem', // 13px
+        '2xl': '0.875rem', // 14px
+        '3xl': '1rem', // 16px
+        '4xl': '1.25rem', // 20px
     },
     fontWeight: {
         normal: 400,
