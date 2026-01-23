@@ -102,9 +102,6 @@ import {
     PitchTypeSelectorTitle,
     PitchTypeGrid,
     PitchTypeButton,
-    CurrentStepCard,
-    CurrentStepTitle,
-    CurrentStepDescription,
 } from './styles';
 
 const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
@@ -642,24 +639,6 @@ const LiveGame: React.FC = () => {
                                 ))}
                             </PitchTypeGrid>
                         </PitchTypeSelector>
-
-                        {/* Steps 2-3: Target & Location via Strike Zone */}
-                        <CurrentStepCard stepColor={!pitchLocation ? theme.colors.primary[600] : theme.colors.green[500]}>
-                            <CurrentStepTitle>
-                                {!targetLocation && !pitchLocation
-                                    ? 'Step 2: Click to Set Target Location (optional)'
-                                    : !pitchLocation
-                                      ? 'Step 3: Click to Set Actual Pitch Location'
-                                      : 'Location Set'}
-                            </CurrentStepTitle>
-                            <CurrentStepDescription>
-                                {!targetLocation && !pitchLocation
-                                    ? 'Click on the zone where the pitcher intended to throw. Skip by clicking directly for actual location.'
-                                    : !pitchLocation
-                                      ? 'Click where the pitch actually ended up. Right-click or double-click to clear target.'
-                                      : `Pitch located at (${pitchLocation.x.toFixed(2)}, ${pitchLocation.y.toFixed(2)})`}
-                            </CurrentStepDescription>
-                        </CurrentStepCard>
 
                         <StrikeZoneRow>
                             <StrikeZoneContainer>
