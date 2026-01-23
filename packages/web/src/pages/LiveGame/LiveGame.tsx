@@ -39,10 +39,8 @@ import {
     StrikeZoneRow,
     StrikeZoneContainer,
     PitchForm,
-    FormRow,
     FormGroup,
     Label,
-    Select,
     Input,
     ResultButtons,
     ResultButton,
@@ -91,6 +89,18 @@ import {
     DiamondResultButton,
     OpenDiamondButton,
     HeatZoneToggle,
+    StepIndicator,
+    Step,
+    StepNumber,
+    StepLabel,
+    StepConnector,
+    PitchTypeSelector,
+    PitchTypeSelectorTitle,
+    PitchTypeGrid,
+    PitchTypeButton,
+    CurrentStepCard,
+    CurrentStepTitle,
+    CurrentStepDescription,
 } from './styles';
 
 const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
@@ -579,6 +589,74 @@ const LiveGame: React.FC = () => {
                             </CountValue>
                         </CountDisplay>
 
+                        {/* Step Indicator */}
+                        <StepIndicator>
+                            <Step completed={!!pitchType} active={!pitchType}>
+                                <StepNumber completed={!!pitchType} active={!pitchType}>
+                                    {pitchType ? '✓' : '1'}
+                                </StepNumber>
+                                <StepLabel active={!pitchType}>Type</StepLabel>
+                            </Step>
+                            <StepConnector completed={!!pitchType} />
+                            <Step completed={!!targetLocation} active={!!pitchType && !targetLocation && !pitchLocation}>
+                                <StepNumber completed={!!targetLocation} active={!!pitchType && !targetLocation && !pitchLocation}>
+                                    {targetLocation ? '✓' : '2'}
+                                </StepNumber>
+                                <StepLabel active={!!pitchType && !targetLocation && !pitchLocation}>Target</StepLabel>
+                            </Step>
+                            <StepConnector completed={!!targetLocation || !!pitchLocation} />
+                            <Step completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>
+                                <StepNumber completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>
+                                    {pitchLocation ? '✓' : '3'}
+                                </StepNumber>
+                                <StepLabel active={!!pitchType && !pitchLocation}>Location</StepLabel>
+                            </Step>
+                            <StepConnector completed={!!pitchLocation} />
+                            <Step completed={!!velocity} active={!!pitchLocation && !velocity}>
+                                <StepNumber completed={!!velocity} active={!!pitchLocation && !velocity}>
+                                    {velocity ? '✓' : '4'}
+                                </StepNumber>
+                                <StepLabel active={!!pitchLocation && !velocity}>Velocity</StepLabel>
+                            </Step>
+                            <StepConnector completed={!!velocity || !!pitchLocation} />
+                            <Step completed={!!pitchResult} active={!!pitchLocation}>
+                                <StepNumber completed={!!pitchResult} active={!!pitchLocation}>
+                                    {pitchResult ? '✓' : '5'}
+                                </StepNumber>
+                                <StepLabel active={!!pitchLocation}>Result</StepLabel>
+                            </Step>
+                        </StepIndicator>
+
+                        {/* Step 1: Pitch Type Selection */}
+                        <PitchTypeSelector>
+                            <PitchTypeSelectorTitle>Step 1: Select Pitch Type</PitchTypeSelectorTitle>
+                            <PitchTypeGrid>
+                                {availablePitchTypes.map(({ value, label }) => (
+                                    <PitchTypeButton key={value} active={pitchType === value} onClick={() => setPitchType(value)}>
+                                        {label}
+                                    </PitchTypeButton>
+                                ))}
+                            </PitchTypeGrid>
+                        </PitchTypeSelector>
+
+                        {/* Steps 2-3: Target & Location via Strike Zone */}
+                        <CurrentStepCard stepColor={!pitchLocation ? theme.colors.primary[600] : theme.colors.green[500]}>
+                            <CurrentStepTitle>
+                                {!targetLocation && !pitchLocation
+                                    ? 'Step 2: Click to Set Target Location (optional)'
+                                    : !pitchLocation
+                                      ? 'Step 3: Click to Set Actual Pitch Location'
+                                      : 'Location Set'}
+                            </CurrentStepTitle>
+                            <CurrentStepDescription>
+                                {!targetLocation && !pitchLocation
+                                    ? 'Click on the zone where the pitcher intended to throw. Skip by clicking directly for actual location.'
+                                    : !pitchLocation
+                                      ? 'Click where the pitch actually ended up. Right-click or double-click to clear target.'
+                                      : `Pitch located at (${pitchLocation.x.toFixed(2)}, ${pitchLocation.y.toFixed(2)})`}
+                            </CurrentStepDescription>
+                        </CurrentStepCard>
+
                         <StrikeZoneRow>
                             <StrikeZoneContainer>
                                 <HeatZoneToggle active={showHeatZones} onClick={() => setShowHeatZones(!showHeatZones)}>
@@ -596,33 +674,22 @@ const LiveGame: React.FC = () => {
                             </StrikeZoneContainer>
 
                             <PitchForm>
-                                <FormRow>
-                                    <FormGroup>
-                                        <Label>Pitch Type</Label>
-                                        <Select value={pitchType} onChange={(e) => setPitchType(e.target.value as PitchType)}>
-                                            {availablePitchTypes.map(({ value, label }) => (
-                                                <option key={value} value={value}>
-                                                    {label}
-                                                </option>
-                                            ))}
-                                        </Select>
-                                    </FormGroup>
-
-                                    <FormGroup>
-                                        <Label>Velocity (mph)</Label>
-                                        <Input
-                                            type="number"
-                                            value={velocity}
-                                            onChange={(e) => setVelocity(e.target.value)}
-                                            placeholder="85"
-                                            min="0"
-                                            max="120"
-                                        />
-                                    </FormGroup>
-                                </FormRow>
-
+                                {/* Step 4: Velocity */}
                                 <FormGroup>
-                                    <Label>Result</Label>
+                                    <Label>Step 4: Velocity (mph) - Optional</Label>
+                                    <Input
+                                        type="number"
+                                        value={velocity}
+                                        onChange={(e) => setVelocity(e.target.value)}
+                                        placeholder="85"
+                                        min="0"
+                                        max="120"
+                                    />
+                                </FormGroup>
+
+                                {/* Step 5: Result */}
+                                <FormGroup>
+                                    <Label>Step 5: Result</Label>
                                     <ResultButtons>
                                         <ResultButton
                                             active={pitchResult === 'ball'}

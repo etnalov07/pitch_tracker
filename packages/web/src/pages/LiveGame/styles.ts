@@ -736,3 +736,191 @@ export const HeatZoneToggle = styled.button<{ active?: boolean }>((props) => ({
         backgroundColor: props.active ? theme.colors.primary[700] : theme.colors.gray[200],
     },
 }));
+
+// Pitch Flow Step Indicator
+export const PitchFlowContainer = styled.div({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.lg,
+});
+
+export const StepIndicator = styled.div({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+    backgroundColor: 'white',
+    borderRadius: theme.borderRadius.lg,
+    boxShadow: theme.shadows.sm,
+    marginBottom: theme.spacing.md,
+});
+
+export const Step = styled.div<{ active?: boolean; completed?: boolean }>((props) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    opacity: props.active || props.completed ? 1 : 0.4,
+}));
+
+export const StepNumber = styled.div<{ active?: boolean; completed?: boolean }>((props) => ({
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    backgroundColor: props.completed ? theme.colors.green[500] : props.active ? theme.colors.primary[600] : theme.colors.gray[200],
+    color: props.completed || props.active ? 'white' : theme.colors.gray[500],
+    transition: 'all 0.2s',
+}));
+
+export const StepLabel = styled.span<{ active?: boolean }>((props) => ({
+    fontSize: theme.fontSize.sm,
+    fontWeight: props.active ? theme.fontWeight.semibold : theme.fontWeight.medium,
+    color: props.active ? theme.colors.gray[900] : theme.colors.gray[600],
+
+    [`@media (max-width: ${theme.breakpoints.md})`]: {
+        display: 'none',
+    },
+}));
+
+export const StepConnector = styled.div<{ completed?: boolean }>((props) => ({
+    flex: 1,
+    height: '2px',
+    backgroundColor: props.completed ? theme.colors.green[500] : theme.colors.gray[200],
+    margin: `0 ${theme.spacing.sm}`,
+    transition: 'all 0.2s',
+}));
+
+// Pitch Type Selector (prominent display)
+export const PitchTypeSelector = styled.div({
+    backgroundColor: 'white',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    boxShadow: theme.shadows.md,
+});
+
+export const PitchTypeSelectorTitle = styled.div({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[700],
+    marginBottom: theme.spacing.md,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+});
+
+export const PitchTypeGrid = styled.div({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
+    gap: theme.spacing.sm,
+});
+
+export const PitchTypeButton = styled.button<{ active?: boolean }>((props) => ({
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    backgroundColor: props.active ? theme.colors.primary[600] : theme.colors.gray[50],
+    color: props.active ? 'white' : theme.colors.gray[700],
+    border: `2px solid ${props.active ? theme.colors.primary[600] : theme.colors.gray[200]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+
+    '&:hover': {
+        backgroundColor: props.active ? theme.colors.primary[700] : theme.colors.gray[100],
+        borderColor: props.active ? theme.colors.primary[700] : theme.colors.gray[300],
+    },
+}));
+
+// Zone instruction overlay
+export const ZoneInstructionOverlay = styled.div<{ visible?: boolean }>((props) => ({
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    display: props.visible ? 'flex' : 'none',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.borderRadius.lg,
+    pointerEvents: 'none',
+}));
+
+export const ZoneInstructionText = styled.div({
+    color: 'white',
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    textAlign: 'center',
+    padding: theme.spacing.lg,
+});
+
+// Current step highlight card
+export const CurrentStepCard = styled.div<{ stepColor?: string }>((props) => ({
+    backgroundColor: 'white',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    boxShadow: theme.shadows.md,
+    borderLeft: `4px solid ${props.stepColor || theme.colors.primary[600]}`,
+}));
+
+export const CurrentStepTitle = styled.div({
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[800],
+    marginBottom: theme.spacing.sm,
+});
+
+export const CurrentStepDescription = styled.div({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[600],
+});
+
+// Velocity and result row (combined for space efficiency)
+export const VelocityResultRow = styled.div({
+    display: 'flex',
+    gap: theme.spacing.lg,
+    alignItems: 'flex-start',
+
+    [`@media (max-width: ${theme.breakpoints.md})`]: {
+        flexDirection: 'column',
+    },
+});
+
+export const VelocityInput = styled.div({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.sm,
+    minWidth: '120px',
+});
+
+export const ResultSection = styled.div({
+    flex: 1,
+});
+
+// Status badges for completed steps
+export const CompletedBadge = styled.span({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    backgroundColor: theme.colors.green[100],
+    color: theme.colors.green[700],
+    borderRadius: theme.borderRadius.full,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
+});
+
+export const PendingBadge = styled.span({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    backgroundColor: theme.colors.gray[100],
+    color: theme.colors.gray[500],
+    borderRadius: theme.borderRadius.full,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
+});

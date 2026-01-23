@@ -61,14 +61,17 @@
 - Clear target via button, right-click, or double-click
 - Previous targets shown with reduced opacity (30%)
 
-### 6) Pitch Flow Redesign
-- Reorder the pitch entry workflow:
-  1. Select **pitch type** first
-  2. Select **desired location** (where pitcher intended to throw)
-  3. Record **actual pitch location** (where it ended up)
-  4. Enter **velocity**
-  5. Record **result** (ball, strike, in play, etc.)
-- More natural flow that matches how a coach thinks about pitching
+### ~~6) Pitch Flow Redesign~~ ✅ DONE
+- ~~Reorder the pitch entry workflow:~~
+  1. ~~Select **pitch type** first~~
+  2. ~~Select **desired location** (where pitcher intended to throw)~~
+  3. ~~Record **actual pitch location** (where it ended up)~~
+  4. ~~Enter **velocity**~~
+  5. ~~Record **result** (ball, strike, in play, etc.)~~
+- ~~More natural flow that matches how a coach thinks about pitching~~
+- Step indicator showing progress through workflow
+- Pitch type grid selector at top of pitch entry
+- Guided instructions for target and actual location
 
 ### ~~7) Pitcher Profile - Game Logs~~ ✅ DONE
 - ~~Add historical game logs to pitcher profile page~~
