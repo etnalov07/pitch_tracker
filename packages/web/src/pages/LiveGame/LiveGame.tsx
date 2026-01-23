@@ -88,7 +88,11 @@ import {
     DiamondResultGrid,
     DiamondResultButton,
     OpenDiamondButton,
-    HeatZoneToggle,
+    HeatZoneToggleContainer,
+    HeatZoneToggleLabel,
+    ToggleSwitch,
+    ToggleSwitchInput,
+    ToggleSwitchSlider,
     StepIndicator,
     Step,
     StepNumber,
@@ -659,11 +663,17 @@ const LiveGame: React.FC = () => {
 
                         <StrikeZoneRow>
                             <StrikeZoneContainer>
-                                <HeatZoneToggle active={showHeatZones} onClick={() => setShowHeatZones(!showHeatZones)}>
-                                    {showHeatZones ? 'Hide' : 'Show'} Heat Zones
-                                    {showHeatZones &&
-                                        ` (${ALL_PITCH_TYPES.find((pt) => pt.value === pitchType)?.label || pitchType})`}
-                                </HeatZoneToggle>
+                                <HeatZoneToggleContainer>
+                                    <HeatZoneToggleLabel>{showHeatZones ? 'Hide' : 'Show'} Heat Zones</HeatZoneToggleLabel>
+                                    <ToggleSwitch>
+                                        <ToggleSwitchInput
+                                            type="checkbox"
+                                            checked={showHeatZones}
+                                            onChange={() => setShowHeatZones(!showHeatZones)}
+                                        />
+                                        <ToggleSwitchSlider />
+                                    </ToggleSwitch>
+                                </HeatZoneToggleContainer>
                                 <StrikeZone
                                     onLocationSelect={handleLocationSelect}
                                     onTargetSelect={handleTargetSelect}

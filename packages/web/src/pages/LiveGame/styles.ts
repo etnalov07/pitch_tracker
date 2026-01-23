@@ -719,23 +719,71 @@ export const OpenDiamondButton = styled.button({
     },
 });
 
-export const HeatZoneToggle = styled.button<{ active?: boolean }>((props) => ({
-    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-    backgroundColor: props.active ? theme.colors.primary[600] : theme.colors.gray[100],
-    color: props.active ? 'white' : theme.colors.gray[700],
-    border: `1px solid ${props.active ? theme.colors.primary[600] : theme.colors.gray[300]}`,
-    borderRadius: theme.borderRadius.md,
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
+export const HeatZoneToggleContainer = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
     marginBottom: theme.spacing.sm,
     alignSelf: 'flex-end',
+});
 
-    '&:hover': {
-        backgroundColor: props.active ? theme.colors.primary[700] : theme.colors.gray[200],
+export const HeatZoneToggleLabel = styled.span({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.gray[700],
+    minWidth: '110px',
+});
+
+export const ToggleSwitch = styled.label({
+    position: 'relative',
+    display: 'inline-block',
+    width: '44px',
+    height: '24px',
+    flexShrink: 0,
+});
+
+export const ToggleSwitchInput = styled.input({
+    opacity: 0,
+    width: 0,
+    height: 0,
+
+    '&:checked + span': {
+        backgroundColor: theme.colors.primary[600],
     },
-}));
+
+    '&:checked + span:before': {
+        transform: 'translateX(20px)',
+    },
+
+    '&:focus + span': {
+        boxShadow: `0 0 0 3px ${theme.colors.primary[100]}`,
+    },
+});
+
+export const ToggleSwitchSlider = styled.span({
+    position: 'absolute',
+    cursor: 'pointer',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: theme.colors.gray[300],
+    transition: '0.2s',
+    borderRadius: '24px',
+
+    '&:before': {
+        position: 'absolute',
+        content: '""',
+        height: '18px',
+        width: '18px',
+        left: '3px',
+        bottom: '3px',
+        backgroundColor: 'white',
+        transition: '0.2s',
+        borderRadius: '50%',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+    },
+});
 
 // Pitch Flow Step Indicator
 export const PitchFlowContainer = styled.div({
