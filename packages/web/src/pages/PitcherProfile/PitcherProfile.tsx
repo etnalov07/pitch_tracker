@@ -177,10 +177,7 @@ const PitcherProfile: React.FC = () => {
                     <GameLogTable gameLogs={profile.game_logs} onGameSelect={handleGameSelect} />
                 </GameLogsSection>
             </Content>
-
-            {selectedGame && (
-                <GameLogDetail gameLog={selectedGame} onClose={handleCloseDetail} onViewGame={handleViewGame} />
-            )}
+            {selectedGame && <GameLogDetail gameLog={selectedGame} onClose={handleCloseDetail} onViewGame={handleViewGame} />}
         </Container>
     );
 };

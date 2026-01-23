@@ -1,5 +1,5 @@
-import { PitcherGameLog } from '@pitch-tracker/shared';
 import styled from '@emotion/styled';
+import { PitcherGameLog } from '@pitch-tracker/shared';
 import React from 'react';
 import { theme } from '../../styles/theme';
 
@@ -120,9 +120,7 @@ const GameLogDetail: React.FC<GameLogDetailProps> = ({ gameLog, onClose, onViewG
                 </BreakdownSection>
 
                 <ModalFooter>
-                    {onViewGame && (
-                        <ViewGameButton onClick={() => onViewGame(gameLog.game_id)}>View Full Game</ViewGameButton>
-                    )}
+                    {onViewGame && <ViewGameButton onClick={() => onViewGame(gameLog.game_id)}>View Full Game</ViewGameButton>}
                     <CloseButtonAlt onClick={onClose}>Close</CloseButtonAlt>
                 </ModalFooter>
             </Modal>

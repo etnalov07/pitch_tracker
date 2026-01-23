@@ -1,5 +1,5 @@
-import { PitcherGameLog } from '@pitch-tracker/shared';
 import styled from '@emotion/styled';
+import { PitcherGameLog } from '@pitch-tracker/shared';
 import React from 'react';
 import { theme } from '../../styles/theme';
 
