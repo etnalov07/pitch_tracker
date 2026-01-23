@@ -283,10 +283,11 @@ const LiveGame: React.FC = () => {
             // Refresh pitcher stats
             setStatsRefreshTrigger((prev) => prev + 1);
 
-            // Reset form
+            // Reset form for next pitch
             setPitchLocation(null);
             setTargetLocation(null);
             setVelocity('');
+            setPitchResult('ball');
 
             // Check for end of at-bat
             if (newBalls >= 4) {
@@ -398,6 +399,8 @@ const LiveGame: React.FC = () => {
         // Close the modal and reset state
         setShowDiamondModal(false);
         setHitLocation(null);
+        setTargetLocation(null);
+        setPitchLocation(null);
         // End the at-bat with the selected result
         await handleEndAtBat(result);
     };
