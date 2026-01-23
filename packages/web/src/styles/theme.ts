@@ -64,12 +64,12 @@ export const theme = {
     },
     spacing: {
         xs: '0.25rem', // 4px
-        sm: '0.5rem', // 8px
-        md: '1rem', // 16px
-        lg: '1.5rem', // 24px
-        xl: '2rem', // 32px
-        '2xl': '3rem', // 48px
-        '3xl': '4rem', // 64px
+        sm: '0.375rem', // 6px
+        md: '0.75rem', // 12px
+        lg: '1rem', // 16px
+        xl: '1.5rem', // 24px
+        '2xl': '2rem', // 32px
+        '3xl': '2.5rem', // 40px
     },
     borderRadius: {
         sm: '0.25rem',
@@ -80,14 +80,14 @@ export const theme = {
         full: '9999px',
     },
     fontSize: {
-        xs: '0.75rem',
-        sm: '0.875rem',
-        base: '1rem',
-        lg: '1.125rem',
-        xl: '1.25rem',
-        '2xl': '1.5rem',
-        '3xl': '1.875rem',
-        '4xl': '2.25rem',
+        xs: '0.7rem',
+        sm: '0.8rem',
+        base: '0.875rem',
+        lg: '1rem',
+        xl: '1.125rem',
+        '2xl': '1.25rem',
+        '3xl': '1.5rem',
+        '4xl': '1.875rem',
     },
     fontWeight: {
         normal: 400,

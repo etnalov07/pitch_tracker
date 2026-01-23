@@ -146,3 +146,33 @@
   - Charts and visualizations
 - Store colors in team record
 - Consider color contrast for accessibility
+
+### 12) UI Density - Reduce Padding and Font Sizes
+- Current UI feels too spread out, requires excessive scrolling
+- Priority areas:
+  - **LiveGame page** - pitch entry workflow should fit without scrolling
+  - Headers and navigation
+  - Form inputs and buttons
+  - Cards and containers
+- Adjustments to consider:
+  - Reduce base spacing/padding values in theme
+  - Smaller font sizes for labels and secondary text
+  - Tighter line heights
+  - Compact mode for data-dense views (stats tables, game logs)
+- Goal: More information visible at once, especially during live game tracking
+- Maintain readability and touch targets for mobile use
+
+### 13) Code Cleanup - Component Structure
+- Refactor components folder to match pages structure:
+  - Each component in its own folder
+  - Component file + styles file together (e.g., `StrikeZone/StrikeZone.tsx` + `StrikeZone/styles.ts`)
+  - Index file for clean exports
+- Break larger components into smaller, focused pieces:
+  - Identify components over 200-300 lines
+  - Extract reusable sub-components
+  - Improve testability and maintainability
+- Current candidates for refactoring:
+  - `components/live/` - multiple components in single files
+  - `StrikeZone` - consider extracting zone rendering, heat map overlay
+  - `BaseballDiamond` - consider extracting trajectory drawing
+- Establish consistent patterns for future development

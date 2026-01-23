@@ -27,7 +27,7 @@ export const LeftPanel = styled.div({
 });
 
 export const MainPanel = styled.div({
-    padding: theme.spacing.xl,
+    padding: theme.spacing.lg,
     overflowY: 'auto',
 });
 
@@ -35,11 +35,11 @@ export const GameHeader = styled.div({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: theme.spacing.xl,
+    padding: theme.spacing.sm,
     background: `linear-gradient(135deg, ${theme.colors.primary[600]} 0%, ${theme.colors.primary[800]} 100%)`,
-    borderRadius: theme.borderRadius.xl,
-    marginBottom: theme.spacing.xl,
-    boxShadow: theme.shadows.lg,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.sm,
+    boxShadow: theme.shadows.md,
 });
 
 export const TeamInfo = styled.div({
@@ -57,7 +57,7 @@ export const TeamName = styled.div({
 
 export const Score = styled.div({
     color: 'white',
-    fontSize: theme.fontSize['4xl'],
+    fontSize: theme.fontSize['xl'],
     fontWeight: theme.fontWeight.bold,
 });
 
@@ -70,7 +70,7 @@ export const GameInfo = styled.div({
 
 export const Inning = styled.div({
     color: 'white',
-    fontSize: theme.fontSize.xl,
+    fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.semibold,
 });
 
@@ -84,12 +84,12 @@ export const CountDisplay = styled.div({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.lg,
-    padding: theme.spacing.lg,
+    gap: theme.spacing.md,
+    padding: theme.spacing.xs,
     backgroundColor: 'white',
-    borderRadius: theme.borderRadius.lg,
-    marginBottom: theme.spacing.lg,
-    boxShadow: theme.shadows.md,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.xs,
+    boxShadow: theme.shadows.sm,
 });
 
 export const CountLabel = styled.span({
@@ -99,7 +99,7 @@ export const CountLabel = styled.span({
 });
 
 export const CountValue = styled.span({
-    fontSize: theme.fontSize['3xl'],
+    fontSize: theme.fontSize['2xl'],
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.primary[600],
 });
@@ -113,8 +113,8 @@ export const OutsDisplay = styled.span({
 export const StrikeZoneRow = styled.div({
     display: 'grid',
     gridTemplateColumns: '1fr',
-    gap: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.md,
 
     [`@media (min-width: ${theme.breakpoints.md})`]: {
         gridTemplateColumns: '1fr 1fr',
@@ -145,54 +145,54 @@ export const FormRow = styled.div({
 export const FormGroup = styled.div({
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing.sm,
+    gap: theme.spacing.xs,
 });
 
 export const Label = styled.label({
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.gray[700],
 });
 
 export const Select = styled.select({
-    padding: theme.spacing.md,
+    padding: theme.spacing.sm,
     border: `1px solid ${theme.colors.gray[300]}`,
-    borderRadius: theme.borderRadius.md,
-    fontSize: theme.fontSize.base,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.sm,
 
     '&:focus': {
         outline: 'none',
         borderColor: theme.colors.primary[500],
-        boxShadow: `0 0 0 3px ${theme.colors.primary[100]}`,
+        boxShadow: `0 0 0 2px ${theme.colors.primary[100]}`,
     },
 });
 
 export const Input = styled.input({
-    padding: theme.spacing.md,
+    padding: theme.spacing.sm,
     border: `1px solid ${theme.colors.gray[300]}`,
-    borderRadius: theme.borderRadius.md,
-    fontSize: theme.fontSize.base,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.sm,
 
     '&:focus': {
         outline: 'none',
         borderColor: theme.colors.primary[500],
-        boxShadow: `0 0 0 3px ${theme.colors.primary[100]}`,
+        boxShadow: `0 0 0 2px ${theme.colors.primary[100]}`,
     },
 });
 
 export const ResultButtons = styled.div({
     display: 'flex',
     flexWrap: 'wrap',
-    gap: theme.spacing.sm,
+    gap: theme.spacing.xs,
 });
 
 export const ResultButton = styled.button<{ active: boolean; color: string }>((props) => ({
-    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
     backgroundColor: props.active ? props.color : theme.colors.gray[100],
     color: props.active ? 'white' : theme.colors.gray[700],
-    border: `2px solid ${props.active ? props.color : theme.colors.gray[300]}`,
-    borderRadius: theme.borderRadius.md,
-    fontSize: theme.fontSize.sm,
+    border: `1px solid ${props.active ? props.color : theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.medium,
     cursor: 'pointer',
     transition: 'all 0.2s',
@@ -204,16 +204,16 @@ export const ResultButton = styled.button<{ active: boolean; color: string }>((p
 
 export const LogButton = styled.button({
     width: '100%',
-    padding: theme.spacing.md,
+    padding: theme.spacing.sm,
     backgroundColor: theme.colors.primary[600],
     color: 'white',
     border: 'none',
-    borderRadius: theme.borderRadius.md,
-    fontSize: theme.fontSize.lg,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.semibold,
     cursor: 'pointer',
     transition: 'background-color 0.2s',
-    marginTop: theme.spacing.lg,
+    marginTop: theme.spacing.md,
 
     '&:hover:not(:disabled)': {
         backgroundColor: theme.colors.primary[700],
@@ -227,16 +227,16 @@ export const LogButton = styled.button({
 
 export const EndAtBatButton = styled.button({
     width: '100%',
-    padding: theme.spacing.md,
+    padding: theme.spacing.sm,
     backgroundColor: theme.colors.green[600],
     color: 'white',
     border: 'none',
-    borderRadius: theme.borderRadius.md,
-    fontSize: theme.fontSize.base,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.semibold,
     cursor: 'pointer',
     transition: 'background-color 0.2s',
-    marginTop: theme.spacing.md,
+    marginTop: theme.spacing.sm,
 
     '&:hover': {
         backgroundColor: theme.colors.green[700],
@@ -789,18 +789,18 @@ export const ToggleSwitchSlider = styled.span({
 export const PitchFlowContainer = styled.div({
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing.lg,
+    gap: theme.spacing.md,
 });
 
 export const StepIndicator = styled.div({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
     backgroundColor: 'white',
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.md,
     boxShadow: theme.shadows.sm,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
 });
 
 export const Step = styled.div<{ active?: boolean; completed?: boolean }>((props) => ({
@@ -811,13 +811,13 @@ export const Step = styled.div<{ active?: boolean; completed?: boolean }>((props
 }));
 
 export const StepNumber = styled.div<{ active?: boolean; completed?: boolean }>((props) => ({
-    width: '28px',
-    height: '28px',
+    width: '22px',
+    height: '22px',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.bold,
     backgroundColor: props.completed ? theme.colors.green[500] : props.active ? theme.colors.primary[600] : theme.colors.gray[200],
     color: props.completed || props.active ? 'white' : theme.colors.gray[500],
@@ -845,16 +845,16 @@ export const StepConnector = styled.div<{ completed?: boolean }>((props) => ({
 // Pitch Type Selector (prominent display)
 export const PitchTypeSelector = styled.div({
     backgroundColor: 'white',
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    boxShadow: theme.shadows.md,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    boxShadow: theme.shadows.sm,
 });
 
 export const PitchTypeSelectorTitle = styled.div({
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.gray[700],
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
 });
@@ -866,12 +866,12 @@ export const PitchTypeGrid = styled.div({
 });
 
 export const PitchTypeButton = styled.button<{ active?: boolean }>((props) => ({
-    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
     backgroundColor: props.active ? theme.colors.primary[600] : theme.colors.gray[50],
     color: props.active ? 'white' : theme.colors.gray[700],
-    border: `2px solid ${props.active ? theme.colors.primary[600] : theme.colors.gray[200]}`,
-    borderRadius: theme.borderRadius.md,
-    fontSize: theme.fontSize.sm,
+    border: `1px solid ${props.active ? theme.colors.primary[600] : theme.colors.gray[200]}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.medium,
     cursor: 'pointer',
     transition: 'all 0.15s',
@@ -908,28 +908,28 @@ export const ZoneInstructionText = styled.div({
 // Current step highlight card
 export const CurrentStepCard = styled.div<{ stepColor?: string }>((props) => ({
     backgroundColor: 'white',
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    boxShadow: theme.shadows.md,
-    borderLeft: `4px solid ${props.stepColor || theme.colors.primary[600]}`,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    boxShadow: theme.shadows.sm,
+    borderLeft: `3px solid ${props.stepColor || theme.colors.primary[600]}`,
 }));
 
 export const CurrentStepTitle = styled.div({
-    fontSize: theme.fontSize.base,
+    fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.gray[800],
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
 });
 
 export const CurrentStepDescription = styled.div({
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.xs,
     color: theme.colors.gray[600],
 });
 
 // Velocity and result row (combined for space efficiency)
 export const VelocityResultRow = styled.div({
     display: 'flex',
-    gap: theme.spacing.lg,
+    gap: theme.spacing.md,
     alignItems: 'flex-start',
 
     [`@media (max-width: ${theme.breakpoints.md})`]: {
@@ -940,8 +940,8 @@ export const VelocityResultRow = styled.div({
 export const VelocityInput = styled.div({
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing.sm,
-    minWidth: '120px',
+    gap: theme.spacing.xs,
+    minWidth: '100px',
 });
 
 export const ResultSection = styled.div({
