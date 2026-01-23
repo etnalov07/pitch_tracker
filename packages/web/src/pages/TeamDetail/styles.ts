@@ -218,18 +218,19 @@ export const RosterTable = styled.table({
 
 export const Th = styled.th({
     textAlign: 'left',
-    padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
     background: theme.colors.gray[50],
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.gray[600],
     borderBottom: `1px solid ${theme.colors.gray[200]}`,
 });
 
 export const Td = styled.td({
-    padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
     borderBottom: `1px solid ${theme.colors.gray[100]}`,
     verticalAlign: 'middle',
+    fontSize: theme.fontSize.sm,
 
     'tr:last-child &': {
         borderBottom: 'none',
@@ -237,11 +238,13 @@ export const Td = styled.td({
 });
 
 export const JerseyNumber = styled.span({
+    fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.gray[800],
 });
 
 export const PlayerName = styled.span({
+    fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.gray[800],
 });
