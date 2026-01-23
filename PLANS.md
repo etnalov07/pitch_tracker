@@ -36,13 +36,17 @@
 - Double play records 2 outs, triple play records 3 outs
 - Inning change notification modal when 3 outs reached
 
-### 4) Pitcher Heat Zones
-- Visualize zones where a pitcher excels at throwing strikes
-- Heat map overlay on strike zone showing:
-  - High strike percentage zones (green/hot)
-  - Low strike percentage zones (red/cold)
-- Could be based on historical data or current game data
-- Helps identify pitcher strengths for game strategy
+### ~~4) Pitcher Heat Zones~~ ✅ DONE
+- ~~Visualize zones where a pitcher excels at throwing strikes~~
+- ~~Heat map overlay on strike zone showing:~~
+  - ~~High strike percentage zones (green/hot)~~
+  - ~~Low strike percentage zones (red/cold)~~
+- ~~Based on historical data or current game data~~
+- ~~Helps identify pitcher strengths for game strategy~~
+- 17 zones: 3x3 inside strike zone + 8 outer ring zones
+- API endpoint: GET /api/analytics/pitcher/:pitcherId/heat-zones
+- HeatZoneOverlay component with color gradient (red → yellow → green)
+- Toggle button on both PitcherProfile and LiveGame pages
 
 ### ~~5) Desired Pitch Location Tracking~~ ✅ DONE
 - ~~Add a new data point: **desired pitch location** (separate from actual result)~~

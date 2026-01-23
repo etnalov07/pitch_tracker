@@ -1,4 +1,6 @@
+import { HeatZoneData } from '@pitch-tracker/shared';
 import { query } from '../config/database';
+import { HEAT_ZONES } from '../utils/heatZones';
 
 export class AnalyticsService {
   // CRITICAL: Batter history for live game strategy
@@ -472,6 +474,69 @@ export class AnalyticsService {
       },
       game_logs: gameLogsData.game_logs,
     };
+  }
+
+  // Get pitcher heat zones showing strike percentage by zone
+  async getPitcherHeatZones(pitcherId: string, gameId?: string): Promise<HeatZoneData[]> {
+    // Query all pitches with locations for this pitcher
+    let queryText = `
+      SELECT
+        location_x,
+        location_y,
+        pitch_result
+      FROM pitches
+      WHERE pitcher_id = $1
+        AND location_x IS NOT NULL
+        AND location_y IS NOT NULL
+    `;
+
+    const params: string[] = [pitcherId];
+
+    if (gameId) {
+      queryText += ' AND game_id = $2';
+      params.push(gameId);
+    }
+
+    const result = await query(queryText, params);
+
+    // Initialize zone counters
+    const zoneCounts: { [zoneId: string]: { total: number; strikes: number } } = {};
+    for (const zone of HEAT_ZONES) {
+      zoneCounts[zone.id] = { total: 0, strikes: 0 };
+    }
+
+    // Classify each pitch into a zone
+    for (const pitch of result.rows) {
+      const x = parseFloat(pitch.location_x);
+      const y = parseFloat(pitch.location_y);
+
+      // Find which zone this pitch falls into
+      for (const zone of HEAT_ZONES) {
+        if (x >= zone.xMin && x < zone.xMax && y >= zone.yMin && y < zone.yMax) {
+          zoneCounts[zone.id].total++;
+          // Count strikes (anything that's not a ball)
+          if (pitch.pitch_result !== 'ball') {
+            zoneCounts[zone.id].strikes++;
+          }
+          break;
+        }
+      }
+    }
+
+    // Convert to HeatZoneData array
+    const heatZones: HeatZoneData[] = HEAT_ZONES.map((zone) => {
+      const counts = zoneCounts[zone.id];
+      return {
+        zone_id: zone.id,
+        total_pitches: counts.total,
+        strikes: counts.strikes,
+        strike_percentage: counts.total > 0
+          ? Math.round((counts.strikes / counts.total) * 100)
+          : 0,
+      };
+    });
+
+    return heatZones;
   }
 }
 

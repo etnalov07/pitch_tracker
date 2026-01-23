@@ -1,7 +1,9 @@
 import { PitcherProfile as PitcherProfileType, PitcherGameLog } from '@pitch-tracker/shared';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import HeatZoneOverlay from '../../components/live/HeatZoneOverlay';
 import { GameLogTable, GameLogDetail } from '../../components/pitcher';
+import useHeatZones from '../../hooks/useHeatZones';
 import api from '../../services/api';
 import {
     Container,
@@ -30,6 +32,14 @@ import {
     LoadingText,
     ErrorText,
     ErrorContainer,
+    HeatZoneCard,
+    HeatZoneHeader,
+    HeatZoneTitle,
+    ToggleButton,
+    HeatZoneContent,
+    HeatZoneLegend,
+    LegendItem,
+    LegendColor,
 } from './styles';
 
 const formatPitchType = (type: string): string => {
@@ -58,6 +68,10 @@ const PitcherProfile: React.FC = () => {
     const [selectedGame, setSelectedGame] = useState<PitcherGameLog | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showHeatZones, setShowHeatZones] = useState(true);
+
+    // Fetch heat zones for career stats (no gameId = all games)
+    const { zones: heatZones } = useHeatZones(pitcher_id);
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -169,6 +183,56 @@ const PitcherProfile: React.FC = () => {
                         </PitchTypesList>
                     </PitchTypesCard>
                 )}
+
+                <HeatZoneCard>
+                    <HeatZoneHeader>
+                        <HeatZoneTitle>Strike Zone Heat Map</HeatZoneTitle>
+                        <ToggleButton active={showHeatZones} onClick={() => setShowHeatZones(!showHeatZones)}>
+                            {showHeatZones ? 'Hide' : 'Show'} Heat Zones
+                        </ToggleButton>
+                    </HeatZoneHeader>
+                    <HeatZoneContent>
+                        <svg viewBox="0 0 300 280" style={{ width: '100%', maxWidth: '350px' }}>
+                            {/* Background */}
+                            <rect x="0" y="0" width="300" height="280" fill="#f5f5f0" />
+                            {/* Strike zone grid */}
+                            <g transform="translate(85, 30)">
+                                <rect x="0" y="0" width="130" height="150" fill="rgba(255,255,255,0.85)" />
+                                {[0, 1, 2].map((row) =>
+                                    [0, 1, 2].map((col) => (
+                                        <rect
+                                            key={`cell-${row}-${col}`}
+                                            x={col * (130 / 3)}
+                                            y={row * (150 / 3)}
+                                            width={130 / 3}
+                                            height={150 / 3}
+                                            fill="rgba(230, 230, 225, 0.6)"
+                                            stroke="#a0a0a0"
+                                            strokeWidth="1"
+                                        />
+                                    ))
+                                )}
+                                <rect x="0" y="0" width="130" height="150" fill="none" stroke="#808080" strokeWidth="2" />
+                            </g>
+                            {/* Heat zone overlay */}
+                            <HeatZoneOverlay zones={heatZones} visible={showHeatZones} />
+                        </svg>
+                    </HeatZoneContent>
+                    <HeatZoneLegend>
+                        <LegendItem>
+                            <LegendColor color="#ef4444" />
+                            <span>Low Strike %</span>
+                        </LegendItem>
+                        <LegendItem>
+                            <LegendColor color="#eab308" />
+                            <span>50%</span>
+                        </LegendItem>
+                        <LegendItem>
+                            <LegendColor color="#22c55e" />
+                            <span>High Strike %</span>
+                        </LegendItem>
+                    </HeatZoneLegend>
+                </HeatZoneCard>
 
                 <GameLogsSection>
                     <SectionHeader>

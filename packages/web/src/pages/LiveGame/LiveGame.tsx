@@ -6,6 +6,7 @@ import BaseballDiamond, { HitType, HitLocation } from '../../components/live/Bas
 import BatterHistory from '../../components/live/BatterHistory';
 import PitcherStats from '../../components/live/PitcherStats';
 import StrikeZone from '../../components/live/StrikeZone';
+import useHeatZones from '../../hooks/useHeatZones';
 import api from '../../services/api';
 import {
     useAppDispatch,
@@ -89,6 +90,7 @@ import {
     DiamondResultGrid,
     DiamondResultButton,
     OpenDiamondButton,
+    HeatZoneToggle,
 } from './styles';
 
 const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
@@ -151,6 +153,10 @@ const LiveGame: React.FC = () => {
     const [showDiamondModal, setShowDiamondModal] = useState(false);
     const [hitType, setHitType] = useState<HitType>('line_drive');
     const [hitLocation, setHitLocation] = useState<HitLocation | null>(null);
+
+    // Heat zones
+    const [showHeatZones, setShowHeatZones] = useState(false);
+    const { zones: heatZones } = useHeatZones(currentPitcher?.player_id, gameId);
 
     useEffect(() => {
         if (gameId) {
@@ -575,12 +581,17 @@ const LiveGame: React.FC = () => {
 
                         <StrikeZoneRow>
                             <StrikeZoneContainer>
+                                <HeatZoneToggle active={showHeatZones} onClick={() => setShowHeatZones(!showHeatZones)}>
+                                    {showHeatZones ? 'Hide' : 'Show'} Heat Zones
+                                </HeatZoneToggle>
                                 <StrikeZone
                                     onLocationSelect={handleLocationSelect}
                                     onTargetSelect={handleTargetSelect}
                                     onTargetClear={handleTargetClear}
                                     targetLocation={targetLocation}
                                     previousPitches={pitches}
+                                    heatZones={heatZones}
+                                    showHeatZones={showHeatZones}
                                 />
                             </StrikeZoneContainer>
 

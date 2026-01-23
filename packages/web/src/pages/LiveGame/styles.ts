@@ -718,3 +718,21 @@ export const OpenDiamondButton = styled.button({
         backgroundColor: theme.colors.primary[700],
     },
 });
+
+export const HeatZoneToggle = styled.button<{ active?: boolean }>((props) => ({
+    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+    backgroundColor: props.active ? theme.colors.primary[600] : theme.colors.gray[100],
+    color: props.active ? 'white' : theme.colors.gray[700],
+    border: `1px solid ${props.active ? theme.colors.primary[600] : theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    marginBottom: theme.spacing.sm,
+    alignSelf: 'flex-end',
+
+    '&:hover': {
+        backgroundColor: props.active ? theme.colors.primary[700] : theme.colors.gray[200],
+    },
+}));

@@ -1,7 +1,9 @@
 import styled from '@emotion/styled';
+import { HeatZoneData } from '@pitch-tracker/shared';
 import React, { useState, useEffect } from 'react';
 import { theme } from '../../styles/theme';
 import { Pitch } from '../../types';
+import HeatZoneOverlay from './HeatZoneOverlay';
 
 interface StrikeZoneProps {
     onLocationSelect: (x: number, y: number) => void;
@@ -9,6 +11,8 @@ interface StrikeZoneProps {
     onTargetClear?: () => void;
     targetLocation?: { x: number; y: number } | null;
     previousPitches?: Pitch[];
+    heatZones?: HeatZoneData[];
+    showHeatZones?: boolean;
 }
 
 const StrikeZone: React.FC<StrikeZoneProps> = ({
@@ -17,6 +21,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     onTargetClear,
     targetLocation,
     previousPitches = [],
+    heatZones = [],
+    showHeatZones = false,
 }) => {
     const [selectedLocation, setSelectedLocation] = useState<{ x: number; y: number } | null>(null);
 
@@ -151,6 +157,9 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         {/* Outer border */}
                         <rect x="0" y="0" width="130" height="150" fill="none" stroke="#808080" strokeWidth="2" />
                     </g>
+
+                    {/* Heat zone overlay */}
+                    <HeatZoneOverlay zones={heatZones} visible={showHeatZones} />
 
                     {/* Previous pitches */}
                     {previousPitches.map((pitch, idx) => {

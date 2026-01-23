@@ -114,6 +114,20 @@ export class AnalyticsController {
       next(error);
     }
   }
+
+  async getPitcherHeatZones(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { pitcherId } = req.params;
+      const { gameId } = req.query;
+      const heatZones = await analyticsService.getPitcherHeatZones(
+        pitcherId as string,
+        gameId as string | undefined
+      );
+      res.status(200).json({ heatZones });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new AnalyticsController();

@@ -174,3 +174,72 @@ export const ErrorContainer = styled.div({
     minHeight: '50vh',
     gap: theme.spacing.lg,
 });
+
+export const HeatZoneCard = styled.div({
+    background: 'white',
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    boxShadow: theme.shadows.sm,
+});
+
+export const HeatZoneHeader = styled.div({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+});
+
+export const HeatZoneTitle = styled.h2({
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[800],
+    margin: 0,
+});
+
+export const ToggleButton = styled.button<{ active?: boolean }>((props) => ({
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    backgroundColor: props.active ? theme.colors.primary[600] : theme.colors.gray[100],
+    color: props.active ? 'white' : theme.colors.gray[700],
+    border: `1px solid ${props.active ? theme.colors.primary[600] : theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+
+    '&:hover': {
+        backgroundColor: props.active ? theme.colors.primary[700] : theme.colors.gray[200],
+    },
+}));
+
+export const HeatZoneContent = styled.div({
+    display: 'flex',
+    justifyContent: 'center',
+    padding: theme.spacing.md,
+});
+
+export const HeatZoneLegend = styled.div({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.sm,
+    backgroundColor: theme.colors.gray[50],
+    borderRadius: theme.borderRadius.md,
+});
+
+export const LegendItem = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.gray[600],
+});
+
+export const LegendColor = styled.div<{ color: string }>((props) => ({
+    width: '16px',
+    height: '16px',
+    backgroundColor: props.color,
+    borderRadius: theme.borderRadius.sm,
+}));

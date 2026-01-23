@@ -374,6 +374,13 @@ export interface Play {
 // Analytics Types
 // ============================================================================
 
+export interface HeatZoneData {
+    zone_id: string;
+    total_pitches: number;
+    strikes: number;
+    strike_percentage: number;
+}
+
 export interface BatterStats {
     total_abs: number;
     hits: number;
