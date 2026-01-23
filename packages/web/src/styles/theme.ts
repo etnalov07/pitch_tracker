@@ -80,14 +80,14 @@ export const theme = {
         full: '9999px',
     },
     fontSize: {
-        xs: '0.5rem', // 8px
-        sm: '0.5625rem', // 9px
-        base: '0.625rem', // 10px
-        lg: '0.7rem', // 11px
-        xl: '0.8rem', // 13px
-        '2xl': '0.875rem', // 14px
-        '3xl': '1rem', // 16px
-        '4xl': '1.25rem', // 20px
+        xs: '0.575rem', // 9px
+        sm: '0.65rem', // 10px
+        base: '0.72rem', // 11.5px
+        lg: '0.8rem', // 13px
+        xl: '0.92rem', // 15px
+        '2xl': '1rem', // 16px
+        '3xl': '1.15rem', // 18px
+        '4xl': '1.44rem', // 23px
     },
     fontWeight: {
         normal: 400,
