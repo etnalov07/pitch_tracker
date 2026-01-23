@@ -64,6 +64,9 @@ import {
     BackButton,
     GameStatus,
     StartGameButton,
+    TopBarRight,
+    EndGameButton,
+    ResumeGameButton,
     StartGamePrompt,
     StartGameText,
     OutsContainer,
@@ -515,6 +518,37 @@ const LiveGame: React.FC = () => {
         }
     };
 
+    const handleEndGame = async () => {
+        if (!gameId || !game) return;
+
+        const confirmEnd = window.confirm('Are you sure you want to end this game? This will mark it as completed.');
+        if (!confirmEnd) return;
+
+        try {
+            await gamesApi.endGame(gameId, {
+                home_score: game.home_score || 0,
+                away_score: game.away_score || 0,
+            });
+            navigate('/');
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : 'Failed to end game');
+        }
+    };
+
+    const handleResumeGame = async () => {
+        if (!gameId) return;
+
+        try {
+            await gamesApi.resumeGame(gameId);
+            dispatch(fetchGameById(gameId));
+            // Fetch current inning
+            const inning = await gamesApi.getCurrentInning(gameId);
+            setCurrentInning(inning);
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : 'Failed to resume game');
+        }
+    };
+
     const handleBackToDashboard = () => {
         navigate('/');
     };
@@ -550,9 +584,17 @@ const LiveGame: React.FC = () => {
             <MainPanel>
                 <TopBar>
                     <BackButton onClick={handleBackToDashboard}>← Back to Dashboard</BackButton>
-                    <GameStatus status={game.status}>
-                        {game.status === 'scheduled' ? 'Scheduled' : game.status === 'in_progress' ? 'In Progress' : 'Completed'}
-                    </GameStatus>
+                    <TopBarRight>
+                        <GameStatus status={game.status}>
+                            {game.status === 'scheduled' ? 'Scheduled' : game.status === 'in_progress' ? 'In Progress' : 'Completed'}
+                        </GameStatus>
+                        {game.status === 'in_progress' && (
+                            <EndGameButton onClick={handleEndGame}>End Game</EndGameButton>
+                        )}
+                        {game.status === 'completed' && (
+                            <ResumeGameButton onClick={handleResumeGame}>Resume Game</ResumeGameButton>
+                        )}
+                    </TopBarRight>
                 </TopBar>
 
                 {/* Show Start Game prompt if game hasn't started */}
@@ -599,7 +641,10 @@ const LiveGame: React.FC = () => {
                                 <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
                             )}
                         </PlayerInfo>
-                        <ChangeButton onClick={() => setShowPitcherSelector(true)}>
+                        <ChangeButton
+                            onClick={() => setShowPitcherSelector(true)}
+                            disabled={game.status === 'completed'}
+                        >
                             {currentPitcher ? 'Change' : 'Select'}
                         </ChangeButton>
                     </PlayerDisplay>
@@ -615,7 +660,10 @@ const LiveGame: React.FC = () => {
                                 <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
                             )}
                         </PlayerInfo>
-                        <ChangeButton onClick={() => setShowBatterSelector(true)}>
+                        <ChangeButton
+                            onClick={() => setShowBatterSelector(true)}
+                            disabled={game.status === 'completed'}
+                        >
                             {currentBatter ? 'Change' : 'Select'}
                         </ChangeButton>
                     </PlayerDisplay>
@@ -790,8 +838,13 @@ const LiveGame: React.FC = () => {
                     </>
                 ) : (
                     <NoAtBatContainer>
-                        <NoAtBatText>No active at-bat</NoAtBatText>
-                        <StartAtBatButton onClick={handleStartAtBat} disabled={needsSetup}>
+                        <NoAtBatText>
+                            {game.status === 'completed' ? 'Game completed - Resume to continue tracking' : 'No active at-bat'}
+                        </NoAtBatText>
+                        <StartAtBatButton
+                            onClick={handleStartAtBat}
+                            disabled={needsSetup || game.status === 'completed'}
+                        >
                             Start New At-Bat
                         </StartAtBatButton>
                     </NoAtBatContainer>

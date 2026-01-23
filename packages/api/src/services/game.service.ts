@@ -178,6 +178,18 @@ export class GameService {
     return result.rows[0];
   }
 
+  async resumeGame(gameId: string): Promise<Game> {
+    const result = await query(
+      `UPDATE games
+       SET status = 'in_progress'
+       WHERE id = $1
+       RETURNING *`,
+      [gameId]
+    );
+
+    return result.rows[0];
+  }
+
   async addHomeRuns(gameId: string, runs: number): Promise<Game> {
     const result = await query(
       `UPDATE games

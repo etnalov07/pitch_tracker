@@ -98,6 +98,16 @@ export class GameController {
     }
   }
 
+  async resumeGame(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const game = await gameService.resumeGame(id as string);
+      res.status(200).json({ message: 'Game resumed', game });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getGameInnings(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;

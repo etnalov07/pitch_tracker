@@ -44,6 +44,11 @@ export const gamesApi = {
         return response.data.game;
     },
 
+    resumeGame: async (id: string): Promise<Game> => {
+        const response = await api.post<{ game: Game }>(`/games/${id}/resume`);
+        return response.data.game;
+    },
+
     advanceInning: async (id: string): Promise<Game> => {
         const response = await api.post<{ game: Game }>(`/games/${id}/advance-inning`);
         return response.data.game;

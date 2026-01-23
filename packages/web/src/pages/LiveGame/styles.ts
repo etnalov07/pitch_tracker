@@ -346,8 +346,13 @@ export const ChangeButton = styled.button({
     fontSize: theme.fontSize.sm,
     cursor: 'pointer',
 
-    '&:hover': {
+    '&:hover:not(:disabled)': {
         backgroundColor: theme.colors.gray[200],
+    },
+
+    '&:disabled': {
+        opacity: 0.5,
+        cursor: 'not-allowed',
     },
 });
 
@@ -439,6 +444,44 @@ export const StartGameButton = styled.button({
     border: 'none',
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+
+    '&:hover': {
+        backgroundColor: theme.colors.green[700],
+    },
+});
+
+export const TopBarRight = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+});
+
+export const EndGameButton = styled.button({
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    backgroundColor: theme.colors.red[600],
+    color: 'white',
+    border: 'none',
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+
+    '&:hover': {
+        backgroundColor: theme.colors.red[700],
+    },
+});
+
+export const ResumeGameButton = styled.button({
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    backgroundColor: theme.colors.green[600],
+    color: 'white',
+    border: 'none',
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.semibold,
     cursor: 'pointer',
     transition: 'background-color 0.2s',

@@ -376,3 +376,109 @@ export const LoadingText = styled.p({
     color: theme.colors.gray[600],
     padding: theme.spacing.xl,
 });
+
+// Team Card with Roster styles
+export const TeamCardHeader = styled.div({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.md,
+});
+
+export const TeamCardInfo = styled.div({});
+
+export const ManageRosterButton = styled.button({
+    background: 'none',
+    border: `1px solid ${theme.colors.primary[300]}`,
+    color: theme.colors.primary[600],
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
+    cursor: 'pointer',
+    fontWeight: theme.fontWeight.medium,
+
+    '&:hover': {
+        background: theme.colors.primary[50],
+    },
+});
+
+export const RosterList = styled.div({
+    borderTop: `1px solid ${theme.colors.gray[200]}`,
+    marginTop: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+});
+
+export const RosterTitle = styled.div({
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[500],
+    textTransform: 'uppercase',
+    marginBottom: theme.spacing.sm,
+});
+
+export const RosterItem = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: `${theme.spacing.xs} 0`,
+    borderBottom: `1px solid ${theme.colors.gray[100]}`,
+
+    '&:last-child': {
+        borderBottom: 'none',
+    },
+});
+
+export const RosterPlayerInfo = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+});
+
+export const RosterNumber = styled.span({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.gray[700],
+    minWidth: '20px',
+});
+
+export const RosterName = styled.span({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[800],
+});
+
+export const RosterRight = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+});
+
+export const HandednessBadge = styled.span({
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.primary[600],
+    backgroundColor: theme.colors.primary[50],
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    borderRadius: theme.borderRadius.sm,
+});
+
+export const ProfileButton = styled.button({
+    background: 'none',
+    border: `1px solid ${theme.colors.green[400]}`,
+    color: theme.colors.green[600],
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
+    cursor: 'pointer',
+    fontWeight: theme.fontWeight.medium,
+
+    '&:hover': {
+        background: theme.colors.green[50],
+    },
+});
+
+export const EmptyRoster = styled.div({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[500],
+    fontStyle: 'italic',
+    padding: `${theme.spacing.sm} 0`,
+});

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector, logout, fetchAllGames, fetchAllTeams } from '../../state';
+import { teamsApi } from '../../state/teams/api/teamsApi';
 import { theme } from '../../styles/theme';
-import type { GameStatus as GameStatusType } from '../../types';
+import type { GameStatus as GameStatusType, Player } from '../../types';
 import {
     Container,
     Header,
@@ -50,6 +51,19 @@ import {
     TeamCardCity,
     TeamCardAbbr,
     SectionHeader,
+    TeamCardHeader,
+    TeamCardInfo,
+    ManageRosterButton,
+    RosterList,
+    RosterTitle,
+    RosterItem,
+    RosterPlayerInfo,
+    RosterNumber,
+    RosterName,
+    RosterRight,
+    HandednessBadge,
+    ProfileButton,
+    EmptyRoster,
 } from './styles';
 
 const Dashboard: React.FC = () => {
@@ -61,6 +75,7 @@ const Dashboard: React.FC = () => {
     const { teamList: teams, loading: teamsLoading } = useAppSelector((state) => state.teams);
 
     const [activeTab, setActiveTab] = useState<'games' | 'teams'>('games');
+    const [teamRosters, setTeamRosters] = useState<Record<string, Player[]>>({});
 
     const loading = gamesLoading || teamsLoading;
 
@@ -68,6 +83,26 @@ const Dashboard: React.FC = () => {
         dispatch(fetchAllGames());
         dispatch(fetchAllTeams());
     }, [dispatch]);
+
+    // Fetch rosters for all teams when teams are loaded
+    useEffect(() => {
+        const fetchRosters = async () => {
+            const rosters: Record<string, Player[]> = {};
+            for (const team of teams) {
+                try {
+                    const teamWithPlayers = await teamsApi.getTeamRoster(team.id);
+                    rosters[team.id] = teamWithPlayers.players || [];
+                } catch {
+                    rosters[team.id] = [];
+                }
+            }
+            setTeamRosters(rosters);
+        };
+
+        if (teams.length > 0) {
+            fetchRosters();
+        }
+    }, [teams]);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -259,13 +294,62 @@ const Dashboard: React.FC = () => {
                     <Section>
                         {teams && teams.length > 0 ? (
                             <TeamGrid>
-                                {teams?.map((team) => (
-                                    <TeamCard key={team.id} onClick={() => navigate(`/teams/${team.id}`)}>
-                                        <TeamCardName>{team.name}</TeamCardName>
-                                        {team.city && <TeamCardCity>{team.city}</TeamCardCity>}
-                                        {team.abbreviation && <TeamCardAbbr>{team.abbreviation}</TeamCardAbbr>}
-                                    </TeamCard>
-                                ))}
+                                {teams?.map((team) => {
+                                    const roster = teamRosters[team.id] || [];
+                                    return (
+                                        <TeamCard key={team.id}>
+                                            <TeamCardHeader>
+                                                <TeamCardInfo>
+                                                    <TeamCardName>{team.name}</TeamCardName>
+                                                    {team.city && <TeamCardCity>{team.city}</TeamCardCity>}
+                                                    {team.abbreviation && <TeamCardAbbr>{team.abbreviation}</TeamCardAbbr>}
+                                                </TeamCardInfo>
+                                                <ManageRosterButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`/teams/${team.id}`);
+                                                    }}
+                                                >
+                                                    Manage Roster
+                                                </ManageRosterButton>
+                                            </TeamCardHeader>
+                                            <RosterList>
+                                                <RosterTitle>Roster ({roster.length})</RosterTitle>
+                                                {roster.length > 0 ? (
+                                                    roster.map((player) => (
+                                                        <RosterItem key={player.id}>
+                                                            <RosterPlayerInfo>
+                                                                <RosterNumber>#{player.jersey_number ?? '-'}</RosterNumber>
+                                                                <RosterName>
+                                                                    {player.first_name} {player.last_name}
+                                                                </RosterName>
+                                                            </RosterPlayerInfo>
+                                                            <RosterRight>
+                                                                {player.primary_position === 'P' && (
+                                                                    <>
+                                                                        <HandednessBadge>
+                                                                            {player.throws === 'L' ? 'LHP' : 'RHP'}
+                                                                        </HandednessBadge>
+                                                                        <ProfileButton
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                navigate(`/teams/${team.id}/pitcher/${player.id}`);
+                                                                            }}
+                                                                        >
+                                                                            Profile
+                                                                        </ProfileButton>
+                                                                    </>
+                                                                )}
+                                                            </RosterRight>
+                                                        </RosterItem>
+                                                    ))
+                                                ) : (
+                                                    <EmptyRoster>No players added yet</EmptyRoster>
+                                                )}
+                                            </RosterList>
+                                        </TeamCard>
+                                    );
+                                })}
                             </TeamGrid>
                         ) : (
                             <EmptyState>
