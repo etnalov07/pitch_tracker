@@ -9,7 +9,7 @@ interface UseHeatZonesResult {
     refetch: () => void;
 }
 
-export function useHeatZones(pitcherId: string | undefined, gameId?: string): UseHeatZonesResult {
+export function useHeatZones(pitcherId: string | undefined, gameId?: string, pitchType?: string): UseHeatZonesResult {
     const [zones, setZones] = useState<HeatZoneData[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -24,10 +24,16 @@ export function useHeatZones(pitcherId: string | undefined, gameId?: string): Us
             setLoading(true);
             setError(null);
 
-            let url = `/analytics/pitcher/${pitcherId}/heat-zones`;
+            const params = new URLSearchParams();
             if (gameId) {
-                url += `?gameId=${gameId}`;
+                params.append('gameId', gameId);
             }
+            if (pitchType) {
+                params.append('pitchType', pitchType);
+            }
+
+            const queryString = params.toString();
+            const url = `/analytics/pitcher/${pitcherId}/heat-zones${queryString ? `?${queryString}` : ''}`;
 
             const response = await api.get<{ heatZones: HeatZoneData[] }>(url);
             setZones(response.data.heatZones);
@@ -37,7 +43,7 @@ export function useHeatZones(pitcherId: string | undefined, gameId?: string): Us
         } finally {
             setLoading(false);
         }
-    }, [pitcherId, gameId]);
+    }, [pitcherId, gameId, pitchType]);
 
     useEffect(() => {
         fetchHeatZones();

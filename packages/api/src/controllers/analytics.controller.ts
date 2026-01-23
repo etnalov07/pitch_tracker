@@ -118,10 +118,11 @@ export class AnalyticsController {
   async getPitcherHeatZones(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { pitcherId } = req.params;
-      const { gameId } = req.query;
+      const { gameId, pitchType } = req.query;
       const heatZones = await analyticsService.getPitcherHeatZones(
         pitcherId as string,
-        gameId as string | undefined
+        gameId as string | undefined,
+        pitchType as string | undefined
       );
       res.status(200).json({ heatZones });
     } catch (error) {

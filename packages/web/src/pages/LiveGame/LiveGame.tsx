@@ -101,6 +101,8 @@ import {
     CurrentStepCard,
     CurrentStepTitle,
     CurrentStepDescription,
+    HeatZonePitchFilter,
+    HeatZonePitchButton,
 } from './styles';
 
 const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
@@ -166,7 +168,8 @@ const LiveGame: React.FC = () => {
 
     // Heat zones
     const [showHeatZones, setShowHeatZones] = useState(false);
-    const { zones: heatZones } = useHeatZones(currentPitcher?.player_id, gameId);
+    const [heatZonePitchType, setHeatZonePitchType] = useState<string | undefined>(undefined);
+    const { zones: heatZones } = useHeatZones(currentPitcher?.player_id, gameId, heatZonePitchType);
 
     useEffect(() => {
         if (gameId) {
@@ -662,6 +665,25 @@ const LiveGame: React.FC = () => {
                                 <HeatZoneToggle active={showHeatZones} onClick={() => setShowHeatZones(!showHeatZones)}>
                                     {showHeatZones ? 'Hide' : 'Show'} Heat Zones
                                 </HeatZoneToggle>
+                                {showHeatZones && pitcherPitchTypes.length > 0 && (
+                                    <HeatZonePitchFilter>
+                                        <HeatZonePitchButton
+                                            active={heatZonePitchType === undefined}
+                                            onClick={() => setHeatZonePitchType(undefined)}
+                                        >
+                                            All
+                                        </HeatZonePitchButton>
+                                        {pitcherPitchTypes.map((type) => (
+                                            <HeatZonePitchButton
+                                                key={type}
+                                                active={heatZonePitchType === type}
+                                                onClick={() => setHeatZonePitchType(type)}
+                                            >
+                                                {ALL_PITCH_TYPES.find((pt) => pt.value === type)?.label || type}
+                                            </HeatZonePitchButton>
+                                        ))}
+                                    </HeatZonePitchFilter>
+                                )}
                                 <StrikeZone
                                     onLocationSelect={handleLocationSelect}
                                     onTargetSelect={handleTargetSelect}

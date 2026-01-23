@@ -243,3 +243,34 @@ export const LegendColor = styled.div<{ color: string }>((props) => ({
     backgroundColor: props.color,
     borderRadius: theme.borderRadius.sm,
 }));
+
+export const PitchTypeFilter = styled.div({
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.md,
+});
+
+export const PitchTypeFilterLabel = styled.span({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.gray[600],
+    marginRight: theme.spacing.sm,
+    alignSelf: 'center',
+});
+
+export const PitchTypeFilterButton = styled.button<{ active?: boolean }>((props) => ({
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    backgroundColor: props.active ? theme.colors.primary[600] : theme.colors.gray[100],
+    color: props.active ? 'white' : theme.colors.gray[700],
+    border: `1px solid ${props.active ? theme.colors.primary[600] : theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+
+    '&:hover': {
+        backgroundColor: props.active ? theme.colors.primary[700] : theme.colors.gray[200],
+    },
+}));

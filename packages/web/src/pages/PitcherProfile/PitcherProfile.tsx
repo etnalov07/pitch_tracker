@@ -40,6 +40,9 @@ import {
     HeatZoneLegend,
     LegendItem,
     LegendColor,
+    PitchTypeFilter,
+    PitchTypeFilterLabel,
+    PitchTypeFilterButton,
 } from './styles';
 
 const formatPitchType = (type: string): string => {
@@ -69,9 +72,10 @@ const PitcherProfile: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showHeatZones, setShowHeatZones] = useState(true);
+    const [heatZonePitchType, setHeatZonePitchType] = useState<string | undefined>(undefined);
 
-    // Fetch heat zones for career stats (no gameId = all games)
-    const { zones: heatZones } = useHeatZones(pitcher_id);
+    // Fetch heat zones for career stats (no gameId = all games, optional pitch type filter)
+    const { zones: heatZones } = useHeatZones(pitcher_id, undefined, heatZonePitchType);
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -191,6 +195,26 @@ const PitcherProfile: React.FC = () => {
                             {showHeatZones ? 'Hide' : 'Show'} Heat Zones
                         </ToggleButton>
                     </HeatZoneHeader>
+                    {profile.pitch_types.length > 0 && (
+                        <PitchTypeFilter>
+                            <PitchTypeFilterLabel>Filter by pitch:</PitchTypeFilterLabel>
+                            <PitchTypeFilterButton
+                                active={heatZonePitchType === undefined}
+                                onClick={() => setHeatZonePitchType(undefined)}
+                            >
+                                All Pitches
+                            </PitchTypeFilterButton>
+                            {profile.pitch_types.map((type) => (
+                                <PitchTypeFilterButton
+                                    key={type}
+                                    active={heatZonePitchType === type}
+                                    onClick={() => setHeatZonePitchType(type)}
+                                >
+                                    {formatPitchType(type)}
+                                </PitchTypeFilterButton>
+                            ))}
+                        </PitchTypeFilter>
+                    )}
                     <HeatZoneContent>
                         <svg viewBox="0 0 300 280" style={{ width: '100%', maxWidth: '350px' }}>
                             {/* Background */}

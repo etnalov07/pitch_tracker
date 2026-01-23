@@ -477,7 +477,7 @@ export class AnalyticsService {
   }
 
   // Get pitcher heat zones showing strike percentage by zone
-  async getPitcherHeatZones(pitcherId: string, gameId?: string): Promise<HeatZoneData[]> {
+  async getPitcherHeatZones(pitcherId: string, gameId?: string, pitchType?: string): Promise<HeatZoneData[]> {
     // Query all pitches with locations for this pitcher
     let queryText = `
       SELECT
@@ -491,10 +491,17 @@ export class AnalyticsService {
     `;
 
     const params: string[] = [pitcherId];
+    let paramIndex = 2;
 
     if (gameId) {
-      queryText += ' AND game_id = $2';
+      queryText += ` AND game_id = $${paramIndex}`;
       params.push(gameId);
+      paramIndex++;
+    }
+
+    if (pitchType) {
+      queryText += ` AND pitch_type = $${paramIndex}`;
+      params.push(pitchType);
     }
 
     const result = await query(queryText, params);
