@@ -124,7 +124,8 @@ export const StrikeZoneRow = styled.div({
 
 export const StrikeZoneContainer = styled.div({
     display: 'flex',
-    justifyContent: 'center',
+    flexDirection: 'column',
+    alignItems: 'center',
 });
 
 export const PitchForm = styled.div({
@@ -724,7 +725,6 @@ export const HeatZoneToggleContainer = styled.div({
     alignItems: 'center',
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.sm,
-    alignSelf: 'flex-end',
 });
 
 export const HeatZoneToggleLabel = styled.span({
