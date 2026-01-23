@@ -101,8 +101,6 @@ import {
     CurrentStepCard,
     CurrentStepTitle,
     CurrentStepDescription,
-    HeatZonePitchFilter,
-    HeatZonePitchButton,
 } from './styles';
 
 const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
@@ -166,10 +164,9 @@ const LiveGame: React.FC = () => {
     const [hitType, setHitType] = useState<HitType>('line_drive');
     const [hitLocation, setHitLocation] = useState<HitLocation | null>(null);
 
-    // Heat zones
+    // Heat zones - automatically filter by currently selected pitch type
     const [showHeatZones, setShowHeatZones] = useState(false);
-    const [heatZonePitchType, setHeatZonePitchType] = useState<string | undefined>(undefined);
-    const { zones: heatZones } = useHeatZones(currentPitcher?.player_id, gameId, heatZonePitchType);
+    const { zones: heatZones } = useHeatZones(currentPitcher?.player_id, gameId, pitchType);
 
     useEffect(() => {
         if (gameId) {
@@ -664,26 +661,9 @@ const LiveGame: React.FC = () => {
                             <StrikeZoneContainer>
                                 <HeatZoneToggle active={showHeatZones} onClick={() => setShowHeatZones(!showHeatZones)}>
                                     {showHeatZones ? 'Hide' : 'Show'} Heat Zones
+                                    {showHeatZones &&
+                                        ` (${ALL_PITCH_TYPES.find((pt) => pt.value === pitchType)?.label || pitchType})`}
                                 </HeatZoneToggle>
-                                {showHeatZones && pitcherPitchTypes.length > 0 && (
-                                    <HeatZonePitchFilter>
-                                        <HeatZonePitchButton
-                                            active={heatZonePitchType === undefined}
-                                            onClick={() => setHeatZonePitchType(undefined)}
-                                        >
-                                            All
-                                        </HeatZonePitchButton>
-                                        {pitcherPitchTypes.map((type) => (
-                                            <HeatZonePitchButton
-                                                key={type}
-                                                active={heatZonePitchType === type}
-                                                onClick={() => setHeatZonePitchType(type)}
-                                            >
-                                                {ALL_PITCH_TYPES.find((pt) => pt.value === type)?.label || type}
-                                            </HeatZonePitchButton>
-                                        ))}
-                                    </HeatZonePitchFilter>
-                                )}
                                 <StrikeZone
                                     onLocationSelect={handleLocationSelect}
                                     onTargetSelect={handleTargetSelect}

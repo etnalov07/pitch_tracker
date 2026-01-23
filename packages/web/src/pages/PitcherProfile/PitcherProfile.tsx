@@ -42,7 +42,7 @@ import {
     LegendColor,
     PitchTypeFilter,
     PitchTypeFilterLabel,
-    PitchTypeFilterButton,
+    PitchTypeSelect,
 } from './styles';
 
 const formatPitchType = (type: string): string => {
@@ -198,21 +198,17 @@ const PitcherProfile: React.FC = () => {
                     {profile.pitch_types.length > 0 && (
                         <PitchTypeFilter>
                             <PitchTypeFilterLabel>Filter by pitch:</PitchTypeFilterLabel>
-                            <PitchTypeFilterButton
-                                active={heatZonePitchType === undefined}
-                                onClick={() => setHeatZonePitchType(undefined)}
+                            <PitchTypeSelect
+                                value={heatZonePitchType || ''}
+                                onChange={(e) => setHeatZonePitchType(e.target.value || undefined)}
                             >
-                                All Pitches
-                            </PitchTypeFilterButton>
-                            {profile.pitch_types.map((type) => (
-                                <PitchTypeFilterButton
-                                    key={type}
-                                    active={heatZonePitchType === type}
-                                    onClick={() => setHeatZonePitchType(type)}
-                                >
-                                    {formatPitchType(type)}
-                                </PitchTypeFilterButton>
-                            ))}
+                                <option value="">All Pitches</option>
+                                {profile.pitch_types.map((type) => (
+                                    <option key={type} value={type}>
+                                        {formatPitchType(type)}
+                                    </option>
+                                ))}
+                            </PitchTypeSelect>
                         </PitchTypeFilter>
                     )}
                     <HeatZoneContent>

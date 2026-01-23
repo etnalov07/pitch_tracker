@@ -246,8 +246,8 @@ export const LegendColor = styled.div<{ color: string }>((props) => ({
 
 export const PitchTypeFilter = styled.div({
     display: 'flex',
-    flexWrap: 'wrap',
-    gap: theme.spacing.xs,
+    alignItems: 'center',
+    gap: theme.spacing.md,
     marginBottom: theme.spacing.md,
 });
 
@@ -255,22 +255,31 @@ export const PitchTypeFilterLabel = styled.span({
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.gray[600],
-    marginRight: theme.spacing.sm,
-    alignSelf: 'center',
 });
 
-export const PitchTypeFilterButton = styled.button<{ active?: boolean }>((props) => ({
-    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-    backgroundColor: props.active ? theme.colors.primary[600] : theme.colors.gray[100],
-    color: props.active ? 'white' : theme.colors.gray[700],
-    border: `1px solid ${props.active ? theme.colors.primary[600] : theme.colors.gray[300]}`,
+export const PitchTypeSelect = styled.select({
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    paddingRight: theme.spacing.xl,
+    backgroundColor: 'white',
+    color: theme.colors.gray[700],
+    border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,
-    fontSize: theme.fontSize.xs,
+    fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
     cursor: 'pointer',
-    transition: 'all 0.15s',
+    appearance: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 12px center',
+    minWidth: '150px',
+
+    '&:focus': {
+        outline: 'none',
+        borderColor: theme.colors.primary[500],
+        boxShadow: `0 0 0 3px ${theme.colors.primary[100]}`,
+    },
 
     '&:hover': {
-        backgroundColor: props.active ? theme.colors.primary[700] : theme.colors.gray[200],
+        borderColor: theme.colors.gray[400],
     },
-}));
+});
