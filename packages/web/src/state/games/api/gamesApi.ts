@@ -49,6 +49,14 @@ export const gamesApi = {
         return response.data.game;
     },
 
+    updateScore: async (id: string, homeScore: number, awayScore: number): Promise<Game> => {
+        const response = await api.put<{ game: Game }>(`/games/${id}/score`, {
+            home_score: homeScore,
+            away_score: awayScore,
+        });
+        return response.data.game;
+    },
+
     getCurrentInning: async (id: string): Promise<Inning | null> => {
         try {
             const response = await api.get<{ inning: Inning }>(`/games/${id}/current-inning`);

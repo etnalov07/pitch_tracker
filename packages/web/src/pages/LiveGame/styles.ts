@@ -575,6 +575,34 @@ export const InningChangeDismiss = styled.button({
     },
 });
 
+export const RunsInputSection = styled.div({
+    marginBottom: theme.spacing.lg,
+});
+
+export const RunsInputLabel = styled.label({
+    display: 'block',
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.gray[700],
+    marginBottom: theme.spacing.sm,
+});
+
+export const RunsInput = styled.input({
+    width: '80px',
+    padding: theme.spacing.sm,
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.bold,
+    textAlign: 'center',
+    border: `2px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+
+    '&:focus': {
+        outline: 'none',
+        borderColor: theme.colors.primary[500],
+        boxShadow: `0 0 0 3px ${theme.colors.primary[100]}`,
+    },
+});
+
 // Baseball Diamond Modal for In-Play recording
 export const DiamondModalOverlay = styled.div({
     position: 'fixed',

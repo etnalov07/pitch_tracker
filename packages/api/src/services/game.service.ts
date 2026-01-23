@@ -168,11 +168,35 @@ export class GameService {
 
   async endGame(gameId: string): Promise<Game> {
     const result = await query(
-      `UPDATE games 
+      `UPDATE games
        SET status = 'completed'
        WHERE id = $1
        RETURNING *`,
       [gameId]
+    );
+
+    return result.rows[0];
+  }
+
+  async addHomeRuns(gameId: string, runs: number): Promise<Game> {
+    const result = await query(
+      `UPDATE games
+       SET home_score = COALESCE(home_score, 0) + $1
+       WHERE id = $2
+       RETURNING *`,
+      [runs, gameId]
+    );
+
+    return result.rows[0];
+  }
+
+  async addAwayRuns(gameId: string, runs: number): Promise<Game> {
+    const result = await query(
+      `UPDATE games
+       SET away_score = COALESCE(away_score, 0) + $1
+       WHERE id = $2
+       RETURNING *`,
+      [runs, gameId]
     );
 
     return result.rows[0];

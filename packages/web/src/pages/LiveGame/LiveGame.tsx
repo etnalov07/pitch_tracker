@@ -74,6 +74,9 @@ import {
     InningChangeText,
     InningChangeSubtext,
     InningChangeDismiss,
+    RunsInputSection,
+    RunsInputLabel,
+    RunsInput,
     DiamondModalOverlay,
     DiamondModal,
     DiamondModalHeader,
@@ -156,9 +159,10 @@ const LiveGame: React.FC = () => {
     // Out tracking
     const [currentOuts, setCurrentOuts] = useState(0);
 
-    // Inning change notification
+    // Inning change notification and runs input
     const [showInningChange, setShowInningChange] = useState(false);
     const [inningChangeInfo, setInningChangeInfo] = useState<{ inning: number; half: string } | null>(null);
+    const [teamRunsScored, setTeamRunsScored] = useState<string>('0');
 
     // Baseball diamond modal for in-play recording
     const [showDiamondModal, setShowDiamondModal] = useState(false);
@@ -349,34 +353,15 @@ const LiveGame: React.FC = () => {
             // Handle out tracking and inning advancement
             if (outsFromPlay > 0) {
                 if (newOutCount >= 3) {
-                    // 3 outs - advance to next half-inning
+                    // 3 outs - show runs prompt modal (don't advance yet)
                     setCurrentOuts(0);
-                    try {
-                        const updatedGame = await gamesApi.advanceInning(gameId!);
-                        // Refresh game state
-                        dispatch(fetchGameById(gameId!));
-                        // Fetch new inning
-                        const newInning = await gamesApi.getCurrentInning(gameId!);
-                        setCurrentInning(newInning);
-                        // Show inning change notification
-                        setInningChangeInfo({
-                            inning: updatedGame.current_inning,
-                            half: updatedGame.inning_half,
-                        });
-                        setShowInningChange(true);
-                        // Reset batting order to top when inning changes
-                        setCurrentBattingOrder(1);
-                        const firstBatter = opponentLineup.find((p) => p.batting_order === 1 && !p.replaced_by_id);
-                        if (firstBatter) {
-                            setCurrentBatter(firstBatter);
-                            // Auto-start the next at-bat
-                            await startAtBatForBatter(firstBatter, 0, newInning);
-                        } else {
-                            setCurrentBatter(null);
-                        }
-                    } catch (error) {
-                        console.error('Failed to advance inning:', error);
-                    }
+                    setTeamRunsScored('0');
+                    // Store current inning info for the modal
+                    setInningChangeInfo({
+                        inning: game?.current_inning || 1,
+                        half: game?.inning_half || 'top',
+                    });
+                    setShowInningChange(true);
                 } else {
                     setCurrentOuts(newOutCount);
                     // Advance to next batter and auto-start at-bat
@@ -415,6 +400,50 @@ const LiveGame: React.FC = () => {
         setHitLocation(null);
         // End the at-bat with the selected result
         await handleEndAtBat(result);
+    };
+
+    // Handle inning change confirmation with runs scored
+    const handleInningChangeConfirm = async () => {
+        if (!gameId || !game) return;
+
+        try {
+            const runsToAdd = parseInt(teamRunsScored, 10) || 0;
+
+            // Update the score with runs from team's at-bat
+            const currentHomeScore = game.home_score || 0;
+            const currentAwayScore = game.away_score || 0;
+            await gamesApi.updateScore(gameId, currentHomeScore + runsToAdd, currentAwayScore);
+
+            // Advance inning twice: once to team's batting half, once to opponent's next at-bat
+            // First advance: opponent done → team bats (we skip this)
+            await gamesApi.advanceInning(gameId);
+            // Second advance: team done → opponent bats again
+            await gamesApi.advanceInning(gameId);
+
+            // Refresh game state
+            dispatch(fetchGameById(gameId));
+
+            // Fetch new inning (opponent batting again)
+            const newInning = await gamesApi.getCurrentInning(gameId);
+            setCurrentInning(newInning);
+
+            // Close modal
+            setShowInningChange(false);
+
+            // Reset batting order to top when inning changes
+            setCurrentBattingOrder(1);
+            const firstBatter = opponentLineup.find((p) => p.batting_order === 1 && !p.replaced_by_id);
+            if (firstBatter && newInning) {
+                setCurrentBatter(firstBatter);
+                // Auto-start the next at-bat
+                await startAtBatForBatter(firstBatter, 0, newInning);
+            } else {
+                setCurrentBatter(null);
+            }
+        } catch (error) {
+            console.error('Failed to advance inning:', error);
+            alert('Failed to advance inning');
+        }
     };
 
     // Helper to start an at-bat for a specific batter
@@ -787,17 +816,23 @@ const LiveGame: React.FC = () => {
                 />
             )}
 
-            {/* Inning Change Notification */}
+            {/* Inning Change - Runs Scored Prompt */}
             {showInningChange && inningChangeInfo && (
                 <InningChangeOverlay>
                     <InningChangeModal>
-                        <InningChangeText>
-                            {inningChangeInfo.half === 'top' ? '▲' : '▼'}{' '}
-                            {inningChangeInfo.half.charAt(0).toUpperCase() + inningChangeInfo.half.slice(1)} of{' '}
-                            {inningChangeInfo.inning}
-                        </InningChangeText>
-                        <InningChangeSubtext>3 outs recorded. Moving to next half-inning.</InningChangeSubtext>
-                        <InningChangeDismiss onClick={() => setShowInningChange(false)}>Continue</InningChangeDismiss>
+                        <InningChangeText>End of Inning {inningChangeInfo.inning}</InningChangeText>
+                        <InningChangeSubtext>3 outs recorded. Enter runs scored by your team:</InningChangeSubtext>
+                        <RunsInputSection>
+                            <RunsInputLabel>Runs Scored</RunsInputLabel>
+                            <RunsInput
+                                type="number"
+                                min="0"
+                                max="99"
+                                value={teamRunsScored}
+                                onChange={(e) => setTeamRunsScored(e.target.value)}
+                            />
+                        </RunsInputSection>
+                        <InningChangeDismiss onClick={handleInningChangeConfirm}>Continue to Next Inning</InningChangeDismiss>
                     </InningChangeModal>
                 </InningChangeOverlay>
             )}
