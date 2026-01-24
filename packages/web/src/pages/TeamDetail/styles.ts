@@ -8,7 +8,7 @@ export const Container = styled.div({
 });
 
 export const Header = styled.header({
-    background: 'white',
+    background: 'linear-gradient(135deg, var(--team-primary) 0%, var(--team-secondary) 100%)',
     padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
     display: 'flex',
     justifyContent: 'space-between',
@@ -25,16 +25,16 @@ export const HeaderLeft = styled.div({
 export const HeaderRight = styled.div({});
 
 export const BackButton = styled.button({
-    background: 'none',
+    background: 'rgba(255, 255, 255, 0.1)',
     border: 'none',
-    color: theme.colors.primary[600],
+    color: 'white',
     fontSize: theme.fontSize.sm,
     cursor: 'pointer',
     padding: `${theme.spacing.sm} ${theme.spacing.md}`,
     borderRadius: theme.borderRadius.md,
 
     '&:hover': {
-        background: theme.colors.gray[100],
+        background: 'rgba(255, 255, 255, 0.2)',
     },
 });
 
@@ -43,29 +43,47 @@ export const TeamInfo = styled.div({});
 export const Title = styled.h1({
     fontSize: theme.fontSize['2xl'],
     fontWeight: theme.fontWeight.bold,
-    color: theme.colors.gray[900],
+    color: 'white',
     margin: 0,
 });
 
 export const Subtitle = styled.p({
     fontSize: theme.fontSize.sm,
-    color: theme.colors.gray[600],
+    color: 'rgba(255, 255, 255, 0.8)',
     margin: `${theme.spacing.xs} 0 0 0`,
 });
 
 export const AddButton = styled.button({
-    backgroundColor: theme.colors.primary[600],
-    color: 'white',
+    backgroundColor: 'white',
+    color: 'var(--team-primary)',
     border: 'none',
     padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.semibold,
     cursor: 'pointer',
-    transition: 'background-color 0.2s',
+    transition: 'all 0.2s',
 
     '&:hover': {
-        backgroundColor: theme.colors.primary[700],
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    },
+});
+
+export const SettingsButton = styled.button({
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    color: 'white',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    marginRight: theme.spacing.md,
+
+    '&:hover': {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderColor: 'rgba(255, 255, 255, 0.5)',
     },
 });
 

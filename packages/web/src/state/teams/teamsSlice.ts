@@ -110,6 +110,39 @@ export const deletePlayer = createAsyncThunk('teams/deletePlayer', async (player
     }
 });
 
+export const uploadTeamLogo = createAsyncThunk(
+    'teams/uploadLogo',
+    async ({ teamId, file }: { teamId: string; file: File }, { rejectWithValue }) => {
+        try {
+            return await teamsApi.uploadLogo(teamId, file);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to upload logo'));
+        }
+    }
+);
+
+export const updateTeamColors = createAsyncThunk(
+    'teams/updateColors',
+    async (
+        { teamId, colors }: { teamId: string; colors: { primary_color?: string; secondary_color?: string; accent_color?: string } },
+        { rejectWithValue }
+    ) => {
+        try {
+            return await teamsApi.updateColors(teamId, colors);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to update colors'));
+        }
+    }
+);
+
+export const deleteTeamLogo = createAsyncThunk('teams/deleteLogo', async (teamId: string, { rejectWithValue }) => {
+    try {
+        return await teamsApi.deleteLogo(teamId);
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to delete logo'));
+    }
+});
+
 const teamsSlice = createSlice({
     name: 'teams',
     initialState,
@@ -240,6 +273,51 @@ const teamsSlice = createSlice({
                 state.roster = state.roster.filter((p) => p.id !== action.payload);
             })
             .addCase(deletePlayer.rejected, (state, action) => {
+                state.error = action.payload as string;
+            });
+
+        // Upload Team Logo
+        builder
+            .addCase(uploadTeamLogo.fulfilled, (state, action) => {
+                const index = state.teamList.findIndex((t) => t.id === action.payload.id);
+                if (index !== -1) {
+                    state.teamList[index] = action.payload;
+                }
+                if (state.selectedTeam?.id === action.payload.id) {
+                    state.selectedTeam = action.payload;
+                }
+            })
+            .addCase(uploadTeamLogo.rejected, (state, action) => {
+                state.error = action.payload as string;
+            });
+
+        // Update Team Colors
+        builder
+            .addCase(updateTeamColors.fulfilled, (state, action) => {
+                const index = state.teamList.findIndex((t) => t.id === action.payload.id);
+                if (index !== -1) {
+                    state.teamList[index] = action.payload;
+                }
+                if (state.selectedTeam?.id === action.payload.id) {
+                    state.selectedTeam = action.payload;
+                }
+            })
+            .addCase(updateTeamColors.rejected, (state, action) => {
+                state.error = action.payload as string;
+            });
+
+        // Delete Team Logo
+        builder
+            .addCase(deleteTeamLogo.fulfilled, (state, action) => {
+                const index = state.teamList.findIndex((t) => t.id === action.payload.id);
+                if (index !== -1) {
+                    state.teamList[index] = action.payload;
+                }
+                if (state.selectedTeam?.id === action.payload.id) {
+                    state.selectedTeam = action.payload;
+                }
+            })
+            .addCase(deleteTeamLogo.rejected, (state, action) => {
                 state.error = action.payload as string;
             });
     },

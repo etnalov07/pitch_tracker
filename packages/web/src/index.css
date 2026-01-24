@@ -1,3 +1,9 @@
+:root {
+    --team-primary: #3b82f6;
+    --team-secondary: #1f2937;
+    --team-accent: #22c55e;
+}
+
 * {
     box-sizing: border-box;
 }

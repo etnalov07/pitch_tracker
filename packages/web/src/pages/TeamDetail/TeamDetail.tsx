@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { TeamLogo } from '../../components/team';
+import { useTeamTheme } from '../../contexts';
 import api from '../../services/api';
 import {
     useAppDispatch,
@@ -22,6 +24,7 @@ import {
     Title,
     Subtitle,
     AddButton,
+    SettingsButton,
     Content,
     FormCard,
     FormTitle,
@@ -81,6 +84,7 @@ const TeamDetail: React.FC = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { team_id } = useParams<{ team_id: string }>();
+    const { setActiveTeam, clearTheme } = useTeamTheme();
 
     const { selectedTeam: team, roster: players = [], loading } = useAppSelector((state) => state.teams);
     const [showAddPlayer, setShowAddPlayer] = useState(false);
@@ -105,6 +109,16 @@ const TeamDetail: React.FC = () => {
             dispatch(fetchTeamRoster(team_id));
         }
     }, [dispatch, team_id]);
+
+    // Apply team theme when team loads
+    useEffect(() => {
+        if (team) {
+            setActiveTeam(team);
+        }
+        return () => {
+            clearTheme();
+        };
+    }, [team, setActiveTeam, clearTheme]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({
@@ -246,12 +260,14 @@ const TeamDetail: React.FC = () => {
             <Header>
                 <HeaderLeft>
                     <BackButton onClick={() => navigate('/teams')}>Back to Teams</BackButton>
+                    <TeamLogo team={team} size="md" />
                     <TeamInfo>
                         <Title>{team.name}</Title>
                         {team.city && <Subtitle>{team.city}</Subtitle>}
                     </TeamInfo>
                 </HeaderLeft>
                 <HeaderRight>
+                    <SettingsButton onClick={() => navigate(`/teams/${team_id}/settings`)}>Settings</SettingsButton>
                     {!showAddPlayer && <AddButton onClick={() => setShowAddPlayer(true)}>+ Add Player</AddButton>}
                 </HeaderRight>
             </Header>

@@ -50,6 +50,10 @@ export interface Team {
     organization?: string;
     age_group?: string;
     season?: string;
+    logo_path?: string;
+    primary_color?: string;
+    secondary_color?: string;
+    accent_color?: string;
     created_at: string;
     updated_at?: string;
 }
