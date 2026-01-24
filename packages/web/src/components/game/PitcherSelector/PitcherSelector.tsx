@@ -1,8 +1,22 @@
-import styled from '@emotion/styled';
 import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
-import { theme } from '../../styles/theme';
-import { Player, GamePitcherWithPlayer } from '../../types';
+import api from '../../../services/api';
+import { Player, GamePitcherWithPlayer } from '../../../types';
+import {
+    Overlay,
+    Modal,
+    ModalHeader,
+    ModalTitle,
+    CloseButton,
+    PitcherList,
+    PitcherCard,
+    PitcherInfo,
+    JerseyNumber,
+    PitcherName,
+    PitcherStats,
+    ActiveBadge,
+    SectionTitle,
+    EmptyMessage,
+} from './styles';
 
 interface PitcherSelectorProps {
     gameId: string;
@@ -11,133 +25,6 @@ interface PitcherSelectorProps {
     onPitcherSelected: (pitcher: GamePitcherWithPlayer) => void;
     onClose: () => void;
 }
-
-const Overlay = styled.div({
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-});
-
-const Modal = styled.div({
-    background: 'white',
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.xl,
-    width: '100%',
-    maxWidth: '500px',
-    maxHeight: '80vh',
-    overflow: 'auto',
-    boxShadow: theme.shadows.lg,
-});
-
-const ModalHeader = styled.div({
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.lg,
-});
-
-const ModalTitle = styled.h2({
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.gray[900],
-    margin: 0,
-});
-
-const CloseButton = styled.button({
-    background: 'none',
-    border: 'none',
-    fontSize: theme.fontSize.xl,
-    color: theme.colors.gray[500],
-    cursor: 'pointer',
-
-    '&:hover': {
-        color: theme.colors.gray[700],
-    },
-});
-
-const PitcherList = styled.div({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing.sm,
-});
-
-const PitcherCard = styled.button<{ isActive?: boolean }>((props) => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: theme.spacing.md,
-    border: `2px solid ${props.isActive ? theme.colors.primary[500] : theme.colors.gray[200]}`,
-    borderRadius: theme.borderRadius.md,
-    background: props.isActive ? theme.colors.primary[50] : 'white',
-    cursor: 'pointer',
-    textAlign: 'left',
-    width: '100%',
-
-    '&:hover': {
-        borderColor: theme.colors.primary[400],
-        background: theme.colors.primary[50],
-    },
-}));
-
-const PitcherInfo = styled.div({
-    display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing.md,
-});
-
-const JerseyNumber = styled.div({
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    backgroundColor: theme.colors.primary[100],
-    color: theme.colors.primary[700],
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: theme.fontWeight.bold,
-    fontSize: theme.fontSize.lg,
-});
-
-const PitcherName = styled.div({
-    fontWeight: theme.fontWeight.medium,
-    color: theme.colors.gray[900],
-});
-
-const PitcherStats = styled.div({
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.gray[500],
-});
-
-const ActiveBadge = styled.span({
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.green[700],
-    backgroundColor: theme.colors.green[100],
-    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-    borderRadius: theme.borderRadius.full,
-});
-
-const SectionTitle = styled.h3({
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.gray[600],
-    textTransform: 'uppercase',
-    marginBottom: theme.spacing.sm,
-    marginTop: theme.spacing.lg,
-});
-
-const EmptyMessage = styled.p({
-    textAlign: 'center',
-    color: theme.colors.gray[500],
-    padding: theme.spacing.lg,
-});
 
 const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, currentInning, onPitcherSelected, onClose }) => {
     const [roster, setRoster] = useState<Player[]>([]);
