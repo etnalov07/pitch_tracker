@@ -3,43 +3,61 @@ import { theme } from '../../styles/theme';
 
 // Styled Components
 export const Container = styled.div({
-    display: 'grid',
-    gridTemplateColumns: '1fr',
+    display: 'flex',
+    flexDirection: 'column',
     minHeight: '100vh',
     backgroundColor: theme.colors.gray[100],
 
     [`@media (min-width: ${theme.breakpoints.lg})`]: {
-        gridTemplateColumns: '400px 1fr',
+        display: 'grid',
+        gridTemplateColumns: '350px 1fr',
     },
 });
 
 export const LeftPanel = styled.div({
     backgroundColor: 'white',
-    borderRight: `1px solid ${theme.colors.gray[200]}`,
-    overflowY: 'auto',
-    position: 'sticky',
-    top: 0,
-    height: '100vh',
-    display: 'flex',
+    borderBottom: `1px solid ${theme.colors.gray[200]}`,
+    display: 'none', // Hidden on mobile by default
     flexDirection: 'column',
     gap: theme.spacing.md,
     padding: theme.spacing.md,
+
+    [`@media (min-width: ${theme.breakpoints.lg})`]: {
+        display: 'flex',
+        borderRight: `1px solid ${theme.colors.gray[200]}`,
+        borderBottom: 'none',
+        overflowY: 'auto',
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+    },
 });
 
 export const MainPanel = styled.div({
-    padding: theme.spacing.lg,
+    padding: theme.spacing.sm,
     overflowY: 'auto',
+    flex: 1,
+
+    [`@media (min-width: ${theme.breakpoints.md})`]: {
+        padding: theme.spacing.lg,
+    },
 });
 
 export const GameHeader = styled.div({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: theme.spacing.sm,
+    padding: theme.spacing.xs,
     background: `linear-gradient(135deg, ${theme.colors.primary[600]} 0%, ${theme.colors.primary[800]} 100%)`,
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.sm,
     boxShadow: theme.shadows.md,
+    gap: theme.spacing.xs,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        padding: theme.spacing.sm,
+        gap: theme.spacing.sm,
+    },
 });
 
 export const TeamInfo = styled.div({
@@ -51,8 +69,16 @@ export const TeamInfo = styled.div({
 
 export const TeamName = styled.div({
     color: 'white',
-    fontSize: theme.fontSize.lg,
+    fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.semibold,
+    textAlign: 'center',
+    maxWidth: '80px',
+    wordWrap: 'break-word',
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        fontSize: theme.fontSize.lg,
+        maxWidth: 'none',
+    },
 });
 
 export const Score = styled.div({
@@ -84,12 +110,16 @@ export const CountDisplay = styled.div({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
     padding: theme.spacing.xs,
     backgroundColor: 'white',
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.xs,
     boxShadow: theme.shadows.sm,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        gap: theme.spacing.md,
+    },
 });
 
 export const CountLabel = styled.span({
@@ -184,6 +214,10 @@ export const ResultButtons = styled.div({
     display: 'flex',
     flexWrap: 'wrap',
     gap: theme.spacing.xs,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        gap: theme.spacing.sm,
+    },
 });
 
 export const ResultButton = styled.button<{ active: boolean; color: string }>((props) => ({
@@ -298,17 +332,27 @@ export const PlayerDisplay = styled.div({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: theme.spacing.md,
+    padding: theme.spacing.sm,
     backgroundColor: 'white',
     borderRadius: theme.borderRadius.lg,
-    marginBottom: theme.spacing.md,
     boxShadow: theme.shadows.sm,
+    gap: theme.spacing.sm,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        padding: theme.spacing.md,
+    },
 });
 
 export const PlayerInfo = styled.div({
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
+    minWidth: 0,
+    flex: 1,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        gap: theme.spacing.md,
+    },
 });
 
 export const PlayerLabel = styled.span({
@@ -319,32 +363,47 @@ export const PlayerLabel = styled.span({
 });
 
 export const PlayerName = styled.span({
-    fontSize: theme.fontSize.lg,
+    fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.gray[900],
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        fontSize: theme.fontSize.lg,
+    },
 });
 
 export const PlayerNumber = styled.span({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '36px',
-    height: '36px',
+    width: '28px',
+    height: '28px',
     borderRadius: '50%',
     backgroundColor: theme.colors.primary[100],
     color: theme.colors.primary[700],
     fontWeight: theme.fontWeight.bold,
-    fontSize: theme.fontSize.base,
+    fontSize: theme.fontSize.sm,
+    flexShrink: 0,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        width: '36px',
+        height: '36px',
+        fontSize: theme.fontSize.base,
+    },
 });
 
 export const ChangeButton = styled.button({
-    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
     backgroundColor: theme.colors.gray[100],
     color: theme.colors.gray[700],
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.xs,
     cursor: 'pointer',
+    flexShrink: 0,
 
     '&:hover:not(:disabled)': {
         backgroundColor: theme.colors.gray[200],
@@ -354,13 +413,24 @@ export const ChangeButton = styled.button({
         opacity: 0.5,
         cursor: 'not-allowed',
     },
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+        fontSize: theme.fontSize.sm,
+    },
 });
 
 export const PlayersRow = styled.div({
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
+    gridTemplateColumns: '1fr',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        gridTemplateColumns: '1fr 1fr',
+        gap: theme.spacing.md,
+        marginBottom: theme.spacing.lg,
+    },
 });
 
 export const SetupPrompt = styled.div({
@@ -395,9 +465,16 @@ export const SetupButton = styled.button({
 
 export const TopBar = styled.div({
     display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    flexDirection: 'column',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: theme.spacing.lg,
+    },
 });
 
 export const BackButton = styled.button({
@@ -456,7 +533,12 @@ export const StartGameButton = styled.button({
 export const TopBarRight = styled.div({
     display: 'flex',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
+    flexWrap: 'wrap',
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        gap: theme.spacing.md,
+    },
 });
 
 export const EndGameButton = styled.button({
@@ -867,11 +949,16 @@ export const StepIndicator = styled.div({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
     backgroundColor: 'white',
     borderRadius: theme.borderRadius.md,
     boxShadow: theme.shadows.sm,
     marginBottom: theme.spacing.sm,
+    overflowX: 'auto',
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    },
 });
 
 export const Step = styled.div<{ active?: boolean; completed?: boolean }>((props) => ({
@@ -882,8 +969,8 @@ export const Step = styled.div<{ active?: boolean; completed?: boolean }>((props
 }));
 
 export const StepNumber = styled.div<{ active?: boolean; completed?: boolean }>((props) => ({
-    width: '22px',
-    height: '22px',
+    width: '18px',
+    height: '18px',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
@@ -893,6 +980,12 @@ export const StepNumber = styled.div<{ active?: boolean; completed?: boolean }>(
     backgroundColor: props.completed ? theme.colors.green[500] : props.active ? theme.colors.primary[600] : theme.colors.gray[200],
     color: props.completed || props.active ? 'white' : theme.colors.gray[500],
     transition: 'all 0.2s',
+    flexShrink: 0,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        width: '22px',
+        height: '22px',
+    },
 }));
 
 export const StepLabel = styled.span<{ active?: boolean }>((props) => ({
@@ -909,16 +1002,27 @@ export const StepConnector = styled.div<{ completed?: boolean }>((props) => ({
     flex: 1,
     height: '2px',
     backgroundColor: props.completed ? theme.colors.green[500] : theme.colors.gray[200],
-    margin: `0 ${theme.spacing.sm}`,
+    margin: `0 ${theme.spacing.xs}`,
+    minWidth: '8px',
     transition: 'all 0.2s',
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        margin: `0 ${theme.spacing.sm}`,
+        minWidth: '16px',
+    },
 }));
 
 // Pitch Type Selector (prominent display)
 export const PitchTypeSelector = styled.div({
     backgroundColor: 'white',
     borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
+    padding: theme.spacing.sm,
     boxShadow: theme.shadows.sm,
+    marginBottom: theme.spacing.sm,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        padding: theme.spacing.md,
+    },
 });
 
 export const PitchTypeSelectorTitle = styled.div({
@@ -932,8 +1036,13 @@ export const PitchTypeSelectorTitle = styled.div({
 
 export const PitchTypeGrid = styled.div({
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
-    gap: theme.spacing.sm,
+    gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))',
+    gap: theme.spacing.xs,
+
+    [`@media (min-width: ${theme.breakpoints.sm})`]: {
+        gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))',
+        gap: theme.spacing.sm,
+    },
 });
 
 export const PitchTypeButton = styled.button<{ active?: boolean }>((props) => ({

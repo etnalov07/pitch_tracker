@@ -432,6 +432,75 @@ export interface SprayChart {
 }
 
 // ============================================================================
+// Batter Scouting Types
+// ============================================================================
+
+export interface BatterScoutingProfile {
+    id: string;
+    team_id: string;
+    opponent_team_name: string;
+    player_name: string;
+    normalized_name: string;
+    bats: HandednessType;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface BatterScoutingNote {
+    id: string;
+    profile_id: string;
+    note_text: string;
+    created_by?: string;
+    created_by_name?: string;
+    created_at: string;
+    updated_at?: string;
+}
+
+export interface BatterTendencies {
+    id: string;
+    profile_id: string;
+    total_pitches_seen: number;
+    total_at_bats: number;
+    pitches_outside_zone: number;
+    swings_outside_zone: number;
+    chase_rate: number | null;
+    pitches_inside_zone: number;
+    takes_inside_zone: number;
+    watch_rate: number | null;
+    early_count_pitches: number;
+    early_count_swings: number;
+    early_count_rate: number | null;
+    first_pitches: number;
+    first_pitch_takes: number;
+    first_pitch_take_rate: number | null;
+    breaking_outside: number;
+    breaking_outside_swings: number;
+    breaking_chase_rate: number | null;
+    zone_tendencies: Record<string, { swing_rate: number; count: number }>;
+    last_calculated_at: string | null;
+    is_stale: boolean;
+}
+
+export type TendencyType = 'chase' | 'takes' | 'aggressive' | 'passive' | 'first_pitch';
+export type TendencyConfidence = 'high' | 'medium' | 'low';
+
+export interface AutoDetectedTendency {
+    type: TendencyType;
+    description: string;
+    confidence: TendencyConfidence;
+    value: number;
+    sample_size: number;
+}
+
+export interface BatterScoutingReport {
+    profile: BatterScoutingProfile;
+    tendencies: BatterTendencies | null;
+    notes: BatterScoutingNote[];
+    auto_detected: AutoDetectedTendency[];
+    games_faced: number;
+}
+
+// ============================================================================
 // API Response Wrappers
 // ============================================================================
 

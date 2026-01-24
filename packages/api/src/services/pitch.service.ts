@@ -1,6 +1,7 @@
 import { query, transaction } from '../config/database';
 import { Pitch } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import scoutingService from './scouting.service';
 
 export class PitchService {
   async logPitch(pitchData: Partial<Pitch> & { opponent_batter_id?: string }): Promise<Pitch> {
@@ -31,7 +32,7 @@ export class PitchService {
       throw new Error('Either batter_id or opponent_batter_id is required');
     }
 
-    return await transaction(async (client) => {
+    const pitch = await transaction(async (client) => {
       // Get current pitch count for this at-bat
       const countResult = await client.query(
         'SELECT COALESCE(MAX(pitch_number), 0) as max_pitch FROM pitches WHERE at_bat_id = $1',
@@ -77,6 +78,18 @@ export class PitchService {
 
       return pitchResult.rows[0];
     });
+
+    // Mark scouting tendencies as stale if this pitch was against an opponent batter
+    if (opponent_batter_id) {
+      try {
+        await scoutingService.markTendenciesStale(opponent_batter_id);
+      } catch (error) {
+        // Don't fail the pitch log if scouting cache update fails
+        console.error('Failed to mark tendencies as stale:', error);
+      }
+    }
+
+    return pitch;
   }
 
   async getPitchById(pitchId: string): Promise<Pitch | null> {

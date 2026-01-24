@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import analyticsController from '../controllers/analytics.controller';
+import scoutingController from '../controllers/scouting.controller';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
@@ -23,5 +24,12 @@ router.get('/game/:gameId/state', analyticsController.getGameState.bind(analytic
 
 // Matchup analytics
 router.get('/matchup/:batterId/:pitcherId', analyticsController.getMatchupStats.bind(analyticsController));
+
+// Opponent batter scouting
+router.get('/opponent-batter/:batterId/scouting', scoutingController.getScoutingReport.bind(scoutingController));
+router.post('/opponent-batter/:batterId/notes', scoutingController.addNote.bind(scoutingController));
+router.put('/opponent-batter/:batterId/notes/:noteId', scoutingController.updateNote.bind(scoutingController));
+router.delete('/opponent-batter/:batterId/notes/:noteId', scoutingController.deleteNote.bind(scoutingController));
+router.post('/opponent-batter/:batterId/tendencies/recalculate', scoutingController.recalculateTendencies.bind(scoutingController));
 
 export default router;
