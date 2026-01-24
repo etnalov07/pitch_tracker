@@ -1,11 +1,17 @@
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 const UPLOAD_DIR = path.join(__dirname, '../../uploads/logos');
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml'];
+
+// Ensure upload directory exists
+if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 const storage = multer.diskStorage({
     destination: (_req, _file, cb) => {
