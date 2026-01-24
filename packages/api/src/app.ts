@@ -19,7 +19,13 @@ import teamRoutes from './routes/team.routes';
 const app: Application = express();
 
 // Middleware
-app.use(cors({ origin: config.cors.origin }));
+console.log('CORS origins configured:', config.cors.origin);
+app.use(cors({
+  origin: config.cors.origin,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
