@@ -8,8 +8,8 @@ import Login from './pages/Login/Login';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
 import PitcherProfile from './pages/PitcherProfile';
 import TeamDetail from './pages/TeamDetail/TeamDetail';
-import TeamSettings from './pages/TeamSettings';
 import Teams from './pages/Teams/Teams';
+import TeamSettings from './pages/TeamSettings';
 import { useAppSelector } from './state';
 
 // Protected Route component

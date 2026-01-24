@@ -1,5 +1,5 @@
-import React from 'react';
 import styled from '@emotion/styled';
+import React from 'react';
 import { theme } from '../../../styles/theme';
 
 interface TeamColors {
@@ -193,7 +193,11 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ colors, onChange }) => {
             <ColorRow>
                 <ColorLabel>Primary</ColorLabel>
                 <ColorInputWrapper>
-                    <ColorInput type="color" value={colors.primary_color} onChange={(e) => handleColorChange('primary_color', e.target.value)} />
+                    <ColorInput
+                        type="color"
+                        value={colors.primary_color}
+                        onChange={(e) => handleColorChange('primary_color', e.target.value)}
+                    />
                     <HexInput
                         value={colors.primary_color}
                         onChange={(e) => handleHexInputChange('primary_color', e.target.value)}
@@ -202,7 +206,12 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ colors, onChange }) => {
                 </ColorInputWrapper>
                 <PresetColors>
                     {PRESET_COLORS.slice(0, 5).map((color) => (
-                        <PresetColor key={color} color={color} onClick={() => handleColorChange('primary_color', color)} title={color} />
+                        <PresetColor
+                            key={color}
+                            color={color}
+                            onClick={() => handleColorChange('primary_color', color)}
+                            title={color}
+                        />
                     ))}
                 </PresetColors>
             </ColorRow>
@@ -223,7 +232,12 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ colors, onChange }) => {
                 </ColorInputWrapper>
                 <PresetColors>
                     {PRESET_COLORS.slice(5, 10).map((color) => (
-                        <PresetColor key={color} color={color} onClick={() => handleColorChange('secondary_color', color)} title={color} />
+                        <PresetColor
+                            key={color}
+                            color={color}
+                            onClick={() => handleColorChange('secondary_color', color)}
+                            title={color}
+                        />
                     ))}
                 </PresetColors>
             </ColorRow>
@@ -231,7 +245,11 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ colors, onChange }) => {
             <ColorRow>
                 <ColorLabel>Accent</ColorLabel>
                 <ColorInputWrapper>
-                    <ColorInput type="color" value={colors.accent_color} onChange={(e) => handleColorChange('accent_color', e.target.value)} />
+                    <ColorInput
+                        type="color"
+                        value={colors.accent_color}
+                        onChange={(e) => handleColorChange('accent_color', e.target.value)}
+                    />
                     <HexInput
                         value={colors.accent_color}
                         onChange={(e) => handleHexInputChange('accent_color', e.target.value)}
@@ -240,7 +258,12 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ colors, onChange }) => {
                 </ColorInputWrapper>
                 <PresetColors>
                     {PRESET_COLORS.slice(0, 5).map((color) => (
-                        <PresetColor key={color} color={color} onClick={() => handleColorChange('accent_color', color)} title={color} />
+                        <PresetColor
+                            key={color}
+                            color={color}
+                            onClick={() => handleColorChange('accent_color', color)}
+                            title={color}
+                        />
                     ))}
                 </PresetColors>
             </ColorRow>

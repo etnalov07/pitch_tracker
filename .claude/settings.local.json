@@ -12,7 +12,8 @@
       "Bash(npx tsc:*)",
       "Bash(npm run lint:*)",
       "Bash(npx prettier:*)",
-      "Bash(npm run build:shared:*)"
+      "Bash(npm run build:shared:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

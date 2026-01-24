@@ -1,7 +1,7 @@
-import React from 'react';
 import styled from '@emotion/styled';
-import { Team } from '../../../types';
+import React from 'react';
 import { theme } from '../../../styles/theme';
+import { Team } from '../../../types';
 
 export type LogoSize = 'sm' | 'md' | 'lg';
 

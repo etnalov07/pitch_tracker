@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
 import styled from '@emotion/styled';
-import { Team } from '../../../types';
+import React, { useRef, useState } from 'react';
 import { theme } from '../../../styles/theme';
+import { Team } from '../../../types';
 import TeamLogo from '../TeamLogo';
 
 interface LogoUploaderProps {
