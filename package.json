@@ -3,7 +3,9 @@
     "version": "1.0.0",
     "private": true,
     "workspaces": [
-        "packages/*"
+        "packages/api",
+        "packages/shared",
+        "packages/web"
     ],
     "scripts": {
         "dev:web": "npm run start --workspace=@pitch-tracker/web",
