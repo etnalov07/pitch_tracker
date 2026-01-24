@@ -90,8 +90,8 @@
 - Career stats card with games, pitches, batters faced, strike %, accuracy
 - Game logs table with drill-down modal for pitch type breakdown
 
-### 8) Batter Scouting Notes
-- Keep notes on each batter's tendencies
+### ~~8) Batter Scouting Notes~~ ✅ DONE
+- ~~Keep notes on each batter's tendencies~~
 - Auto-detect patterns:
   - "Chases low and away breaking balls"
   - "Doesn't swing at borderline pitches"
@@ -147,8 +147,8 @@
 - Store colors in team record
 - Consider color contrast for accessibility
 
-### 12) UI Density - Reduce Padding and Font Sizes
-- Current UI feels too spread out, requires excessive scrolling
+### ~~12) UI Density - Reduce Padding and Font Sizes~~ ✅ DONE
+- ~~Current UI feels too spread out, requires excessive scrolling~~
 - Priority areas:
   - **LiveGame page** - pitch entry workflow should fit without scrolling
   - Headers and navigation

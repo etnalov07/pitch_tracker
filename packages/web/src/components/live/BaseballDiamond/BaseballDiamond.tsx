@@ -1,6 +1,6 @@
-import styled from '@emotion/styled';
 import React, { useState, useRef } from 'react';
-import { theme } from '../../styles/theme';
+import { theme } from '../../../styles/theme';
+import { Container, DiamondSvg, Legend, LegendItem, LegendLine } from './styles';
 
 export type HitType = 'fly_ball' | 'line_drive' | 'ground_ball';
 
@@ -252,41 +252,5 @@ const BaseballDiamond: React.FC<BaseballDiamondProps> = ({ onLocationSelect, sel
         </Container>
     );
 };
-
-const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: ${theme.spacing.sm};
-`;
-
-const DiamondSvg = styled.svg`
-    width: 100%;
-    max-width: 300px;
-    height: auto;
-    cursor: crosshair;
-    border: 1px solid ${theme.colors.gray[200]};
-    border-radius: ${theme.borderRadius.lg};
-    background-color: ${theme.colors.green[50]};
-`;
-
-const Legend = styled.div`
-    display: flex;
-    gap: ${theme.spacing.md};
-    font-size: ${theme.fontSize.xs};
-    color: ${theme.colors.gray[600]};
-`;
-
-const LegendItem = styled.div`
-    display: flex;
-    align-items: center;
-    gap: ${theme.spacing.xs};
-`;
-
-const LegendLine = styled.div`
-    width: 16px;
-    height: 3px;
-    border-radius: 2px;
-`;
 
 export default BaseballDiamond;

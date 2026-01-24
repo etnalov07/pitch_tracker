@@ -1,9 +1,20 @@
-import styled from '@emotion/styled';
 import { HeatZoneData } from '@pitch-tracker/shared';
 import React, { useState, useEffect } from 'react';
-import { theme } from '../../styles/theme';
-import { Pitch } from '../../types';
-import HeatZoneOverlay from './HeatZoneOverlay';
+import { theme } from '../../../styles/theme';
+import { Pitch } from '../../../types';
+import HeatZoneOverlay from '../HeatZoneOverlay';
+import {
+    Container,
+    Title,
+    ZoneWrapper,
+    MainSvg,
+    ClearTargetButton,
+    Legend,
+    LegendItem,
+    LegendDot,
+    TargetIcon,
+    Instructions,
+} from './styles';
 
 interface StrikeZoneProps {
     onLocationSelect: (x: number, y: number) => void;
@@ -290,92 +301,5 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         </Container>
     );
 };
-
-// Styled Components
-const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: ${theme.spacing.md};
-`;
-
-const Title = styled.h3`
-    font-size: ${theme.fontSize.lg};
-    font-weight: ${theme.fontWeight.semibold};
-    color: ${theme.colors.gray[900]};
-    margin: 0;
-`;
-
-const ZoneWrapper = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: ${theme.spacing.md};
-    align-items: center;
-`;
-
-const MainSvg = styled.svg`
-    width: 100%;
-    max-width: 350px;
-    height: auto;
-    cursor: crosshair;
-    border-radius: ${theme.borderRadius.lg};
-    box-shadow: ${theme.shadows.md};
-`;
-
-const ClearTargetButton = styled.button`
-    padding: ${theme.spacing.xs} ${theme.spacing.md};
-    background-color: ${theme.colors.gray[100]};
-    color: ${theme.colors.gray[700]};
-    border: 1px solid ${theme.colors.gray[300]};
-    border-radius: ${theme.borderRadius.md};
-    font-size: ${theme.fontSize.sm};
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &:hover {
-        background-color: ${theme.colors.gray[200]};
-        border-color: ${theme.colors.gray[400]};
-    }
-`;
-
-const Legend = styled.div`
-    display: flex;
-    flex-wrap: wrap;
-    gap: ${theme.spacing.md};
-    padding: ${theme.spacing.md};
-    background-color: ${theme.colors.gray[50]};
-    border-radius: ${theme.borderRadius.md};
-`;
-
-const LegendItem = styled.div`
-    display: flex;
-    align-items: center;
-    gap: ${theme.spacing.sm};
-    font-size: ${theme.fontSize.sm};
-    color: ${theme.colors.gray[700]};
-`;
-
-const LegendDot = styled.div<{ color: string }>`
-    width: 12px;
-    height: 12px;
-    background-color: ${(props) => props.color};
-    border-radius: 50%;
-    border: 1px solid white;
-    box-shadow: ${theme.shadows.sm};
-`;
-
-const TargetIcon = styled.div`
-    width: 14px;
-    height: 14px;
-    border: 2px dashed ${theme.colors.primary[500]};
-    border-radius: 50%;
-`;
-
-const Instructions = styled.p`
-    font-size: ${theme.fontSize.sm};
-    color: ${theme.colors.gray[600]};
-    text-align: center;
-    margin: 0;
-    font-style: italic;
-`;
 
 export default StrikeZone;
