@@ -39,18 +39,7 @@ jobs:
 
             - name: Build iOS app on EAS
               working-directory: packages/mobile
-              run: eas build --platform ios --profile production --non-interactive --no-wait
-              env:
-                  APP_VARIANT: production
-
-            - name: Wait for build & submit to TestFlight
-              working-directory: packages/mobile
-              run: |
-                  echo "Waiting for EAS build to complete..."
-                  eas build:list --platform ios --status finished --limit 1 --json | head -1
-
-                  echo "Submitting to TestFlight..."
-                  eas submit --platform ios --profile production --latest --non-interactive
+              run: eas build --platform ios --profile production --non-interactive --auto-submit
               env:
                   APP_VARIANT: production
 

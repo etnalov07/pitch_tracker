@@ -5,7 +5,8 @@
     "workspaces": [
         "packages/api",
         "packages/shared",
-        "packages/web"
+        "packages/web",
+        "packages/mobile"
     ],
     "scripts": {
         "dev:web": "npm run start --workspace=@pitch-tracker/web",
