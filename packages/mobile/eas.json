@@ -45,7 +45,8 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "brian.volante@bvolante.com"
+        "appleId": "brian.volante@bvolante.com",
+        "ascAppId": 6758285136
       }
     }
   }
