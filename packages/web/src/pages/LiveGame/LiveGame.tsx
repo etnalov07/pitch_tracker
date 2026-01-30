@@ -436,9 +436,10 @@ const LiveGame: React.FC = () => {
             // Close modal
             setShowInningChange(false);
 
-            // Reset batting order to top when inning changes
-            setCurrentBattingOrder(1);
-            const firstBatter = opponentLineup.find((p) => p.batting_order === 1 && !p.replaced_by_id);
+            // Continue lineup from where it left off (next batter after the last out)
+            const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+            setCurrentBattingOrder(nextOrder);
+            const firstBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
             if (firstBatter && newInning) {
                 setCurrentBatter(firstBatter);
                 // Auto-start the next at-bat

@@ -15,17 +15,23 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.pitchtracker.app",
-      "requireFullScreen": false
+      "bundleIdentifier": "com.bvolante.pitch-tracker",
+      "requireFullScreen": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.pitchtracker.app",
+      "package": "com.bvolante.pitch_tracker",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#2563eb"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["INTERNET", "ACCESS_NETWORK_STATE"]
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -34,10 +40,18 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": "https://bvolante.com/bt-api",
+      "router": {},
+      "eas": {
+        "projectId": "751e9c35-fdc0-40e0-b7d2-f5ad5d515f17"
+      }
     }
   }
 }

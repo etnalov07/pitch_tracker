@@ -1,10 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import authReducer from './auth/authSlice';
+import gamesReducer from './games/gamesSlice';
+import teamsReducer from './teams/teamsSlice';
+import offlineReducer from './offline/offlineSlice';
 
 export const store = configureStore({
     reducer: {
         auth: authReducer,
+        games: gamesReducer,
+        teams: teamsReducer,
+        offline: offlineReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

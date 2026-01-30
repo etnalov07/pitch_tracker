@@ -1,79 +1,222 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, Button, useTheme, FAB } from 'react-native-paper';
+import React, { useEffect, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
+import { Text, Card, Button, useTheme, FAB, ActivityIndicator, Chip } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import { useAppSelector } from '../../src/state';
+import * as Haptics from 'expo-haptics';
+import { useAppSelector, useAppDispatch, fetchAllGames } from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
+import { SyncStatusBadge, EmptyState } from '../../src/components/common';
+import { Game } from '@pitch-tracker/shared';
+
+const GameCard: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress }) => {
+    const theme = useTheme();
+
+    const getStatusColor = () => {
+        switch (game.status) {
+            case 'in_progress':
+                return theme.colors.primary;
+            case 'completed':
+                return '#10b981';
+            default:
+                return '#6b7280';
+        }
+    };
+
+    const getStatusLabel = () => {
+        switch (game.status) {
+            case 'in_progress':
+                return 'In Progress';
+            case 'completed':
+                return 'Completed';
+            case 'scheduled':
+                return 'Scheduled';
+            default:
+                return game.status;
+        }
+    };
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    return (
+        <Pressable onPress={onPress}>
+            <Card style={styles.gameCard}>
+                <Card.Content>
+                    <View style={styles.gameHeader}>
+                        <Text variant="titleMedium" numberOfLines={1} style={styles.gameTitle}>
+                            vs {game.opponent_name || 'TBD'}
+                        </Text>
+                        <Chip
+                            compact
+                            textStyle={{ fontSize: 10, color: '#fff' }}
+                            style={{ backgroundColor: getStatusColor() }}
+                        >
+                            {getStatusLabel()}
+                        </Chip>
+                    </View>
+                    <View style={styles.gameDetails}>
+                        <Text variant="bodySmall" style={styles.gameDate}>
+                            {formatDate(game.game_date)}
+                        </Text>
+                        {game.status !== 'scheduled' && (
+                            <Text variant="titleLarge" style={styles.score}>
+                                {game.home_score ?? 0} - {game.away_score ?? 0}
+                            </Text>
+                        )}
+                    </View>
+                    {game.status === 'in_progress' && (
+                        <Text variant="bodySmall" style={styles.inningText}>
+                            {game.inning_half === 'top' ? '▲' : '▼'} {game.current_inning || 1}
+                        </Text>
+                    )}
+                </Card.Content>
+            </Card>
+        </Pressable>
+    );
+};
 
 export default function DashboardScreen() {
     const router = useRouter();
     const theme = useTheme();
+    const dispatch = useAppDispatch();
     const { user } = useAppSelector((state) => state.auth);
+    const { games, loading } = useAppSelector((state) => state.games);
     const { isTablet } = useDeviceType();
+
+    const loadGames = useCallback(() => {
+        dispatch(fetchAllGames());
+    }, [dispatch]);
+
+    useEffect(() => {
+        loadGames();
+    }, [loadGames]);
+
+    const activeGames = games.filter((g) => g.status === 'in_progress');
+    const recentGames = games
+        .filter((g) => g.status === 'completed')
+        .slice(0, 5);
+    const scheduledGames = games
+        .filter((g) => g.status === 'scheduled')
+        .slice(0, 3);
+
+    const handleGamePress = (game: Game) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (game.status === 'in_progress') {
+            router.push(`/game/${game.id}/live`);
+        } else if (game.status === 'scheduled') {
+            router.push(`/game/${game.id}/setup`);
+        } else {
+            router.push(`/game/${game.id}`);
+        }
+    };
+
+    const handleFabPress = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        router.push('/teams');
+    };
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Text variant="headlineSmall" style={styles.greeting}>
-                    Welcome, {user?.first_name || 'Coach'}!
-                </Text>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl refreshing={loading} onRefresh={loadGames} />
+                }
+            >
+                <View style={styles.headerRow}>
+                    <Text variant="headlineSmall" style={styles.greeting}>
+                        Welcome, {user?.first_name || 'Coach'}!
+                    </Text>
+                    <SyncStatusBadge />
+                </View>
 
+                {/* Active Games Section */}
+                {activeGames.length > 0 && (
+                    <View style={styles.section}>
+                        <Text variant="titleMedium" style={styles.sectionTitle}>
+                            Active Games
+                        </Text>
+                        <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
+                            {activeGames.map((game) => (
+                                <GameCard
+                                    key={game.id}
+                                    game={game}
+                                    onPress={() => handleGamePress(game)}
+                                />
+                            ))}
+                        </View>
+                    </View>
+                )}
+
+                {/* Stats Cards */}
                 <View style={[styles.cardGrid, isTablet && styles.cardGridTablet]}>
                     <Card style={[styles.card, isTablet && styles.cardTablet]}>
-                        <Card.Title title="Active Games" />
+                        <Card.Title title="Games" />
                         <Card.Content>
                             <Text variant="displaySmall" style={{ color: theme.colors.primary }}>
-                                0
+                                {games.length}
                             </Text>
                             <Text variant="bodyMedium" style={styles.cardSubtext}>
-                                No active games
+                                {activeGames.length} active, {recentGames.length} completed
                             </Text>
                         </Card.Content>
-                        <Card.Actions>
-                            <Button onPress={() => router.push('/teams')}>
-                                Start New Game
-                            </Button>
-                        </Card.Actions>
                     </Card>
 
                     <Card style={[styles.card, isTablet && styles.cardTablet]}>
-                        <Card.Title title="Recent Games" />
-                        <Card.Content>
-                            <Text variant="bodyMedium" style={styles.cardSubtext}>
-                                No recent games
-                            </Text>
-                        </Card.Content>
-                        <Card.Actions>
-                            <Button onPress={() => router.push('/teams')}>
-                                View All
-                            </Button>
-                        </Card.Actions>
-                    </Card>
-
-                    <Card style={[styles.card, isTablet && styles.cardTablet]}>
-                        <Card.Title title="My Teams" />
+                        <Card.Title title="Scheduled" />
                         <Card.Content>
                             <Text variant="displaySmall" style={{ color: theme.colors.primary }}>
-                                0
+                                {scheduledGames.length}
                             </Text>
                             <Text variant="bodyMedium" style={styles.cardSubtext}>
-                                No teams yet
+                                Upcoming games
                             </Text>
                         </Card.Content>
                         <Card.Actions>
                             <Button onPress={() => router.push('/teams')}>
-                                Manage Teams
+                                View Schedule
                             </Button>
                         </Card.Actions>
                     </Card>
                 </View>
+
+                {/* Recent Games Section */}
+                {recentGames.length > 0 && (
+                    <View style={styles.section}>
+                        <Text variant="titleMedium" style={styles.sectionTitle}>
+                            Recent Games
+                        </Text>
+                        <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
+                            {recentGames.map((game) => (
+                                <GameCard
+                                    key={game.id}
+                                    game={game}
+                                    onPress={() => handleGamePress(game)}
+                                />
+                            ))}
+                        </View>
+                    </View>
+                )}
+
+                {/* Empty State */}
+                {games.length === 0 && !loading && (
+                    <EmptyState
+                        icon="baseball"
+                        title="No games yet"
+                        message="Create a team and start tracking your games"
+                        actionLabel="Get Started"
+                        onAction={() => router.push('/teams')}
+                    />
+                )}
             </ScrollView>
 
             <FAB
                 icon="plus"
                 style={[styles.fab, { backgroundColor: theme.colors.primary }]}
                 color={theme.colors.onPrimary}
-                onPress={() => router.push('/teams')}
+                onPress={handleFabPress}
                 label={isTablet ? 'New Game' : undefined}
             />
         </View>
@@ -89,11 +232,60 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingBottom: 80,
     },
-    greeting: {
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 20,
+    },
+    greeting: {
+        flex: 1,
+    },
+    section: {
+        marginBottom: 24,
+    },
+    sectionTitle: {
+        marginBottom: 12,
+        color: '#374151',
+    },
+    gameList: {
+        gap: 12,
+    },
+    gameListTablet: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
+    gameCard: {
+        backgroundColor: '#ffffff',
+    },
+    gameHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    gameTitle: {
+        flex: 1,
+        marginRight: 8,
+    },
+    gameDetails: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    gameDate: {
+        color: '#6b7280',
+    },
+    score: {
+        fontWeight: 'bold',
+    },
+    inningText: {
+        color: '#6b7280',
+        marginTop: 4,
     },
     cardGrid: {
         gap: 16,
+        marginBottom: 24,
     },
     cardGridTablet: {
         flexDirection: 'row',
@@ -110,6 +302,22 @@ const styles = StyleSheet.create({
     cardSubtext: {
         color: '#6b7280',
         marginTop: 4,
+    },
+    emptyCard: {
+        backgroundColor: '#ffffff',
+        marginTop: 20,
+    },
+    emptyContent: {
+        alignItems: 'center',
+        paddingVertical: 32,
+    },
+    emptyText: {
+        color: '#6b7280',
+        marginTop: 8,
+        textAlign: 'center',
+    },
+    emptyButton: {
+        marginTop: 16,
     },
     fab: {
         position: 'absolute',

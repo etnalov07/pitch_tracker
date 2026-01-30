@@ -10,6 +10,7 @@ import 'react-native-reanimated';
 
 import { store, useAppDispatch, useAppSelector, initializeAuth } from '../src/state';
 import { lightTheme, darkTheme } from '../src/styles/theme';
+import { startOfflineService, stopOfflineService } from '../src/services/offlineService';
 
 export {
     ErrorBoundary,
@@ -28,9 +29,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const segments = useSegments();
     const router = useRouter();
 
-    // Initialize auth on mount
+    // Initialize auth and offline service on mount
     useEffect(() => {
         dispatch(initializeAuth());
+        startOfflineService();
+
+        return () => {
+            stopOfflineService();
+        };
     }, [dispatch]);
 
     // Handle navigation based on auth state
@@ -65,6 +71,12 @@ function RootLayoutContent() {
                 <Stack>
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                     <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                    <Stack.Screen
+                        name="game/[id]/index"
+                        options={{
+                            headerShown: false,
+                        }}
+                    />
                     <Stack.Screen
                         name="game/[id]/live"
                         options={{

@@ -1,17 +1,91 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, List, Divider, Button, useTheme, Avatar } from 'react-native-paper';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { Text, List, Divider, Button, useTheme, Avatar, Switch, ActivityIndicator } from 'react-native-paper';
+import Constants from 'expo-constants';
+import * as Haptics from 'expo-haptics';
 import { useAppSelector, useAppDispatch, logoutUser } from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
+import { triggerSync } from '../../src/services/offlineService';
+import { clearAllActions } from '../../src/db/offlineQueue';
 
 export default function SettingsScreen() {
     const dispatch = useAppDispatch();
     const theme = useTheme();
     const { user } = useAppSelector((state) => state.auth);
+    const { isOnline, isSyncing, pendingCount, lastSyncTime } = useAppSelector((state) => state.offline);
     const { isTablet } = useDeviceType();
+    const [syncing, setSyncing] = useState(false);
 
     const handleLogout = () => {
-        dispatch(logoutUser());
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Alert.alert(
+            'Sign Out',
+            'Are you sure you want to sign out?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Sign Out', style: 'destructive', onPress: () => {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    dispatch(logoutUser());
+                }},
+            ]
+        );
+    };
+
+    const handleManualSync = async () => {
+        if (!isOnline) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert('Offline', 'Cannot sync while offline');
+            return;
+        }
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setSyncing(true);
+        try {
+            const result = await triggerSync();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert(
+                'Sync Complete',
+                `Synced: ${result.synced}, Failed: ${result.failed}, Remaining: ${result.remaining}`
+            );
+        } catch {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert('Error', 'Sync failed');
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    const handleClearPending = () => {
+        if (pendingCount === 0) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Alert.alert(
+            'Clear Pending Actions',
+            `This will delete ${pendingCount} pending action(s). This data will be lost.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Clear',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await clearAllActions();
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                        Alert.alert('Cleared', 'Pending actions cleared');
+                    },
+                },
+            ]
+        );
+    };
+
+    const formatLastSync = () => {
+        if (!lastSyncTime) return 'Never';
+        const date = new Date(lastSyncTime);
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+        const minutes = Math.floor(diff / 60000);
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        return date.toLocaleDateString();
     };
 
     const getInitials = () => {
@@ -61,19 +135,60 @@ export default function SettingsScreen() {
                 <Divider style={styles.divider} />
 
                 <List.Section>
-                    <List.Subheader>App Settings</List.Subheader>
+                    <List.Subheader>Sync & Data</List.Subheader>
                     <List.Item
-                        title="Notifications"
-                        left={(props) => <List.Icon {...props} icon="bell" />}
-                        right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                        onPress={() => {/* TODO */}}
+                        title="Connection Status"
+                        description={isOnline ? 'Online' : 'Offline'}
+                        left={(props) => (
+                            <List.Icon
+                                {...props}
+                                icon={isOnline ? 'wifi' : 'wifi-off'}
+                                color={isOnline ? '#10b981' : '#ef4444'}
+                            />
+                        )}
                     />
                     <List.Item
-                        title="Sync Status"
-                        description="All data synced"
-                        left={(props) => <List.Icon {...props} icon="sync" />}
-                        right={(props) => <List.Icon {...props} icon="check-circle" color={theme.colors.tertiary} />}
+                        title="Pending Actions"
+                        description={
+                            pendingCount > 0
+                                ? `${pendingCount} action(s) waiting to sync`
+                                : 'All data synced'
+                        }
+                        left={(props) => (
+                            <List.Icon
+                                {...props}
+                                icon={pendingCount > 0 ? 'cloud-upload' : 'cloud-check'}
+                                color={pendingCount > 0 ? '#f59e0b' : '#10b981'}
+                            />
+                        )}
+                        right={() =>
+                            isSyncing || syncing ? (
+                                <ActivityIndicator size={20} />
+                            ) : pendingCount > 0 ? (
+                                <Button
+                                    compact
+                                    mode="text"
+                                    onPress={handleManualSync}
+                                    disabled={!isOnline}
+                                >
+                                    Sync
+                                </Button>
+                            ) : null
+                        }
                     />
+                    <List.Item
+                        title="Last Sync"
+                        description={formatLastSync()}
+                        left={(props) => <List.Icon {...props} icon="history" />}
+                    />
+                    {pendingCount > 0 && (
+                        <List.Item
+                            title="Clear Pending"
+                            description="Delete unsynced data"
+                            left={(props) => <List.Icon {...props} icon="delete" color="#ef4444" />}
+                            onPress={handleClearPending}
+                        />
+                    )}
                 </List.Section>
 
                 <Divider style={styles.divider} />
@@ -82,7 +197,7 @@ export default function SettingsScreen() {
                     <List.Subheader>About</List.Subheader>
                     <List.Item
                         title="Version"
-                        description="1.0.0"
+                        description={Constants.expoConfig?.version || '1.0.0'}
                         left={(props) => <List.Icon {...props} icon="information" />}
                     />
                     <List.Item

@@ -1,0 +1,87 @@
+name: Build & Submit Mobile App
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - 'packages/mobile/**'
+            - 'packages/shared/**'
+            - '.github/workflows/deploy-mobile.yml'
+    workflow_dispatch:
+
+jobs:
+    build-ios:
+        name: Build iOS & Submit to TestFlight
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+
+            - name: Setup Expo & EAS CLI
+              uses: expo/expo-github-action@v8
+              with:
+                  eas-version: latest
+                  token: ${{ secrets.EXPO_TOKEN }}
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build shared package
+              run: npm run build --workspace=@pitch-tracker/shared
+
+            - name: Build iOS app on EAS
+              working-directory: packages/mobile
+              run: eas build --platform ios --profile production --non-interactive --no-wait
+              env:
+                  APP_VARIANT: production
+
+            - name: Wait for build & submit to TestFlight
+              working-directory: packages/mobile
+              run: |
+                  echo "Waiting for EAS build to complete..."
+                  eas build:list --platform ios --status finished --limit 1 --json | head -1
+
+                  echo "Submitting to TestFlight..."
+                  eas submit --platform ios --profile production --latest --non-interactive
+              env:
+                  APP_VARIANT: production
+
+    build-android:
+        name: Build Android
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '18'
+                  cache: 'npm'
+
+            - name: Setup Expo & EAS CLI
+              uses: expo/expo-github-action@v8
+              with:
+                  eas-version: latest
+                  token: ${{ secrets.EXPO_TOKEN }}
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build shared package
+              run: npm run build --workspace=@pitch-tracker/shared
+
+            - name: Build Android app on EAS
+              working-directory: packages/mobile
+              run: eas build --platform android --profile production --non-interactive
+              env:
+                  APP_VARIANT: production
