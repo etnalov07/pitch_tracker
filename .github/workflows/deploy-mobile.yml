@@ -39,7 +39,7 @@ jobs:
 
             - name: Build iOS app on EAS
               working-directory: packages/mobile
-              run: eas build --platform ios --profile production --auto-submit
+              run: eas build --platform ios --profile production --non-interactive --auto-submit
               env:
                   APP_VARIANT: production
 
