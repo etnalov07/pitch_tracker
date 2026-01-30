@@ -102,18 +102,21 @@
 - Build a scouting report over time
 - Display notes when batter comes up
 
-### 9) Mobile App with Expo
-- Create a new `packages/mobile` package using Expo
-- Share business logic and types from existing packages
-- Target platforms:
-  - iOS (Apple App Store)
-  - Android (Google Play Store)
-- Features to prioritize for mobile:
-  - Live game pitch tracking (primary use case)
-  - Quick pitch entry optimized for touch
-  - Offline support for games without connectivity
-  - Sync when back online
-- Consider React Native Paper or similar for UI components
+### ~~9) Mobile App with Expo~~ ✅ DONE
+- ~~Create a new `packages/mobile` package using Expo~~
+- ~~Share business logic and types from existing packages~~
+- ~~Target platforms:~~
+  - ~~iOS (Apple App Store)~~
+  - ~~Android (Google Play Store)~~
+- ~~Features to prioritize for mobile:~~
+  - ~~Live game pitch tracking (primary use case)~~
+  - ~~Quick pitch entry optimized for touch~~
+  - ~~Offline support for games without connectivity~~
+  - ~~Sync when back online~~
+- ~~React Native Paper for UI components~~
+- Expo Router with typed routes, Redux Toolkit state management
+- EAS Build CI/CD with TestFlight auto-submit
+- Phone and tablet responsive layouts
 
 ### 10) Roster Import from File
 - Support importing roster from common file formats:
@@ -176,3 +179,137 @@
   - `StrikeZone` - consider extracting zone rendering, heat map overlay
   - `BaseballDiamond` - consider extracting trajectory drawing
 - Establish consistent patterns for future development
+
+### 14) Player Login & Team Invites
+- Players (pitchers) get their own login accounts
+- Coach sends an email invite from the team roster
+  - Invite link generated per player from roster management screen
+  - Link allows player to create account and join the team
+- Player role vs Coach role:
+  - **Coach**: Full access (create games, manage roster, record pitches for any pitcher)
+  - **Player**: View own stats, record own bullpen sessions, see scouting notes
+- Email integration:
+  - Send invite email with unique token/link
+  - Token expires after configurable period
+  - Resend invite option on roster page
+- Player can belong to multiple teams (e.g., school team + travel team)
+
+### 15) Bullpen Mode (Practice Sessions)
+- Practice pitch tracking without a batter or game context
+- Simplified workflow (no at-bat, no lineup, no innings):
+  1. Select pitch type
+  2. Set target location (where pitcher intended to throw)
+  3. Record actual pitch location
+  4. Enter velocity (optional)
+  - No ball/strike result needed (coach/player decides focus)
+- Data recorded per pitch:
+  - Pitch type
+  - Target location (desired)
+  - Actual location
+  - Velocity (where applicable)
+  - Timestamp
+- Session tracking:
+  - Start/end a bullpen session
+  - Session tagged as "practice" (distinct from "game")
+  - Session notes (e.g., "working on slider command")
+- Contributes to pitcher analytics:
+  - Included in heat zone data (hot/cold zones)
+  - Included in location accuracy stats
+  - Included in velocity tracking
+  - Pitcher Profile game logs show bullpen sessions separately (marked as "Practice")
+- Available to both coach and player (player can self-record)
+- Accessible from:
+  - Team detail page (coach selects a pitcher)
+  - Player's own dashboard (if player login is implemented)
+- Player can add personal notes about their bullpen session
+  - Free-text notes per session (e.g., "Slider felt sharp today", "Struggling with changeup grip")
+  - Notes visible to both player and coach
+
+### 16) Mobile Splash Screen
+- Design and implement a branded splash screen for the mobile app
+- Match app branding (logo, colors)
+- Configured via Expo splash screen plugin in app.json
+- Smooth transition from splash to app content
+
+### 17) App Theme & Pitch Tracking Colors
+- Revisit and adjust the color palette for both web and mobile
+- Pitch type colors: ensure each pitch type has a distinct, readable color
+  - Consistent across strike zone dots, stats tables, charts
+  - Work well on both light and dark backgrounds
+- Overall app theme adjustments:
+  - Primary/secondary/accent colors
+  - Ensure consistency between web and mobile
+- Consider dark mode support
+
+### 18) Rename Mobile App to "Pitch Chart"
+- Update app display name from "Pitch Tracker" to "Pitch Chart"
+- Update in:
+  - app.json (`name`, `slug`)
+  - App Store / TestFlight metadata
+  - Splash screen text (if applicable)
+  - Any in-app branding references
+
+### 19) Team Year & Team Type
+- Add a **year** field to teams (e.g., 2025, 2026)
+  - Allows tracking the same program across seasons
+  - Historical team data preserved by year
+- Add a **team type** field:
+  - **High School**: Player limited to one high school team per year
+  - **Travel**: Player can be on multiple travel teams per year (within an organization)
+- Player-team relationship:
+  - Players can belong to multiple teams across types
+  - Validation: max one high school team per player per year
+  - No limit on travel team memberships per year
+- Filter/sort teams by year and type in UI
+
+### 20) Base Runners in Live Game
+- Add a baseball diamond to the score/game status area showing base runners
+- Diamond shows 1st, 2nd, 3rd bases as the infield view
+  - Empty base: outline only
+  - Occupied base: filled/highlighted
+- Update base runners during at-bat:
+  - Single: advance runners appropriately
+  - Double: advance runners
+  - Triple: advance runners
+  - HR: clear bases, all score
+  - Walk: force advance if bases loaded
+  - Outs: runners stay (unless double play, etc.)
+- Display in both web and mobile live game screens
+- Reset bases on inning change (3 outs)
+- Visual consistency with existing baseball diamond component style
+
+### 21) Organization Level for Travel Teams
+- Add an Organization entity above the Team level
+  - Organization has a name, logo, and admin users
+  - An organization can contain multiple teams (e.g., "Lions Den 14U", "Lions Den 16U", "Lions Den 18U")
+  - Teams within an org have a year and type (see #19)
+- Roles:
+  - **Org Admin**: View all teams, all players, all stats across the organization
+  - **Coach**: Manages their own team(s) within the org (existing behavior)
+  - **Player**: Views own stats (existing behavior)
+- Organization dashboard:
+  - Overview of all teams in the org
+  - Aggregate stats across teams
+  - Player search across the organization
+- Team assignment:
+  - Players can be moved between teams within the same org
+  - Coaches can be assigned to one or more teams
+- Useful for travel ball organizations managing multiple age groups or squads
+
+---
+
+## Future / Under Discussion
+
+### Integrate with PitchSafe
+- Explore integration with PitchSafe pitch count monitoring
+- Need to coordinate with Lions Den on API/data sharing
+- Potential features:
+  - Automatic pitch count limits and warnings
+  - Rest day recommendations based on pitch counts
+  - Compliance tracking for league rules
+
+### Integrate with Pocket Radar
+- Connect to Pocket Radar devices for automatic velocity capture
+- Eliminate manual velocity entry during games and bullpens
+- Bluetooth or API integration depending on device capabilities
+- Auto-populate velocity field when pitch is detected
