@@ -32,7 +32,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     // Initialize auth and offline service on mount
     useEffect(() => {
         dispatch(initializeAuth());
-        startOfflineService();
+        startOfflineService().catch((err) => {
+            console.warn('Failed to start offline service:', err);
+        });
 
         return () => {
             stopOfflineService();
