@@ -113,9 +113,12 @@ export default function TeamDetailScreen() {
                     <Card style={styles.teamInfoCard}>
                         <Card.Content>
                             <Text variant="headlineSmall">{selectedTeam?.name}</Text>
-                            {selectedTeam?.season && (
+                            {(selectedTeam?.team_type || selectedTeam?.season || selectedTeam?.year) && (
                                 <Text variant="bodyMedium" style={styles.teamSeason}>
-                                    {selectedTeam.season}
+                                    {[
+                                        selectedTeam?.team_type === 'high_school' ? 'High School' : selectedTeam?.team_type === 'travel' ? 'Travel' : selectedTeam?.team_type === 'club' ? 'Club' : selectedTeam?.team_type === 'college' ? 'College' : '',
+                                        selectedTeam?.season && selectedTeam?.year ? `${selectedTeam.season} ${selectedTeam.year}` : selectedTeam?.season || (selectedTeam?.year ? `${selectedTeam.year}` : ''),
+                                    ].filter(Boolean).join(' \u00B7 ')}
                                 </Text>
                             )}
                             <View style={styles.teamStats}>

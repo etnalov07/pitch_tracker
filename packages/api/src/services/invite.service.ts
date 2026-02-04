@@ -3,6 +3,7 @@ import { query, transaction } from '../config/database';
 import { Invite, TeamRole } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config/env';
+import teamService from './team.service';
 
 export class InviteService {
     async createInvite(
@@ -117,6 +118,18 @@ export class InviteService {
 
             if (existingMember.rows.length > 0) {
                 throw new Error('You are already a member of this team');
+            }
+
+            // HS validation: players can only be on one high_school team per year
+            if (invite.role === 'player') {
+                const teamResult = await client.query(
+                    'SELECT team_type, year FROM teams WHERE id = $1',
+                    [invite.team_id]
+                );
+                const team = teamResult.rows[0];
+                if (team?.team_type === 'high_school' && team.year) {
+                    await teamService.validateHighSchoolLimit(userId, team.year, invite.team_id);
+                }
             }
 
             // Create team membership

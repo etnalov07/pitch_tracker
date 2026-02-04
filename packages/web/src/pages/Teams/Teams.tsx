@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector, fetchAllTeams, createTeam, deleteTeam, clearTeamsError } from '../../state';
+import { TeamType, TeamSeason } from '../../types';
 import {
     Container,
     Header,
@@ -17,6 +18,7 @@ import {
     FormGroup,
     Label,
     Input,
+    Select,
     FormActions,
     CancelButton,
     SubmitButton,
@@ -27,6 +29,7 @@ import {
     TeamName,
     TeamAbbr,
     TeamCity,
+    TeamMeta,
     TeamActions,
     ViewButton,
     DeleteButton,
@@ -37,6 +40,13 @@ import {
     CreateButtonLarge,
     LoadingText,
 } from './styles';
+
+const TEAM_TYPE_LABELS: Record<string, string> = {
+    high_school: 'High School',
+    travel: 'Travel',
+    club: 'Club',
+    college: 'College',
+};
 
 const Teams: React.FC = () => {
     const navigate = useNavigate();
@@ -49,6 +59,9 @@ const Teams: React.FC = () => {
         name: '',
         abbreviation: '',
         city: '',
+        team_type: '' as TeamType | '',
+        season: '' as TeamSeason | '',
+        year: '',
     });
     const [submitting, setSubmitting] = useState(false);
     const [localError, setLocalError] = useState('');
@@ -59,7 +72,7 @@ const Teams: React.FC = () => {
         dispatch(fetchAllTeams());
     }, [dispatch]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value,
@@ -84,9 +97,12 @@ const Teams: React.FC = () => {
                     name: formData.name.trim(),
                     abbreviation: formData.abbreviation.trim() || undefined,
                     city: formData.city.trim() || undefined,
+                    team_type: formData.team_type || undefined,
+                    season: formData.season || undefined,
+                    year: formData.year ? parseInt(formData.year, 10) : undefined,
                 })
             ).unwrap();
-            setFormData({ name: '', abbreviation: '', city: '' });
+            setFormData({ name: '', abbreviation: '', city: '', team_type: '', season: '', year: '' });
             setShowCreateForm(false);
         } catch (err: unknown) {
             setLocalError(err instanceof Error ? err.message : 'Failed to create team');
@@ -165,12 +181,50 @@ const Teams: React.FC = () => {
                                 </FormGroup>
                             </FormRow>
 
+                            <FormGroup>
+                                <Label htmlFor="team_type">Team Type</Label>
+                                <Select id="team_type" name="team_type" value={formData.team_type} onChange={handleChange}>
+                                    <option value="">Select type...</option>
+                                    <option value="high_school">High School</option>
+                                    <option value="travel">Travel</option>
+                                    <option value="club">Club</option>
+                                    <option value="college">College</option>
+                                </Select>
+                            </FormGroup>
+
+                            <FormRow>
+                                <FormGroup>
+                                    <Label htmlFor="season">Season</Label>
+                                    <Select id="season" name="season" value={formData.season} onChange={handleChange}>
+                                        <option value="">Select season...</option>
+                                        <option value="Spring">Spring</option>
+                                        <option value="Summer">Summer</option>
+                                        <option value="Fall">Fall</option>
+                                        <option value="Winter">Winter</option>
+                                    </Select>
+                                </FormGroup>
+
+                                <FormGroup>
+                                    <Label htmlFor="year">Year</Label>
+                                    <Input
+                                        type="number"
+                                        id="year"
+                                        name="year"
+                                        value={formData.year}
+                                        onChange={handleChange}
+                                        placeholder={`e.g., ${new Date().getFullYear()}`}
+                                        min="2000"
+                                        max="2099"
+                                    />
+                                </FormGroup>
+                            </FormRow>
+
                             <FormActions>
                                 <CancelButton
                                     type="button"
                                     onClick={() => {
                                         setShowCreateForm(false);
-                                        setFormData({ name: '', abbreviation: '', city: '' });
+                                        setFormData({ name: '', abbreviation: '', city: '', team_type: '', season: '', year: '' });
                                         setLocalError('');
                                     }}
                                 >
@@ -204,6 +258,16 @@ const Teams: React.FC = () => {
                                     {team.abbreviation && <TeamAbbr>{team.abbreviation}</TeamAbbr>}
                                 </TeamCardHeader>
                                 {team.city && <TeamCity>{team.city}</TeamCity>}
+                                {(team.team_type || team.season || team.year) && (
+                                    <TeamMeta>
+                                        {[
+                                            team.team_type ? TEAM_TYPE_LABELS[team.team_type] : '',
+                                            team.season && team.year ? `${team.season} ${team.year}` : team.season || (team.year ? `${team.year}` : ''),
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' \u00B7 ')}
+                                    </TeamMeta>
+                                )}
                                 <TeamActions>
                                     <ViewButton onClick={() => navigate(`/teams/${team.id}`)}>Manage Roster</ViewButton>
                                     <DeleteButton onClick={() => handleDelete(team.id, team.name)}>Delete</DeleteButton>

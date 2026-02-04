@@ -48,6 +48,9 @@ export interface JWTPayload {
 // Team Types
 // ============================================================================
 
+export type TeamType = 'high_school' | 'travel' | 'club' | 'college';
+export type TeamSeason = 'Spring' | 'Summer' | 'Fall' | 'Winter';
+
 export interface Team {
     id: string;
     name: string;
@@ -58,6 +61,8 @@ export interface Team {
     organization?: string;
     age_group?: string;
     season?: string;
+    team_type?: TeamType;
+    year?: number;
     logo_path?: string;
     primary_color?: string;
     secondary_color?: string;

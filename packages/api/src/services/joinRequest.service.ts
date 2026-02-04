@@ -1,6 +1,7 @@
 import { query, transaction } from '../config/database';
 import { JoinRequest } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import teamService from './team.service';
 
 export class JoinRequestService {
     async createRequest(
@@ -88,6 +89,16 @@ export class JoinRequestService {
             const request = reqResult.rows[0];
             if (request.status !== 'pending') {
                 throw new Error(`Request has already been ${request.status}`);
+            }
+
+            // HS validation: players can only be on one high_school team per year
+            const teamResult = await client.query(
+                'SELECT team_type, year FROM teams WHERE id = $1',
+                [request.team_id]
+            );
+            const team = teamResult.rows[0];
+            if (team?.team_type === 'high_school' && team.year) {
+                await teamService.validateHighSchoolLimit(request.user_id, team.year, request.team_id);
             }
 
             // Update request

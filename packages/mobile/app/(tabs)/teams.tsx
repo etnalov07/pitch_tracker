@@ -6,10 +6,26 @@ import * as Haptics from 'expo-haptics';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
 import { useAppSelector, useAppDispatch, fetchAllTeams, createTeam } from '../../src/state';
 import { EmptyState } from '../../src/components/common';
-import { Team } from '@pitch-tracker/shared';
+import { Team, TeamType, TeamSeason } from '@pitch-tracker/shared';
+
+const TEAM_TYPE_LABELS: Record<string, string> = {
+    high_school: 'High School',
+    travel: 'Travel',
+    club: 'Club',
+    college: 'College',
+};
+
+const formatTeamMeta = (team: Team): string | null => {
+    const parts = [
+        team.team_type ? TEAM_TYPE_LABELS[team.team_type] : '',
+        team.season && team.year ? `${team.season} ${team.year}` : team.season || (team.year ? `${team.year}` : ''),
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(' \u00B7 ') : null;
+};
 
 const TeamCard: React.FC<{ team: Team; onPress: () => void }> = ({ team, onPress }) => {
     const theme = useTheme();
+    const meta = formatTeamMeta(team);
 
     return (
         <Pressable onPress={onPress}>
@@ -24,9 +40,9 @@ const TeamCard: React.FC<{ team: Team; onPress: () => void }> = ({ team, onPress
                         <Text variant="titleMedium" numberOfLines={1}>
                             {team.name}
                         </Text>
-                        {team.season && (
+                        {meta && (
                             <Text variant="bodySmall" style={styles.teamSeason}>
-                                {team.season}
+                                {meta}
                             </Text>
                         )}
                     </View>
@@ -46,7 +62,9 @@ export default function TeamsScreen() {
 
     const [modalVisible, setModalVisible] = useState(false);
     const [newTeamName, setNewTeamName] = useState('');
-    const [newTeamSeason, setNewTeamSeason] = useState('');
+    const [newTeamType, setNewTeamType] = useState<TeamType | ''>('');
+    const [newTeamSeason, setNewTeamSeason] = useState<TeamSeason | ''>('');
+    const [newTeamYear, setNewTeamYear] = useState('');
     const [creating, setCreating] = useState(false);
 
     const loadTeams = useCallback(() => {
@@ -67,11 +85,15 @@ export default function TeamsScreen() {
         try {
             await dispatch(createTeam({
                 name: newTeamName.trim(),
-                season: newTeamSeason.trim() || undefined,
+                team_type: newTeamType || undefined,
+                season: newTeamSeason || undefined,
+                year: newTeamYear ? parseInt(newTeamYear, 10) : undefined,
             })).unwrap();
             setModalVisible(false);
             setNewTeamName('');
+            setNewTeamType('');
             setNewTeamSeason('');
+            setNewTeamYear('');
         } catch {
             Alert.alert('Error', 'Failed to create team');
         } finally {
@@ -151,13 +173,42 @@ export default function TeamsScreen() {
                         style={styles.input}
                         autoFocus
                     />
+                    <Text variant="labelMedium" style={styles.pickerLabel}>Team Type</Text>
+                    <View style={styles.chipRow}>
+                        {(['high_school', 'travel', 'club', 'college'] as TeamType[]).map((type) => (
+                            <Button
+                                key={type}
+                                mode={newTeamType === type ? 'contained' : 'outlined'}
+                                compact
+                                onPress={() => setNewTeamType(newTeamType === type ? '' : type)}
+                                style={styles.chip}
+                            >
+                                {TEAM_TYPE_LABELS[type]}
+                            </Button>
+                        ))}
+                    </View>
+                    <Text variant="labelMedium" style={styles.pickerLabel}>Season</Text>
+                    <View style={styles.chipRow}>
+                        {(['Spring', 'Summer', 'Fall', 'Winter'] as TeamSeason[]).map((s) => (
+                            <Button
+                                key={s}
+                                mode={newTeamSeason === s ? 'contained' : 'outlined'}
+                                compact
+                                onPress={() => setNewTeamSeason(newTeamSeason === s ? '' : s)}
+                                style={styles.chip}
+                            >
+                                {s}
+                            </Button>
+                        ))}
+                    </View>
                     <TextInput
-                        label="Season (optional)"
-                        value={newTeamSeason}
-                        onChangeText={setNewTeamSeason}
+                        label="Year"
+                        value={newTeamYear}
+                        onChangeText={setNewTeamYear}
                         mode="outlined"
                         style={styles.input}
-                        placeholder="e.g., Spring 2024"
+                        keyboardType="number-pad"
+                        placeholder={`e.g., ${new Date().getFullYear()}`}
                     />
                     <View style={styles.modalActions}>
                         <Button onPress={() => setModalVisible(false)}>
@@ -251,6 +302,20 @@ const styles = StyleSheet.create({
     },
     input: {
         marginBottom: 12,
+    },
+    pickerLabel: {
+        color: '#6b7280',
+        marginBottom: 6,
+        marginTop: 4,
+    },
+    chipRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginBottom: 12,
+    },
+    chip: {
+        borderRadius: 20,
     },
     modalActions: {
         flexDirection: 'row',

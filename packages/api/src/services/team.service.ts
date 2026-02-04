@@ -12,7 +12,7 @@ export interface TeamBrandingUpdate {
 
 export class TeamService {
   async createTeam(userId: string, teamData: Partial<Team>): Promise<Team> {
-    const { name, organization, age_group, season, organization_id } = teamData;
+    const { name, organization, age_group, season, organization_id, team_type, year } = teamData;
 
     if (!name) {
       throw new Error('Team name is required');
@@ -21,10 +21,10 @@ export class TeamService {
     return await transaction(async (client) => {
       const team_id = uuidv4();
       const result = await client.query(
-        `INSERT INTO teams (id, name, owner_id, organization, age_group, season, organization_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `INSERT INTO teams (id, name, owner_id, organization, age_group, season, organization_id, team_type, year)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING *`,
-        [team_id, name, userId, organization, age_group, season, organization_id || null]
+        [team_id, name, userId, organization, age_group, season, organization_id || null, team_type || null, year || null]
       );
 
       // Also create team_members entry for owner
@@ -64,7 +64,7 @@ export class TeamService {
 
   async searchTeams(searchQuery: string, limit = 20): Promise<Team[]> {
     const result = await query(
-      `SELECT id, name, organization, age_group, season, logo_path, primary_color
+      `SELECT id, name, organization, age_group, season, logo_path, primary_color, team_type, year
        FROM teams
        WHERE LOWER(name) LIKE LOWER($1)
        ORDER BY name
@@ -94,17 +94,19 @@ export class TeamService {
   async updateTeam(team_id: string, userId: string, updates: Partial<Team>): Promise<Team> {
     await this.verifyTeamAccess(team_id, userId);
 
-    const { name, organization, age_group, season } = updates;
+    const { name, organization, age_group, season, team_type, year } = updates;
 
     const result = await query(
-      `UPDATE teams 
+      `UPDATE teams
        SET name = COALESCE($1, name),
            organization = COALESCE($2, organization),
            age_group = COALESCE($3, age_group),
-           season = COALESCE($4, season)
-       WHERE id = $5
+           season = COALESCE($4, season),
+           team_type = COALESCE($5, team_type),
+           year = COALESCE($6, year)
+       WHERE id = $7
        RETURNING *`,
-      [name, organization, age_group, season, team_id]
+      [name, organization, age_group, season, team_type, year, team_id]
     );
 
     return result.rows[0];
@@ -181,6 +183,42 @@ export class TeamService {
     );
 
     return result.rows[0];
+  }
+
+  /**
+   * Validates that a player is not already on a high_school team for the given year.
+   * Coaches are exempt — only role='player' is restricted.
+   */
+  async validateHighSchoolLimit(
+    userId: string,
+    year: number,
+    excludeTeamId?: string
+  ): Promise<void> {
+    const params: (string | number)[] = [userId, year];
+    let excludeClause = '';
+    if (excludeTeamId) {
+      excludeClause = ' AND t.id != $3';
+      params.push(excludeTeamId);
+    }
+
+    const result = await query(
+      `SELECT t.id, t.name
+       FROM team_members tm
+       JOIN teams t ON t.id = tm.team_id
+       WHERE tm.user_id = $1
+         AND t.team_type = 'high_school'
+         AND t.year = $2
+         AND tm.role = 'player'${excludeClause}
+       LIMIT 1`,
+      params
+    );
+
+    if (result.rows.length > 0) {
+      const existingTeam = result.rows[0];
+      throw new Error(
+        `Player is already on a high school team for ${year}: ${existingTeam.name}`
+      );
+    }
   }
 }
 

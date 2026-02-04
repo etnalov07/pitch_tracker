@@ -177,6 +177,37 @@ export const ErrorMessage = styled.div({
     fontSize: theme.fontSize.sm,
 });
 
+export const Select = styled.select({
+    padding: theme.spacing.md,
+    border: `1px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.base,
+    backgroundColor: 'white',
+    transition: 'all 0.2s',
+
+    '&:focus': {
+        outline: 'none',
+        borderColor: theme.colors.primary[500],
+        boxShadow: `0 0 0 3px ${theme.colors.primary[100]}`,
+    },
+});
+
+export const TeamMeta = styled.p({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[500],
+    margin: `${theme.spacing.xs} 0 0 0`,
+});
+
+export const TeamTypeBadge = styled.span({
+    display: 'inline-block',
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    background: theme.colors.gray[100],
+    color: theme.colors.gray[700],
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
+});
+
 export const TeamGrid = styled.div({
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',

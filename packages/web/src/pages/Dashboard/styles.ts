@@ -318,6 +318,12 @@ export const TeamCardCity = styled.p({
     margin: '0',
 });
 
+export const TeamCardMeta = styled.p({
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.gray[500],
+    margin: `${theme.spacing.xs} 0 0 0`,
+});
+
 export const TeamCardAbbr = styled.span({
     display: 'inline-block',
     marginTop: theme.spacing.md,
