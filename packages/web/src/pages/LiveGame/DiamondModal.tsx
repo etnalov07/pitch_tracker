@@ -69,28 +69,48 @@ const DiamondModal: React.FC<DiamondModalProps> = ({
                 <DiamondInstructions>Click on the field to mark where the ball was hit</DiamondInstructions>
 
                 <DiamondContainer>
-                    <BaseballDiamond
-                        hitType={hitType}
-                        selectedLocation={hitLocation}
-                        onLocationSelect={onHitLocationChange}
-                    />
+                    <BaseballDiamond hitType={hitType} selectedLocation={hitLocation} onLocationSelect={onHitLocationChange} />
                 </DiamondContainer>
 
                 <DiamondResultSection>
                     <DiamondResultTitle>Select Result {!hitLocation && '(select location first)'}</DiamondResultTitle>
                     <DiamondResultGrid>
-                        <DiamondResultButton disabled={!hitLocation} onClick={() => onResult('single')}>Single</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} onClick={() => onResult('double')}>Double</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} onClick={() => onResult('triple')}>Triple</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} onClick={() => onResult('home_run')}>Home Run</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('groundout')}>Groundout</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('flyout')}>Flyout</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('lineout')}>Lineout</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('popout')}>Popout</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} onClick={() => onResult('error')}>Error</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('fielders_choice')}>FC</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('double_play')}>DP</DiamondResultButton>
-                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('sacrifice_fly')}>Sac Fly</DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} onClick={() => onResult('single')}>
+                            Single
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} onClick={() => onResult('double')}>
+                            Double
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} onClick={() => onResult('triple')}>
+                            Triple
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} onClick={() => onResult('home_run')}>
+                            Home Run
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('groundout')}>
+                            Groundout
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('flyout')}>
+                            Flyout
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('lineout')}>
+                            Lineout
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('popout')}>
+                            Popout
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} onClick={() => onResult('error')}>
+                            Error
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('fielders_choice')}>
+                            FC
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('double_play')}>
+                            DP
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => onResult('sacrifice_fly')}>
+                            Sac Fly
+                        </DiamondResultButton>
                     </DiamondResultGrid>
                 </DiamondResultSection>
             </DiamondModalStyled>

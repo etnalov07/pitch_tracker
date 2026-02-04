@@ -7,8 +7,6 @@ import StrikeZone from '../../components/live/StrikeZone';
 import { theme } from '../../styles/theme';
 import DiamondModal from './DiamondModal';
 import InningChangeModal from './InningChangeModal';
-import { useLiveGameState } from './useLiveGameState';
-import { useLiveGameActions } from './useLiveGameActions';
 import {
     Container,
     LeftPanel,
@@ -75,25 +73,51 @@ import {
     PitchTypeGrid,
     PitchTypeButton,
 } from './styles';
+import { useLiveGameActions } from './useLiveGameActions';
+import { useLiveGameState } from './useLiveGameState';
 
 const LiveGame: React.FC = () => {
     const state = useLiveGameState();
     const actions = useLiveGameActions(state);
 
     const {
-        gameId, navigate,
-        game, currentAtBat, pitches, loading,
-        pitchLocation, targetLocation, pitchType, setPitchType,
-        velocity, setVelocity, pitchResult, setPitchResult,
-        currentPitcher, currentBatter, currentBattingOrder,
-        showPitcherSelector, setShowPitcherSelector,
-        showBatterSelector, setShowBatterSelector,
-        statsRefreshTrigger, availablePitchTypes,
+        gameId,
+        navigate,
+        game,
+        currentAtBat,
+        pitches,
+        loading,
+        pitchLocation,
+        targetLocation,
+        pitchType,
+        setPitchType,
+        velocity,
+        setVelocity,
+        pitchResult,
+        setPitchResult,
+        currentPitcher,
+        currentBatter,
+        currentBattingOrder,
+        showPitcherSelector,
+        setShowPitcherSelector,
+        showBatterSelector,
+        setShowBatterSelector,
+        statsRefreshTrigger,
+        availablePitchTypes,
         currentOuts,
-        showInningChange, inningChangeInfo, teamRunsScored, setTeamRunsScored,
-        showDiamondModal, setShowDiamondModal,
-        hitType, setHitType, hitLocation, setHitLocation,
-        showHeatZones, setShowHeatZones, heatZones,
+        showInningChange,
+        inningChangeInfo,
+        teamRunsScored,
+        setTeamRunsScored,
+        showDiamondModal,
+        setShowDiamondModal,
+        hitType,
+        setHitType,
+        hitLocation,
+        setHitLocation,
+        showHeatZones,
+        setShowHeatZones,
+        heatZones,
     } = state;
 
     if (loading) {
@@ -127,10 +151,16 @@ const LiveGame: React.FC = () => {
                     <BackButton onClick={() => navigate('/')}>← Back to Dashboard</BackButton>
                     <TopBarRight>
                         <GameStatus status={game.status}>
-                            {game.status === 'scheduled' ? 'Scheduled' : game.status === 'in_progress' ? 'In Progress' : 'Completed'}
+                            {game.status === 'scheduled'
+                                ? 'Scheduled'
+                                : game.status === 'in_progress'
+                                  ? 'In Progress'
+                                  : 'Completed'}
                         </GameStatus>
                         {game.status === 'in_progress' && <EndGameButton onClick={actions.handleEndGame}>End Game</EndGameButton>}
-                        {game.status === 'completed' && <ResumeGameButton onClick={actions.handleResumeGame}>Resume Game</ResumeGameButton>}
+                        {game.status === 'completed' && (
+                            <ResumeGameButton onClick={actions.handleResumeGame}>Resume Game</ResumeGameButton>
+                        )}
                     </TopBarRight>
                 </TopBar>
 
@@ -168,7 +198,9 @@ const LiveGame: React.FC = () => {
                             {currentPitcher ? (
                                 <>
                                     <PlayerNumber>{currentPitcher.player?.jersey_number || '#'}</PlayerNumber>
-                                    <PlayerName>{currentPitcher.player?.first_name} {currentPitcher.player?.last_name}</PlayerName>
+                                    <PlayerName>
+                                        {currentPitcher.player?.first_name} {currentPitcher.player?.last_name}
+                                    </PlayerName>
                                 </>
                             ) : (
                                 <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
@@ -213,32 +245,44 @@ const LiveGame: React.FC = () => {
                     <>
                         <CountDisplay>
                             <CountLabel>Count</CountLabel>
-                            <CountValue>{currentAtBat.balls}-{currentAtBat.strikes}</CountValue>
+                            <CountValue>
+                                {currentAtBat.balls}-{currentAtBat.strikes}
+                            </CountValue>
                         </CountDisplay>
 
                         <StepIndicator>
                             <Step completed={!!pitchType} active={!pitchType}>
-                                <StepNumber completed={!!pitchType} active={!pitchType}>{pitchType ? '✓' : '1'}</StepNumber>
+                                <StepNumber completed={!!pitchType} active={!pitchType}>
+                                    {pitchType ? '✓' : '1'}
+                                </StepNumber>
                                 <StepLabel active={!pitchType}>Type</StepLabel>
                             </Step>
                             <StepConnector completed={!!pitchType} />
                             <Step completed={!!targetLocation} active={!!pitchType && !targetLocation && !pitchLocation}>
-                                <StepNumber completed={!!targetLocation} active={!!pitchType && !targetLocation && !pitchLocation}>{targetLocation ? '✓' : '2'}</StepNumber>
+                                <StepNumber completed={!!targetLocation} active={!!pitchType && !targetLocation && !pitchLocation}>
+                                    {targetLocation ? '✓' : '2'}
+                                </StepNumber>
                                 <StepLabel active={!!pitchType && !targetLocation && !pitchLocation}>Target</StepLabel>
                             </Step>
                             <StepConnector completed={!!targetLocation || !!pitchLocation} />
                             <Step completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>
-                                <StepNumber completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>{pitchLocation ? '✓' : '3'}</StepNumber>
+                                <StepNumber completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>
+                                    {pitchLocation ? '✓' : '3'}
+                                </StepNumber>
                                 <StepLabel active={!!pitchType && !pitchLocation}>Location</StepLabel>
                             </Step>
                             <StepConnector completed={!!pitchLocation} />
                             <Step completed={!!velocity} active={!!pitchLocation && !velocity}>
-                                <StepNumber completed={!!velocity} active={!!pitchLocation && !velocity}>{velocity ? '✓' : '4'}</StepNumber>
+                                <StepNumber completed={!!velocity} active={!!pitchLocation && !velocity}>
+                                    {velocity ? '✓' : '4'}
+                                </StepNumber>
                                 <StepLabel active={!!pitchLocation && !velocity}>Velocity</StepLabel>
                             </Step>
                             <StepConnector completed={!!velocity || !!pitchLocation} />
                             <Step completed={!!pitchResult} active={!!pitchLocation}>
-                                <StepNumber completed={!!pitchResult} active={!!pitchLocation}>{pitchResult ? '✓' : '5'}</StepNumber>
+                                <StepNumber completed={!!pitchResult} active={!!pitchLocation}>
+                                    {pitchResult ? '✓' : '5'}
+                                </StepNumber>
                                 <StepLabel active={!!pitchLocation}>Result</StepLabel>
                             </Step>
                         </StepIndicator>
@@ -259,7 +303,11 @@ const LiveGame: React.FC = () => {
                                 <HeatZoneToggleContainer>
                                     <HeatZoneToggleLabel>{showHeatZones ? 'Hide' : 'Show'} Heat Zones</HeatZoneToggleLabel>
                                     <ToggleSwitch>
-                                        <ToggleSwitchInput type="checkbox" checked={showHeatZones} onChange={() => setShowHeatZones(!showHeatZones)} />
+                                        <ToggleSwitchInput
+                                            type="checkbox"
+                                            checked={showHeatZones}
+                                            onChange={() => setShowHeatZones(!showHeatZones)}
+                                        />
                                         <ToggleSwitchSlider />
                                     </ToggleSwitch>
                                 </HeatZoneToggleContainer>
@@ -277,21 +325,60 @@ const LiveGame: React.FC = () => {
                             <PitchForm>
                                 <FormGroup>
                                     <Label>Step 4: Velocity (mph) - Optional</Label>
-                                    <Input type="number" value={velocity} onChange={(e) => setVelocity(e.target.value)} placeholder="85" min="0" max="120" />
+                                    <Input
+                                        type="number"
+                                        value={velocity}
+                                        onChange={(e) => setVelocity(e.target.value)}
+                                        placeholder="85"
+                                        min="0"
+                                        max="120"
+                                    />
                                 </FormGroup>
 
                                 <FormGroup>
                                     <Label>Step 5: Result</Label>
                                     <ResultButtons>
-                                        <ResultButton active={pitchResult === 'ball'} onClick={() => setPitchResult('ball')} color={theme.colors.gray[400]}>Ball</ResultButton>
-                                        <ResultButton active={pitchResult === 'called_strike'} onClick={() => setPitchResult('called_strike')} color={theme.colors.green[500]}>Called Strike</ResultButton>
-                                        <ResultButton active={pitchResult === 'swinging_strike'} onClick={() => setPitchResult('swinging_strike')} color={theme.colors.red[500]}>Swinging Strike</ResultButton>
-                                        <ResultButton active={pitchResult === 'foul'} onClick={() => setPitchResult('foul')} color={theme.colors.yellow[500]}>Foul</ResultButton>
-                                        <ResultButton active={pitchResult === 'in_play'} onClick={() => setPitchResult('in_play')} color={theme.colors.primary[600]}>In Play</ResultButton>
+                                        <ResultButton
+                                            active={pitchResult === 'ball'}
+                                            onClick={() => setPitchResult('ball')}
+                                            color={theme.colors.gray[400]}
+                                        >
+                                            Ball
+                                        </ResultButton>
+                                        <ResultButton
+                                            active={pitchResult === 'called_strike'}
+                                            onClick={() => setPitchResult('called_strike')}
+                                            color={theme.colors.green[500]}
+                                        >
+                                            Called Strike
+                                        </ResultButton>
+                                        <ResultButton
+                                            active={pitchResult === 'swinging_strike'}
+                                            onClick={() => setPitchResult('swinging_strike')}
+                                            color={theme.colors.red[500]}
+                                        >
+                                            Swinging Strike
+                                        </ResultButton>
+                                        <ResultButton
+                                            active={pitchResult === 'foul'}
+                                            onClick={() => setPitchResult('foul')}
+                                            color={theme.colors.yellow[500]}
+                                        >
+                                            Foul
+                                        </ResultButton>
+                                        <ResultButton
+                                            active={pitchResult === 'in_play'}
+                                            onClick={() => setPitchResult('in_play')}
+                                            color={theme.colors.primary[600]}
+                                        >
+                                            In Play
+                                        </ResultButton>
                                     </ResultButtons>
                                 </FormGroup>
 
-                                <LogButton onClick={actions.handleLogPitch} disabled={!pitchLocation}>Log Pitch</LogButton>
+                                <LogButton onClick={actions.handleLogPitch} disabled={!pitchLocation}>
+                                    Log Pitch
+                                </LogButton>
 
                                 {pitchResult === 'in_play' && (
                                     <OpenDiamondButton onClick={() => setShowDiamondModal(true)}>
@@ -348,7 +435,10 @@ const LiveGame: React.FC = () => {
                     onHitTypeChange={setHitType}
                     onHitLocationChange={setHitLocation}
                     onResult={actions.handleDiamondResult}
-                    onClose={() => { setShowDiamondModal(false); setHitLocation(null); }}
+                    onClose={() => {
+                        setShowDiamondModal(false);
+                        setHitLocation(null);
+                    }}
                 />
             )}
         </Container>

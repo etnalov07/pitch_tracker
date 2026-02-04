@@ -17,12 +17,7 @@ interface InningChangeModalProps {
     onConfirm: () => void;
 }
 
-const InningChangeModal: React.FC<InningChangeModalProps> = ({
-    inningChangeInfo,
-    teamRunsScored,
-    onTeamRunsChange,
-    onConfirm,
-}) => {
+const InningChangeModal: React.FC<InningChangeModalProps> = ({ inningChangeInfo, teamRunsScored, onTeamRunsChange, onConfirm }) => {
     return (
         <InningChangeOverlay>
             <InningChangeModalStyled>

@@ -181,13 +181,9 @@ export const RequestStatus = styled.span<{ status: string }>(({ status }) => ({
     padding: `${theme.spacing.xs} ${theme.spacing.md}`,
     borderRadius: theme.borderRadius.full,
     backgroundColor:
-        status === 'pending' ? theme.colors.yellow[100] :
-        status === 'approved' ? theme.colors.green[100] :
-        theme.colors.red[100],
+        status === 'pending' ? theme.colors.yellow[100] : status === 'approved' ? theme.colors.green[100] : theme.colors.red[100],
     color:
-        status === 'pending' ? theme.colors.yellow[700] :
-        status === 'approved' ? theme.colors.green[700] :
-        theme.colors.red[700],
+        status === 'pending' ? theme.colors.yellow[700] : status === 'approved' ? theme.colors.green[700] : theme.colors.red[700],
 }));
 
 export const EmptyText = styled.p({

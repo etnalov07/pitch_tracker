@@ -45,7 +45,9 @@ const JoinTeam: React.FC = () => {
 
     useEffect(() => {
         dispatch(fetchMyJoinRequests());
-        return () => { dispatch(clearSearchResults()); };
+        return () => {
+            dispatch(clearSearchResults());
+        };
     }, [dispatch]);
 
     const handleSearch = () => {

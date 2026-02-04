@@ -3,11 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
 import useHeatZones from '../../hooks/useHeatZones';
 import api from '../../services/api';
-import {
-    useAppDispatch,
-    useAppSelector,
-    fetchGameById,
-} from '../../state';
+import { useAppDispatch, useAppSelector, fetchGameById } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { PitchType, PitchResult, OpponentLineupPlayer, GamePitcherWithPlayer, Inning as InningType } from '../../types';
 
@@ -128,38 +124,58 @@ export function useLiveGameState() {
         pitches,
         loading,
         // Pitch form
-        pitchLocation, setPitchLocation,
-        targetLocation, setTargetLocation,
-        pitchType, setPitchType,
-        velocity, setVelocity,
-        pitchResult, setPitchResult,
+        pitchLocation,
+        setPitchLocation,
+        targetLocation,
+        setTargetLocation,
+        pitchType,
+        setPitchType,
+        velocity,
+        setVelocity,
+        pitchResult,
+        setPitchResult,
         // Players
-        currentPitcher, setCurrentPitcher,
-        currentBatter, setCurrentBatter,
-        currentBattingOrder, setCurrentBattingOrder,
+        currentPitcher,
+        setCurrentPitcher,
+        currentBatter,
+        setCurrentBatter,
+        currentBattingOrder,
+        setCurrentBattingOrder,
         // Modals
-        showPitcherSelector, setShowPitcherSelector,
-        showBatterSelector, setShowBatterSelector,
+        showPitcherSelector,
+        setShowPitcherSelector,
+        showBatterSelector,
+        setShowBatterSelector,
         // Inning
-        currentInning, setCurrentInning,
+        currentInning,
+        setCurrentInning,
         // Stats
-        statsRefreshTrigger, setStatsRefreshTrigger,
+        statsRefreshTrigger,
+        setStatsRefreshTrigger,
         // Pitch types
         availablePitchTypes,
         // Lineup
         opponentLineup,
         // Outs
-        currentOuts, setCurrentOuts,
+        currentOuts,
+        setCurrentOuts,
         // Inning change
-        showInningChange, setShowInningChange,
-        inningChangeInfo, setInningChangeInfo,
-        teamRunsScored, setTeamRunsScored,
+        showInningChange,
+        setShowInningChange,
+        inningChangeInfo,
+        setInningChangeInfo,
+        teamRunsScored,
+        setTeamRunsScored,
         // Diamond modal
-        showDiamondModal, setShowDiamondModal,
-        hitType, setHitType,
-        hitLocation, setHitLocation,
+        showDiamondModal,
+        setShowDiamondModal,
+        hitType,
+        setHitType,
+        hitLocation,
+        setHitLocation,
         // Heat zones
-        showHeatZones, setShowHeatZones,
+        showHeatZones,
+        setShowHeatZones,
         heatZones,
     };
 }

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
-import { theme } from '../../styles/theme';
+import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../state';
 import { fetchTeamJoinRequests, approveJoinRequest, denyJoinRequest } from '../../state/invites/invitesSlice';
+import { theme } from '../../styles/theme';
 import type { Player } from '../../types';
 
 interface JoinRequestsPanelProps {
@@ -26,10 +26,12 @@ const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({ teamId, players }
     const unlinkedPlayers = players.filter((p) => !p.user_id);
 
     const handleApprove = (requestId: string) => {
-        dispatch(approveJoinRequest({
-            requestId,
-            linkedPlayerId: linkPlayerMap[requestId] || undefined,
-        }));
+        dispatch(
+            approveJoinRequest({
+                requestId,
+                linkedPlayerId: linkPlayerMap[requestId] || undefined,
+            })
+        );
     };
 
     const handleDeny = (requestId: string) => {
@@ -46,18 +48,14 @@ const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({ teamId, players }
                             <RequestName>
                                 {[request.user_first_name, request.user_last_name].filter(Boolean).join(' ') || 'Unknown User'}
                             </RequestName>
-                            {request.message && (
-                                <RequestMessage>{request.message}</RequestMessage>
-                            )}
+                            {request.message && <RequestMessage>{request.message}</RequestMessage>}
                         </RequestInfo>
 
                         <RequestActions>
                             {unlinkedPlayers.length > 0 && (
                                 <LinkSelect
                                     value={linkPlayerMap[request.id] || ''}
-                                    onChange={(e) =>
-                                        setLinkPlayerMap({ ...linkPlayerMap, [request.id]: e.target.value })
-                                    }
+                                    onChange={(e) => setLinkPlayerMap({ ...linkPlayerMap, [request.id]: e.target.value })}
                                 >
                                     <option value="">Link to player...</option>
                                     {unlinkedPlayers.map((p) => (
@@ -67,12 +65,8 @@ const JoinRequestsPanel: React.FC<JoinRequestsPanelProps> = ({ teamId, players }
                                     ))}
                                 </LinkSelect>
                             )}
-                            <ApproveButton onClick={() => handleApprove(request.id)}>
-                                Approve
-                            </ApproveButton>
-                            <DenyButton onClick={() => handleDeny(request.id)}>
-                                Deny
-                            </DenyButton>
+                            <ApproveButton onClick={() => handleApprove(request.id)}>Approve</ApproveButton>
+                            <DenyButton onClick={() => handleDeny(request.id)}>Deny</DenyButton>
                         </RequestActions>
                     </RequestItem>
                 ))}

@@ -152,14 +152,24 @@ export function useTeamDetail() {
     };
 
     return {
-        navigate, team_id,
-        team, players, loading,
-        showAddPlayer, setShowAddPlayer,
+        navigate,
+        team_id,
+        team,
+        players,
+        loading,
+        showAddPlayer,
+        setShowAddPlayer,
         editingPlayer,
-        submitting, error,
-        formData, selectedPitchTypes,
-        handleChange, resetForm, handlePitchTypeToggle,
-        handleSubmit, handleEdit, handleDelete,
+        submitting,
+        error,
+        formData,
+        selectedPitchTypes,
+        handleChange,
+        resetForm,
+        handlePitchTypeToggle,
+        handleSubmit,
+        handleEdit,
+        handleDelete,
     };
 }
 

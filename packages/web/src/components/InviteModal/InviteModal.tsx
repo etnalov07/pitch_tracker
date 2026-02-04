@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
 import styled from '@emotion/styled';
-import { theme } from '../../styles/theme';
+import React, { useState } from 'react';
 import { useAppDispatch } from '../../state';
 import { createInvite } from '../../state/invites/invitesSlice';
+import { theme } from '../../styles/theme';
 import type { Player } from '../../types';
 
 interface InviteModalProps {
@@ -40,7 +40,7 @@ const InviteModal: React.FC<InviteModalProps> = ({ teamId, players, onClose }) =
             const baseUrl = window.location.origin;
             setInviteLink(`${baseUrl}/invite/${invite.token}`);
         } else {
-            setError(result.payload as string || 'Failed to generate invite');
+            setError((result.payload as string) || 'Failed to generate invite');
         }
     };
 
@@ -89,10 +89,7 @@ const InviteModal: React.FC<InviteModalProps> = ({ teamId, players, onClose }) =
                         {unlinkedPlayers.length > 0 && (
                             <FormGroup>
                                 <Label>Link to Player (optional)</Label>
-                                <Select
-                                    value={selectedPlayerId}
-                                    onChange={(e) => setSelectedPlayerId(e.target.value)}
-                                >
+                                <Select value={selectedPlayerId} onChange={(e) => setSelectedPlayerId(e.target.value)}>
                                     <option value="">No specific player</option>
                                     {unlinkedPlayers.map((p) => (
                                         <option key={p.id} value={p.id}>
@@ -115,11 +112,14 @@ const InviteModal: React.FC<InviteModalProps> = ({ teamId, players, onClose }) =
                         <SuccessText>Invite link generated! Share it with the person you want to invite.</SuccessText>
                         <LinkBox>
                             <LinkText>{inviteLink}</LinkText>
-                            <CopyButton onClick={handleCopy}>
-                                {copied ? 'Copied!' : 'Copy'}
-                            </CopyButton>
+                            <CopyButton onClick={handleCopy}>{copied ? 'Copied!' : 'Copy'}</CopyButton>
                         </LinkBox>
-                        <GenerateButton onClick={() => { setInviteLink(null); setCopied(false); }}>
+                        <GenerateButton
+                            onClick={() => {
+                                setInviteLink(null);
+                                setCopied(false);
+                            }}
+                        >
                             Generate Another
                         </GenerateButton>
                     </>

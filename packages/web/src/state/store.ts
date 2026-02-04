@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './auth/authSlice';
 import gamesReducer from './games/gamesSlice';
-import teamsReducer from './teams/teamsSlice';
-import { organizationsReducer } from './organizations';
 import { invitesReducer } from './invites';
+import { organizationsReducer } from './organizations';
+import teamsReducer from './teams/teamsSlice';
 
 export const store = configureStore({
     reducer: {

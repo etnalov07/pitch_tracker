@@ -1,6 +1,5 @@
 import React from 'react';
 import { PlayerPosition, HandednessType, PitchType } from '../../types';
-import { TeamDetailState } from './useTeamDetail';
 import {
     FormCard,
     FormTitle,
@@ -19,6 +18,7 @@ import {
     PitchTypesGrid,
     PitchTypeCheckbox,
 } from './styles';
+import { TeamDetailState } from './useTeamDetail';
 
 const POSITIONS: PlayerPosition[] = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'UTIL'];
 const HANDEDNESS: HandednessType[] = ['R', 'L', 'S'];
@@ -42,9 +42,15 @@ interface PlayerFormProps {
 
 const PlayerForm: React.FC<PlayerFormProps> = ({ state }) => {
     const {
-        editingPlayer, submitting, error,
-        formData, selectedPitchTypes,
-        handleChange, resetForm, handlePitchTypeToggle, handleSubmit,
+        editingPlayer,
+        submitting,
+        error,
+        formData,
+        selectedPitchTypes,
+        handleChange,
+        resetForm,
+        handlePitchTypeToggle,
+        handleSubmit,
     } = state;
 
     return (

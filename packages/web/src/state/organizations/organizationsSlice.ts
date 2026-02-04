@@ -23,27 +23,21 @@ const initialState: OrganizationsState = {
     error: null,
 };
 
-export const fetchMyOrganizations = createAsyncThunk(
-    'organizations/fetchMy',
-    async (_, { rejectWithValue }) => {
-        try {
-            return await organizationsApi.getMyOrganizations();
-        } catch (error: unknown) {
-            return rejectWithValue(getErrorMessage(error, 'Failed to fetch organizations'));
-        }
+export const fetchMyOrganizations = createAsyncThunk('organizations/fetchMy', async (_, { rejectWithValue }) => {
+    try {
+        return await organizationsApi.getMyOrganizations();
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch organizations'));
     }
-);
+});
 
-export const fetchOrganizationById = createAsyncThunk(
-    'organizations/fetchById',
-    async (orgId: string, { rejectWithValue }) => {
-        try {
-            return await organizationsApi.getOrganizationById(orgId);
-        } catch (error: unknown) {
-            return rejectWithValue(getErrorMessage(error, 'Failed to fetch organization'));
-        }
+export const fetchOrganizationById = createAsyncThunk('organizations/fetchById', async (orgId: string, { rejectWithValue }) => {
+    try {
+        return await organizationsApi.getOrganizationById(orgId);
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch organization'));
     }
-);
+});
 
 export const createOrganization = createAsyncThunk(
     'organizations/create',
@@ -56,16 +50,13 @@ export const createOrganization = createAsyncThunk(
     }
 );
 
-export const fetchOrgMembers = createAsyncThunk(
-    'organizations/fetchMembers',
-    async (orgId: string, { rejectWithValue }) => {
-        try {
-            return await organizationsApi.getMembers(orgId);
-        } catch (error: unknown) {
-            return rejectWithValue(getErrorMessage(error, 'Failed to fetch members'));
-        }
+export const fetchOrgMembers = createAsyncThunk('organizations/fetchMembers', async (orgId: string, { rejectWithValue }) => {
+    try {
+        return await organizationsApi.getMembers(orgId);
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch members'));
     }
-);
+});
 
 export const addOrgMember = createAsyncThunk(
     'organizations/addMember',
@@ -94,32 +85,53 @@ const organizationsSlice = createSlice({
     name: 'organizations',
     initialState,
     reducers: {
-        clearOrgsError: (state) => { state.error = null; },
+        clearOrgsError: (state) => {
+            state.error = null;
+        },
     },
     extraReducers: (builder) => {
         builder
-            .addCase(fetchMyOrganizations.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(fetchMyOrganizations.fulfilled, (state, action) => { state.loading = false; state.list = action.payload; })
-            .addCase(fetchMyOrganizations.rejected, (state, action) => { state.loading = false; state.error = action.payload as string; });
-
-        builder
-            .addCase(fetchOrganizationById.pending, (state) => { state.loading = true; })
-            .addCase(fetchOrganizationById.fulfilled, (state, action) => { state.loading = false; state.selectedOrg = action.payload; })
-            .addCase(fetchOrganizationById.rejected, (state, action) => { state.loading = false; state.error = action.payload as string; });
-
-        builder
-            .addCase(createOrganization.fulfilled, (state, action) => { state.list.push(action.payload); });
-
-        builder
-            .addCase(fetchOrgMembers.fulfilled, (state, action) => { state.members = action.payload; });
-
-        builder
-            .addCase(addOrgMember.fulfilled, (state, action) => { state.members.push(action.payload); });
-
-        builder
-            .addCase(removeOrgMember.fulfilled, (state, action) => {
-                state.members = state.members.filter((m) => m.id !== action.payload);
+            .addCase(fetchMyOrganizations.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchMyOrganizations.fulfilled, (state, action) => {
+                state.loading = false;
+                state.list = action.payload;
+            })
+            .addCase(fetchMyOrganizations.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
             });
+
+        builder
+            .addCase(fetchOrganizationById.pending, (state) => {
+                state.loading = true;
+            })
+            .addCase(fetchOrganizationById.fulfilled, (state, action) => {
+                state.loading = false;
+                state.selectedOrg = action.payload;
+            })
+            .addCase(fetchOrganizationById.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            });
+
+        builder.addCase(createOrganization.fulfilled, (state, action) => {
+            state.list.push(action.payload);
+        });
+
+        builder.addCase(fetchOrgMembers.fulfilled, (state, action) => {
+            state.members = action.payload;
+        });
+
+        builder.addCase(addOrgMember.fulfilled, (state, action) => {
+            state.members.push(action.payload);
+        });
+
+        builder.addCase(removeOrgMember.fulfilled, (state, action) => {
+            state.members = state.members.filter((m) => m.id !== action.payload);
+        });
     },
 });
 

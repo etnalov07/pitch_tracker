@@ -2,12 +2,7 @@ import api from '../../../services/api';
 import { Invite, Team, JoinRequest } from '../../../types';
 
 export const invitesApi = {
-    createInvite: async (data: {
-        team_id: string;
-        player_id?: string;
-        role?: string;
-        invited_email?: string;
-    }): Promise<Invite> => {
+    createInvite: async (data: { team_id: string; player_id?: string; role?: string; invited_email?: string }): Promise<Invite> => {
         const response = await api.post<Invite>('/invites', data);
         return response.data;
     },

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { TeamLogo } from '../../components/team';
 import { InviteModal } from '../../components/InviteModal';
 import { JoinRequestsPanel } from '../../components/JoinRequestsPanel';
+import { TeamLogo } from '../../components/team';
 import PlayerForm from './PlayerForm';
 import RosterTable from './RosterTable';
-import { useTeamDetail } from './useTeamDetail';
 import {
     Container,
     Header,
@@ -21,15 +20,11 @@ import {
     ErrorText,
     BackLink,
 } from './styles';
+import { useTeamDetail } from './useTeamDetail';
 
 const TeamDetail: React.FC = () => {
     const state = useTeamDetail();
-    const {
-        navigate, team_id,
-        team, players, loading,
-        showAddPlayer, setShowAddPlayer,
-        handleEdit, handleDelete,
-    } = state;
+    const { navigate, team_id, team, players, loading, showAddPlayer, setShowAddPlayer, handleEdit, handleDelete } = state;
 
     const [showInviteModal, setShowInviteModal] = useState(false);
 
@@ -83,13 +78,7 @@ const TeamDetail: React.FC = () => {
                 />
             </Content>
 
-            {showInviteModal && (
-                <InviteModal
-                    teamId={team_id!}
-                    players={players}
-                    onClose={() => setShowInviteModal(false)}
-                />
-            )}
+            {showInviteModal && <InviteModal teamId={team_id!} players={players} onClose={() => setShowInviteModal(false)} />}
         </Container>
     );
 };

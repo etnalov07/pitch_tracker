@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Player, PlayerPosition } from '../../types';
 import { theme } from '../../styles/theme';
+import { Player, PlayerPosition } from '../../types';
 import {
     RosterSection,
     SectionHeader,
@@ -48,10 +48,7 @@ interface RosterTableProps {
     onDelete: (playerId: string, playerName: string) => void;
 }
 
-const RosterTable: React.FC<RosterTableProps> = ({
-    teamId, players, showAddPlayer,
-    onAddPlayer, onEdit, onDelete,
-}) => {
+const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlayer, onAddPlayer, onEdit, onDelete }) => {
     const navigate = useNavigate();
 
     return (
@@ -63,9 +60,7 @@ const RosterTable: React.FC<RosterTableProps> = ({
             {players.length === 0 ? (
                 <EmptyState>
                     <EmptyText>No players on the roster yet.</EmptyText>
-                    {!showAddPlayer && (
-                        <AddButtonSmall onClick={onAddPlayer}>Add Your First Player</AddButtonSmall>
-                    )}
+                    {!showAddPlayer && <AddButtonSmall onClick={onAddPlayer}>Add Your First Player</AddButtonSmall>}
                 </EmptyState>
             ) : (
                 <RosterTableStyled>
@@ -102,17 +97,13 @@ const RosterTable: React.FC<RosterTableProps> = ({
                                 <Td>
                                     <ActionButtons>
                                         {player.primary_position === 'P' && (
-                                            <ProfileButton
-                                                onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}`)}
-                                            >
+                                            <ProfileButton onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}`)}>
                                                 Profile
                                             </ProfileButton>
                                         )}
                                         <EditButton onClick={() => onEdit(player)}>Edit</EditButton>
                                         <RemoveButton
-                                            onClick={() =>
-                                                onDelete(player.id, `${player.first_name} ${player.last_name}`)
-                                            }
+                                            onClick={() => onDelete(player.id, `${player.first_name} ${player.last_name}`)}
                                         >
                                             Remove
                                         </RemoveButton>
