@@ -250,18 +250,21 @@
   - Splash screen text (if applicable)
   - Any in-app branding references
 
-### 19) Team Year & Team Type
-- Add a **year** field to teams (e.g., 2025, 2026)
-  - Allows tracking the same program across seasons
-  - Historical team data preserved by year
-- Add a **team type** field:
-  - **High School**: Player limited to one high school team per year
-  - **Travel**: Player can be on multiple travel teams per year (within an organization)
-- Player-team relationship:
-  - Players can belong to multiple teams across types
-  - Validation: max one high school team per player per year
-  - No limit on travel team memberships per year
-- Filter/sort teams by year and type in UI
+### ~~19) Team Year & Team Type~~ ✅ DONE
+- ~~Add a **year** field to teams (e.g., 2025, 2026)~~
+  - ~~Allows tracking the same program across seasons~~
+  - ~~Historical team data preserved by year~~
+- ~~Add a **team type** field:~~
+  - ~~**High School**: Player limited to one high school team per year~~
+  - ~~**Travel**: Player can be on multiple travel teams per year (within an organization)~~
+- ~~Player-team relationship:~~
+  - ~~Players can belong to multiple teams across types~~
+  - ~~Validation: max one high school team per player per year~~
+  - ~~No limit on travel team memberships per year~~
+- ~~Added team_type (high_school/travel/club/college) and year columns~~
+- ~~Structured season dropdown (Spring/Summer/Fall/Winter) + year input~~
+- ~~HS validation enforced in invite accept and join request approval~~
+- ~~Filter/sort teams by year and type in UI~~
 
 ### 20) Base Runners in Live Game
 - Add a baseball diamond to the score/game status area showing base runners
