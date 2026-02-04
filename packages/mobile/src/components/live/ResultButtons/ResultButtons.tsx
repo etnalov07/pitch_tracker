@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { PitchResult } from '@pitch-tracker/shared';
-import { colors } from '../../styles/theme';
+import { colors } from '../../../styles/theme';
 
 interface ResultButtonsProps {
     selectedResult: PitchResult | null;

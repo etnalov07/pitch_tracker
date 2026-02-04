@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Text, Pressable } from 'react-native';
 import { Game, Player } from '@pitch-tracker/shared';
-import { colors } from '../../styles/theme';
+import { colors } from '../../../styles/theme';
 
 interface GameHeaderProps {
     game: Game;

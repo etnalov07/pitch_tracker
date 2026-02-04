@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Text, Button, IconButton } from 'react-native-paper';
 import Svg, { Path, Circle, G, Line, Text as SvgText } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { colors } from '../../styles/theme';
+import { colors } from '../../../styles/theme';
 
 export type HitType = 'fly_ball' | 'line_drive' | 'ground_ball';
 
