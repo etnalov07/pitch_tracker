@@ -1,4 +1,10 @@
 // ============================================================================
+// Utility Functions
+// ============================================================================
+
+export { isOutResult, getOutsForResult } from './utils/atBatHelpers';
+
+// ============================================================================
 // User & Authentication Types
 // ============================================================================
 
@@ -25,6 +31,7 @@ export interface RegisterData {
     password: string;
     first_name: string;
     last_name: string;
+    registration_type?: 'coach' | 'player' | 'org_admin';
 }
 
 export interface AuthResponse {
@@ -45,6 +52,7 @@ export interface Team {
     id: string;
     name: string;
     owner_id: string;
+    organization_id?: string;
     abbreviation?: string;
     city?: string;
     organization?: string;
@@ -75,6 +83,7 @@ export type ThrowingHand = 'R' | 'L';
 export interface Player {
     id: string;
     team_id: string;
+    user_id?: string;
     first_name: string;
     last_name: string;
     jersey_number?: number;
@@ -557,4 +566,114 @@ export interface GamePitchersResponse {
 export interface GamePitcherResponse {
     pitcher: GamePitcher;
     message?: string;
+}
+
+// ============================================================================
+// Role Types
+// ============================================================================
+
+export type OrgRole = 'owner' | 'admin' | 'coach';
+export type TeamRole = 'owner' | 'coach' | 'assistant' | 'player';
+
+// ============================================================================
+// Organization Types
+// ============================================================================
+
+export interface Organization {
+    id: string;
+    name: string;
+    slug: string;
+    description?: string;
+    logo_path?: string;
+    primary_color?: string;
+    secondary_color?: string;
+    created_by: string;
+    created_at: string;
+    updated_at?: string;
+}
+
+export interface OrganizationMember {
+    id: string;
+    organization_id: string;
+    user_id: string;
+    role: OrgRole;
+    created_at: string;
+    user_first_name?: string;
+    user_last_name?: string;
+    user_email?: string;
+}
+
+export interface OrganizationWithTeams extends Organization {
+    teams: Team[];
+    member_count: number;
+}
+
+// ============================================================================
+// Team Member Types
+// ============================================================================
+
+export interface TeamMember {
+    id: string;
+    team_id: string;
+    user_id: string;
+    role: TeamRole;
+    player_id?: string;
+    created_at: string;
+    user_first_name?: string;
+    user_last_name?: string;
+    user_email?: string;
+}
+
+// ============================================================================
+// Invite Types
+// ============================================================================
+
+export type InviteStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
+
+export interface Invite {
+    id: string;
+    token: string;
+    team_id: string;
+    player_id?: string;
+    invited_by: string;
+    invited_email?: string;
+    role: TeamRole;
+    status: InviteStatus;
+    expires_at: string;
+    accepted_by?: string;
+    accepted_at?: string;
+    created_at: string;
+    team_name?: string;
+    inviter_name?: string;
+    player_name?: string;
+}
+
+// ============================================================================
+// Join Request Types
+// ============================================================================
+
+export type JoinRequestStatus = 'pending' | 'approved' | 'denied';
+
+export interface JoinRequest {
+    id: string;
+    team_id: string;
+    user_id: string;
+    message?: string;
+    status: JoinRequestStatus;
+    reviewed_by?: string;
+    linked_player_id?: string;
+    reviewed_at?: string;
+    created_at: string;
+    user_first_name?: string;
+    user_last_name?: string;
+    team_name?: string;
+}
+
+// ============================================================================
+// Extended User Type (with role context)
+// ============================================================================
+
+export interface UserWithRoles extends User {
+    team_memberships: TeamMember[];
+    org_memberships: OrganizationMember[];
 }

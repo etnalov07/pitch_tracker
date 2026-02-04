@@ -46,9 +46,10 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         if (initializing) return;
 
         const inAuthGroup = segments[0] === '(auth)';
+        const inInvite = (segments[0] as string) === 'invite';
 
-        if (!isAuthenticated && !inAuthGroup) {
-            // Redirect to login if not authenticated
+        if (!isAuthenticated && !inAuthGroup && !inInvite) {
+            // Redirect to login if not authenticated (allow invite screen)
             router.replace('/login');
         } else if (isAuthenticated && inAuthGroup) {
             // Redirect to home if authenticated but on auth screen
@@ -89,6 +90,8 @@ function RootLayoutContent() {
                     <Stack.Screen name="game/[id]/setup" options={{ title: 'Game Setup' }} />
                     <Stack.Screen name="game/[id]/lineup" options={{ title: 'Opponent Lineup' }} />
                     <Stack.Screen name="team/[id]" options={{ title: 'Team Details' }} />
+                    <Stack.Screen name="invite/[token]" options={{ title: 'Team Invite' }} />
+                    <Stack.Screen name="join-team" options={{ title: 'Find a Team' }} />
                     <Stack.Screen name="+not-found" />
                 </Stack>
             </AuthGuard>

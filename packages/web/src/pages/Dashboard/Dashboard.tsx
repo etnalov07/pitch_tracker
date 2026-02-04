@@ -185,6 +185,10 @@ const Dashboard: React.FC = () => {
                         <ActionIcon>+</ActionIcon>
                         <ActionText>New Team</ActionText>
                     </ActionCard>
+                    <ActionCard onClick={() => navigate('/join-team')}>
+                        <ActionIcon>&#128269;</ActionIcon>
+                        <ActionText>Find Team</ActionText>
+                    </ActionCard>
                 </QuickActions>
 
                 {liveGames.length > 0 && (

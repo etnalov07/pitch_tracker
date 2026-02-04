@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Dashboard from './pages/Dashboard/Dashboard';
 import GameHistory from './pages/GameHistory/GameHistory';
 import GameSetup from './pages/GameSetup/GameSetup';
+import InviteAccept from './pages/InviteAccept/InviteAccept';
+import JoinTeam from './pages/JoinTeam/JoinTeam';
 import LiveGame from './pages/LiveGame/LiveGame';
 import Login from './pages/Login/Login';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
@@ -23,6 +25,15 @@ function App() {
         <Router>
             <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/invite/:token" element={<InviteAccept />} />
+                <Route
+                    path="/join-team"
+                    element={
+                        <ProtectedRoute>
+                            <JoinTeam />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route
                     path="/"
                     element={

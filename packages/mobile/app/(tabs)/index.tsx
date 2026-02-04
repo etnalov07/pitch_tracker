@@ -182,6 +182,18 @@ export default function DashboardScreen() {
                     </Card>
                 </View>
 
+                {/* Quick Actions */}
+                <View style={styles.quickActions}>
+                    <Button
+                        mode="outlined"
+                        icon="magnify"
+                        onPress={() => router.push('/join-team' as any)}
+                        style={styles.quickAction}
+                    >
+                        Find a Team
+                    </Button>
+                </View>
+
                 {/* Recent Games Section */}
                 {recentGames.length > 0 && (
                     <View style={styles.section}>
@@ -318,6 +330,14 @@ const styles = StyleSheet.create({
     },
     emptyButton: {
         marginTop: 16,
+    },
+    quickActions: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 24,
+    },
+    quickAction: {
+        flex: 1,
     },
     fab: {
         position: 'absolute',

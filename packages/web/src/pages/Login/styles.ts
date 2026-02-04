@@ -134,3 +134,27 @@ export const ToggleLink = styled.span({
         textDecoration: 'underline',
     },
 });
+
+export const RoleSelector = styled.div({
+    display: 'flex',
+    gap: theme.spacing.md,
+});
+
+export const RoleOption = styled.button<{ active?: boolean }>(({ active }) => ({
+    flex: 1,
+    padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+    border: `2px solid ${active ? theme.colors.primary[500] : theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: active ? theme.colors.primary[50] : 'white',
+    color: active ? theme.colors.primary[700] : theme.colors.gray[600],
+    fontWeight: active ? theme.fontWeight.semibold : theme.fontWeight.normal,
+    fontSize: theme.fontSize.sm,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    type: 'button',
+
+    '&:hover': {
+        borderColor: theme.colors.primary[400],
+        backgroundColor: theme.colors.primary[50],
+    },
+}));

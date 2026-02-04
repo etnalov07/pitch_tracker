@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
-import { AuthRequest } from '../types';
+import { AuthRequest, RoleAwareRequest } from '../types';
 import teamService from '../services/team.service';
+import joinRequestService from '../services/joinRequest.service';
 import { processLogoUpload } from '../utils/imageProcessor';
 
 export class TeamController {
@@ -175,6 +176,29 @@ export class TeamController {
       const { id } = req.params;
       const team = await teamService.deleteLogo(id as string, req.user.id);
       res.status(200).json({ message: 'Logo deleted successfully', team });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async searchTeams(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const q = req.query.q as string;
+      if (!q || q.trim().length < 2) {
+        res.status(400).json({ error: 'Search query must be at least 2 characters' });
+        return;
+      }
+      const teams = await teamService.searchTeams(q.trim());
+      res.json({ teams });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getJoinRequests(req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const requests = await joinRequestService.getRequestsByTeam(req.params.id as string);
+      res.json({ requests });
     } catch (error) {
       next(error);
     }

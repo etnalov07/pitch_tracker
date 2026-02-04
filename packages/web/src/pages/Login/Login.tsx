@@ -16,6 +16,8 @@ import {
     Title,
     ToggleLink,
     ToggleText,
+    RoleSelector,
+    RoleOption,
 } from './styles';
 
 const Login: React.FC = () => {
@@ -29,6 +31,7 @@ const Login: React.FC = () => {
         password: '',
         first_name: '',
         last_name: '',
+        registration_type: 'coach' as 'coach' | 'player' | 'org_admin',
     });
 
     // Redirect if already authenticated
@@ -65,6 +68,7 @@ const Login: React.FC = () => {
                     password: formData.password,
                     first_name: formData.first_name,
                     last_name: formData.last_name,
+                    registration_type: formData.registration_type,
                 })
             );
         }
@@ -109,6 +113,30 @@ const Login: React.FC = () => {
                                     />
                                 </FormGroup>
                             </FormRow>
+
+                            <FormGroup>
+                                <Label>I am a...</Label>
+                                <RoleSelector>
+                                    <RoleOption
+                                        active={formData.registration_type === 'coach'}
+                                        onClick={() => setFormData({ ...formData, registration_type: 'coach' })}
+                                    >
+                                        Coach
+                                    </RoleOption>
+                                    <RoleOption
+                                        active={formData.registration_type === 'player'}
+                                        onClick={() => setFormData({ ...formData, registration_type: 'player' })}
+                                    >
+                                        Player
+                                    </RoleOption>
+                                    <RoleOption
+                                        active={formData.registration_type === 'org_admin'}
+                                        onClick={() => setFormData({ ...formData, registration_type: 'org_admin' })}
+                                    >
+                                        Org Admin
+                                    </RoleOption>
+                                </RoleSelector>
+                            </FormGroup>
                         </>
                     )}
 

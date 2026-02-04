@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { TextInput, Button, Text, Surface, HelperText } from 'react-native-paper';
+import { TextInput, Button, Text, Surface, HelperText, SegmentedButtons } from 'react-native-paper';
 import { Link } from 'expo-router';
 import { useAppDispatch, useAppSelector, registerUser, clearAuthError } from '../../src/state';
 
@@ -15,6 +15,7 @@ export default function RegisterScreen() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
+    const [registrationType, setRegistrationType] = useState<string>('coach');
 
     const handleRegister = () => {
         // Validation
@@ -39,6 +40,7 @@ export default function RegisterScreen() {
             last_name: lastName.trim(),
             email: email.trim(),
             password,
+            registration_type: registrationType as 'coach' | 'player' | 'org_admin',
         }));
     };
 
@@ -84,6 +86,18 @@ export default function RegisterScreen() {
                             style={[styles.input, styles.nameInput]}
                         />
                     </View>
+
+                    <Text variant="bodyMedium" style={styles.roleLabel}>I am a...</Text>
+                    <SegmentedButtons
+                        value={registrationType}
+                        onValueChange={setRegistrationType}
+                        buttons={[
+                            { value: 'coach', label: 'Coach' },
+                            { value: 'player', label: 'Player' },
+                            { value: 'org_admin', label: 'Org Admin' },
+                        ]}
+                        style={styles.segmentedButtons}
+                    />
 
                     <TextInput
                         label="Email"
@@ -184,6 +198,14 @@ const styles = StyleSheet.create({
     },
     nameInput: {
         flex: 1,
+    },
+    roleLabel: {
+        marginBottom: 8,
+        color: '#374151',
+        fontWeight: '500',
+    },
+    segmentedButtons: {
+        marginBottom: 16,
     },
     input: {
         marginBottom: 16,

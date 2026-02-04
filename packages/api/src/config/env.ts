@@ -19,6 +19,10 @@ interface Config {
   cors: {
     origin: string | string[];
   };
+  invite: {
+    defaultExpiryDays: number;
+    baseUrl: string;
+  };
 }
 
 const getEnvVariable = (key: string, defaultValue?: string): string => {
@@ -45,6 +49,10 @@ export const config: Config = {
   },
   cors: {
     origin: getEnvVariable('CORS_ORIGIN', 'http://localhost:3000').split(',').map(o => o.trim()),
+  },
+  invite: {
+    defaultExpiryDays: parseInt(getEnvVariable('INVITE_EXPIRY_DAYS', '7'), 10),
+    baseUrl: getEnvVariable('APP_BASE_URL', 'http://localhost:3000'),
   },
 };
 

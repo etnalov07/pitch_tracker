@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { TeamRole, OrgRole } from '@pitch-tracker/shared';
 
 // Re-export shared types
 export * from '@pitch-tracker/shared';
@@ -30,4 +31,14 @@ export interface AuthRequest extends Request {
         id: string;
         email: string;
     };
+}
+
+// Request with loaded role information
+export interface UserRoles {
+    teamRoles: Map<string, TeamRole>;
+    orgRoles: Map<string, OrgRole>;
+}
+
+export interface RoleAwareRequest extends AuthRequest {
+    userRoles?: UserRoles;
 }

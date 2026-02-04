@@ -75,7 +75,35 @@ export class AuthService {
       [userId]
     );
 
-    return result.rows[0] || null;
+    if (result.rows.length === 0) return null;
+
+    const user = result.rows[0];
+
+    // Load role memberships
+    const [teamMemberships, orgMemberships] = await Promise.all([
+      query(
+        `SELECT tm.id, tm.team_id, tm.user_id, tm.role, tm.player_id, tm.created_at,
+                t.name as team_name
+         FROM team_members tm
+         JOIN teams t ON t.id = tm.team_id
+         WHERE tm.user_id = $1`,
+        [userId]
+      ),
+      query(
+        `SELECT om.id, om.organization_id, om.user_id, om.role, om.created_at,
+                o.name as org_name
+         FROM organization_members om
+         JOIN organizations o ON o.id = om.organization_id
+         WHERE om.user_id = $1`,
+        [userId]
+      ),
+    ]);
+
+    return {
+      ...user,
+      team_memberships: teamMemberships.rows,
+      org_memberships: orgMemberships.rows,
+    };
   }
 }
 
