@@ -1,6 +1,6 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Pressable, Alert } from 'react-native';
-import { Text, Card, Button, useTheme, FAB, Portal, Modal, TextInput, IconButton, Avatar } from 'react-native-paper';
+import { Text, Card, Button, Chip, useTheme, FAB, Portal, Modal, TextInput, IconButton, Avatar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
@@ -67,6 +67,8 @@ export default function TeamsScreen() {
     const [newTeamYear, setNewTeamYear] = useState('');
     const [creating, setCreating] = useState(false);
 
+    const [filterType, setFilterType] = useState<TeamType | ''>('');
+
     const loadTeams = useCallback(() => {
         dispatch(fetchAllTeams());
     }, [dispatch]);
@@ -74,6 +76,13 @@ export default function TeamsScreen() {
     useEffect(() => {
         loadTeams();
     }, [loadTeams]);
+
+    const filteredTeams = useMemo(() => {
+        if (!filterType) return teams;
+        return teams.filter((t) => t.team_type === filterType);
+    }, [teams, filterType]);
+
+    const hasTypes = useMemo(() => teams.some((t) => t.team_type), [teams]);
 
     const handleCreateTeam = async () => {
         if (!newTeamName.trim()) {
@@ -128,15 +137,45 @@ export default function TeamsScreen() {
                 }
             >
                 {teams.length > 0 ? (
-                    <View style={[styles.teamList, isTablet && styles.teamListTablet]}>
-                        {teams.map((team) => (
-                            <TeamCard
-                                key={team.id}
-                                team={team}
-                                onPress={() => handleTeamPress(team)}
-                            />
-                        ))}
-                    </View>
+                    <>
+                        {hasTypes && (
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
+                                <Chip
+                                    selected={filterType === ''}
+                                    onPress={() => setFilterType('')}
+                                    style={styles.filterChip}
+                                    compact
+                                >
+                                    All
+                                </Chip>
+                                {(['high_school', 'travel', 'club', 'college'] as TeamType[]).map((type) => (
+                                    <Chip
+                                        key={type}
+                                        selected={filterType === type}
+                                        onPress={() => setFilterType(filterType === type ? '' : type)}
+                                        style={styles.filterChip}
+                                        compact
+                                    >
+                                        {TEAM_TYPE_LABELS[type]}
+                                    </Chip>
+                                ))}
+                            </ScrollView>
+                        )}
+                        <View style={[styles.teamList, isTablet && styles.teamListTablet]}>
+                            {filteredTeams.map((team) => (
+                                <TeamCard
+                                    key={team.id}
+                                    team={team}
+                                    onPress={() => handleTeamPress(team)}
+                                />
+                            ))}
+                            {filteredTeams.length === 0 && (
+                                <Text variant="bodyMedium" style={styles.noResults}>
+                                    No {TEAM_TYPE_LABELS[filterType] || ''} teams found
+                                </Text>
+                            )}
+                        </View>
+                    </>
                 ) : !loading ? (
                     <EmptyState
                         icon="account-group"
@@ -240,6 +279,21 @@ const styles = StyleSheet.create({
     },
     scrollContentEmpty: {
         flexGrow: 1,
+    },
+    filterRow: {
+        marginBottom: 12,
+        flexGrow: 0,
+    },
+    filterRowContent: {
+        gap: 8,
+    },
+    filterChip: {
+        borderRadius: 20,
+    },
+    noResults: {
+        textAlign: 'center',
+        color: '#6b7280',
+        paddingVertical: 24,
     },
     teamList: {
         gap: 12,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector, fetchAllTeams, createTeam, deleteTeam, clearTeamsError } from '../../state';
 import { TeamType, TeamSeason } from '../../types';
@@ -23,6 +23,10 @@ import {
     CancelButton,
     SubmitButton,
     ErrorMessage,
+    FilterBar,
+    FilterSelect,
+    SortSelect,
+    FilterCount,
     TeamGrid,
     TeamCard,
     TeamCardHeader,
@@ -54,6 +58,10 @@ const Teams: React.FC = () => {
 
     const { teamList: teams, loading, error: stateError } = useAppSelector((state) => state.teams);
 
+    const [filterType, setFilterType] = useState<TeamType | ''>('');
+    const [filterYear, setFilterYear] = useState('');
+    const [sortBy, setSortBy] = useState<'name' | 'year' | 'type'>('name');
+
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
@@ -71,6 +79,35 @@ const Teams: React.FC = () => {
     useEffect(() => {
         dispatch(fetchAllTeams());
     }, [dispatch]);
+
+    const availableYears = useMemo(() => {
+        const years = teams.map((t) => t.year).filter((y): y is number => !!y);
+        return Array.from(new Set(years)).sort((a, b) => b - a);
+    }, [teams]);
+
+    const filteredTeams = useMemo(() => {
+        let result = [...teams];
+
+        if (filterType) {
+            result = result.filter((t) => t.team_type === filterType);
+        }
+        if (filterYear) {
+            const yr = parseInt(filterYear, 10);
+            result = result.filter((t) => t.year === yr);
+        }
+
+        result.sort((a, b) => {
+            if (sortBy === 'year') {
+                return (b.year || 0) - (a.year || 0) || a.name.localeCompare(b.name);
+            }
+            if (sortBy === 'type') {
+                return (a.team_type || '').localeCompare(b.team_type || '') || a.name.localeCompare(b.name);
+            }
+            return a.name.localeCompare(b.name);
+        });
+
+        return result;
+    }, [teams, filterType, filterYear, sortBy]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({
@@ -250,33 +287,62 @@ const Teams: React.FC = () => {
                         )}
                     </EmptyState>
                 ) : (
-                    <TeamGrid>
-                        {teams?.map((team) => (
-                            <TeamCard key={team.id}>
-                                <TeamCardHeader>
-                                    <TeamName>{team.name}</TeamName>
-                                    {team.abbreviation && <TeamAbbr>{team.abbreviation}</TeamAbbr>}
-                                </TeamCardHeader>
-                                {team.city && <TeamCity>{team.city}</TeamCity>}
-                                {(team.team_type || team.season || team.year) && (
-                                    <TeamMeta>
-                                        {[
-                                            team.team_type ? TEAM_TYPE_LABELS[team.team_type] : '',
-                                            team.season && team.year
-                                                ? `${team.season} ${team.year}`
-                                                : team.season || (team.year ? `${team.year}` : ''),
-                                        ]
-                                            .filter(Boolean)
-                                            .join(' \u00B7 ')}
-                                    </TeamMeta>
-                                )}
-                                <TeamActions>
-                                    <ViewButton onClick={() => navigate(`/teams/${team.id}`)}>Manage Roster</ViewButton>
-                                    <DeleteButton onClick={() => handleDelete(team.id, team.name)}>Delete</DeleteButton>
-                                </TeamActions>
-                            </TeamCard>
-                        ))}
-                    </TeamGrid>
+                    <>
+                        <FilterBar>
+                            <FilterSelect value={filterType} onChange={(e) => setFilterType(e.target.value as TeamType | '')}>
+                                <option value="">All Types</option>
+                                <option value="high_school">High School</option>
+                                <option value="travel">Travel</option>
+                                <option value="club">Club</option>
+                                <option value="college">College</option>
+                            </FilterSelect>
+                            <FilterSelect value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
+                                <option value="">All Years</option>
+                                {availableYears.map((yr) => (
+                                    <option key={yr} value={yr}>
+                                        {yr}
+                                    </option>
+                                ))}
+                            </FilterSelect>
+                            <SortSelect value={sortBy} onChange={(e) => setSortBy(e.target.value as 'name' | 'year' | 'type')}>
+                                <option value="name">Sort by Name</option>
+                                <option value="year">Sort by Year</option>
+                                <option value="type">Sort by Type</option>
+                            </SortSelect>
+                            {(filterType || filterYear) && (
+                                <FilterCount>
+                                    {filteredTeams.length} of {teams.length} teams
+                                </FilterCount>
+                            )}
+                        </FilterBar>
+                        <TeamGrid>
+                            {filteredTeams.map((team) => (
+                                <TeamCard key={team.id}>
+                                    <TeamCardHeader>
+                                        <TeamName>{team.name}</TeamName>
+                                        {team.abbreviation && <TeamAbbr>{team.abbreviation}</TeamAbbr>}
+                                    </TeamCardHeader>
+                                    {team.city && <TeamCity>{team.city}</TeamCity>}
+                                    {(team.team_type || team.season || team.year) && (
+                                        <TeamMeta>
+                                            {[
+                                                team.team_type ? TEAM_TYPE_LABELS[team.team_type] : '',
+                                                team.season && team.year
+                                                    ? `${team.season} ${team.year}`
+                                                    : team.season || (team.year ? `${team.year}` : ''),
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' \u00B7 ')}
+                                        </TeamMeta>
+                                    )}
+                                    <TeamActions>
+                                        <ViewButton onClick={() => navigate(`/teams/${team.id}`)}>Manage Roster</ViewButton>
+                                        <DeleteButton onClick={() => handleDelete(team.id, team.name)}>Delete</DeleteButton>
+                                    </TeamActions>
+                                </TeamCard>
+                            ))}
+                        </TeamGrid>
+                    </>
                 )}
             </Content>
         </Container>

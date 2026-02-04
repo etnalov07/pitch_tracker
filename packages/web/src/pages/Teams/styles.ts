@@ -208,6 +208,37 @@ export const TeamTypeBadge = styled.span({
     fontWeight: theme.fontWeight.medium,
 });
 
+export const FilterBar = styled.div({
+    display: 'flex',
+    gap: theme.spacing.md,
+    alignItems: 'center',
+    marginBottom: theme.spacing.lg,
+    flexWrap: 'wrap',
+});
+
+export const FilterSelect = styled.select({
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    border: `1px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    backgroundColor: 'white',
+    color: theme.colors.gray[700],
+    cursor: 'pointer',
+
+    '&:focus': {
+        outline: 'none',
+        borderColor: theme.colors.primary[500],
+    },
+});
+
+export const SortSelect = styled(FilterSelect)({});
+
+export const FilterCount = styled.span({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[500],
+    marginLeft: 'auto',
+});
+
 export const TeamGrid = styled.div({
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
