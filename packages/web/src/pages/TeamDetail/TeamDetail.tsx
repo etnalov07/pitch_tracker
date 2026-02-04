@@ -57,8 +57,18 @@ const TeamDetail: React.FC = () => {
                         {(team.team_type || team.season || team.year) && (
                             <Subtitle>
                                 {[
-                                    team.team_type === 'high_school' ? 'High School' : team.team_type === 'travel' ? 'Travel' : team.team_type === 'club' ? 'Club' : team.team_type === 'college' ? 'College' : '',
-                                    team.season && team.year ? `${team.season} ${team.year}` : team.season || (team.year ? `${team.year}` : ''),
+                                    team.team_type === 'high_school'
+                                        ? 'High School'
+                                        : team.team_type === 'travel'
+                                          ? 'Travel'
+                                          : team.team_type === 'club'
+                                            ? 'Club'
+                                            : team.team_type === 'college'
+                                              ? 'College'
+                                              : '',
+                                    team.season && team.year
+                                        ? `${team.season} ${team.year}`
+                                        : team.season || (team.year ? `${team.year}` : ''),
                                 ]
                                     .filter(Boolean)
                                     .join(' \u00B7 ')}

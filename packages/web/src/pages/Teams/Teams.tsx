@@ -262,7 +262,9 @@ const Teams: React.FC = () => {
                                     <TeamMeta>
                                         {[
                                             team.team_type ? TEAM_TYPE_LABELS[team.team_type] : '',
-                                            team.season && team.year ? `${team.season} ${team.year}` : team.season || (team.year ? `${team.year}` : ''),
+                                            team.season && team.year
+                                                ? `${team.season} ${team.year}`
+                                                : team.season || (team.year ? `${team.year}` : ''),
                                         ]
                                             .filter(Boolean)
                                             .join(' \u00B7 ')}
