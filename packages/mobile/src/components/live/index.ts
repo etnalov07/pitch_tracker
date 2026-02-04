@@ -5,3 +5,6 @@ export { default as GameHeader } from './GameHeader';
 export { default as PitcherStats } from './PitcherStats';
 export { default as BaseballDiamond } from './BaseballDiamond';
 export { default as InPlayModal } from './InPlayModal';
+export { default as PitcherSelectorModal } from './PitcherSelectorModal';
+export { default as BatterSelectorModal } from './BatterSelectorModal';
+export { default as InningChangeModal } from './InningChangeModal';

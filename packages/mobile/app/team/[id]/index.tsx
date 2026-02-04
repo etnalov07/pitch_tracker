@@ -1,62 +1,31 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
 import {
     Text,
     Card,
-    Button,
-    useTheme,
     FAB,
     Portal,
-    Modal,
-    TextInput,
-    IconButton,
-    Chip,
-    SegmentedButtons,
     Divider,
+    useTheme,
 } from 'react-native-paper';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useAppSelector, useAppDispatch, fetchTeamById, fetchTeamPlayers, addPlayer, deletePlayer } from '../../../src/state';
+import { useAppSelector, useAppDispatch, fetchTeamById, fetchTeamPlayers, deletePlayer } from '../../../src/state';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
 import { LoadingScreen, EmptyState } from '../../../src/components/common';
-import { PlayerWithPitchTypes, PlayerPosition, HandednessType, ThrowingHand } from '@pitch-tracker/shared';
-
-const POSITIONS: PlayerPosition[] = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'UTIL'];
-
-const getPositionColor = (pos: string): string => {
-    switch (pos) {
-        case 'P': return '#ef4444';
-        case 'C': return '#3b82f6';
-        case '1B': return '#22c55e';
-        case '2B': return '#16a34a';
-        case '3B': return '#eab308';
-        case 'SS': return '#15803d';
-        case 'LF': return '#2563eb';
-        case 'CF': return '#1d4ed8';
-        case 'RF': return '#3b82f6';
-        case 'DH': return '#6b7280';
-        default: return '#6b7280';
-    }
-};
+import { AddPlayerModal, PlayerListItem } from '../../../src/components/team';
+import { PlayerWithPitchTypes } from '@pitch-tracker/shared';
+import { useState } from 'react';
 
 export default function TeamDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
     const { isTablet } = useDeviceType();
 
     const { selectedTeam, players: rawPlayers, loading, playersLoading } = useAppSelector((state) => state.teams);
     const players = rawPlayers || [];
-
     const [modalVisible, setModalVisible] = useState(false);
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [jerseyNumber, setJerseyNumber] = useState('');
-    const [position, setPosition] = useState<PlayerPosition>('P');
-    const [throws, setThrows] = useState<ThrowingHand>('R');
-    const [bats, setBats] = useState<HandednessType>('R');
-    const [creating, setCreating] = useState(false);
 
     const loadData = useCallback(() => {
         if (id) {
@@ -68,38 +37,6 @@ export default function TeamDetailScreen() {
     useEffect(() => {
         loadData();
     }, [loadData]);
-
-    const handleAddPlayer = async () => {
-        if (!firstName.trim() || !lastName.trim()) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', 'Please enter first and last name');
-            return;
-        }
-
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setCreating(true);
-        try {
-            await dispatch(addPlayer({
-                teamId: id!,
-                data: {
-                    first_name: firstName.trim(),
-                    last_name: lastName.trim(),
-                    jersey_number: jerseyNumber ? parseInt(jerseyNumber, 10) : undefined,
-                    primary_position: position,
-                    throws,
-                    bats,
-                },
-            })).unwrap();
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setModalVisible(false);
-            resetForm();
-        } catch {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', 'Failed to add player');
-        } finally {
-            setCreating(false);
-        }
-    };
 
     const handleDeletePlayer = (player: PlayerWithPitchTypes) => {
         Alert.alert(
@@ -123,47 +60,12 @@ export default function TeamDetailScreen() {
         );
     };
 
-    const resetForm = () => {
-        setFirstName('');
-        setLastName('');
-        setJerseyNumber('');
-        setPosition('P');
-        setThrows('R');
-        setBats('R');
-    };
-
     const pitchers = players.filter((p) => p.primary_position === 'P');
     const fieldPlayers = players.filter((p) => p.primary_position !== 'P');
 
     if (loading && !selectedTeam) {
         return <LoadingScreen message="Loading team..." />;
     }
-
-    const renderRosterRow = (player: PlayerWithPitchTypes) => (
-        <View key={player.id} style={styles.rosterRow}>
-            <Text style={styles.rosterJersey}>
-                {player.jersey_number != null ? `#${player.jersey_number}` : '-'}
-            </Text>
-            <View style={styles.rosterNameCol}>
-                <Text style={styles.rosterName} numberOfLines={1}>
-                    {player.first_name} {player.last_name}
-                </Text>
-            </View>
-            <View style={[styles.posBadge, { backgroundColor: getPositionColor(player.primary_position) }]}>
-                <Text style={styles.posBadgeText}>{player.primary_position}</Text>
-            </View>
-            <Text style={styles.rosterBT}>
-                {player.bats === 'S' ? 'S' : player.bats}/{player.throws}
-            </Text>
-            <IconButton
-                icon="trash-can-outline"
-                size={18}
-                iconColor="#9ca3af"
-                onPress={() => handleDeletePlayer(player)}
-                style={styles.deleteButton}
-            />
-        </View>
-    );
 
     const renderRosterTable = (title: string, playerList: PlayerWithPitchTypes[]) => {
         if (playerList.length === 0) return null;
@@ -184,7 +86,7 @@ export default function TeamDetailScreen() {
                     <Divider />
                     {playerList.map((player, idx) => (
                         <React.Fragment key={player.id}>
-                            {renderRosterRow(player)}
+                            <PlayerListItem player={player} onDelete={handleDeletePlayer} />
                             {idx < playerList.length - 1 && <Divider />}
                         </React.Fragment>
                     ))}
@@ -208,7 +110,6 @@ export default function TeamDetailScreen() {
                         <RefreshControl refreshing={loading || playersLoading} onRefresh={loadData} />
                     }
                 >
-                    {/* Team Info Card */}
                     <Card style={styles.teamInfoCard}>
                         <Card.Content>
                             <Text variant="headlineSmall">{selectedTeam?.name}</Text>
@@ -240,11 +141,9 @@ export default function TeamDetailScreen() {
                         </Card.Content>
                     </Card>
 
-                    {/* Roster Tables */}
                     {renderRosterTable('Pitchers', pitchers)}
                     {renderRosterTable('Position Players', fieldPlayers)}
 
-                    {/* Empty State */}
                     {players.length === 0 && !playersLoading && (
                         <EmptyState
                             icon="account-plus-outline"
@@ -271,97 +170,12 @@ export default function TeamDetailScreen() {
                 />
 
                 <Portal>
-                    <Modal
+                    <AddPlayerModal
                         visible={modalVisible}
                         onDismiss={() => setModalVisible(false)}
-                        contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}
-                    >
-                        <ScrollView>
-                            <Text variant="titleLarge" style={styles.modalTitle}>
-                                Add Player
-                            </Text>
-                            <View style={styles.nameRow}>
-                                <TextInput
-                                    label="First Name"
-                                    value={firstName}
-                                    onChangeText={setFirstName}
-                                    mode="outlined"
-                                    style={[styles.input, styles.nameInput]}
-                                />
-                                <TextInput
-                                    label="Last Name"
-                                    value={lastName}
-                                    onChangeText={setLastName}
-                                    mode="outlined"
-                                    style={[styles.input, styles.nameInput]}
-                                />
-                            </View>
-                            <TextInput
-                                label="Jersey Number"
-                                value={jerseyNumber}
-                                onChangeText={setJerseyNumber}
-                                mode="outlined"
-                                keyboardType="numeric"
-                                style={styles.input}
-                            />
-                            <Text variant="labelMedium" style={styles.fieldLabel}>Position</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-                                <View style={styles.chipRow}>
-                                    {POSITIONS.map((pos) => (
-                                        <Chip
-                                            key={pos}
-                                            selected={position === pos}
-                                            onPress={() => {
-                                                Haptics.selectionAsync();
-                                                setPosition(pos);
-                                            }}
-                                            style={styles.positionChip}
-                                        >
-                                            {pos}
-                                        </Chip>
-                                    ))}
-                                </View>
-                            </ScrollView>
-                            <Text variant="labelMedium" style={styles.fieldLabel}>Throws</Text>
-                            <SegmentedButtons
-                                value={throws}
-                                onValueChange={(v) => {
-                                    Haptics.selectionAsync();
-                                    setThrows(v as ThrowingHand);
-                                }}
-                                buttons={[
-                                    { value: 'R', label: 'Right' },
-                                    { value: 'L', label: 'Left' },
-                                ]}
-                                style={styles.segmented}
-                            />
-                            <Text variant="labelMedium" style={styles.fieldLabel}>Bats</Text>
-                            <SegmentedButtons
-                                value={bats}
-                                onValueChange={(v) => {
-                                    Haptics.selectionAsync();
-                                    setBats(v as HandednessType);
-                                }}
-                                buttons={[
-                                    { value: 'R', label: 'Right' },
-                                    { value: 'L', label: 'Left' },
-                                    { value: 'S', label: 'Switch' },
-                                ]}
-                                style={styles.segmented}
-                            />
-                            <View style={styles.modalActions}>
-                                <Button onPress={() => setModalVisible(false)}>Cancel</Button>
-                                <Button
-                                    mode="contained"
-                                    onPress={handleAddPlayer}
-                                    loading={creating}
-                                    disabled={creating || !firstName.trim() || !lastName.trim()}
-                                >
-                                    Add Player
-                                </Button>
-                            </View>
-                        </ScrollView>
-                    </Modal>
+                        teamId={id!}
+                        isTablet={isTablet}
+                    />
                 </Portal>
             </View>
         </>
@@ -400,7 +214,6 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         color: '#374151',
     },
-    // Roster table styles
     rosterCard: {
         backgroundColor: '#ffffff',
         overflow: 'hidden',
@@ -418,100 +231,15 @@ const styles = StyleSheet.create({
         color: '#6b7280',
         textTransform: 'uppercase',
     },
-    rosterRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-    },
     rosterJersey: {
         width: 40,
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#374151',
     },
     rosterNameCol: {
         flex: 1,
-    },
-    rosterName: {
-        fontSize: 15,
-        fontWeight: '500',
-        color: '#111827',
-    },
-    posBadge: {
-        width: 36,
-        paddingVertical: 2,
-        borderRadius: 4,
-        alignItems: 'center',
-        marginRight: 4,
-    },
-    posBadgeText: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: '#ffffff',
-    },
-    rosterBT: {
-        width: 32,
-        fontSize: 13,
-        color: '#6b7280',
-        textAlign: 'center',
-    },
-    deleteButton: {
-        margin: 0,
-        width: 34,
-        height: 34,
     },
     fab: {
         position: 'absolute',
         right: 16,
         bottom: 16,
-    },
-    modal: {
-        backgroundColor: '#ffffff',
-        margin: 20,
-        padding: 20,
-        borderRadius: 12,
-        maxHeight: '80%',
-    },
-    modalTablet: {
-        maxWidth: 500,
-        alignSelf: 'center',
-        width: '100%',
-    },
-    modalTitle: {
-        marginBottom: 16,
-    },
-    nameRow: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    nameInput: {
-        flex: 1,
-    },
-    input: {
-        marginBottom: 12,
-    },
-    fieldLabel: {
-        marginBottom: 8,
-        color: '#374151',
-    },
-    chipScroll: {
-        marginBottom: 12,
-    },
-    chipRow: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    positionChip: {
-        marginRight: 4,
-    },
-    segmented: {
-        marginBottom: 16,
-    },
-    modalActions: {
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
-        gap: 8,
-        marginTop: 8,
     },
 });
