@@ -39,9 +39,9 @@ jobs:
 
             - name: Build iOS app on EAS
               working-directory: packages/mobile
-              run: eas build --platform ios --profile production --non-interactive --auto-submit
+              run: eas build --platform ios --profile development --non-interactive
               env:
-                  APP_VARIANT: production
+                  APP_VARIANT: development
 
     build-android:
         name: Build Android
@@ -71,6 +71,6 @@ jobs:
 
             - name: Build Android app on EAS
               working-directory: packages/mobile
-              run: eas build --platform android --profile production --non-interactive
+              run: eas build --platform android --profile development --non-interactive
               env:
-                  APP_VARIANT: production
+                  APP_VARIANT: development
