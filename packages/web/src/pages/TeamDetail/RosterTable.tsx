@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { theme } from '../../styles/theme';
-import { Player, PlayerPosition } from '../../types';
+import { Player } from '../../types';
 import {
     RosterSection,
     SectionHeader,
@@ -11,7 +10,6 @@ import {
     Td,
     JerseyNumber,
     PlayerName,
-    PositionBadge,
     Handedness,
     ActionButtons,
     EditButton,
@@ -21,23 +19,6 @@ import {
     EmptyText,
     AddButtonSmall,
 } from './styles';
-
-const getPositionColor = (position: PlayerPosition) => {
-    const colors: Record<string, string> = {
-        P: theme.colors.red[500],
-        C: theme.colors.primary[500],
-        '1B': theme.colors.green[500],
-        '2B': theme.colors.green[600],
-        '3B': theme.colors.green[700],
-        SS: theme.colors.yellow[600],
-        LF: theme.colors.primary[400],
-        CF: theme.colors.primary[500],
-        RF: theme.colors.primary[600],
-        DH: theme.colors.gray[500],
-        UTIL: theme.colors.gray[400],
-    };
-    return colors[position] || theme.colors.gray[500];
-};
 
 interface RosterTableProps {
     teamId: string;
@@ -54,13 +35,13 @@ const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlaye
     return (
         <RosterSection>
             <SectionHeader>
-                <SectionTitle>Roster ({players.length} players)</SectionTitle>
+                <SectionTitle>Pitchers ({players.length})</SectionTitle>
             </SectionHeader>
 
             {players.length === 0 ? (
                 <EmptyState>
-                    <EmptyText>No players on the roster yet.</EmptyText>
-                    {!showAddPlayer && <AddButtonSmall onClick={onAddPlayer}>Add Your First Player</AddButtonSmall>}
+                    <EmptyText>No pitchers on the roster yet.</EmptyText>
+                    {!showAddPlayer && <AddButtonSmall onClick={onAddPlayer}>Add Your First Pitcher</AddButtonSmall>}
                 </EmptyState>
             ) : (
                 <RosterTableStyled>
@@ -68,8 +49,7 @@ const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlaye
                         <tr>
                             <Th>#</Th>
                             <Th>Name</Th>
-                            <Th>Pos</Th>
-                            <Th>B/T</Th>
+                            <Th>Type</Th>
                             <Th>Actions</Th>
                         </tr>
                     </thead>
@@ -85,22 +65,13 @@ const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlaye
                                     </PlayerName>
                                 </Td>
                                 <Td>
-                                    <PositionBadge color={getPositionColor(player.primary_position)}>
-                                        {player.primary_position}
-                                    </PositionBadge>
-                                </Td>
-                                <Td>
-                                    <Handedness>
-                                        {player.bats}/{player.throws}
-                                    </Handedness>
+                                    <Handedness>{player.throws === 'L' ? 'LHP' : 'RHP'}</Handedness>
                                 </Td>
                                 <Td>
                                     <ActionButtons>
-                                        {player.primary_position === 'P' && (
-                                            <ProfileButton onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}`)}>
-                                                Profile
-                                            </ProfileButton>
-                                        )}
+                                        <ProfileButton onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}`)}>
+                                            Profile
+                                        </ProfileButton>
                                         <EditButton onClick={() => onEdit(player)}>Edit</EditButton>
                                         <RemoveButton
                                             onClick={() => onDelete(player.id, `${player.first_name} ${player.last_name}`)}

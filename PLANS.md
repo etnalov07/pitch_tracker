@@ -165,34 +165,35 @@
 - Goal: More information visible at once, especially during live game tracking
 - Maintain readability and touch targets for mobile use
 
-### 13) Code Cleanup - Component Structure
-- Refactor components folder to match pages structure:
-  - Each component in its own folder
-  - Component file + styles file together (e.g., `StrikeZone/StrikeZone.tsx` + `StrikeZone/styles.ts`)
-  - Index file for clean exports
-- Break larger components into smaller, focused pieces:
-  - Identify components over 200-300 lines
-  - Extract reusable sub-components
-  - Improve testability and maintainability
-- Current candidates for refactoring:
-  - `components/live/` - multiple components in single files
-  - `StrikeZone` - consider extracting zone rendering, heat map overlay
-  - `BaseballDiamond` - consider extracting trajectory drawing
-- Establish consistent patterns for future development
+### ~~13) Code Cleanup - Component Structure~~ ✅ DONE
+- ~~Refactor components folder to match pages structure:~~
+  - ~~Each component in its own folder~~
+  - ~~Component file + styles file together (e.g., `StrikeZone/StrikeZone.tsx` + `StrikeZone/styles.ts`)~~
+  - ~~Index file for clean exports~~
+- ~~Break larger components into smaller, focused pieces:~~
+  - ~~Identify components over 200-300 lines~~
+  - ~~Extract reusable sub-components~~
+  - ~~Improve testability and maintainability~~
+- ~~Current candidates for refactoring:~~
+  - ~~`components/live/` - multiple components in single files~~
+  - ~~`StrikeZone` - consider extracting zone rendering, heat map overlay~~
+  - ~~`BaseballDiamond` - consider extracting trajectory drawing~~
+- ~~Establish consistent patterns for future development~~
 
-### 14) Player Login & Team Invites
-- Players (pitchers) get their own login accounts
-- Coach sends an email invite from the team roster
-  - Invite link generated per player from roster management screen
-  - Link allows player to create account and join the team
-- Player role vs Coach role:
-  - **Coach**: Full access (create games, manage roster, record pitches for any pitcher)
-  - **Player**: View own stats, record own bullpen sessions, see scouting notes
-- Email integration:
-  - Send invite email with unique token/link
-  - Token expires after configurable period
-  - Resend invite option on roster page
-- Player can belong to multiple teams (e.g., school team + travel team)
+### ~~14) Player Login & Team Invites~~ ✅ DONE
+- ~~Players (pitchers) get their own login accounts~~
+- ~~Coach generates invite link from team roster (no email service — copy/share manually)~~
+  - ~~Invite link generated per player from roster management screen~~
+  - ~~Link allows player to create account and join the team~~
+- ~~Player role vs Coach role:~~
+  - ~~**Coach**: Full access (create games, manage roster, record pitches for any pitcher)~~
+  - ~~**Player**: View own stats, record own bullpen sessions, see scouting notes~~
+- ~~Invite system:~~
+  - ~~Random hex token invite links with expiration~~
+  - ~~Server-side revocation/tracking~~
+  - ~~Resend invite option on roster page~~
+- ~~Player can belong to multiple teams (e.g., school team + travel team)~~
+- ~~Join requests: players can search teams and request to join~~
 
 ### 15) Bullpen Mode (Practice Sessions)
 - Practice pitch tracking without a batter or game context
@@ -278,23 +279,23 @@
 - Reset bases on inning change (3 outs)
 - Visual consistency with existing baseball diamond component style
 
-### 21) Organization Level for Travel Teams
-- Add an Organization entity above the Team level
-  - Organization has a name, logo, and admin users
-  - An organization can contain multiple teams (e.g., "Lions Den 14U", "Lions Den 16U", "Lions Den 18U")
-  - Teams within an org have a year and type (see #19)
-- Roles:
-  - **Org Admin**: View all teams, all players, all stats across the organization
-  - **Coach**: Manages their own team(s) within the org (existing behavior)
-  - **Player**: Views own stats (existing behavior)
-- Organization dashboard:
-  - Overview of all teams in the org
-  - Aggregate stats across teams
-  - Player search across the organization
-- Team assignment:
-  - Players can be moved between teams within the same org
-  - Coaches can be assigned to one or more teams
-- Useful for travel ball organizations managing multiple age groups or squads
+### ~~21) Organization Level for Travel Teams~~ ✅ DONE
+- ~~Add an Organization entity above the Team level~~
+  - ~~Organization has a name, logo, and admin users~~
+  - ~~An organization can contain multiple teams (e.g., "Lions Den 14U", "Lions Den 16U", "Lions Den 18U")~~
+  - ~~Teams within an org have a year and type (see #19)~~
+- ~~Roles:~~
+  - ~~**Org Admin**: View all teams, all players, all stats across the organization~~
+  - ~~**Coach**: Manages their own team(s) within the org (existing behavior)~~
+  - ~~**Player**: Views own stats (existing behavior)~~
+- ~~Organization dashboard:~~
+  - ~~Overview of all teams in the org~~
+  - ~~Aggregate stats across teams~~
+  - ~~Player search across the organization~~
+- ~~Team assignment:~~
+  - ~~Players can be moved between teams within the same org~~
+  - ~~Coaches can be assigned to one or more teams~~
+- ~~Useful for travel ball organizations managing multiple age groups or squads~~
 
 ---
 

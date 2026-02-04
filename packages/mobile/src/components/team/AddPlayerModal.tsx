@@ -5,14 +5,11 @@ import {
     Button,
     Modal,
     TextInput,
-    Chip,
     SegmentedButtons,
 } from 'react-native-paper';
 import * as Haptics from 'expo-haptics';
 import { useAppDispatch, addPlayer } from '../../state';
-import { PlayerPosition, HandednessType, ThrowingHand } from '@pitch-tracker/shared';
-
-const POSITIONS: PlayerPosition[] = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'UTIL'];
+import { ThrowingHand } from '@pitch-tracker/shared';
 
 interface AddPlayerModalProps {
     visible: boolean;
@@ -26,18 +23,14 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [jerseyNumber, setJerseyNumber] = useState('');
-    const [position, setPosition] = useState<PlayerPosition>('P');
     const [throws, setThrows] = useState<ThrowingHand>('R');
-    const [bats, setBats] = useState<HandednessType>('R');
     const [creating, setCreating] = useState(false);
 
     const resetForm = () => {
         setFirstName('');
         setLastName('');
         setJerseyNumber('');
-        setPosition('P');
         setThrows('R');
-        setBats('R');
     };
 
     const handleAddPlayer = async () => {
@@ -56,9 +49,9 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
                     first_name: firstName.trim(),
                     last_name: lastName.trim(),
                     jersey_number: jerseyNumber ? parseInt(jerseyNumber, 10) : undefined,
-                    primary_position: position,
+                    primary_position: 'P',
                     throws,
-                    bats,
+                    bats: 'R',
                 },
             })).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -66,7 +59,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
             resetForm();
         } catch {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', 'Failed to add player');
+            Alert.alert('Error', 'Failed to add pitcher');
         } finally {
             setCreating(false);
         }
@@ -80,7 +73,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
         >
             <ScrollView>
                 <Text variant="titleLarge" style={styles.modalTitle}>
-                    Add Player
+                    Add Pitcher
                 </Text>
                 <View style={styles.nameRow}>
                     <TextInput
@@ -106,25 +99,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
                     keyboardType="numeric"
                     style={styles.input}
                 />
-                <Text variant="labelMedium" style={styles.fieldLabel}>Position</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-                    <View style={styles.chipRow}>
-                        {POSITIONS.map((pos) => (
-                            <Chip
-                                key={pos}
-                                selected={position === pos}
-                                onPress={() => {
-                                    Haptics.selectionAsync();
-                                    setPosition(pos);
-                                }}
-                                style={styles.positionChip}
-                            >
-                                {pos}
-                            </Chip>
-                        ))}
-                    </View>
-                </ScrollView>
-                <Text variant="labelMedium" style={styles.fieldLabel}>Throws</Text>
+                <Text variant="labelMedium" style={styles.fieldLabel}>Pitcher Type</Text>
                 <SegmentedButtons
                     value={throws}
                     onValueChange={(v) => {
@@ -132,22 +107,8 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
                         setThrows(v as ThrowingHand);
                     }}
                     buttons={[
-                        { value: 'R', label: 'Right' },
-                        { value: 'L', label: 'Left' },
-                    ]}
-                    style={styles.segmented}
-                />
-                <Text variant="labelMedium" style={styles.fieldLabel}>Bats</Text>
-                <SegmentedButtons
-                    value={bats}
-                    onValueChange={(v) => {
-                        Haptics.selectionAsync();
-                        setBats(v as HandednessType);
-                    }}
-                    buttons={[
-                        { value: 'R', label: 'Right' },
-                        { value: 'L', label: 'Left' },
-                        { value: 'S', label: 'Switch' },
+                        { value: 'R', label: 'RHP' },
+                        { value: 'L', label: 'LHP' },
                     ]}
                     style={styles.segmented}
                 />
@@ -159,7 +120,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
                         loading={creating}
                         disabled={creating || !firstName.trim() || !lastName.trim()}
                     >
-                        Add Player
+                        Add Pitcher
                     </Button>
                 </View>
             </ScrollView>
@@ -196,16 +157,6 @@ const styles = StyleSheet.create({
     fieldLabel: {
         marginBottom: 8,
         color: '#374151',
-    },
-    chipScroll: {
-        marginBottom: 12,
-    },
-    chipRow: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    positionChip: {
-        marginRight: 4,
     },
     segmented: {
         marginBottom: 16,

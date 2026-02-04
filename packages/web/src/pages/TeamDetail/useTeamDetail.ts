@@ -17,7 +17,7 @@ const initialFormData = {
     first_name: '',
     last_name: '',
     jersey_number: '',
-    primary_position: 'UTIL' as PlayerPosition,
+    primary_position: 'P' as PlayerPosition,
     bats: 'R' as HandednessType,
     throws: 'R' as ThrowingHand,
 };
@@ -102,7 +102,7 @@ export function useTeamDetail() {
                 playerId = result.id;
             }
 
-            if (formData.primary_position === 'P' && selectedPitchTypes.length > 0) {
+            if (selectedPitchTypes.length > 0) {
                 await api.put(`/players/${playerId}/pitch-types`, { pitch_types: selectedPitchTypes });
             }
 
@@ -125,14 +125,10 @@ export function useTeamDetail() {
             throws: player.throws,
         });
 
-        if (player.primary_position === 'P') {
-            try {
-                const response = await api.get<{ pitch_types: string[] }>(`/players/${player.id}/pitch-types`);
-                setSelectedPitchTypes((response.data.pitch_types || []) as PitchType[]);
-            } catch {
-                setSelectedPitchTypes([]);
-            }
-        } else {
+        try {
+            const response = await api.get<{ pitch_types: string[] }>(`/players/${player.id}/pitch-types`);
+            setSelectedPitchTypes((response.data.pitch_types || []) as PitchType[]);
+        } catch {
             setSelectedPitchTypes([]);
         }
 
