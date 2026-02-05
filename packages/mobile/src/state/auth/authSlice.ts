@@ -23,19 +23,27 @@ const initialState: AuthState = {
 
 // Initialize auth state from SecureStore
 export const initializeAuth = createAsyncThunk('auth/initialize', async () => {
-    const token = await SecureStore.getItemAsync('token');
-    const userStr = await SecureStore.getItemAsync('user');
+    try {
+        // Small delay to allow TurboModules to fully initialize
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-    let user: User | null = null;
-    if (userStr) {
-        try {
-            user = JSON.parse(userStr);
-        } catch {
-            user = null;
+        const token = await SecureStore.getItemAsync('token');
+        const userStr = await SecureStore.getItemAsync('user');
+
+        let user: User | null = null;
+        if (userStr) {
+            try {
+                user = JSON.parse(userStr);
+            } catch {
+                user = null;
+            }
         }
-    }
 
-    return { token, user };
+        return { token, user };
+    } catch (error) {
+        console.warn('Failed to initialize auth from SecureStore:', error);
+        return { token: null, user: null };
+    }
 });
 
 // Login

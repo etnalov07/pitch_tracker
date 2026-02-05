@@ -30,11 +30,23 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     // Initialize auth and offline service on mount
+    // Run sequentially to avoid TurboModule race conditions on startup
     useEffect(() => {
-        dispatch(initializeAuth());
-        startOfflineService().catch((err) => {
-            console.warn('Failed to start offline service:', err);
-        });
+        const initialize = async () => {
+            try {
+                await dispatch(initializeAuth());
+            } catch (err) {
+                console.warn('Failed to initialize auth:', err);
+            }
+
+            try {
+                await startOfflineService();
+            } catch (err) {
+                console.warn('Failed to start offline service:', err);
+            }
+        };
+
+        initialize();
 
         return () => {
             stopOfflineService();

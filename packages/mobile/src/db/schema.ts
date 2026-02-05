@@ -1,13 +1,30 @@
 import * as SQLite from 'expo-sqlite';
 
 let db: SQLite.SQLiteDatabase | null = null;
+let initPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
-    if (!db) {
-        db = await SQLite.openDatabaseAsync('pitch_tracker.db');
-        await initializeDatabase(db);
+    if (db) {
+        return db;
     }
-    return db;
+
+    // Prevent multiple simultaneous initialization attempts
+    if (initPromise) {
+        return initPromise;
+    }
+
+    initPromise = (async () => {
+        try {
+            db = await SQLite.openDatabaseAsync('pitch_tracker.db');
+            await initializeDatabase(db);
+            return db;
+        } catch (error) {
+            initPromise = null;
+            throw error;
+        }
+    })();
+
+    return initPromise;
 };
 
 const initializeDatabase = async (database: SQLite.SQLiteDatabase): Promise<void> => {

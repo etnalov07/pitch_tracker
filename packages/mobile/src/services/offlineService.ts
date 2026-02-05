@@ -136,15 +136,29 @@ const handleNetworkChange = (state: Network.NetworkState): void => {
 
 // Start the offline service
 export const startOfflineService = async (): Promise<void> => {
-    // Load initial pending count
-    await store.dispatch(loadPendingCount());
+    try {
+        // Load initial pending count
+        await store.dispatch(loadPendingCount());
+    } catch (err) {
+        console.warn('Failed to load pending count:', err);
+    }
 
-    // Check initial network state
-    const networkState = await Network.getNetworkStateAsync();
-    handleNetworkChange(networkState);
+    try {
+        // Check initial network state
+        const networkState = await Network.getNetworkStateAsync();
+        handleNetworkChange(networkState);
+    } catch (err) {
+        console.warn('Failed to get network state:', err);
+        // Default to online if we can't check
+        store.dispatch(setOnlineStatus(true));
+    }
 
-    // Subscribe to network changes
-    networkSubscription = Network.addNetworkStateListener(handleNetworkChange);
+    try {
+        // Subscribe to network changes
+        networkSubscription = Network.addNetworkStateListener(handleNetworkChange);
+    } catch (err) {
+        console.warn('Failed to subscribe to network changes:', err);
+    }
 
     // Start periodic sync
     syncInterval = setInterval(async () => {
