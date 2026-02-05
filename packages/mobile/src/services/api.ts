@@ -1,5 +1,5 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:5000/bt-api';
@@ -15,7 +15,7 @@ const api = axios.create({
 // Request interceptor to add auth token
 api.interceptors.request.use(
     async (config) => {
-        const token = await SecureStore.getItemAsync('token');
+        const token = await AsyncStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -32,8 +32,8 @@ api.interceptors.response.use(
     async (error) => {
         if (error.response?.status === 401) {
             // Unauthorized - clear stored credentials
-            await SecureStore.deleteItemAsync('token');
-            await SecureStore.deleteItemAsync('user');
+            await AsyncStorage.removeItem('token');
+            await AsyncStorage.removeItem('user');
         }
 
         // Extract error message from response
