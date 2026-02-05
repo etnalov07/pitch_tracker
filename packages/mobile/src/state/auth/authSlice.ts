@@ -24,8 +24,9 @@ const initialState: AuthState = {
 // Initialize auth state from SecureStore
 export const initializeAuth = createAsyncThunk('auth/initialize', async () => {
     try {
-        // Small delay to allow TurboModules to fully initialize
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Delay to allow TurboModules to fully initialize on iOS 26 beta
+        // Combined with InteractionManager.runAfterInteractions in _layout.tsx
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         const token = await SecureStore.getItemAsync('token');
         const userStr = await SecureStore.getItemAsync('user');

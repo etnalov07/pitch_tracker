@@ -3,7 +3,7 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, InteractionManager } from 'react-native';
 import { Provider as ReduxProvider } from 'react-redux';
 import { PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
@@ -30,25 +30,29 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     // Initialize auth and offline service on mount
-    // Run sequentially to avoid TurboModule race conditions on startup
+    // Use InteractionManager to defer native module access until after animations complete
+    // This helps avoid TurboModule race conditions on iOS 26 beta
     useEffect(() => {
-        const initialize = async () => {
-            try {
-                await dispatch(initializeAuth());
-            } catch (err) {
-                console.warn('Failed to initialize auth:', err);
-            }
+        const task = InteractionManager.runAfterInteractions(() => {
+            const initialize = async () => {
+                try {
+                    await dispatch(initializeAuth());
+                } catch (err) {
+                    console.warn('Failed to initialize auth:', err);
+                }
 
-            try {
-                await startOfflineService();
-            } catch (err) {
-                console.warn('Failed to start offline service:', err);
-            }
-        };
+                try {
+                    await startOfflineService();
+                } catch (err) {
+                    console.warn('Failed to start offline service:', err);
+                }
+            };
 
-        initialize();
+            initialize();
+        });
 
         return () => {
+            task.cancel();
             stopOfflineService();
         };
     }, [dispatch]);
