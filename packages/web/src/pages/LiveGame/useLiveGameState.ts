@@ -5,7 +5,14 @@ import useHeatZones from '../../hooks/useHeatZones';
 import api from '../../services/api';
 import { useAppDispatch, useAppSelector, fetchGameById } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
-import { PitchType, PitchResult, OpponentLineupPlayer, GamePitcherWithPlayer, Inning as InningType, BaseRunners } from '../../types';
+import {
+    PitchType,
+    PitchResult,
+    OpponentLineupPlayer,
+    GamePitcherWithPlayer,
+    Inning as InningType,
+    BaseRunners,
+} from '../../types';
 
 export const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
     { value: 'fastball', label: 'Fastball' },
@@ -97,7 +104,10 @@ export function useLiveGameState() {
                 })
                 .catch((err) => console.error('Failed to load opponent lineup:', err));
             gamesApi.getCurrentInning(gameId).then(setCurrentInning);
-            gamesApi.getBaseRunners(gameId).then(setBaseRunners).catch(() => {});
+            gamesApi
+                .getBaseRunners(gameId)
+                .then(setBaseRunners)
+                .catch(() => {});
         }
     }, [dispatch, gameId]);
 

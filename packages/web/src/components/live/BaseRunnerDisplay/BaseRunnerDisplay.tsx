@@ -1,6 +1,6 @@
-import React from 'react';
 import styled from '@emotion/styled';
 import { BaseRunners, RunnerBase } from '@pitch-tracker/shared';
+import React from 'react';
 
 interface BaseRunnerDisplayProps {
     runners: BaseRunners;

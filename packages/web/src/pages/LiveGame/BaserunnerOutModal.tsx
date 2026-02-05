@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import styled from '@emotion/styled';
 import { BaseRunners, RunnerBase, BaserunnerEventType } from '@pitch-tracker/shared';
+import React, { useState } from 'react';
 import { theme } from '../../styles/theme';
 
 interface BaserunnerOutModalProps {
@@ -140,13 +140,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'outline' | 'danger' }>`
     }}
 `;
 
-const BaserunnerOutModal: React.FC<BaserunnerOutModalProps> = ({
-    isOpen,
-    onClose,
-    runners,
-    currentOuts,
-    onRecordOut,
-}) => {
+const BaserunnerOutModal: React.FC<BaserunnerOutModalProps> = ({ isOpen, onClose, runners, currentOuts, onRecordOut }) => {
     const [selectedBase, setSelectedBase] = useState<RunnerBase | null>(null);
     const [selectedEventType, setSelectedEventType] = useState<BaserunnerEventType | null>(null);
 
@@ -185,11 +179,7 @@ const BaserunnerOutModal: React.FC<BaserunnerOutModalProps> = ({
                     ) : (
                         <ChipRow>
                             {occupiedBases.map((b) => (
-                                <Chip
-                                    key={b.base}
-                                    $selected={selectedBase === b.base}
-                                    onClick={() => setSelectedBase(b.base)}
-                                >
+                                <Chip key={b.base} $selected={selectedBase === b.base} onClick={() => setSelectedBase(b.base)}>
                                     {b.label}
                                 </Chip>
                             ))}

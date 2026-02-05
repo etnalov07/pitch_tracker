@@ -1,8 +1,8 @@
 import React from 'react';
 import BatterSelector from '../../components/game/BatterSelector';
 import PitcherSelector from '../../components/game/PitcherSelector';
-import BatterHistory from '../../components/live/BatterHistory';
 import BaseRunnerDisplay from '../../components/live/BaseRunnerDisplay';
+import BatterHistory from '../../components/live/BatterHistory';
 import PitcherStats from '../../components/live/PitcherStats';
 import StrikeZone from '../../components/live/StrikeZone';
 import { theme } from '../../styles/theme';

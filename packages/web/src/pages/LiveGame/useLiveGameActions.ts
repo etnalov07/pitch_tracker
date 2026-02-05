@@ -1,8 +1,8 @@
+import { BaseRunners, BaserunnerEventType, RunnerBase, getSuggestedAdvancement, clearBases } from '@pitch-tracker/shared';
 import { fetchGameById, startGame, logPitch, createAtBat, updateAtBat, setCurrentAtBat, clearPitches } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { OpponentLineupPlayer, GamePitcherWithPlayer, getOutsForResult } from '../../types';
 import { LiveGameState } from './useLiveGameState';
-import { BaseRunners, BaserunnerEventType, RunnerBase, getSuggestedAdvancement, clearBases } from '@pitch-tracker/shared';
 
 export function useLiveGameActions(state: LiveGameState) {
     const {
@@ -202,7 +202,16 @@ export function useLiveGameActions(state: LiveGameState) {
 
         // For hits with runners on base, show runner advancement modal
         const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
-        const isHitResult = ['single', 'double', 'triple', 'home_run', 'walk', 'hit_by_pitch', 'sacrifice_fly', 'fielders_choice'].includes(result);
+        const isHitResult = [
+            'single',
+            'double',
+            'triple',
+            'home_run',
+            'walk',
+            'hit_by_pitch',
+            'sacrifice_fly',
+            'fielders_choice',
+        ].includes(result);
 
         if (hasRunnersOnBase && isHitResult) {
             setPendingHitResult(result);

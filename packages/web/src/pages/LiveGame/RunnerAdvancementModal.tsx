@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { BaseRunners, getSuggestedAdvancement } from '@pitch-tracker/shared';
-import { theme } from '../../styles/theme';
+import React, { useState, useEffect } from 'react';
 import BaseRunnerDisplay from '../../components/live/BaseRunnerDisplay';
+import { theme } from '../../styles/theme';
 
 interface RunnerAdvancementModalProps {
     isOpen: boolean;
@@ -218,8 +218,7 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
         onClose();
     };
 
-    const runnersOnBefore =
-        (currentRunners.first ? 1 : 0) + (currentRunners.second ? 1 : 0) + (currentRunners.third ? 1 : 0);
+    const runnersOnBefore = (currentRunners.first ? 1 : 0) + (currentRunners.second ? 1 : 0) + (currentRunners.third ? 1 : 0);
 
     return (
         <Overlay onClick={onClose}>
