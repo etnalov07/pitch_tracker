@@ -197,34 +197,44 @@
 
 ### 15) Bullpen Mode (Practice Sessions)
 - Practice pitch tracking without a batter or game context
-- Simplified workflow (no at-bat, no lineup, no innings):
+- **Simplified workflow** (no at-bat, no lineup, no innings):
   1. Select pitch type
   2. Set target location (where pitcher intended to throw)
   3. Record actual pitch location
   4. Enter velocity (optional)
-  - No ball/strike result needed (coach/player decides focus)
-- Data recorded per pitch:
-  - Pitch type
-  - Target location (desired)
-  - Actual location
-  - Velocity (where applicable)
-  - Timestamp
-- Session tracking:
-  - Start/end a bullpen session
-  - Session tagged as "practice" (distinct from "game")
-  - Session notes (e.g., "working on slider command")
-- Contributes to pitcher analytics:
+  5. Record result: ball or strike
+- **Key difference from live game**: Focus on command development, not game outcomes
+- **Intensity levels**:
+  - **Low**: Mechanics focus, recovery days (60-70% effort)
+  - **Medium**: Building up, feel for pitches (75-85% effort)
+  - **High**: Game-like intensity, pre-game bullpen (90-100% effort)
+- **Bullpen Plans** (reusable templates):
+  - Coach creates plans with predefined pitch sequences
+  - Each pitch in plan: pitch type, target location, optional instruction
+  - Example plans: "Pre-Game 25 Pitch Routine", "Slider Development Day"
+  - Pitcher can load a plan or throw free-form
+  - Display shows "Pitch 12 of 30" when following a plan
+- **Target accuracy**:
+  - "Hit target" = actual location within one ball width of target edge
+  - Contributes to pitcher's location accuracy stats and heat zones
+- **Session notes**:
+  - Pitcher and/or coach can add notes about the session
+  - Free-text (e.g., "Slider felt sharp", "Struggling with changeup grip")
+  - Notes visible to both player and coach
+- **Data model**:
+  - `bullpen_sessions`: id, team_id, pitcher_id, date, intensity, notes, plan_id?, status
+  - `bullpen_pitches`: id, session_id, pitch_number, pitch_type, target_x/y, actual_x/y, velocity?, result
+  - `bullpen_plans`: id, team_id, name, description, created_by
+  - `bullpen_plan_pitches`: id, plan_id, sequence, pitch_type, target_x/y, instruction?
+- **Analytics integration**:
   - Included in heat zone data (hot/cold zones)
   - Included in location accuracy stats
   - Included in velocity tracking
-  - Pitcher Profile game logs show bullpen sessions separately (marked as "Practice")
-- Available to both coach and player (player can self-record)
-- Accessible from:
-  - Team detail page (coach selects a pitcher)
-  - Player's own dashboard (if player login is implemented)
-- Player can add personal notes about their bullpen session
-  - Free-text notes per session (e.g., "Slider felt sharp today", "Struggling with changeup grip")
-  - Notes visible to both player and coach
+  - Pitcher Profile shows bullpen sessions separately (marked as "Practice")
+- **Access**:
+  - Coach: from Team Detail page (select pitcher)
+  - Player: from own dashboard (self-record)
+- **Future consideration**: Catcher feedback per pitch (not in initial release)
 
 ### 16) Mobile Splash Screen
 - Design and implement a branded splash screen for the mobile app
@@ -266,21 +276,24 @@
 - ~~HS validation enforced in invite accept and join request approval~~
 - ~~Filter/sort teams by year and type in UI~~
 
-### 20) Base Runners in Live Game
-- Add a baseball diamond to the score/game status area showing base runners
-- Diamond shows 1st, 2nd, 3rd bases as the infield view
-  - Empty base: outline only
-  - Occupied base: filled/highlighted
-- Update base runners during at-bat:
-  - Single: advance runners appropriately
-  - Double: advance runners
-  - Triple: advance runners
-  - HR: clear bases, all score
-  - Walk: force advance if bases loaded
-  - Outs: runners stay (unless double play, etc.)
-- Display in both web and mobile live game screens
-- Reset bases on inning change (3 outs)
-- Visual consistency with existing baseball diamond component style
+### ~~20) Base Runners in Live Game~~ ✅ DONE
+- ~~Add a baseball diamond to the score/game status area showing base runners~~
+- ~~Diamond shows 1st, 2nd, 3rd bases as the infield view~~
+  - ~~Empty base: outline only~~
+  - ~~Occupied base: filled/highlighted~~
+- ~~Update base runners during at-bat:~~
+  - ~~Single: advance runners appropriately~~
+  - ~~Double: advance runners~~
+  - ~~Triple: advance runners~~
+  - ~~HR: clear bases, all score~~
+  - ~~Walk: force advance if bases loaded~~
+  - ~~Outs: runners stay (unless double play, etc.)~~
+- ~~Display in both web and mobile live game screens~~
+- ~~Reset bases on inning change (3 outs)~~
+- Runner advancement modal allows manual adjustment (extra-base takes)
+- Caught stealing / pickoff recording via "Runner Out" button
+- `baserunner_events` table tracks CS, pickoffs, etc.
+- Runs scored go to opponent (away_score) since user's team is pitching
 
 ### ~~21) Organization Level for Travel Teams~~ ✅ DONE
 - ~~Add an Organization entity above the Team level~~
