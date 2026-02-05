@@ -1,7 +1,12 @@
 import { query, transaction } from '../config/database';
 import { BaserunnerEvent, BaseRunners, RunnerBase } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import { removeRunner } from '@pitch-tracker/shared';
+
+// Inline helper to avoid runtime dependency on @pitch-tracker/shared in production
+const removeRunner = (runners: BaseRunners, base: RunnerBase): BaseRunners => ({
+    ...runners,
+    [base]: false,
+});
 
 export class BaserunnerEventService {
     async recordEvent(data: Partial<BaserunnerEvent>): Promise<BaserunnerEvent> {
