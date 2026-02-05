@@ -1,7 +1,11 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, LoginCredentials, RegisterData } from '@pitch-tracker/shared';
 import { authApi } from './api/authApi';
+
+// Using AsyncStorage instead of SecureStore for iOS 26.2 beta testing
+// SecureStore uses TurboModules which crash on iOS 26.2 beta
+// TODO: Revert to SecureStore once React Native fixes TurboModule issue
 
 interface AuthState {
     user: User | null;
@@ -21,15 +25,11 @@ const initialState: AuthState = {
     error: null,
 };
 
-// Initialize auth state from SecureStore
+// Initialize auth state from AsyncStorage
 export const initializeAuth = createAsyncThunk('auth/initialize', async () => {
     try {
-        // Delay to allow TurboModules to fully initialize on iOS 26 beta
-        // Combined with InteractionManager.runAfterInteractions in _layout.tsx
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const token = await SecureStore.getItemAsync('token');
-        const userStr = await SecureStore.getItemAsync('user');
+        const token = await AsyncStorage.getItem('token');
+        const userStr = await AsyncStorage.getItem('user');
 
         let user: User | null = null;
         if (userStr) {
@@ -42,7 +42,7 @@ export const initializeAuth = createAsyncThunk('auth/initialize', async () => {
 
         return { token, user };
     } catch (error) {
-        console.warn('Failed to initialize auth from SecureStore:', error);
+        console.warn('Failed to initialize auth from AsyncStorage:', error);
         return { token: null, user: null };
     }
 });
@@ -53,8 +53,8 @@ export const loginUser = createAsyncThunk(
     async (credentials: LoginCredentials, { rejectWithValue }) => {
         try {
             const response = await authApi.login(credentials);
-            await SecureStore.setItemAsync('token', response.token);
-            await SecureStore.setItemAsync('user', JSON.stringify(response.user));
+            await AsyncStorage.setItem('token', response.token);
+            await AsyncStorage.setItem('user', JSON.stringify(response.user));
             return response;
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Login failed';
@@ -69,8 +69,8 @@ export const registerUser = createAsyncThunk(
     async (data: RegisterData, { rejectWithValue }) => {
         try {
             const response = await authApi.register(data);
-            await SecureStore.setItemAsync('token', response.token);
-            await SecureStore.setItemAsync('user', JSON.stringify(response.user));
+            await AsyncStorage.setItem('token', response.token);
+            await AsyncStorage.setItem('user', JSON.stringify(response.user));
             return response;
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Registration failed';
@@ -85,7 +85,7 @@ export const fetchUserProfile = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const user = await authApi.getProfile();
-            await SecureStore.setItemAsync('user', JSON.stringify(user));
+            await AsyncStorage.setItem('user', JSON.stringify(user));
             return user;
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to fetch profile';
@@ -96,8 +96,8 @@ export const fetchUserProfile = createAsyncThunk(
 
 // Logout
 export const logoutUser = createAsyncThunk('auth/logout', async () => {
-    await SecureStore.deleteItemAsync('token');
-    await SecureStore.deleteItemAsync('user');
+    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('user');
 });
 
 const authSlice = createSlice({

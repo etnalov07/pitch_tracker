@@ -7,7 +7,7 @@ import {
     TextInput,
     SegmentedButtons,
 } from 'react-native-paper';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '../../utils/haptics';
 import { useAppDispatch, addPlayer } from '../../state';
 import { ThrowingHand } from '@pitch-tracker/shared';
 

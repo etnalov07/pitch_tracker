@@ -9,7 +9,7 @@ import {
     useTheme,
 } from 'react-native-paper';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '../../../src/utils/haptics';
 import { useAppSelector, useAppDispatch, fetchTeamById, fetchTeamPlayers, deletePlayer } from '../../../src/state';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
 import { LoadingScreen, EmptyState } from '../../../src/components/common';

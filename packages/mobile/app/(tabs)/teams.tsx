@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Pressable, Alert } from 'react-native';
 import { Text, Card, Button, Chip, useTheme, FAB, Portal, Modal, TextInput, IconButton, Avatar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '../../src/utils/haptics';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
 import { useAppSelector, useAppDispatch, fetchAllTeams, createTeam } from '../../src/state';
 import { EmptyState } from '../../src/components/common';

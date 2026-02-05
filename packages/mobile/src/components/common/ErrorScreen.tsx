@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Button, useTheme, Icon } from 'react-native-paper';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '../../utils/haptics';
 
 interface ErrorScreenProps {
     title?: string;

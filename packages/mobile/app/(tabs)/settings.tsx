@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Text, List, Divider, Button, useTheme, Avatar, Switch, ActivityIndicator } from 'react-native-paper';
 import Constants from 'expo-constants';
-import * as Haptics from 'expo-haptics';
+import * as Haptics from '../../src/utils/haptics';
 import { useAppSelector, useAppDispatch, logoutUser } from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
 // Offline service disabled for iOS 26.2 beta testing
