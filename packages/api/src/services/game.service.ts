@@ -1,5 +1,5 @@
 import { query, transaction } from '../config/database';
-import { Game, Inning } from '../types';
+import { Game, Inning, BaseRunners } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class GameService {
@@ -139,10 +139,10 @@ export class GameService {
         newHalf = 'top';
       }
 
-      // Update game
+      // Update game and clear base runners for new inning
       const gameResult = await client.query(
         `UPDATE games
-         SET current_inning = $1, inning_half = $2
+         SET current_inning = $1, inning_half = $2, base_runners = '{"first": false, "second": false, "third": false}'::jsonb
          WHERE id = $3
          RETURNING *`,
         [newInning, newHalf, gameId]
@@ -231,12 +231,41 @@ export class GameService {
 
   async getGameInnings(gameId: string): Promise<Inning[]> {
     const result = await query(
-      `SELECT * FROM innings 
-       WHERE game_id = $1 
+      `SELECT * FROM innings
+       WHERE game_id = $1
        ORDER BY inning_number, CASE WHEN half = 'top' THEN 1 ELSE 2 END`,
       [gameId]
     );
     return result.rows;
+  }
+
+  async updateBaseRunners(gameId: string, baseRunners: BaseRunners): Promise<Game> {
+    const result = await query(
+      `UPDATE games
+       SET base_runners = $1
+       WHERE id = $2
+       RETURNING *`,
+      [JSON.stringify(baseRunners), gameId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error('Game not found');
+    }
+
+    return result.rows[0];
+  }
+
+  async getBaseRunners(gameId: string): Promise<BaseRunners> {
+    const result = await query(
+      `SELECT base_runners FROM games WHERE id = $1`,
+      [gameId]
+    );
+
+    if (result.rows.length === 0) {
+      throw new Error('Game not found');
+    }
+
+    return result.rows[0].base_runners || { first: false, second: false, third: false };
   }
 }
 

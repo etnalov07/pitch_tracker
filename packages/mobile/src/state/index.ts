@@ -28,12 +28,17 @@ export {
     updateAtBat,
     logPitch,
     recordPlay,
+    updateBaseRunners,
+    fetchBaseRunners,
+    recordBaserunnerEvent,
     clearGamesError,
     clearSelectedGame,
     setSelectedGame,
     setCurrentAtBat,
     addPitch,
     clearPitches,
+    setBaseRunners,
+    clearBaseRunners,
 } from './games/gamesSlice';
 
 export {

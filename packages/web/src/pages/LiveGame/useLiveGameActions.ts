@@ -2,6 +2,7 @@ import { fetchGameById, startGame, logPitch, createAtBat, updateAtBat, setCurren
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { OpponentLineupPlayer, GamePitcherWithPlayer, getOutsForResult } from '../../types';
 import { LiveGameState } from './useLiveGameState';
+import { BaseRunners, BaserunnerEventType, RunnerBase, getSuggestedAdvancement, clearBases } from '@pitch-tracker/shared';
 
 export function useLiveGameActions(state: LiveGameState) {
     const {
@@ -40,6 +41,11 @@ export function useLiveGameActions(state: LiveGameState) {
         setTeamRunsScored,
         setShowDiamondModal,
         setHitLocation,
+        baseRunners,
+        setBaseRunners,
+        setShowBaserunnerOutModal,
+        setShowRunnerAdvancementModal,
+        setPendingHitResult,
     } = state;
 
     const startAtBatForBatter = async (batter: OpponentLineupPlayer, outs: number, inning: typeof currentInning) => {
@@ -193,7 +199,30 @@ export function useLiveGameActions(state: LiveGameState) {
         setHitLocation(null);
         setTargetLocation(null);
         setPitchLocation(null);
-        await handleEndAtBat(result);
+
+        // For hits with runners on base, show runner advancement modal
+        const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
+        const isHitResult = ['single', 'double', 'triple', 'home_run', 'walk', 'hit_by_pitch', 'sacrifice_fly', 'fielders_choice'].includes(result);
+
+        if (hasRunnersOnBase && isHitResult) {
+            setPendingHitResult(result);
+            setShowRunnerAdvancementModal(true);
+        } else if (isHitResult) {
+            // No runners, but still need to place the batter
+            const { suggestedRunners, suggestedRuns } = getSuggestedAdvancement(baseRunners, result);
+            if (gameId) {
+                await gamesApi.updateBaseRunners(gameId, suggestedRunners);
+                setBaseRunners(suggestedRunners);
+                if (suggestedRuns > 0 && game) {
+                    const newHomeScore = (game.home_score || 0) + suggestedRuns;
+                    await gamesApi.updateScore(gameId, newHomeScore, game.away_score || 0);
+                    dispatch(fetchGameById(gameId));
+                }
+            }
+            await handleEndAtBat(result);
+        } else {
+            await handleEndAtBat(result);
+        }
     };
 
     const handleInningChangeConfirm = async () => {
@@ -208,6 +237,9 @@ export function useLiveGameActions(state: LiveGameState) {
 
             await gamesApi.advanceInning(gameId);
             await gamesApi.advanceInning(gameId);
+
+            // Clear base runners on inning change
+            setBaseRunners(clearBases());
 
             dispatch(fetchGameById(gameId));
 
@@ -228,6 +260,77 @@ export function useLiveGameActions(state: LiveGameState) {
         } catch (error) {
             console.error('Failed to advance inning:', error);
             alert('Failed to advance inning');
+        }
+    };
+
+    const handleRunnerAdvancementConfirm = async (newRunners: BaseRunners, runsScored: number) => {
+        if (!gameId || !game) return;
+
+        try {
+            // Update base runners on server
+            await gamesApi.updateBaseRunners(gameId, newRunners);
+            setBaseRunners(newRunners);
+
+            // Update score if runs scored
+            if (runsScored > 0) {
+                const newHomeScore = (game.home_score || 0) + runsScored;
+                await gamesApi.updateScore(gameId, newHomeScore, game.away_score || 0);
+                dispatch(fetchGameById(gameId));
+            }
+
+            setShowRunnerAdvancementModal(false);
+
+            // Now end the at-bat with the pending result
+            const result = state.pendingHitResult;
+            setPendingHitResult(null);
+            if (result) {
+                await handleEndAtBat(result);
+            }
+        } catch (error) {
+            console.error('Failed to update runner advancement:', error);
+            alert('Failed to update runner positions');
+        }
+    };
+
+    const handleRecordBaserunnerOut = async (runnerBase: RunnerBase, eventType: BaserunnerEventType) => {
+        if (!gameId || !currentInning) return;
+
+        try {
+            // Record the baserunner event
+            await gamesApi.recordBaserunnerEvent({
+                game_id: gameId,
+                inning_id: currentInning.id,
+                at_bat_id: currentAtBat?.id,
+                event_type: eventType,
+                runner_base: runnerBase,
+                outs_before: currentOuts,
+            });
+
+            // Update local base runners state (remove the runner)
+            const newRunners: BaseRunners = {
+                ...baseRunners,
+                [runnerBase]: false,
+            };
+            setBaseRunners(newRunners);
+
+            // Update outs
+            const newOuts = currentOuts + 1;
+            if (newOuts >= 3) {
+                setCurrentOuts(0);
+                setTeamRunsScored('0');
+                setInningChangeInfo({
+                    inning: game?.current_inning || 1,
+                    half: game?.inning_half || 'top',
+                });
+                setShowInningChange(true);
+            } else {
+                setCurrentOuts(newOuts);
+            }
+
+            setShowBaserunnerOutModal(false);
+        } catch (error) {
+            console.error('Failed to record baserunner out:', error);
+            alert('Failed to record baserunner out');
         }
     };
 
@@ -318,6 +421,8 @@ export function useLiveGameActions(state: LiveGameState) {
         handleEndAtBat,
         handleDiamondResult,
         handleInningChangeConfirm,
+        handleRunnerAdvancementConfirm,
+        handleRecordBaserunnerOut,
         handleStartAtBat,
         handlePitcherSelected,
         handleBatterSelected,

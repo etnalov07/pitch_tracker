@@ -2,11 +2,14 @@ import React from 'react';
 import BatterSelector from '../../components/game/BatterSelector';
 import PitcherSelector from '../../components/game/PitcherSelector';
 import BatterHistory from '../../components/live/BatterHistory';
+import BaseRunnerDisplay from '../../components/live/BaseRunnerDisplay';
 import PitcherStats from '../../components/live/PitcherStats';
 import StrikeZone from '../../components/live/StrikeZone';
 import { theme } from '../../styles/theme';
+import BaserunnerOutModal from './BaserunnerOutModal';
 import DiamondModal from './DiamondModal';
 import InningChangeModal from './InningChangeModal';
+import RunnerAdvancementModal from './RunnerAdvancementModal';
 import {
     Container,
     LeftPanel,
@@ -118,6 +121,12 @@ const LiveGame: React.FC = () => {
         showHeatZones,
         setShowHeatZones,
         heatZones,
+        baseRunners,
+        showBaserunnerOutModal,
+        setShowBaserunnerOutModal,
+        showRunnerAdvancementModal,
+        setShowRunnerAdvancementModal,
+        pendingHitResult,
     } = state;
 
     if (loading) {
@@ -179,11 +188,31 @@ const LiveGame: React.FC = () => {
                     <GameInfo>
                         <Inning>Inning {game.current_inning || 1}</Inning>
                         <InningHalf>{game.inning_half === 'top' ? '▲ Top' : '▼ Bottom'}</InningHalf>
-                        <OutsContainer>
-                            <OutsLabel>Outs</OutsLabel>
-                            <OutIndicator active={currentOuts >= 1} />
-                            <OutIndicator active={currentOuts >= 2} />
-                        </OutsContainer>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px' }}>
+                            <OutsContainer>
+                                <OutsLabel>Outs</OutsLabel>
+                                <OutIndicator active={currentOuts >= 1} />
+                                <OutIndicator active={currentOuts >= 2} />
+                            </OutsContainer>
+                            <BaseRunnerDisplay runners={baseRunners} size={50} />
+                        </div>
+                        {(baseRunners.first || baseRunners.second || baseRunners.third) && game.status === 'in_progress' && (
+                            <button
+                                onClick={() => setShowBaserunnerOutModal(true)}
+                                style={{
+                                    marginTop: '8px',
+                                    padding: '6px 12px',
+                                    fontSize: '12px',
+                                    background: theme.colors.red[50],
+                                    color: theme.colors.red[700],
+                                    border: `1px solid ${theme.colors.red[200]}`,
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Record Runner Out
+                            </button>
+                        )}
                     </GameInfo>
                     <TeamInfo>
                         <TeamName>Your Team</TeamName>
@@ -439,6 +468,26 @@ const LiveGame: React.FC = () => {
                         setShowDiamondModal(false);
                         setHitLocation(null);
                     }}
+                />
+            )}
+
+            {showBaserunnerOutModal && (
+                <BaserunnerOutModal
+                    isOpen={showBaserunnerOutModal}
+                    onClose={() => setShowBaserunnerOutModal(false)}
+                    runners={baseRunners}
+                    currentOuts={currentOuts}
+                    onRecordOut={(eventType, runnerBase) => actions.handleRecordBaserunnerOut(runnerBase, eventType)}
+                />
+            )}
+
+            {showRunnerAdvancementModal && pendingHitResult && (
+                <RunnerAdvancementModal
+                    isOpen={showRunnerAdvancementModal}
+                    onClose={() => setShowRunnerAdvancementModal(false)}
+                    currentRunners={baseRunners}
+                    hitResult={pendingHitResult}
+                    onConfirm={actions.handleRunnerAdvancementConfirm}
                 />
             )}
         </Container>

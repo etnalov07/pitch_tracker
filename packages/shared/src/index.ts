@@ -2,7 +2,13 @@
 // Utility Functions
 // ============================================================================
 
-export { isOutResult, getOutsForResult } from './utils/atBatHelpers';
+export {
+    isOutResult,
+    getOutsForResult,
+    getSuggestedAdvancement,
+    removeRunner,
+    clearBases,
+} from './utils/atBatHelpers';
 
 // ============================================================================
 // User & Authentication Types
@@ -189,6 +195,40 @@ export interface PitcherGameLogsResponse {
 export type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 export type InningHalf = 'top' | 'bottom';
 
+// ============================================================================
+// Base Runner Types
+// ============================================================================
+
+export interface BaseRunners {
+    first: boolean;
+    second: boolean;
+    third: boolean;
+}
+
+export type BaserunnerEventType =
+    | 'caught_stealing'
+    | 'pickoff'
+    | 'interference'
+    | 'passed_runner'
+    | 'appeal_out'
+    | 'other';
+
+export type RunnerBase = 'first' | 'second' | 'third';
+
+export interface BaserunnerEvent {
+    id: string;
+    game_id: string;
+    inning_id: string;
+    at_bat_id?: string;
+    event_type: BaserunnerEventType;
+    runner_base: RunnerBase;
+    out_recorded: boolean;
+    outs_before: number;
+    outs_after: number;
+    notes?: string;
+    created_at: string;
+}
+
 export interface Game {
     id: string;
     home_team_id: string;
@@ -202,6 +242,7 @@ export interface Game {
     away_score: number;
     current_inning: number;
     inning_half: InningHalf;
+    base_runners?: BaseRunners;
     created_by: string;
     created_at: string;
     updated_at?: string;

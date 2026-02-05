@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, Text, Pressable } from 'react-native';
-import { Game, Player } from '@pitch-tracker/shared';
+import { Game, Player, BaseRunners, RunnerBase } from '@pitch-tracker/shared';
 import { colors } from '../../../styles/theme';
+import BaseRunnerDiamond from '../BaseRunnerDiamond';
 
 interface GameHeaderProps {
     game: Game;
@@ -10,8 +11,10 @@ interface GameHeaderProps {
     balls: number;
     strikes: number;
     outs: number;
+    runners?: BaseRunners;
     onPitcherPress?: () => void;
     onBatterPress?: () => void;
+    onRunnerPress?: (base: RunnerBase) => void;
 }
 
 const GameHeader: React.FC<GameHeaderProps> = ({
@@ -21,8 +24,10 @@ const GameHeader: React.FC<GameHeaderProps> = ({
     balls,
     strikes,
     outs,
+    runners = { first: false, second: false, third: false },
     onPitcherPress,
     onBatterPress,
+    onRunnerPress,
 }) => {
     const getInningDisplay = () => {
         const half = game.inning_half === 'top' ? '▲' : '▼';
@@ -75,6 +80,10 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                     <Text style={styles.teamLabel}>AWAY</Text>
                     <Text style={styles.score}>{game.away_score || 0}</Text>
                 </View>
+                {/* Base runners diamond */}
+                <View style={styles.diamondContainer}>
+                    <BaseRunnerDiamond runners={runners} size={46} onBasePress={onRunnerPress} />
+                </View>
             </View>
 
             {/* Bottom row: Pitcher vs Batter */}
@@ -124,6 +133,9 @@ const styles = StyleSheet.create({
     teamScore: {
         alignItems: 'center',
         minWidth: 44,
+    },
+    diamondContainer: {
+        marginLeft: 8,
     },
     teamLabel: {
         fontSize: 10,

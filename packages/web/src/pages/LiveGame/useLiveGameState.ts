@@ -5,7 +5,7 @@ import useHeatZones from '../../hooks/useHeatZones';
 import api from '../../services/api';
 import { useAppDispatch, useAppSelector, fetchGameById } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
-import { PitchType, PitchResult, OpponentLineupPlayer, GamePitcherWithPlayer, Inning as InningType } from '../../types';
+import { PitchType, PitchResult, OpponentLineupPlayer, GamePitcherWithPlayer, Inning as InningType, BaseRunners } from '../../types';
 
 export const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
     { value: 'fastball', label: 'Fastball' },
@@ -73,6 +73,14 @@ export function useLiveGameState() {
     const [showHeatZones, setShowHeatZones] = useState(false);
     const { zones: heatZones } = useHeatZones(currentPitcher?.player_id, gameId, pitchType);
 
+    // Base runners state
+    const [baseRunners, setBaseRunners] = useState<BaseRunners>({ first: false, second: false, third: false });
+
+    // Base runner modals
+    const [showBaserunnerOutModal, setShowBaserunnerOutModal] = useState(false);
+    const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
+    const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
+
     useEffect(() => {
         if (gameId) {
             dispatch(fetchGameById(gameId));
@@ -89,6 +97,7 @@ export function useLiveGameState() {
                 })
                 .catch((err) => console.error('Failed to load opponent lineup:', err));
             gamesApi.getCurrentInning(gameId).then(setCurrentInning);
+            gamesApi.getBaseRunners(gameId).then(setBaseRunners).catch(() => {});
         }
     }, [dispatch, gameId]);
 
@@ -177,6 +186,15 @@ export function useLiveGameState() {
         showHeatZones,
         setShowHeatZones,
         heatZones,
+        // Base runners
+        baseRunners,
+        setBaseRunners,
+        showBaserunnerOutModal,
+        setShowBaserunnerOutModal,
+        showRunnerAdvancementModal,
+        setShowRunnerAdvancementModal,
+        pendingHitResult,
+        setPendingHitResult,
     };
 }
 

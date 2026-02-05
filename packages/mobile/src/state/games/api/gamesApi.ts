@@ -1,5 +1,17 @@
 import api from '../../../services/api';
-import { Game, Team, Player, AtBat, Pitch, Play, Inning, GamePitcherWithPlayer, OpponentLineupPlayer } from '@pitch-tracker/shared';
+import {
+    Game,
+    Team,
+    Player,
+    AtBat,
+    Pitch,
+    Play,
+    Inning,
+    GamePitcherWithPlayer,
+    OpponentLineupPlayer,
+    BaseRunners,
+    BaserunnerEvent,
+} from '@pitch-tracker/shared';
 
 export interface GameState {
     game: Game;
@@ -125,5 +137,27 @@ export const gamesApi = {
     getPitcherPitchTypes: async (playerId: string): Promise<string[]> => {
         const response = await api.get<{ pitch_types: string[] }>(`/players/${playerId}/pitch-types`);
         return response.data.pitch_types || [];
+    },
+
+    // Base runners operations
+    updateBaseRunners: async (gameId: string, baseRunners: BaseRunners): Promise<Game> => {
+        const response = await api.put<{ game: Game }>(`/games/${gameId}/base-runners`, { base_runners: baseRunners });
+        return response.data.game;
+    },
+
+    getBaseRunners: async (gameId: string): Promise<BaseRunners> => {
+        const response = await api.get<{ base_runners: BaseRunners }>(`/games/${gameId}/base-runners`);
+        return response.data.base_runners;
+    },
+
+    // Baserunner event operations
+    recordBaserunnerEvent: async (eventData: Partial<BaserunnerEvent>): Promise<BaserunnerEvent> => {
+        const response = await api.post<{ event: BaserunnerEvent }>('/baserunner-events', eventData);
+        return response.data.event;
+    },
+
+    getBaserunnerEventsByGame: async (gameId: string): Promise<BaserunnerEvent[]> => {
+        const response = await api.get<{ events: BaserunnerEvent[] }>(`/baserunner-events/game/${gameId}`);
+        return response.data.events;
     },
 };

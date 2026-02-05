@@ -133,6 +133,33 @@ export class GameController {
       next(error);
     }
   }
+
+  async updateBaseRunners(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { base_runners } = req.body;
+
+      if (!base_runners) {
+        res.status(400).json({ error: 'base_runners is required' });
+        return;
+      }
+
+      const game = await gameService.updateBaseRunners(id as string, base_runners);
+      res.status(200).json({ message: 'Base runners updated', game });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getBaseRunners(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const baseRunners = await gameService.getBaseRunners(id as string);
+      res.status(200).json({ base_runners: baseRunners });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new GameController();

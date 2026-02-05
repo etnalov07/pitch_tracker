@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/errorHandler';
 import analyticsRoutes from './routes/analytics.routes';
 import atBatRoutes from './routes/atBat.routes';
 import authRoutes from './routes/auth.routes';
+import baserunnerEventRoutes from './routes/baserunnerEvent.routes';
 import gamePitcherRoutes from './routes/gamePitcher.routes';
 import gameRoutes from './routes/game.routes';
 import inviteRoutes from './routes/invite.routes';
@@ -65,6 +66,7 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/bt-api/analytics', analyticsRoutes);
 app.use('/bt-api/at-bats', atBatRoutes);
 app.use('/bt-api/auth', authRoutes);
+app.use('/bt-api/baserunner-events', baserunnerEventRoutes);
 app.use('/bt-api/game-pitchers', gamePitcherRoutes);
 app.use('/bt-api/games', gameRoutes);
 app.use('/bt-api/invites', inviteRoutes);

@@ -1,5 +1,19 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Game, Team, Player, AtBat, Pitch, Play, Inning, GamePitcherWithPlayer, OpponentLineupPlayer } from '@pitch-tracker/shared';
+import {
+    Game,
+    Team,
+    Player,
+    AtBat,
+    Pitch,
+    Play,
+    Inning,
+    GamePitcherWithPlayer,
+    OpponentLineupPlayer,
+    BaseRunners,
+    BaserunnerEvent,
+    BaserunnerEventType,
+    RunnerBase,
+} from '@pitch-tracker/shared';
 import { gamesApi, GameState } from './api/gamesApi';
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
@@ -16,6 +30,7 @@ interface GamesSliceState {
     gamePitchers: GamePitcherWithPlayer[];
     opponentLineup: OpponentLineupPlayer[];
     pitches: Pitch[];
+    baseRunners: BaseRunners;
     loading: boolean;
     gameStateLoading: boolean;
     error: string | null;
@@ -30,6 +45,7 @@ const initialState: GamesSliceState = {
     gamePitchers: [],
     opponentLineup: [],
     pitches: [],
+    baseRunners: { first: false, second: false, third: false },
     loading: false,
     gameStateLoading: false,
     error: null,
@@ -176,6 +192,47 @@ export const fetchTeamPitcherRoster = createAsyncThunk('games/fetchTeamPitcherRo
     }
 });
 
+export const updateBaseRunners = createAsyncThunk(
+    'games/updateBaseRunners',
+    async ({ gameId, baseRunners }: { gameId: string; baseRunners: BaseRunners }, { rejectWithValue }) => {
+        try {
+            const game = await gamesApi.updateBaseRunners(gameId, baseRunners);
+            return { game, baseRunners };
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to update base runners'));
+        }
+    }
+);
+
+export const fetchBaseRunners = createAsyncThunk('games/fetchBaseRunners', async (gameId: string, { rejectWithValue }) => {
+    try {
+        return await gamesApi.getBaseRunners(gameId);
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch base runners'));
+    }
+});
+
+export const recordBaserunnerEvent = createAsyncThunk(
+    'games/recordBaserunnerEvent',
+    async (
+        eventData: {
+            game_id: string;
+            inning_id: string;
+            at_bat_id?: string;
+            event_type: BaserunnerEventType;
+            runner_base: RunnerBase;
+            outs_before: number;
+        },
+        { rejectWithValue }
+    ) => {
+        try {
+            return await gamesApi.recordBaserunnerEvent(eventData);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to record baserunner event'));
+        }
+    }
+);
+
 const gamesSlice = createSlice({
     name: 'games',
     initialState,
@@ -191,6 +248,7 @@ const gamesSlice = createSlice({
             state.gamePitchers = [];
             state.opponentLineup = [];
             state.pitches = [];
+            state.baseRunners = { first: false, second: false, third: false };
         },
         setSelectedGame: (state, action: PayloadAction<Game>) => {
             state.selectedGame = action.payload;
@@ -203,6 +261,12 @@ const gamesSlice = createSlice({
         },
         clearPitches: (state) => {
             state.pitches = [];
+        },
+        setBaseRunners: (state, action: PayloadAction<BaseRunners>) => {
+            state.baseRunners = action.payload;
+        },
+        clearBaseRunners: (state) => {
+            state.baseRunners = { first: false, second: false, third: false };
         },
     },
     extraReducers: (builder) => {
@@ -377,9 +441,38 @@ const gamesSlice = createSlice({
         builder.addCase(fetchOpponentLineup.fulfilled, (state, action) => {
             state.opponentLineup = action.payload;
         });
+
+        // Update Base Runners
+        builder.addCase(updateBaseRunners.fulfilled, (state, action) => {
+            state.baseRunners = action.payload.baseRunners;
+            if (state.selectedGame?.id === action.payload.game.id) {
+                state.selectedGame = action.payload.game;
+            }
+        });
+
+        // Fetch Base Runners
+        builder.addCase(fetchBaseRunners.fulfilled, (state, action) => {
+            state.baseRunners = action.payload;
+        });
+
+        // Record Baserunner Event (updates happen on server, refetch runners)
+        builder.addCase(recordBaserunnerEvent.fulfilled, (state, action) => {
+            // The server already removed the runner, update local state
+            const base = action.payload.runner_base as keyof BaseRunners;
+            state.baseRunners[base] = false;
+        });
     },
 });
 
-export const { clearGamesError, clearSelectedGame, setSelectedGame, setCurrentAtBat, addPitch, clearPitches } = gamesSlice.actions;
+export const {
+    clearGamesError,
+    clearSelectedGame,
+    setSelectedGame,
+    setCurrentAtBat,
+    addPitch,
+    clearPitches,
+    setBaseRunners,
+    clearBaseRunners,
+} = gamesSlice.actions;
 
 export default gamesSlice.reducer;
