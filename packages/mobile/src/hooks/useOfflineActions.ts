@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
-import { useAppSelector, useAppDispatch } from '../state';
-import { queueAction } from '../db/offlineQueue';
-import { incrementPendingCount } from '../state/offline/offlineSlice';
+import { useAppDispatch } from '../state';
 import { logPitch, createAtBat, updateAtBat, recordPlay, addPitch } from '../state';
 import { Pitch, AtBat, Play, PitchType, PitchResult } from '@pitch-tracker/shared';
+
+// Offline support disabled for iOS 26.2 beta testing (TurboModule crash)
+// This hook now always performs online operations directly
 
 interface LogPitchPayload {
     at_bat_id: string;
@@ -39,7 +40,8 @@ interface RecordPlayPayload extends Partial<Play> {
 
 export const useOfflineActions = () => {
     const dispatch = useAppDispatch();
-    const isOnline = useAppSelector((state) => state.offline.isOnline);
+    // Always report as online since offline support is disabled
+    const isOnline = true;
 
     const logPitchOffline = useCallback(
         async (payload: LogPitchPayload): Promise<{ success: boolean; queued: boolean }> => {
@@ -56,110 +58,57 @@ export const useOfflineActions = () => {
                 velocity: payload.velocity,
             };
 
-            if (isOnline) {
-                try {
-                    await dispatch(logPitch(pitchData)).unwrap();
-                    return { success: true, queued: false };
-                } catch {
-                    // Fall back to offline queue on failure
-                    await queueAction('LOG_PITCH', pitchData);
-                    dispatch(incrementPendingCount());
-
-                    // Optimistically add to local state
-                    const optimisticPitch: Pitch = {
-                        ...pitchData,
-                        id: `temp_${Date.now()}`,
-                        pitch_number: 0,
-                        created_at: new Date().toISOString(),
-                    } as Pitch;
-                    dispatch(addPitch(optimisticPitch));
-
-                    return { success: false, queued: true };
-                }
-            } else {
-                // Queue for later sync
-                await queueAction('LOG_PITCH', pitchData);
-                dispatch(incrementPendingCount());
-
-                // Optimistically add to local state
-                const optimisticPitch: Pitch = {
-                    ...pitchData,
-                    id: `temp_${Date.now()}`,
-                    pitch_number: 0,
-                    created_at: new Date().toISOString(),
-                } as Pitch;
-                dispatch(addPitch(optimisticPitch));
-
-                return { success: false, queued: true };
+            try {
+                await dispatch(logPitch(pitchData)).unwrap();
+                return { success: true, queued: false };
+            } catch {
+                // No offline queue - just fail
+                return { success: false, queued: false };
             }
         },
-        [isOnline, dispatch]
+        [dispatch]
     );
 
     const createAtBatOffline = useCallback(
         async (payload: CreateAtBatPayload): Promise<{ success: boolean; queued: boolean }> => {
             const atBatData: Partial<AtBat> = payload;
 
-            if (isOnline) {
-                try {
-                    await dispatch(createAtBat(atBatData)).unwrap();
-                    return { success: true, queued: false };
-                } catch {
-                    await queueAction('CREATE_AT_BAT', atBatData);
-                    dispatch(incrementPendingCount());
-                    return { success: false, queued: true };
-                }
-            } else {
-                await queueAction('CREATE_AT_BAT', atBatData);
-                dispatch(incrementPendingCount());
-                return { success: false, queued: true };
+            try {
+                await dispatch(createAtBat(atBatData)).unwrap();
+                return { success: true, queued: false };
+            } catch {
+                return { success: false, queued: false };
             }
         },
-        [isOnline, dispatch]
+        [dispatch]
     );
 
     const updateAtBatOffline = useCallback(
         async (payload: UpdateAtBatPayload): Promise<{ success: boolean; queued: boolean }> => {
             const { at_bat_id, ...updateData } = payload;
 
-            if (isOnline) {
-                try {
-                    await dispatch(updateAtBat({ id: at_bat_id, data: updateData })).unwrap();
-                    return { success: true, queued: false };
-                } catch {
-                    await queueAction('UPDATE_AT_BAT', payload);
-                    dispatch(incrementPendingCount());
-                    return { success: false, queued: true };
-                }
-            } else {
-                await queueAction('UPDATE_AT_BAT', payload);
-                dispatch(incrementPendingCount());
-                return { success: false, queued: true };
+            try {
+                await dispatch(updateAtBat({ id: at_bat_id, data: updateData })).unwrap();
+                return { success: true, queued: false };
+            } catch {
+                return { success: false, queued: false };
             }
         },
-        [isOnline, dispatch]
+        [dispatch]
     );
 
     const recordPlayOffline = useCallback(
         async (payload: RecordPlayPayload): Promise<{ success: boolean; queued: boolean }> => {
             const playData: Partial<Play> = payload;
 
-            if (isOnline) {
-                try {
-                    await dispatch(recordPlay(playData)).unwrap();
-                    return { success: true, queued: false };
-                } catch {
-                    await queueAction('RECORD_PLAY', playData);
-                    dispatch(incrementPendingCount());
-                    return { success: false, queued: true };
-                }
-            } else {
-                await queueAction('RECORD_PLAY', playData);
-                dispatch(incrementPendingCount());
-                return { success: false, queued: true };
+            try {
+                await dispatch(recordPlay(playData)).unwrap();
+                return { success: true, queued: false };
+            } catch {
+                return { success: false, queued: false };
             }
         },
-        [isOnline, dispatch]
+        [dispatch]
     );
 
     return {

@@ -10,7 +10,8 @@ import 'react-native-reanimated';
 
 import { store, useAppDispatch, useAppSelector, initializeAuth } from '../src/state';
 import { lightTheme, darkTheme } from '../src/styles/theme';
-import { startOfflineService, stopOfflineService } from '../src/services/offlineService';
+// Offline service disabled for iOS 26.2 beta testing (TurboModule crash)
+// import { startOfflineService, stopOfflineService } from '../src/services/offlineService';
 
 export {
     ErrorBoundary,
@@ -41,11 +42,12 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
                     console.warn('Failed to initialize auth:', err);
                 }
 
-                try {
-                    await startOfflineService();
-                } catch (err) {
-                    console.warn('Failed to start offline service:', err);
-                }
+                // Offline service disabled for iOS 26.2 beta testing
+                // try {
+                //     await startOfflineService();
+                // } catch (err) {
+                //     console.warn('Failed to start offline service:', err);
+                // }
             };
 
             initialize();
@@ -53,7 +55,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
         return () => {
             task.cancel();
-            stopOfflineService();
+            // stopOfflineService(); // Disabled for iOS 26.2 beta testing
         };
     }, [dispatch]);
 

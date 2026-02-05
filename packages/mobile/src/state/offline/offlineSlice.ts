@@ -1,10 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import * as Network from 'expo-network';
-import {
-    getPendingActions,
-    getPendingActionCount,
-    OfflineAction,
-} from '../../db/offlineQueue';
+
+// Offline support disabled for iOS 26.2 beta testing (TurboModule crash)
+// This slice now maintains static "always online" state
 
 interface OfflineState {
     isOnline: boolean;
@@ -21,37 +18,32 @@ const initialState: OfflineState = {
     pendingCount: 0,
     lastSyncTime: null,
     syncError: null,
-    networkType: null,
+    networkType: 'wifi',
 };
 
-// Check network status
+// No-op thunks - always return online state
 export const checkNetworkStatus = createAsyncThunk(
     'offline/checkNetworkStatus',
     async () => {
-        const state = await Network.getNetworkStateAsync();
         return {
-            isConnected: state.isConnected ?? false,
-            isInternetReachable: state.isInternetReachable ?? false,
-            type: state.type ?? null,
+            isConnected: true,
+            isInternetReachable: true,
+            type: 'wifi',
         };
     }
 );
 
-// Load pending action count
 export const loadPendingCount = createAsyncThunk(
     'offline/loadPendingCount',
     async () => {
-        const count = await getPendingActionCount();
-        return count;
+        return 0;
     }
 );
 
-// Get all pending actions (for debugging/display)
 export const loadPendingActions = createAsyncThunk(
     'offline/loadPendingActions',
     async () => {
-        const actions = await getPendingActions();
-        return actions;
+        return [];
     }
 );
 

@@ -5,8 +5,9 @@ import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { useAppSelector, useAppDispatch, logoutUser } from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
-import { triggerSync } from '../../src/services/offlineService';
-import { clearAllActions } from '../../src/db/offlineQueue';
+// Offline service disabled for iOS 26.2 beta testing
+// import { triggerSync } from '../../src/services/offlineService';
+// import { clearAllActions } from '../../src/db/offlineQueue';
 
 export default function SettingsScreen() {
     const dispatch = useAppDispatch();
@@ -32,47 +33,14 @@ export default function SettingsScreen() {
     };
 
     const handleManualSync = async () => {
-        if (!isOnline) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Offline', 'Cannot sync while offline');
-            return;
-        }
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setSyncing(true);
-        try {
-            const result = await triggerSync();
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert(
-                'Sync Complete',
-                `Synced: ${result.synced}, Failed: ${result.failed}, Remaining: ${result.remaining}`
-            );
-        } catch {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', 'Sync failed');
-        } finally {
-            setSyncing(false);
-        }
+        // Offline sync disabled for iOS 26.2 beta testing
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert('Info', 'Offline sync is temporarily disabled');
     };
 
     const handleClearPending = () => {
-        if (pendingCount === 0) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Alert.alert(
-            'Clear Pending Actions',
-            `This will delete ${pendingCount} pending action(s). This data will be lost.`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Clear',
-                    style: 'destructive',
-                    onPress: async () => {
-                        await clearAllActions();
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                        Alert.alert('Cleared', 'Pending actions cleared');
-                    },
-                },
-            ]
-        );
+        // Offline sync disabled for iOS 26.2 beta testing
+        Alert.alert('Info', 'Offline sync is temporarily disabled');
     };
 
     const formatLastSync = () => {

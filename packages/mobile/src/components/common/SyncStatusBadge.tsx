@@ -2,7 +2,8 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { useAppSelector } from '../../state';
-import { triggerSync } from '../../services/offlineService';
+// Offline service disabled for iOS 26.2 beta testing
+// import { triggerSync } from '../../services/offlineService';
 import { colors } from '../../styles/theme';
 
 interface SyncStatusBadgeProps {
@@ -15,9 +16,10 @@ const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({ compact = false }) =>
     );
 
     const handlePress = async () => {
-        if (isOnline && pendingCount > 0 && !isSyncing) {
-            await triggerSync();
-        }
+        // Offline sync disabled for iOS 26.2 beta testing
+        // if (isOnline && pendingCount > 0 && !isSyncing) {
+        //     await triggerSync();
+        // }
     };
 
     const getStatusColor = () => {
