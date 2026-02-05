@@ -199,7 +199,8 @@ export default function LiveGameScreen() {
         if (!id || !game) return;
         try {
             const runsToAdd = parseInt(teamRunsScored, 10) || 0;
-            await gamesApi.updateScore(id, (game.home_score || 0) + runsToAdd, game.away_score || 0);
+            // Runs scored while our team is pitching go to opponent (away_score)
+            await gamesApi.updateScore(id, game.home_score || 0, (game.away_score || 0) + runsToAdd);
             await gamesApi.advanceInning(id);
             await gamesApi.advanceInning(id);
             // Clear base runners on inning change (also done server-side)
@@ -316,11 +317,15 @@ export default function LiveGameScreen() {
         if (!pendingHitResult) return;
         dispatch(setBaseRunners(newRunners));
         if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
-        // TODO: Add runs to score if runsScored > 0
+        // Runs scored while our team is pitching go to opponent (away_score)
+        if (runsScored > 0 && game) {
+            await gamesApi.updateScore(id, game.home_score || 0, (game.away_score || 0) + runsScored);
+            dispatch(fetchGameById(id));
+        }
         setShowRunnerAdvancementModal(false);
         await handleEndAtBat(pendingHitResult);
         setPendingHitResult(null);
-    }, [pendingHitResult, id, dispatch, handleEndAtBat]);
+    }, [pendingHitResult, id, game, dispatch, handleEndAtBat]);
 
     const handleRecordBaserunnerOut = useCallback(async (eventType: BaserunnerEventType, runnerBase: RunnerBase) => {
         if (!id || !currentInning) return;

@@ -222,9 +222,10 @@ export function useLiveGameActions(state: LiveGameState) {
             if (gameId) {
                 await gamesApi.updateBaseRunners(gameId, suggestedRunners);
                 setBaseRunners(suggestedRunners);
+                // Runs scored while our team is pitching go to opponent (away_score)
                 if (suggestedRuns > 0 && game) {
-                    const newHomeScore = (game.home_score || 0) + suggestedRuns;
-                    await gamesApi.updateScore(gameId, newHomeScore, game.away_score || 0);
+                    const newAwayScore = (game.away_score || 0) + suggestedRuns;
+                    await gamesApi.updateScore(gameId, game.home_score || 0, newAwayScore);
                     dispatch(fetchGameById(gameId));
                 }
             }
@@ -240,9 +241,10 @@ export function useLiveGameActions(state: LiveGameState) {
         try {
             const runsToAdd = parseInt(teamRunsScored, 10) || 0;
 
+            // Runs scored while our team is pitching go to opponent (away_score)
             const currentHomeScore = game.home_score || 0;
             const currentAwayScore = game.away_score || 0;
-            await gamesApi.updateScore(gameId, currentHomeScore + runsToAdd, currentAwayScore);
+            await gamesApi.updateScore(gameId, currentHomeScore, currentAwayScore + runsToAdd);
 
             await gamesApi.advanceInning(gameId);
             await gamesApi.advanceInning(gameId);
@@ -280,10 +282,10 @@ export function useLiveGameActions(state: LiveGameState) {
             await gamesApi.updateBaseRunners(gameId, newRunners);
             setBaseRunners(newRunners);
 
-            // Update score if runs scored
+            // Runs scored while our team is pitching go to opponent (away_score)
             if (runsScored > 0) {
-                const newHomeScore = (game.home_score || 0) + runsScored;
-                await gamesApi.updateScore(gameId, newHomeScore, game.away_score || 0);
+                const newAwayScore = (game.away_score || 0) + runsScored;
+                await gamesApi.updateScore(gameId, game.home_score || 0, newAwayScore);
                 dispatch(fetchGameById(gameId));
             }
 
