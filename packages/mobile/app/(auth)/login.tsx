@@ -40,7 +40,7 @@ export default function LoginScreen() {
             >
                 <Surface style={styles.surface} elevation={2}>
                     <Text variant="headlineMedium" style={styles.title}>
-                        Pitch Tracker
+                        Pitch Chart
                     </Text>
                     <Text variant="bodyMedium" style={styles.subtitle}>
                         Sign in to your account

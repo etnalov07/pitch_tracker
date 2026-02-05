@@ -77,7 +77,7 @@ const Login: React.FC = () => {
     return (
         <Container>
             <FormCard>
-                <Logo>⚾ Baseball Tracker</Logo>
+                <Logo>⚾ Pitch Chart</Logo>
                 <Title>{isLogin ? 'Welcome Back' : 'Create Account'}</Title>
                 <Subtitle>{isLogin ? 'Sign in to track your games' : 'Sign up to get started'}</Subtitle>
 

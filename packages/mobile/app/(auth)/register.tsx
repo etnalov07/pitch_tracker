@@ -65,7 +65,7 @@ export default function RegisterScreen() {
                         Create Account
                     </Text>
                     <Text variant="bodyMedium" style={styles.subtitle}>
-                        Join Pitch Tracker
+                        Join Pitch Chart
                     </Text>
 
                     <View style={styles.nameRow}>

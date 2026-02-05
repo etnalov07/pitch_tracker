@@ -242,13 +242,13 @@
   - Ensure consistency between web and mobile
 - Consider dark mode support
 
-### 18) Rename Mobile App to "Pitch Chart"
-- Update app display name from "Pitch Tracker" to "Pitch Chart"
-- Update in:
-  - app.json (`name`, `slug`)
-  - App Store / TestFlight metadata
-  - Splash screen text (if applicable)
-  - Any in-app branding references
+### ~~18) Rename Mobile App to "Pitch Chart"~~ ✅ DONE
+- ~~Update app display name from "Pitch Tracker" to "Pitch Chart"~~
+- ~~Update in:~~
+  - ~~app.json (`name`, `slug`)~~
+  - ~~App Store / TestFlight metadata~~
+  - ~~Splash screen text (if applicable)~~
+  - ~~Any in-app branding references~~
 
 ### ~~19) Team Year & Team Type~~ ✅ DONE
 - ~~Add a **year** field to teams (e.g., 2025, 2026)~~

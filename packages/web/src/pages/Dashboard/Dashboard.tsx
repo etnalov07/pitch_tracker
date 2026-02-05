@@ -168,7 +168,7 @@ const Dashboard: React.FC = () => {
         <Container>
             <Header>
                 <HeaderLeft>
-                    <Logo>Baseball Tracker</Logo>
+                    <Logo>Pitch Chart</Logo>
                     <WelcomeText>Welcome back, {user?.first_name || 'Coach'}!</WelcomeText>
                 </HeaderLeft>
                 <HeaderRight>
