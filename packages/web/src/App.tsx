@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import BullpenSessions from './pages/BullpenSessions';
 import Dashboard from './pages/Dashboard/Dashboard';
 import GameHistory from './pages/GameHistory/GameHistory';
 import GameSetup from './pages/GameSetup/GameSetup';
@@ -79,6 +80,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <TeamDetail />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/teams/:team_id/bullpen"
+                    element={
+                        <ProtectedRoute>
+                            <BullpenSessions />
                         </ProtectedRoute>
                     }
                 />
