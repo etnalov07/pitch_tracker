@@ -4,12 +4,7 @@ import { Text, Button, useTheme, IconButton, Modal, TextInput } from 'react-nati
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import { PitchType, BullpenPitchResult, BullpenIntensity, Pitch } from '@pitch-tracker/shared';
-import {
-    useAppDispatch,
-    useAppSelector,
-    fetchBullpenSession,
-    fetchSessionPitches,
-} from '../../../src/state';
+import { useAppDispatch, useAppSelector, fetchBullpenSession, fetchSessionPitches } from '../../../src/state';
 import { logBullpenPitch, endBullpenSession } from '../../../src/state/bullpen/bullpenSlice';
 import { StrikeZone, PitchTypeGrid } from '../../../src/components/live';
 import { BullpenResultButtons, SessionHeader } from '../../../src/components/bullpen';
@@ -17,7 +12,11 @@ import { bullpenApi } from '../../../src/state/bullpen/api/bullpenApi';
 
 export default function BullpenLiveScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
-    const { pitcherName, jerseyNumber, intensity: intensityParam } = useLocalSearchParams<{
+    const {
+        pitcherName,
+        jerseyNumber,
+        intensity: intensityParam,
+    } = useLocalSearchParams<{
         pitcherName?: string;
         jerseyNumber?: string;
         intensity?: string;
@@ -73,10 +72,9 @@ export default function BullpenLiveScreen() {
     const displayJersey = currentSession?.pitcher_jersey_number ?? (jerseyNumber ? parseInt(jerseyNumber, 10) : undefined);
     const displayIntensity = (currentSession?.intensity || intensityParam || 'medium') as BullpenIntensity;
     const totalPitches = currentSession?.total_pitches ?? pitches.length;
-    const totalStrikes = currentSession?.strikes ?? pitches.filter(p =>
-        ['called_strike', 'swinging_strike', 'foul'].includes(p.result)
-    ).length;
-    const totalBalls = currentSession?.balls ?? pitches.filter(p => p.result === 'ball').length;
+    const totalStrikes =
+        currentSession?.strikes ?? pitches.filter((p) => ['called_strike', 'swinging_strike', 'foul'].includes(p.result)).length;
+    const totalBalls = currentSession?.balls ?? pitches.filter((p) => p.result === 'ball').length;
 
     const handleLogPitch = useCallback(async () => {
         if (!selectedPitchType || !selectedResult || !pitchLocation || !id) {
@@ -86,16 +84,18 @@ export default function BullpenLiveScreen() {
         setIsLogging(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         try {
-            await dispatch(logBullpenPitch({
-                session_id: id,
-                pitch_type: selectedPitchType,
-                target_x: targetLocation?.x,
-                target_y: targetLocation?.y,
-                actual_x: pitchLocation.x,
-                actual_y: pitchLocation.y,
-                velocity: velocity ? parseFloat(velocity) : undefined,
-                result: selectedResult,
-            })).unwrap();
+            await dispatch(
+                logBullpenPitch({
+                    session_id: id,
+                    pitch_type: selectedPitchType,
+                    target_x: targetLocation?.x,
+                    target_y: targetLocation?.y,
+                    actual_x: pitchLocation.x,
+                    actual_y: pitchLocation.y,
+                    velocity: velocity ? parseFloat(velocity) : undefined,
+                    result: selectedResult,
+                })
+            ).unwrap();
 
             // Reset for next pitch
             setSelectedPitchType(null);
@@ -127,12 +127,15 @@ export default function BullpenLiveScreen() {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <View style={styles.header}>
-                <IconButton icon="arrow-left" onPress={() => {
-                    Alert.alert('Leave Session', 'Are you sure? The session will remain in progress.', [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Leave', onPress: () => router.back() },
-                    ]);
-                }} />
+                <IconButton
+                    icon="arrow-left"
+                    onPress={() => {
+                        Alert.alert('Leave Session', 'Are you sure? The session will remain in progress.', [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Leave', onPress: () => router.back() },
+                        ]);
+                    }}
+                />
                 <Text variant="titleLarge">Bullpen</Text>
                 <IconButton icon="flag-checkered" onPress={() => setShowEndModal(true)} />
             </View>
@@ -147,12 +150,7 @@ export default function BullpenLiveScreen() {
                     intensity={displayIntensity}
                 />
 
-                <PitchTypeGrid
-                    selectedType={selectedPitchType}
-                    onSelect={setSelectedPitchType}
-                    disabled={isLogging}
-                    compact
-                />
+                <PitchTypeGrid selectedType={selectedPitchType} onSelect={setSelectedPitchType} disabled={isLogging} compact />
 
                 <StrikeZone
                     onLocationSelect={(x, y) => setPitchLocation({ x, y })}
@@ -164,16 +162,13 @@ export default function BullpenLiveScreen() {
                     compact
                 />
 
-                <BullpenResultButtons
-                    selectedResult={selectedResult}
-                    onSelect={setSelectedResult}
-                    disabled={isLogging}
-                    compact
-                />
+                <BullpenResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
 
                 {/* Velocity input */}
                 <View style={styles.velocityRow}>
-                    <Text variant="labelMedium" style={styles.velocityLabel}>Velocity (mph)</Text>
+                    <Text variant="labelMedium" style={styles.velocityLabel}>
+                        Velocity (mph)
+                    </Text>
                     <RNTextInput
                         style={styles.velocityInput}
                         value={velocity}
@@ -198,12 +193,10 @@ export default function BullpenLiveScreen() {
             </ScrollView>
 
             {/* End Session Modal */}
-            <Modal
-                visible={showEndModal}
-                onDismiss={() => setShowEndModal(false)}
-                contentContainerStyle={styles.modal}
-            >
-                <Text variant="titleLarge" style={styles.modalTitle}>End Session</Text>
+            <Modal visible={showEndModal} onDismiss={() => setShowEndModal(false)} contentContainerStyle={styles.modal}>
+                <Text variant="titleLarge" style={styles.modalTitle}>
+                    End Session
+                </Text>
                 <Text variant="bodyMedium" style={styles.modalSubtitle}>
                     {totalPitches} pitches logged
                 </Text>
@@ -219,7 +212,9 @@ export default function BullpenLiveScreen() {
                 />
                 <View style={styles.modalActions}>
                     <Button onPress={() => setShowEndModal(false)}>Cancel</Button>
-                    <Button mode="contained" onPress={handleEndSession}>End Session</Button>
+                    <Button mode="contained" onPress={handleEndSession}>
+                        End Session
+                    </Button>
                 </View>
             </Modal>
         </SafeAreaView>

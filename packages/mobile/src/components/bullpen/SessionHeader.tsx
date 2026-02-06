@@ -18,14 +18,7 @@ const INTENSITY_COLORS: Record<BullpenIntensity, { bg: string; text: string }> =
     high: { bg: '#fee2e2', text: '#dc2626' },
 };
 
-const SessionHeader: React.FC<SessionHeaderProps> = ({
-    pitcherName,
-    jerseyNumber,
-    totalPitches,
-    strikes,
-    balls,
-    intensity,
-}) => {
+const SessionHeader: React.FC<SessionHeaderProps> = ({ pitcherName, jerseyNumber, totalPitches, strikes, balls, intensity }) => {
     const strikePercentage = totalPitches > 0 ? Math.round((strikes / totalPitches) * 100) : 0;
     const colors = INTENSITY_COLORS[intensity];
 
@@ -33,10 +26,10 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
         <View style={styles.container}>
             <View style={styles.topRow}>
                 <View style={styles.pitcherInfo}>
-                    {jerseyNumber != null && (
-                        <Text style={styles.jerseyNumber}>#{jerseyNumber}</Text>
-                    )}
-                    <Text variant="titleMedium" style={styles.pitcherName}>{pitcherName}</Text>
+                    {jerseyNumber != null && <Text style={styles.jerseyNumber}>#{jerseyNumber}</Text>}
+                    <Text variant="titleMedium" style={styles.pitcherName}>
+                        {pitcherName}
+                    </Text>
                 </View>
                 <Chip
                     compact

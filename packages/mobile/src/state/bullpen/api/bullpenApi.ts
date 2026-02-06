@@ -1,10 +1,5 @@
 import api from '../../../services/api';
-import {
-    BullpenSession,
-    BullpenSessionWithDetails,
-    BullpenPitch,
-    BullpenSessionSummary,
-} from '@pitch-tracker/shared';
+import { BullpenSession, BullpenSessionWithDetails, BullpenPitch, BullpenSessionSummary } from '@pitch-tracker/shared';
 
 export const bullpenApi = {
     // Session CRUD
@@ -71,7 +66,9 @@ export const bullpenApi = {
     },
 
     getPitcherBullpenLogs: async (pitcherId: string): Promise<{ sessions: BullpenSessionSummary[]; total_count: number }> => {
-        const response = await api.get<{ sessions: BullpenSessionSummary[]; total_count: number }>(`/bullpen/pitcher/${pitcherId}/logs`);
+        const response = await api.get<{ sessions: BullpenSessionSummary[]; total_count: number }>(
+            `/bullpen/pitcher/${pitcherId}/logs`
+        );
         return response.data;
     },
 };

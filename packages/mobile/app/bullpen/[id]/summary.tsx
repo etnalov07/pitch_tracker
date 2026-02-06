@@ -116,7 +116,9 @@ export default function BullpenSummaryScreen() {
                 {summary.pitch_type_breakdown.length > 0 && (
                     <Card style={styles.card}>
                         <Card.Content>
-                            <Text variant="titleMedium" style={styles.sectionTitle}>Pitch Type Breakdown</Text>
+                            <Text variant="titleMedium" style={styles.sectionTitle}>
+                                Pitch Type Breakdown
+                            </Text>
                             <Divider style={styles.divider} />
 
                             {/* Table Header */}
@@ -151,7 +153,9 @@ export default function BullpenSummaryScreen() {
                 {summary.notes && (
                     <Card style={styles.card}>
                         <Card.Content>
-                            <Text variant="titleMedium" style={styles.sectionTitle}>Notes</Text>
+                            <Text variant="titleMedium" style={styles.sectionTitle}>
+                                Notes
+                            </Text>
                             <Divider style={styles.divider} />
                             <Text variant="bodyMedium">{summary.notes}</Text>
                         </Card.Content>

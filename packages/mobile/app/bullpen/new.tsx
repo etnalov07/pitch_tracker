@@ -22,24 +22,27 @@ export default function NewBullpenScreen() {
 
     useEffect(() => {
         if (teamId) {
-            dispatch(fetchTeamPlayers(teamId))
-                .finally(() => setLoadingPlayers(false));
+            dispatch(fetchTeamPlayers(teamId)).finally(() => setLoadingPlayers(false));
         }
     }, [teamId, dispatch]);
 
-    const pitchers = teamPlayers.filter(p => p.primary_position === 'P' && p.is_active !== false);
+    const pitchers = teamPlayers.filter((p) => p.primary_position === 'P' && p.is_active !== false);
 
     const handleStart = async () => {
         if (!selectedPitcher || !teamId) return;
         setCreating(true);
         try {
-            const session = await dispatch(createBullpenSession({
-                team_id: teamId,
-                pitcher_id: selectedPitcher.id,
-                intensity,
-            })).unwrap();
+            const session = await dispatch(
+                createBullpenSession({
+                    team_id: teamId,
+                    pitcher_id: selectedPitcher.id,
+                    intensity,
+                })
+            ).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            router.replace(`/bullpen/${session.id}/live?pitcherName=${encodeURIComponent(selectedPitcher.first_name + ' ' + selectedPitcher.last_name)}&jerseyNumber=${selectedPitcher.jersey_number || ''}&intensity=${intensity}` as any);
+            router.replace(
+                `/bullpen/${session.id}/live?pitcherName=${encodeURIComponent(selectedPitcher.first_name + ' ' + selectedPitcher.last_name)}&jerseyNumber=${selectedPitcher.jersey_number || ''}&intensity=${intensity}` as any
+            );
         } catch {
             Alert.alert('Error', 'Failed to create bullpen session');
         } finally {
@@ -57,7 +60,9 @@ export default function NewBullpenScreen() {
 
             <ScrollView contentContainerStyle={styles.content}>
                 {/* Pitcher Selection */}
-                <Text variant="labelLarge" style={styles.sectionLabel}>Select Pitcher</Text>
+                <Text variant="labelLarge" style={styles.sectionLabel}>
+                    Select Pitcher
+                </Text>
                 {loadingPlayers ? (
                     <ActivityIndicator style={{ marginVertical: 20 }} />
                 ) : pitchers.length === 0 ? (
@@ -86,10 +91,7 @@ export default function NewBullpenScreen() {
                 )}
 
                 {/* Intensity */}
-                <IntensitySelector
-                    selected={intensity}
-                    onSelect={setIntensity}
-                />
+                <IntensitySelector selected={intensity} onSelect={setIntensity} />
 
                 {/* Start Button */}
                 <Button

@@ -1,14 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
-import {
-    Text,
-    Card,
-    FAB,
-    Portal,
-    Divider,
-    Button,
-    useTheme,
-} from 'react-native-paper';
+import { Text, Card, FAB, Portal, Divider, Button, useTheme } from 'react-native-paper';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import { useAppSelector, useAppDispatch, fetchTeamById, fetchTeamPlayers, deletePlayer } from '../../../src/state';
@@ -41,25 +33,21 @@ export default function TeamDetailScreen() {
     }, [loadData]);
 
     const handleDeletePlayer = (player: PlayerWithPitchTypes) => {
-        Alert.alert(
-            'Remove Player',
-            `Are you sure you want to remove ${player.first_name} ${player.last_name} from the roster?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Remove',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await dispatch(deletePlayer(player.id)).unwrap();
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        } catch {
-                            Alert.alert('Error', 'Failed to remove player');
-                        }
-                    },
+        Alert.alert('Remove Player', `Are you sure you want to remove ${player.first_name} ${player.last_name} from the roster?`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Remove',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        await dispatch(deletePlayer(player.id)).unwrap();
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    } catch {
+                        Alert.alert('Error', 'Failed to remove player');
+                    }
                 },
-            ]
-        );
+            },
+        ]);
     };
 
     const pitchers = players.filter((p) => p.primary_position === 'P');
@@ -108,9 +96,7 @@ export default function TeamDetailScreen() {
             <View style={styles.container}>
                 <ScrollView
                     contentContainerStyle={styles.scrollContent}
-                    refreshControl={
-                        <RefreshControl refreshing={loading || playersLoading} onRefresh={loadData} />
-                    }
+                    refreshControl={<RefreshControl refreshing={loading || playersLoading} onRefresh={loadData} />}
                 >
                     <Card style={styles.teamInfoCard}>
                         <Card.Content>
@@ -118,9 +104,21 @@ export default function TeamDetailScreen() {
                             {(selectedTeam?.team_type || selectedTeam?.season || selectedTeam?.year) && (
                                 <Text variant="bodyMedium" style={styles.teamSeason}>
                                     {[
-                                        selectedTeam?.team_type === 'high_school' ? 'High School' : selectedTeam?.team_type === 'travel' ? 'Travel' : selectedTeam?.team_type === 'club' ? 'Club' : selectedTeam?.team_type === 'college' ? 'College' : '',
-                                        selectedTeam?.season && selectedTeam?.year ? `${selectedTeam.season} ${selectedTeam.year}` : selectedTeam?.season || (selectedTeam?.year ? `${selectedTeam.year}` : ''),
-                                    ].filter(Boolean).join(' \u00B7 ')}
+                                        selectedTeam?.team_type === 'high_school'
+                                            ? 'High School'
+                                            : selectedTeam?.team_type === 'travel'
+                                              ? 'Travel'
+                                              : selectedTeam?.team_type === 'club'
+                                                ? 'Club'
+                                                : selectedTeam?.team_type === 'college'
+                                                  ? 'College'
+                                                  : '',
+                                        selectedTeam?.season && selectedTeam?.year
+                                            ? `${selectedTeam.season} ${selectedTeam.year}`
+                                            : selectedTeam?.season || (selectedTeam?.year ? `${selectedTeam.year}` : ''),
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' \u00B7 ')}
                                 </Text>
                             )}
                             <View style={styles.teamStats}>

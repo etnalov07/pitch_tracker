@@ -25,7 +25,9 @@ const IntensitySelector: React.FC<IntensitySelectorProps> = ({ selected, onSelec
 
     return (
         <View style={styles.container}>
-            <Text variant="labelMedium" style={styles.label}>Intensity</Text>
+            <Text variant="labelMedium" style={styles.label}>
+                Intensity
+            </Text>
             <View style={styles.row}>
                 {INTENSITIES.map(({ value, label, effort, color, bgColor }) => {
                     const isSelected = selected === value;
@@ -40,12 +42,8 @@ const IntensitySelector: React.FC<IntensitySelectorProps> = ({ selected, onSelec
                             onPress={() => handleSelect(value)}
                             disabled={disabled}
                         >
-                            <Text style={[styles.buttonLabel, isSelected && { color }]}>
-                                {label}
-                            </Text>
-                            <Text style={[styles.effortText, isSelected && { color }]}>
-                                {effort}
-                            </Text>
+                            <Text style={[styles.buttonLabel, isSelected && { color }]}>{label}</Text>
+                            <Text style={[styles.effortText, isSelected && { color }]}>{effort}</Text>
                         </Pressable>
                     );
                 })}

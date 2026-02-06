@@ -1,10 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import {
-    BullpenSession,
-    BullpenSessionWithDetails,
-    BullpenPitch,
-    BullpenSessionSummary,
-} from '@pitch-tracker/shared';
+import { BullpenSession, BullpenSessionWithDetails, BullpenPitch, BullpenSessionSummary } from '@pitch-tracker/shared';
 import { bullpenApi } from './api/bullpenApi';
 
 interface BullpenState {
@@ -33,12 +28,9 @@ export const createBullpenSession = createAsyncThunk(
     }
 );
 
-export const fetchBullpenSession = createAsyncThunk(
-    'bullpen/fetchSession',
-    async (sessionId: string) => {
-        return await bullpenApi.getSession(sessionId);
-    }
-);
+export const fetchBullpenSession = createAsyncThunk('bullpen/fetchSession', async (sessionId: string) => {
+    return await bullpenApi.getSession(sessionId);
+});
 
 export const fetchBullpenSessions = createAsyncThunk(
     'bullpen/fetchSessions',
@@ -70,19 +62,13 @@ export const logBullpenPitch = createAsyncThunk(
     }
 );
 
-export const fetchSessionPitches = createAsyncThunk(
-    'bullpen/fetchPitches',
-    async (sessionId: string) => {
-        return await bullpenApi.getSessionPitches(sessionId);
-    }
-);
+export const fetchSessionPitches = createAsyncThunk('bullpen/fetchPitches', async (sessionId: string) => {
+    return await bullpenApi.getSessionPitches(sessionId);
+});
 
-export const fetchSessionSummary = createAsyncThunk(
-    'bullpen/fetchSummary',
-    async (sessionId: string) => {
-        return await bullpenApi.getSessionSummary(sessionId);
-    }
-);
+export const fetchSessionSummary = createAsyncThunk('bullpen/fetchSummary', async (sessionId: string) => {
+    return await bullpenApi.getSessionSummary(sessionId);
+});
 
 const bullpenSlice = createSlice({
     name: 'bullpen',
@@ -149,43 +135,37 @@ const bullpenSlice = createSlice({
             });
 
         // End session
-        builder
-            .addCase(endBullpenSession.fulfilled, (state, action) => {
-                if (state.currentSession) {
-                    state.currentSession.status = 'completed';
-                    if (action.meta.arg.notes) {
-                        state.currentSession.notes = action.meta.arg.notes;
-                    }
+        builder.addCase(endBullpenSession.fulfilled, (state, action) => {
+            if (state.currentSession) {
+                state.currentSession.status = 'completed';
+                if (action.meta.arg.notes) {
+                    state.currentSession.notes = action.meta.arg.notes;
                 }
-            });
+            }
+        });
 
         // Log pitch
-        builder
-            .addCase(logBullpenPitch.fulfilled, (state, action) => {
-                state.pitches.push(action.payload);
-                // Update current session counts
-                if (state.currentSession) {
-                    state.currentSession.total_pitches = state.pitches.length;
-                    const strikes = state.pitches.filter(p =>
-                        ['called_strike', 'swinging_strike', 'foul'].includes(p.result)
-                    ).length;
-                    const balls = state.pitches.filter(p => p.result === 'ball').length;
-                    state.currentSession.strikes = strikes;
-                    state.currentSession.balls = balls;
-                }
-            });
+        builder.addCase(logBullpenPitch.fulfilled, (state, action) => {
+            state.pitches.push(action.payload);
+            // Update current session counts
+            if (state.currentSession) {
+                state.currentSession.total_pitches = state.pitches.length;
+                const strikes = state.pitches.filter((p) => ['called_strike', 'swinging_strike', 'foul'].includes(p.result)).length;
+                const balls = state.pitches.filter((p) => p.result === 'ball').length;
+                state.currentSession.strikes = strikes;
+                state.currentSession.balls = balls;
+            }
+        });
 
         // Fetch pitches
-        builder
-            .addCase(fetchSessionPitches.fulfilled, (state, action) => {
-                state.pitches = action.payload;
-            });
+        builder.addCase(fetchSessionPitches.fulfilled, (state, action) => {
+            state.pitches = action.payload;
+        });
 
         // Fetch summary
-        builder
-            .addCase(fetchSessionSummary.fulfilled, (state, action) => {
-                state.summary = action.payload;
-            });
+        builder.addCase(fetchSessionSummary.fulfilled, (state, action) => {
+            state.summary = action.payload;
+        });
     },
 });
 

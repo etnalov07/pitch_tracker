@@ -4,24 +4,17 @@ import api from './api';
 export const bullpenService = {
     getTeamSessions: async (teamId: string, pitcherId?: string): Promise<BullpenSessionWithDetails[]> => {
         const params = pitcherId ? { pitcher_id: pitcherId } : {};
-        const response = await api.get<BullpenSessionWithDetails[]>(
-            `/bullpen/sessions/team/${teamId}`,
-            { params }
-        );
+        const response = await api.get<BullpenSessionWithDetails[]>(`/bullpen/sessions/team/${teamId}`, { params });
         return response.data;
     },
 
     getPitcherSessions: async (pitcherId: string): Promise<BullpenSessionWithDetails[]> => {
-        const response = await api.get<BullpenSessionWithDetails[]>(
-            `/bullpen/sessions/pitcher/${pitcherId}`
-        );
+        const response = await api.get<BullpenSessionWithDetails[]>(`/bullpen/sessions/pitcher/${pitcherId}`);
         return response.data;
     },
 
     getSessionSummary: async (sessionId: string): Promise<BullpenSessionSummary> => {
-        const response = await api.get<BullpenSessionSummary>(
-            `/bullpen/sessions/${sessionId}/summary`
-        );
+        const response = await api.get<BullpenSessionSummary>(`/bullpen/sessions/${sessionId}/summary`);
         return response.data;
     },
 

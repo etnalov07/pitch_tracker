@@ -2,13 +2,7 @@
 // Utility Functions
 // ============================================================================
 
-export {
-    isOutResult,
-    getOutsForResult,
-    getSuggestedAdvancement,
-    removeRunner,
-    clearBases,
-} from './utils/atBatHelpers';
+export { isOutResult, getOutsForResult, getSuggestedAdvancement, removeRunner, clearBases } from './utils/atBatHelpers';
 
 // ============================================================================
 // User & Authentication Types
@@ -205,13 +199,7 @@ export interface BaseRunners {
     third: boolean;
 }
 
-export type BaserunnerEventType =
-    | 'caught_stealing'
-    | 'pickoff'
-    | 'interference'
-    | 'passed_runner'
-    | 'appeal_out'
-    | 'other';
+export type BaserunnerEventType = 'caught_stealing' | 'pickoff' | 'interference' | 'passed_runner' | 'appeal_out' | 'other';
 
 export type RunnerBase = 'first' | 'second' | 'third';
 

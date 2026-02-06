@@ -38,9 +38,7 @@ const BullpenLogTable: React.FC<BullpenLogTableProps> = ({ sessions, onSessionSe
                     <Row key={session.session_id} onClick={() => onSessionSelect(session)}>
                         <Td>{formatDate(session.date)}</Td>
                         <Td align="center">
-                            <IntensityBadge intensity={session.intensity}>
-                                {session.intensity}
-                            </IntensityBadge>
+                            <IntensityBadge intensity={session.intensity}>{session.intensity}</IntensityBadge>
                         </Td>
                         <Td align="center">{session.total_pitches}</Td>
                         <Td align="center">
@@ -50,9 +48,7 @@ const BullpenLogTable: React.FC<BullpenLogTableProps> = ({ sessions, onSessionSe
                             {session.strike_percentage}%
                         </Td>
                         <Td align="center">
-                            {session.target_accuracy_percentage !== null
-                                ? `${session.target_accuracy_percentage}%`
-                                : '-'}
+                            {session.target_accuracy_percentage !== null ? `${session.target_accuracy_percentage}%` : '-'}
                         </Td>
                         <Td align="center">
                             <ViewButton

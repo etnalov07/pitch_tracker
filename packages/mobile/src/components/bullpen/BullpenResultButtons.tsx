@@ -47,9 +47,7 @@ const BullpenResultButtons: React.FC<BullpenResultButtonsProps> = ({
                         onPress={() => handleSelect(value)}
                         disabled={disabled}
                     >
-                        <Text style={[styles.buttonText, compact && styles.buttonTextCompact]}>
-                            {compact ? shortLabel : label}
-                        </Text>
+                        <Text style={[styles.buttonText, compact && styles.buttonTextCompact]}>{compact ? shortLabel : label}</Text>
                     </Pressable>
                 );
             })}

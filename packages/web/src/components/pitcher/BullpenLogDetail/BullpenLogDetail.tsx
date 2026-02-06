@@ -64,10 +64,7 @@ const BullpenLogDetail: React.FC<BullpenLogDetailProps> = ({ session, onClose })
             <Modal onClick={(e) => e.stopPropagation()}>
                 <ModalHeader>
                     <ModalTitle>
-                        Bullpen Session{' '}
-                        <IntensityBadge intensity={session.intensity}>
-                            {session.intensity} intensity
-                        </IntensityBadge>
+                        Bullpen Session <IntensityBadge intensity={session.intensity}>{session.intensity} intensity</IntensityBadge>
                     </ModalTitle>
                     <ModalDate>{formatDate(session.date)}</ModalDate>
                     <CloseButton onClick={onClose}>&times;</CloseButton>

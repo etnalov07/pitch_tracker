@@ -48,11 +48,7 @@ const GameCard: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress
                         <Text variant="titleMedium" numberOfLines={1} style={styles.gameTitle}>
                             vs {game.opponent_name || 'TBD'}
                         </Text>
-                        <Chip
-                            compact
-                            textStyle={{ fontSize: 10, color: '#fff' }}
-                            style={{ backgroundColor: getStatusColor() }}
-                        >
+                        <Chip compact textStyle={{ fontSize: 10, color: '#fff' }} style={{ backgroundColor: getStatusColor() }}>
                             {getStatusLabel()}
                         </Chip>
                     </View>
@@ -94,12 +90,8 @@ export default function DashboardScreen() {
     }, [loadGames]);
 
     const activeGames = games.filter((g) => g.status === 'in_progress');
-    const recentGames = games
-        .filter((g) => g.status === 'completed')
-        .slice(0, 5);
-    const scheduledGames = games
-        .filter((g) => g.status === 'scheduled')
-        .slice(0, 3);
+    const recentGames = games.filter((g) => g.status === 'completed').slice(0, 5);
+    const scheduledGames = games.filter((g) => g.status === 'scheduled').slice(0, 3);
 
     const handleGamePress = (game: Game) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -121,9 +113,7 @@ export default function DashboardScreen() {
         <View style={styles.container}>
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
-                refreshControl={
-                    <RefreshControl refreshing={loading} onRefresh={loadGames} />
-                }
+                refreshControl={<RefreshControl refreshing={loading} onRefresh={loadGames} />}
             >
                 <View style={styles.headerRow}>
                     <Text variant="headlineSmall" style={styles.greeting}>
@@ -140,11 +130,7 @@ export default function DashboardScreen() {
                         </Text>
                         <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
                             {activeGames.map((game) => (
-                                <GameCard
-                                    key={game.id}
-                                    game={game}
-                                    onPress={() => handleGamePress(game)}
-                                />
+                                <GameCard key={game.id} game={game} onPress={() => handleGamePress(game)} />
                             ))}
                         </View>
                     </View>
@@ -175,9 +161,7 @@ export default function DashboardScreen() {
                             </Text>
                         </Card.Content>
                         <Card.Actions>
-                            <Button onPress={() => router.push('/teams')}>
-                                View Schedule
-                            </Button>
+                            <Button onPress={() => router.push('/teams')}>View Schedule</Button>
                         </Card.Actions>
                     </Card>
                 </View>
@@ -213,11 +197,7 @@ export default function DashboardScreen() {
                         </Text>
                         <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
                             {recentGames.map((game) => (
-                                <GameCard
-                                    key={game.id}
-                                    game={game}
-                                    onPress={() => handleGamePress(game)}
-                                />
+                                <GameCard key={game.id} game={game} onPress={() => handleGamePress(game)} />
                             ))}
                         </View>
                     </View>
