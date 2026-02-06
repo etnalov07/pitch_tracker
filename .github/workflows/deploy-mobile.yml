@@ -13,7 +13,7 @@ on:
 jobs:
     build-ios:
         name: Build iOS & Submit to TestFlight
-        runs-on: ubuntu-latest
+        runs-on: macos-15
 
         steps:
             - name: Checkout code
@@ -37,9 +37,15 @@ jobs:
             - name: Build shared package
               run: npm run build --workspace=@pitch-tracker/shared
 
-            - name: Build iOS app on EAS
+            - name: Build iOS app locally
               working-directory: packages/mobile
-              run: eas build --platform ios --profile production --non-interactive --auto-submit
+              run: eas build --platform ios --profile production --local --non-interactive --output ./build.ipa
+              env:
+                  APP_VARIANT: production
+
+            - name: Submit to TestFlight
+              working-directory: packages/mobile
+              run: eas submit --platform ios --path ./build.ipa --non-interactive
               env:
                   APP_VARIANT: production
 
