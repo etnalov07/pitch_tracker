@@ -6,7 +6,6 @@ import { useEffect } from 'react';
 import { useColorScheme, InteractionManager } from 'react-native';
 import { Provider as ReduxProvider } from 'react-redux';
 import { PaperProvider } from 'react-native-paper';
-import 'react-native-reanimated';
 
 import { store, useAppDispatch, useAppSelector, initializeAuth } from '../src/state';
 import { lightTheme, darkTheme } from '../src/styles/theme';
