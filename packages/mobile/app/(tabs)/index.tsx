@@ -186,6 +186,17 @@ export default function DashboardScreen() {
                 <View style={styles.quickActions}>
                     <Button
                         mode="outlined"
+                        icon="baseball-bat"
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push('/bullpen/new' as any);
+                        }}
+                        style={styles.quickAction}
+                    >
+                        Start Bullpen
+                    </Button>
+                    <Button
+                        mode="outlined"
                         icon="magnify"
                         onPress={() => router.push('/join-team' as any)}
                         style={styles.quickAction}

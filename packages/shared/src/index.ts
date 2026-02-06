@@ -560,6 +560,97 @@ export interface BatterScoutingReport {
 }
 
 // ============================================================================
+// Bullpen Mode Types
+// ============================================================================
+
+export type BullpenIntensity = 'low' | 'medium' | 'high';
+export type BullpenSessionStatus = 'in_progress' | 'completed' | 'cancelled';
+export type BullpenPitchResult = 'ball' | 'called_strike' | 'swinging_strike' | 'foul';
+
+export interface BullpenSession {
+    id: string;
+    team_id: string;
+    pitcher_id: string;
+    date: string;
+    intensity: BullpenIntensity;
+    notes?: string;
+    plan_id?: string;
+    status: BullpenSessionStatus;
+    created_by?: string;
+    created_at: string;
+    updated_at?: string;
+}
+
+export interface BullpenSessionWithDetails extends BullpenSession {
+    pitcher_first_name: string;
+    pitcher_last_name: string;
+    pitcher_jersey_number?: number;
+    total_pitches: number;
+    strikes: number;
+    balls: number;
+    plan_name?: string;
+}
+
+export interface BullpenPitch {
+    id: string;
+    session_id: string;
+    pitch_number: number;
+    pitch_type: PitchType;
+    target_x?: number;
+    target_y?: number;
+    actual_x?: number;
+    actual_y?: number;
+    velocity?: number;
+    result: BullpenPitchResult;
+    created_at: string;
+}
+
+export interface BullpenPlan {
+    id: string;
+    team_id: string;
+    name: string;
+    description?: string;
+    created_by?: string;
+    created_at: string;
+    updated_at?: string;
+}
+
+export interface BullpenPlanPitch {
+    id: string;
+    plan_id: string;
+    sequence: number;
+    pitch_type: PitchType;
+    target_x?: number;
+    target_y?: number;
+    instruction?: string;
+}
+
+export interface BullpenPlanWithPitches extends BullpenPlan {
+    pitches: BullpenPlanPitch[];
+}
+
+export interface BullpenSessionSummary {
+    session_id: string;
+    date: string;
+    intensity: BullpenIntensity;
+    total_pitches: number;
+    strikes: number;
+    balls: number;
+    strike_percentage: number;
+    target_accuracy_percentage: number | null;
+    pitch_type_breakdown: {
+        pitch_type: string;
+        count: number;
+        strikes: number;
+        balls: number;
+        avg_velocity: number | null;
+        top_velocity: number | null;
+    }[];
+    plan_name?: string;
+    notes?: string;
+}
+
+// ============================================================================
 // API Response Wrappers
 // ============================================================================
 

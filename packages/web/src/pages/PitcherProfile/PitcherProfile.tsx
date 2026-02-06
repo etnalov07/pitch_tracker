@@ -1,10 +1,11 @@
-import { PitcherProfile as PitcherProfileType, PitcherGameLog } from '@pitch-tracker/shared';
+import { PitcherProfile as PitcherProfileType, PitcherGameLog, BullpenSessionSummary } from '@pitch-tracker/shared';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import HeatZoneOverlay from '../../components/live/HeatZoneOverlay';
-import { GameLogTable, GameLogDetail } from '../../components/pitcher';
+import { GameLogTable, GameLogDetail, BullpenLogTable, BullpenLogDetail } from '../../components/pitcher';
 import useHeatZones from '../../hooks/useHeatZones';
 import api from '../../services/api';
+import { bullpenService } from '../../services/bullpenService';
 import {
     Container,
     Header,
@@ -73,6 +74,8 @@ const PitcherProfile: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [showHeatZones, setShowHeatZones] = useState(true);
     const [heatZonePitchType, setHeatZonePitchType] = useState<string | undefined>(undefined);
+    const [bullpenSessions, setBullpenSessions] = useState<BullpenSessionSummary[]>([]);
+    const [selectedBullpen, setSelectedBullpen] = useState<BullpenSessionSummary | null>(null);
 
     // Fetch heat zones for career stats (no gameId = all games, optional pitch type filter)
     const { zones: heatZones } = useHeatZones(pitcher_id, undefined, heatZonePitchType);
@@ -83,8 +86,12 @@ const PitcherProfile: React.FC = () => {
 
             try {
                 setLoading(true);
-                const response = await api.get<{ profile: PitcherProfileType }>(`/analytics/pitcher/${pitcher_id}/profile`);
-                setProfile(response.data.profile);
+                const [profileRes, bullpenRes] = await Promise.all([
+                    api.get<{ profile: PitcherProfileType }>(`/analytics/pitcher/${pitcher_id}/profile`),
+                    bullpenService.getPitcherBullpenLogs(pitcher_id).catch(() => ({ sessions: [], total_count: 0 })),
+                ]);
+                setProfile(profileRes.data.profile);
+                setBullpenSessions(bullpenRes.sessions);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load pitcher profile');
             } finally {
@@ -260,8 +267,16 @@ const PitcherProfile: React.FC = () => {
                     </SectionHeader>
                     <GameLogTable gameLogs={profile.game_logs} onGameSelect={handleGameSelect} />
                 </GameLogsSection>
+
+                <GameLogsSection>
+                    <SectionHeader>
+                        <SectionTitle>Bullpen Sessions</SectionTitle>
+                    </SectionHeader>
+                    <BullpenLogTable sessions={bullpenSessions} onSessionSelect={setSelectedBullpen} />
+                </GameLogsSection>
             </Content>
             {selectedGame && <GameLogDetail gameLog={selectedGame} onClose={handleCloseDetail} onViewGame={handleViewGame} />}
+            {selectedBullpen && <BullpenLogDetail session={selectedBullpen} onClose={() => setSelectedBullpen(null)} />}
         </Container>
     );
 };

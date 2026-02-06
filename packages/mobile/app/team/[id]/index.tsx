@@ -6,9 +6,10 @@ import {
     FAB,
     Portal,
     Divider,
+    Button,
     useTheme,
 } from 'react-native-paper';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import { useAppSelector, useAppDispatch, fetchTeamById, fetchTeamPlayers, deletePlayer } from '../../../src/state';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
@@ -19,6 +20,7 @@ import { useState } from 'react';
 
 export default function TeamDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
+    const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
     const { isTablet } = useDeviceType();
@@ -144,6 +146,19 @@ export default function TeamDetailScreen() {
                         </Card.Content>
                     </Card>
 
+                    <Button
+                        mode="contained"
+                        icon="baseball-bat"
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            router.push(`/bullpen/new?teamId=${id}` as any);
+                        }}
+                        style={styles.bullpenButton}
+                        contentStyle={styles.bullpenButtonContent}
+                    >
+                        Start Bullpen Session
+                    </Button>
+
                     {renderRosterTable('Pitchers', pitchers)}
                     {renderRosterTable('Position Players', fieldPlayers)}
 
@@ -239,6 +254,12 @@ const styles = StyleSheet.create({
     },
     rosterNameCol: {
         flex: 1,
+    },
+    bullpenButton: {
+        marginBottom: 16,
+    },
+    bullpenButtonContent: {
+        paddingVertical: 6,
     },
     fab: {
         position: 'absolute',

@@ -5,6 +5,7 @@ import gamesReducer from './games/gamesSlice';
 import teamsReducer from './teams/teamsSlice';
 import offlineReducer from './offline/offlineSlice';
 import { invitesReducer } from './invites';
+import bullpenReducer from './bullpen/bullpenSlice';
 
 export const store = configureStore({
     reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
         teams: teamsReducer,
         offline: offlineReducer,
         invites: invitesReducer,
+        bullpen: bullpenReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
