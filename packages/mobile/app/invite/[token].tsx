@@ -45,7 +45,9 @@ export default function InviteAcceptScreen() {
         return (
             <View style={styles.centered}>
                 <Surface style={styles.surface} elevation={2}>
-                    <Text variant="headlineSmall" style={styles.title}>You're In!</Text>
+                    <Text variant="headlineSmall" style={styles.title}>
+                        You're In!
+                    </Text>
                     <Text variant="bodyMedium" style={styles.successText}>
                         You have successfully joined the team.
                     </Text>
@@ -60,14 +62,14 @@ export default function InviteAcceptScreen() {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <Surface style={styles.surface} elevation={2}>
-                <Text variant="headlineSmall" style={styles.title}>Team Invite</Text>
+                <Text variant="headlineSmall" style={styles.title}>
+                    Team Invite
+                </Text>
                 <Text variant="bodyMedium" style={styles.subtitle}>
                     You've been invited to join a team
                 </Text>
 
-                {error && (
-                    <Text style={styles.errorText}>{error}</Text>
-                )}
+                {error && <Text style={styles.errorText}>{error}</Text>}
 
                 {currentInvite ? (
                     <>
@@ -75,9 +77,7 @@ export default function InviteAcceptScreen() {
                             <Card.Content>
                                 <InfoRow label="Team" value={currentInvite.team_name || 'Team'} />
                                 <InfoRow label="Role" value={currentInvite.role} />
-                                {currentInvite.player_name && (
-                                    <InfoRow label="Player" value={currentInvite.player_name} />
-                                )}
+                                {currentInvite.player_name && <InfoRow label="Player" value={currentInvite.player_name} />}
                                 <InfoRow label="Invited by" value={currentInvite.inviter_name || 'Coach'} />
                             </Card.Content>
                         </Card>
@@ -94,11 +94,7 @@ export default function InviteAcceptScreen() {
                         </Button>
                     </>
                 ) : (
-                    !error && (
-                        <Text style={styles.errorText}>
-                            This invite is no longer valid or has expired.
-                        </Text>
-                    )
+                    !error && <Text style={styles.errorText}>This invite is no longer valid or has expired.</Text>
                 )}
 
                 <Button mode="text" onPress={() => router.replace('/')}>
@@ -112,8 +108,12 @@ export default function InviteAcceptScreen() {
 function InfoRow({ label, value }: { label: string; value: string }) {
     return (
         <View style={styles.infoRow}>
-            <Text variant="bodySmall" style={styles.infoLabel}>{label}</Text>
-            <Text variant="bodyMedium" style={styles.infoValue}>{value}</Text>
+            <Text variant="bodySmall" style={styles.infoLabel}>
+                {label}
+            </Text>
+            <Text variant="bodyMedium" style={styles.infoValue}>
+                {value}
+            </Text>
         </View>
     );
 }

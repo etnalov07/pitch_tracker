@@ -8,11 +8,7 @@ interface LoadingScreenProps {
     fullScreen?: boolean;
 }
 
-const LoadingScreen: React.FC<LoadingScreenProps> = ({
-    message = 'Loading...',
-    size = 'large',
-    fullScreen = true,
-}) => {
+const LoadingScreen: React.FC<LoadingScreenProps> = ({ message = 'Loading...', size = 'large', fullScreen = true }) => {
     const theme = useTheme();
 
     return (

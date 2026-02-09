@@ -81,7 +81,9 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
         <View style={styles.overlay}>
             <View style={styles.modal}>
                 <View style={styles.header}>
-                    <Text variant="titleLarge" style={styles.title}>Record Play Result</Text>
+                    <Text variant="titleLarge" style={styles.title}>
+                        Record Play Result
+                    </Text>
                     <IconButton icon="close" onPress={handleClose} size={24} />
                 </View>
 
@@ -92,7 +94,10 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                             <Pressable
                                 key={type}
                                 style={[styles.hitTypeButton, hitType === type && styles.hitTypeButtonActive]}
-                                onPress={() => { setHitType(type); Haptics.selectionAsync(); }}
+                                onPress={() => {
+                                    setHitType(type);
+                                    Haptics.selectionAsync();
+                                }}
                             >
                                 <Text style={[styles.hitTypeText, hitType === type && styles.hitTypeTextActive]}>
                                     {type === 'fly_ball' ? 'Fly Ball' : type === 'line_drive' ? 'Line Drive' : 'Ground Ball'}
@@ -102,9 +107,7 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                     </View>
 
                     {/* Baseball Field */}
-                    <Text style={styles.fieldInstruction}>
-                        Tap the field to mark hit location
-                    </Text>
+                    <Text style={styles.fieldInstruction}>Tap the field to mark hit location</Text>
                     <View style={styles.fieldContainer}>
                         <Pressable onPress={handleFieldPress}>
                             <Svg width={FIELD_SIZE} height={FIELD_SIZE} viewBox={`0 0 ${FIELD_SIZE} ${FIELD_SIZE}`}>
@@ -123,10 +126,42 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                                 />
 
                                 {/* Base paths */}
-                                <Line x1={homePos.x} y1={homePos.y} x2={firstPos.x} y2={firstPos.y} stroke="#374151" strokeWidth={1.5} opacity={0.5} />
-                                <Line x1={firstPos.x} y1={firstPos.y} x2={secondPos.x} y2={secondPos.y} stroke="#374151" strokeWidth={1.5} opacity={0.5} />
-                                <Line x1={secondPos.x} y1={secondPos.y} x2={thirdPos.x} y2={thirdPos.y} stroke="#374151" strokeWidth={1.5} opacity={0.5} />
-                                <Line x1={thirdPos.x} y1={thirdPos.y} x2={homePos.x} y2={homePos.y} stroke="#374151" strokeWidth={1.5} opacity={0.5} />
+                                <Line
+                                    x1={homePos.x}
+                                    y1={homePos.y}
+                                    x2={firstPos.x}
+                                    y2={firstPos.y}
+                                    stroke="#374151"
+                                    strokeWidth={1.5}
+                                    opacity={0.5}
+                                />
+                                <Line
+                                    x1={firstPos.x}
+                                    y1={firstPos.y}
+                                    x2={secondPos.x}
+                                    y2={secondPos.y}
+                                    stroke="#374151"
+                                    strokeWidth={1.5}
+                                    opacity={0.5}
+                                />
+                                <Line
+                                    x1={secondPos.x}
+                                    y1={secondPos.y}
+                                    x2={thirdPos.x}
+                                    y2={thirdPos.y}
+                                    stroke="#374151"
+                                    strokeWidth={1.5}
+                                    opacity={0.5}
+                                />
+                                <Line
+                                    x1={thirdPos.x}
+                                    y1={thirdPos.y}
+                                    x2={homePos.x}
+                                    y2={homePos.y}
+                                    stroke="#374151"
+                                    strokeWidth={1.5}
+                                    opacity={0.5}
+                                />
 
                                 {/* Bases */}
                                 <Circle cx={homePos.x} cy={homePos.y} r={6} fill="white" stroke="#374151" strokeWidth={1.5} />
@@ -138,13 +173,48 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                                 <Circle cx={CENTER} cy={FIELD_SIZE * 0.6} r={4} fill="#d4a76a" stroke="#374151" strokeWidth={1} />
 
                                 {/* Field position labels */}
-                                <SvgText x={CENTER} y={FIELD_SIZE * 0.12} textAnchor="middle" fontSize="11" fill="#374151" fontWeight="600">CF</SvgText>
-                                <SvgText x={FIELD_SIZE * 0.2} y={FIELD_SIZE * 0.22} textAnchor="middle" fontSize="11" fill="#374151" fontWeight="600">LF</SvgText>
-                                <SvgText x={FIELD_SIZE * 0.8} y={FIELD_SIZE * 0.22} textAnchor="middle" fontSize="11" fill="#374151" fontWeight="600">RF</SvgText>
-                                <SvgText x={CENTER - 35} y={FIELD_SIZE * 0.5} textAnchor="middle" fontSize="10" fill="#374151">SS</SvgText>
-                                <SvgText x={CENTER + 35} y={FIELD_SIZE * 0.48} textAnchor="middle" fontSize="10" fill="#374151">2B</SvgText>
-                                <SvgText x={thirdPos.x - 15} y={thirdPos.y} textAnchor="middle" fontSize="10" fill="#374151">3B</SvgText>
-                                <SvgText x={firstPos.x + 15} y={firstPos.y} textAnchor="middle" fontSize="10" fill="#374151">1B</SvgText>
+                                <SvgText
+                                    x={CENTER}
+                                    y={FIELD_SIZE * 0.12}
+                                    textAnchor="middle"
+                                    fontSize="11"
+                                    fill="#374151"
+                                    fontWeight="600"
+                                >
+                                    CF
+                                </SvgText>
+                                <SvgText
+                                    x={FIELD_SIZE * 0.2}
+                                    y={FIELD_SIZE * 0.22}
+                                    textAnchor="middle"
+                                    fontSize="11"
+                                    fill="#374151"
+                                    fontWeight="600"
+                                >
+                                    LF
+                                </SvgText>
+                                <SvgText
+                                    x={FIELD_SIZE * 0.8}
+                                    y={FIELD_SIZE * 0.22}
+                                    textAnchor="middle"
+                                    fontSize="11"
+                                    fill="#374151"
+                                    fontWeight="600"
+                                >
+                                    RF
+                                </SvgText>
+                                <SvgText x={CENTER - 35} y={FIELD_SIZE * 0.5} textAnchor="middle" fontSize="10" fill="#374151">
+                                    SS
+                                </SvgText>
+                                <SvgText x={CENTER + 35} y={FIELD_SIZE * 0.48} textAnchor="middle" fontSize="10" fill="#374151">
+                                    2B
+                                </SvgText>
+                                <SvgText x={thirdPos.x - 15} y={thirdPos.y} textAnchor="middle" fontSize="10" fill="#374151">
+                                    3B
+                                </SvgText>
+                                <SvgText x={firstPos.x + 15} y={firstPos.y} textAnchor="middle" fontSize="10" fill="#374151">
+                                    1B
+                                </SvgText>
 
                                 {/* Hit location marker */}
                                 {hitLocation && (
@@ -175,9 +245,7 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                     </View>
 
                     {/* Result Selection */}
-                    <Text style={styles.resultTitle}>
-                        Select Result {!hitLocation ? '(tap field first)' : ''}
-                    </Text>
+                    <Text style={styles.resultTitle}>Select Result {!hitLocation ? '(tap field first)' : ''}</Text>
 
                     {/* Hit results row */}
                     <View style={styles.resultRow}>
@@ -188,7 +256,13 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                                 onPress={() => hitLocation && handleResultSelect(result)}
                                 disabled={!hitLocation}
                             >
-                                <Text style={[styles.resultButtonText, styles.hitButtonText, !hitLocation && styles.resultButtonTextDisabled]}>
+                                <Text
+                                    style={[
+                                        styles.resultButtonText,
+                                        styles.hitButtonText,
+                                        !hitLocation && styles.resultButtonTextDisabled,
+                                    ]}
+                                >
                                     {label}
                                 </Text>
                             </Pressable>
@@ -204,7 +278,13 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                                 onPress={() => hitLocation && handleResultSelect(result)}
                                 disabled={!hitLocation}
                             >
-                                <Text style={[styles.resultButtonText, styles.outButtonText, !hitLocation && styles.resultButtonTextDisabled]}>
+                                <Text
+                                    style={[
+                                        styles.resultButtonText,
+                                        styles.outButtonText,
+                                        !hitLocation && styles.resultButtonTextDisabled,
+                                    ]}
+                                >
                                     {label}
                                 </Text>
                             </Pressable>
@@ -220,7 +300,13 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                                 onPress={() => hitLocation && handleResultSelect(result)}
                                 disabled={!hitLocation}
                             >
-                                <Text style={[styles.resultButtonText, styles.otherButtonText, !hitLocation && styles.resultButtonTextDisabled]}>
+                                <Text
+                                    style={[
+                                        styles.resultButtonText,
+                                        styles.otherButtonText,
+                                        !hitLocation && styles.resultButtonTextDisabled,
+                                    ]}
+                                >
                                     {label}
                                 </Text>
                             </Pressable>

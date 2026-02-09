@@ -42,22 +42,25 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact =
     const strikePercentage = totalPitches > 0 ? strikes / totalPitches : 0;
 
     // Group by pitch type
-    const pitchTypeBreakdown = pitches.reduce((acc, p) => {
-        const type = p.pitch_type;
-        if (!acc[type]) {
-            acc[type] = { total: 0, strikes: 0 };
-        }
-        acc[type].total++;
-        if (
-            p.pitch_result === 'called_strike' ||
-            p.pitch_result === 'swinging_strike' ||
-            p.pitch_result === 'foul' ||
-            p.pitch_result === 'in_play'
-        ) {
-            acc[type].strikes++;
-        }
-        return acc;
-    }, {} as Record<string, { total: number; strikes: number }>);
+    const pitchTypeBreakdown = pitches.reduce(
+        (acc, p) => {
+            const type = p.pitch_type;
+            if (!acc[type]) {
+                acc[type] = { total: 0, strikes: 0 };
+            }
+            acc[type].total++;
+            if (
+                p.pitch_result === 'called_strike' ||
+                p.pitch_result === 'swinging_strike' ||
+                p.pitch_result === 'foul' ||
+                p.pitch_result === 'in_play'
+            ) {
+                acc[type].strikes++;
+            }
+            return acc;
+        },
+        {} as Record<string, { total: number; strikes: number }>
+    );
 
     const pitchTypes = Object.entries(pitchTypeBreakdown)
         .sort((a, b) => b[1].total - a[1].total)
@@ -88,9 +91,7 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact =
         <Card style={styles.container}>
             <Card.Content>
                 <Text variant="titleMedium" style={styles.title}>
-                    {pitcher
-                        ? `${pitcher.first_name} ${pitcher.last_name}`
-                        : 'Pitcher Stats'}
+                    {pitcher ? `${pitcher.first_name} ${pitcher.last_name}` : 'Pitcher Stats'}
                 </Text>
 
                 {/* Overview Stats */}

@@ -167,7 +167,10 @@ export const fetchGamePitchers = createAsyncThunk('games/fetchGamePitchers', asy
 
 export const changePitcher = createAsyncThunk(
     'games/changePitcher',
-    async ({ gameId, playerId, inningEntered }: { gameId: string; playerId: string; inningEntered: number }, { rejectWithValue }) => {
+    async (
+        { gameId, playerId, inningEntered }: { gameId: string; playerId: string; inningEntered: number },
+        { rejectWithValue }
+    ) => {
         try {
             return await gamesApi.changePitcher(gameId, playerId, inningEntered);
         } catch (error: unknown) {
@@ -184,13 +187,16 @@ export const fetchOpponentLineup = createAsyncThunk('games/fetchOpponentLineup',
     }
 });
 
-export const fetchTeamPitcherRoster = createAsyncThunk('games/fetchTeamPitcherRoster', async (teamId: string, { rejectWithValue }) => {
-    try {
-        return await gamesApi.getTeamPitchers(teamId);
-    } catch (error: unknown) {
-        return rejectWithValue(getErrorMessage(error, 'Failed to fetch team pitchers'));
+export const fetchTeamPitcherRoster = createAsyncThunk(
+    'games/fetchTeamPitcherRoster',
+    async (teamId: string, { rejectWithValue }) => {
+        try {
+            return await gamesApi.getTeamPitchers(teamId);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to fetch team pitchers'));
+        }
     }
-});
+);
 
 export const updateBaseRunners = createAsyncThunk(
     'games/updateBaseRunners',
@@ -423,9 +429,7 @@ const gamesSlice = createSlice({
         // Change Pitcher
         builder.addCase(changePitcher.fulfilled, (state, action) => {
             // Add new pitcher to list, mark previous as exited
-            const existing = state.gamePitchers.find(
-                (p) => !p.inning_exited && p.id !== action.payload.id
-            );
+            const existing = state.gamePitchers.find((p) => !p.inning_exited && p.id !== action.payload.id);
             if (existing) {
                 existing.inning_exited = action.payload.inning_entered;
             }

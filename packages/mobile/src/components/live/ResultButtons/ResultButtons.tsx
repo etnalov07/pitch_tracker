@@ -19,12 +19,7 @@ const RESULTS: { type: PitchResult; label: string; compactLabel: string; color: 
     { type: 'in_play', label: 'In Play', compactLabel: 'In Play', color: colors.primary[600], textColor: '#ffffff' },
 ];
 
-const ResultButtons: React.FC<ResultButtonsProps> = ({
-    selectedResult,
-    onSelect,
-    disabled = false,
-    compact = false,
-}) => {
+const ResultButtons: React.FC<ResultButtonsProps> = ({ selectedResult, onSelect, disabled = false, compact = false }) => {
     const handleSelect = (result: PitchResult) => {
         if (disabled) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -49,9 +44,7 @@ const ResultButtons: React.FC<ResultButtonsProps> = ({
                                 onPress={() => handleSelect(type)}
                                 disabled={disabled}
                             >
-                                <Text style={[compactStyles.label, { color: textColor }]}>
-                                    {compactLabel}
-                                </Text>
+                                <Text style={[compactStyles.label, { color: textColor }]}>{compactLabel}</Text>
                             </Pressable>
                         );
                     })}
@@ -78,12 +71,7 @@ const ResultButtons: React.FC<ResultButtonsProps> = ({
                             onPress={() => handleSelect(type)}
                             disabled={disabled}
                         >
-                            <Text style={[
-                                styles.label,
-                                { color: textColor },
-                            ]}>
-                                {label}
-                            </Text>
+                            <Text style={[styles.label, { color: textColor }]}>{label}</Text>
                         </Pressable>
                     );
                 })}

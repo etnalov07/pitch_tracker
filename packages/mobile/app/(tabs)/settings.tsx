@@ -19,17 +19,17 @@ export default function SettingsScreen() {
 
     const handleLogout = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Alert.alert(
-            'Sign Out',
-            'Are you sure you want to sign out?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Sign Out', style: 'destructive', onPress: () => {
+        Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Sign Out',
+                style: 'destructive',
+                onPress: () => {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     dispatch(logoutUser());
-                }},
-            ]
-        );
+                },
+            },
+        ]);
     };
 
     const handleManualSync = async () => {
@@ -68,11 +68,7 @@ export default function SettingsScreen() {
             <View style={[styles.content, isTablet && styles.contentTablet]}>
                 {/* Profile Section */}
                 <View style={styles.profileSection}>
-                    <Avatar.Text
-                        size={80}
-                        label={getInitials()}
-                        style={{ backgroundColor: theme.colors.primary }}
-                    />
+                    <Avatar.Text size={80} label={getInitials()} style={{ backgroundColor: theme.colors.primary }} />
                     <Text variant="headlineSmall" style={styles.userName}>
                         {user?.first_name} {user?.last_name}
                     </Text>
@@ -90,13 +86,17 @@ export default function SettingsScreen() {
                         title="Edit Profile"
                         left={(props) => <List.Icon {...props} icon="account-edit" />}
                         right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                        onPress={() => {/* TODO */}}
+                        onPress={() => {
+                            /* TODO */
+                        }}
                     />
                     <List.Item
                         title="Change Password"
                         left={(props) => <List.Icon {...props} icon="lock" />}
                         right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                        onPress={() => {/* TODO */}}
+                        onPress={() => {
+                            /* TODO */
+                        }}
                     />
                 </List.Section>
 
@@ -108,20 +108,12 @@ export default function SettingsScreen() {
                         title="Connection Status"
                         description={isOnline ? 'Online' : 'Offline'}
                         left={(props) => (
-                            <List.Icon
-                                {...props}
-                                icon={isOnline ? 'wifi' : 'wifi-off'}
-                                color={isOnline ? '#10b981' : '#ef4444'}
-                            />
+                            <List.Icon {...props} icon={isOnline ? 'wifi' : 'wifi-off'} color={isOnline ? '#10b981' : '#ef4444'} />
                         )}
                     />
                     <List.Item
                         title="Pending Actions"
-                        description={
-                            pendingCount > 0
-                                ? `${pendingCount} action(s) waiting to sync`
-                                : 'All data synced'
-                        }
+                        description={pendingCount > 0 ? `${pendingCount} action(s) waiting to sync` : 'All data synced'}
                         left={(props) => (
                             <List.Icon
                                 {...props}
@@ -133,12 +125,7 @@ export default function SettingsScreen() {
                             isSyncing || syncing ? (
                                 <ActivityIndicator size={20} />
                             ) : pendingCount > 0 ? (
-                                <Button
-                                    compact
-                                    mode="text"
-                                    onPress={handleManualSync}
-                                    disabled={!isOnline}
-                                >
+                                <Button compact mode="text" onPress={handleManualSync} disabled={!isOnline}>
                                     Sync
                                 </Button>
                             ) : null
@@ -172,23 +159,22 @@ export default function SettingsScreen() {
                         title="Privacy Policy"
                         left={(props) => <List.Icon {...props} icon="shield-account" />}
                         right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                        onPress={() => {/* TODO */}}
+                        onPress={() => {
+                            /* TODO */
+                        }}
                     />
                     <List.Item
                         title="Terms of Service"
                         left={(props) => <List.Icon {...props} icon="file-document" />}
                         right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                        onPress={() => {/* TODO */}}
+                        onPress={() => {
+                            /* TODO */
+                        }}
                     />
                 </List.Section>
 
                 <View style={styles.logoutSection}>
-                    <Button
-                        mode="outlined"
-                        onPress={handleLogout}
-                        textColor={theme.colors.error}
-                        style={styles.logoutButton}
-                    >
+                    <Button mode="outlined" onPress={handleLogout} textColor={theme.colors.error} style={styles.logoutButton}>
                         Sign Out
                     </Button>
                 </View>

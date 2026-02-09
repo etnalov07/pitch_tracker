@@ -20,12 +20,10 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
     isTablet,
 }) => {
     return (
-        <Modal
-            visible={visible}
-            onDismiss={() => {}}
-            contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}
-        >
-            <Text variant="titleLarge" style={styles.modalTitle}>Inning Over</Text>
+        <Modal visible={visible} onDismiss={() => {}} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
+            <Text variant="titleLarge" style={styles.modalTitle}>
+                Inning Over
+            </Text>
             <Text style={styles.inningChangeText}>
                 3 outs recorded.{'\n'}
                 {inningChangeInfo && `End of ${inningChangeInfo.half === 'top' ? 'Top' : 'Bottom'} ${inningChangeInfo.inning}`}
@@ -51,7 +49,17 @@ const styles = StyleSheet.create({
     modalTitle: { marginBottom: 16 },
     inningChangeText: { fontSize: 16, color: '#374151', textAlign: 'center', marginBottom: 16, lineHeight: 24 },
     runsLabel: { fontSize: 14, color: '#6b7280', marginBottom: 8 },
-    runsInput: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12, fontSize: 24, textAlign: 'center', fontWeight: 'bold', marginBottom: 16, color: '#111827' },
+    runsInput: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        padding: 12,
+        fontSize: 24,
+        textAlign: 'center',
+        fontWeight: 'bold',
+        marginBottom: 16,
+        color: '#111827',
+    },
     inningChangeButton: { marginTop: 4 },
 });
 

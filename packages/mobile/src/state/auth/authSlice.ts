@@ -48,51 +48,42 @@ export const initializeAuth = createAsyncThunk('auth/initialize', async () => {
 });
 
 // Login
-export const loginUser = createAsyncThunk(
-    'auth/login',
-    async (credentials: LoginCredentials, { rejectWithValue }) => {
-        try {
-            const response = await authApi.login(credentials);
-            await AsyncStorage.setItem('token', response.token);
-            await AsyncStorage.setItem('user', JSON.stringify(response.user));
-            return response;
-        } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : 'Login failed';
-            return rejectWithValue(message);
-        }
+export const loginUser = createAsyncThunk('auth/login', async (credentials: LoginCredentials, { rejectWithValue }) => {
+    try {
+        const response = await authApi.login(credentials);
+        await AsyncStorage.setItem('token', response.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.user));
+        return response;
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Login failed';
+        return rejectWithValue(message);
     }
-);
+});
 
 // Register
-export const registerUser = createAsyncThunk(
-    'auth/register',
-    async (data: RegisterData, { rejectWithValue }) => {
-        try {
-            const response = await authApi.register(data);
-            await AsyncStorage.setItem('token', response.token);
-            await AsyncStorage.setItem('user', JSON.stringify(response.user));
-            return response;
-        } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : 'Registration failed';
-            return rejectWithValue(message);
-        }
+export const registerUser = createAsyncThunk('auth/register', async (data: RegisterData, { rejectWithValue }) => {
+    try {
+        const response = await authApi.register(data);
+        await AsyncStorage.setItem('token', response.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.user));
+        return response;
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Registration failed';
+        return rejectWithValue(message);
     }
-);
+});
 
 // Fetch Profile
-export const fetchUserProfile = createAsyncThunk(
-    'auth/fetchProfile',
-    async (_, { rejectWithValue }) => {
-        try {
-            const user = await authApi.getProfile();
-            await AsyncStorage.setItem('user', JSON.stringify(user));
-            return user;
-        } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : 'Failed to fetch profile';
-            return rejectWithValue(message);
-        }
+export const fetchUserProfile = createAsyncThunk('auth/fetchProfile', async (_, { rejectWithValue }) => {
+    try {
+        const user = await authApi.getProfile();
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+        return user;
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to fetch profile';
+        return rejectWithValue(message);
     }
-);
+});
 
 // Logout
 export const logoutUser = createAsyncThunk('auth/logout', async () => {

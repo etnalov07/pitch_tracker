@@ -21,7 +21,9 @@ export default function JoinTeamScreen() {
 
     useEffect(() => {
         dispatch(fetchMyJoinRequests());
-        return () => { dispatch(clearSearchResults()); };
+        return () => {
+            dispatch(clearSearchResults());
+        };
     }, [dispatch]);
 
     const handleSearch = () => {
@@ -45,10 +47,14 @@ export default function JoinTeamScreen() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case 'pending': return '#ca8a04';
-            case 'approved': return '#16a34a';
-            case 'denied': return '#dc2626';
-            default: return '#6b7280';
+            case 'pending':
+                return '#ca8a04';
+            case 'approved':
+                return '#16a34a';
+            case 'denied':
+                return '#dc2626';
+            default:
+                return '#6b7280';
         }
     };
 
@@ -69,12 +75,7 @@ export default function JoinTeamScreen() {
                         style={styles.searchInput}
                         dense
                     />
-                    <Button
-                        mode="contained"
-                        onPress={handleSearch}
-                        disabled={query.trim().length < 2}
-                        compact
-                    >
+                    <Button mode="contained" onPress={handleSearch} disabled={query.trim().length < 2} compact>
                         Search
                     </Button>
                 </View>
@@ -132,9 +133,7 @@ export default function JoinTeamScreen() {
                             </Card>
                         ))
                     ) : (
-                        <Text style={styles.emptyText}>
-                            No join requests yet. Search for a team above.
-                        </Text>
+                        <Text style={styles.emptyText}>No join requests yet. Search for a team above.</Text>
                     )}
                 </View>
             </ScrollView>

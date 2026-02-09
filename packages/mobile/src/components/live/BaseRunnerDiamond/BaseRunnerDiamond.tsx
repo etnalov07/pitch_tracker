@@ -14,12 +14,7 @@ interface BaseRunnerDiamondProps {
  * Compact baseball diamond component for displaying base runner positions.
  * Designed to fit in the game header alongside score and count.
  */
-const BaseRunnerDiamond: React.FC<BaseRunnerDiamondProps> = ({
-    runners,
-    size = 50,
-    onBasePress,
-    disabled = false,
-}) => {
+const BaseRunnerDiamond: React.FC<BaseRunnerDiamondProps> = ({ runners, size = 50, onBasePress, disabled = false }) => {
     // Diamond dimensions
     const center = size / 2;
     const baseSize = size * 0.18;
@@ -43,45 +38,13 @@ const BaseRunnerDiamond: React.FC<BaseRunnerDiamondProps> = ({
     };
 
     return (
-        <Pressable
-            style={[styles.container, { width: size, height: size }]}
-            onPress={() => {}}
-            disabled={disabled || !onBasePress}
-        >
+        <Pressable style={[styles.container, { width: size, height: size }]} onPress={() => {}} disabled={disabled || !onBasePress}>
             <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
                 {/* Base paths */}
-                <Line
-                    x1={homePos.x}
-                    y1={homePos.y}
-                    x2={firstPos.x}
-                    y2={firstPos.y}
-                    stroke={pathColor}
-                    strokeWidth={1.5}
-                />
-                <Line
-                    x1={firstPos.x}
-                    y1={firstPos.y}
-                    x2={secondPos.x}
-                    y2={secondPos.y}
-                    stroke={pathColor}
-                    strokeWidth={1.5}
-                />
-                <Line
-                    x1={secondPos.x}
-                    y1={secondPos.y}
-                    x2={thirdPos.x}
-                    y2={thirdPos.y}
-                    stroke={pathColor}
-                    strokeWidth={1.5}
-                />
-                <Line
-                    x1={thirdPos.x}
-                    y1={thirdPos.y}
-                    x2={homePos.x}
-                    y2={homePos.y}
-                    stroke={pathColor}
-                    strokeWidth={1.5}
-                />
+                <Line x1={homePos.x} y1={homePos.y} x2={firstPos.x} y2={firstPos.y} stroke={pathColor} strokeWidth={1.5} />
+                <Line x1={firstPos.x} y1={firstPos.y} x2={secondPos.x} y2={secondPos.y} stroke={pathColor} strokeWidth={1.5} />
+                <Line x1={secondPos.x} y1={secondPos.y} x2={thirdPos.x} y2={thirdPos.y} stroke={pathColor} strokeWidth={1.5} />
+                <Line x1={thirdPos.x} y1={thirdPos.y} x2={homePos.x} y2={homePos.y} stroke={pathColor} strokeWidth={1.5} />
 
                 {/* Home plate (pentagon shape) */}
                 <Path

@@ -170,13 +170,7 @@ const BaseballDiamond: React.FC<BaseballDiamondProps> = ({
                     </Text>
                     <View style={styles.outsRow}>
                         {[0, 1, 2].map((i) => (
-                            <View
-                                key={i}
-                                style={[
-                                    styles.outDot,
-                                    i < outs && styles.outDotActive,
-                                ]}
-                            />
+                            <View key={i} style={[styles.outDot, i < outs && styles.outDotActive]} />
                         ))}
                     </View>
                 </View>

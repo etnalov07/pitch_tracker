@@ -84,6 +84,7 @@ const Dashboard: React.FC = () => {
     // Derive the user's primary role from team memberships
     const ROLE_PRIORITY: Record<string, number> = { owner: 0, coach: 1, assistant: 2, player: 3 };
     const primaryRole = teams.reduce<string | null>((best, team) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const role = (team as any).user_role as string | undefined;
         if (!role) return best;
         if (!best) return role;

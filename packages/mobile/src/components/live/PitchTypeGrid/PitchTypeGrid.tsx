@@ -33,9 +33,7 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
     compact = false,
 }) => {
     // Filter to only available pitch types if provided, otherwise show all
-    const pitchTypes = availablePitchTypes
-        ? ALL_PITCH_TYPES.filter(p => availablePitchTypes.includes(p.type))
-        : ALL_PITCH_TYPES;
+    const pitchTypes = availablePitchTypes ? ALL_PITCH_TYPES.filter((p) => availablePitchTypes.includes(p.type)) : ALL_PITCH_TYPES;
 
     const handleSelect = (type: PitchType) => {
         if (disabled) return;
@@ -60,14 +58,7 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
                                 onPress={() => handleSelect(type)}
                                 disabled={disabled}
                             >
-                                <Text
-                                    style={[
-                                        compactStyles.abbrev,
-                                        isSelected && compactStyles.textSelected,
-                                    ]}
-                                >
-                                    {abbrev}
-                                </Text>
+                                <Text style={[compactStyles.abbrev, isSelected && compactStyles.textSelected]}>{abbrev}</Text>
                             </Pressable>
                         );
                     })}
@@ -85,26 +76,12 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
                     return (
                         <Pressable
                             key={type}
-                            style={[
-                                styles.button,
-                                isSelected && styles.buttonSelected,
-                                disabled && styles.buttonDisabled,
-                            ]}
+                            style={[styles.button, isSelected && styles.buttonSelected, disabled && styles.buttonDisabled]}
                             onPress={() => handleSelect(type)}
                             disabled={disabled}
                         >
-                            <Text style={[
-                                styles.abbrev,
-                                isSelected && styles.textSelected,
-                            ]}>
-                                {abbrev}
-                            </Text>
-                            <Text style={[
-                                styles.label,
-                                isSelected && styles.textSelected,
-                            ]}>
-                                {label}
-                            </Text>
+                            <Text style={[styles.abbrev, isSelected && styles.textSelected]}>{abbrev}</Text>
+                            <Text style={[styles.label, isSelected && styles.textSelected]}>{label}</Text>
                         </Pressable>
                     );
                 })}

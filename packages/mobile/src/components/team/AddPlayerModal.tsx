@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import {
-    Text,
-    Button,
-    Modal,
-    TextInput,
-    SegmentedButtons,
-} from 'react-native-paper';
+import { Text, Button, Modal, TextInput, SegmentedButtons } from 'react-native-paper';
 import * as Haptics from '../../utils/haptics';
 import { useAppDispatch, addPlayer } from '../../state';
 import { ThrowingHand } from '@pitch-tracker/shared';
@@ -43,17 +37,19 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setCreating(true);
         try {
-            await dispatch(addPlayer({
-                teamId,
-                data: {
-                    first_name: firstName.trim(),
-                    last_name: lastName.trim(),
-                    jersey_number: jerseyNumber ? parseInt(jerseyNumber, 10) : undefined,
-                    primary_position: 'P',
-                    throws,
-                    bats: 'R',
-                },
-            })).unwrap();
+            await dispatch(
+                addPlayer({
+                    teamId,
+                    data: {
+                        first_name: firstName.trim(),
+                        last_name: lastName.trim(),
+                        jersey_number: jerseyNumber ? parseInt(jerseyNumber, 10) : undefined,
+                        primary_position: 'P',
+                        throws,
+                        bats: 'R',
+                    },
+                })
+            ).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             onDismiss();
             resetForm();
@@ -66,11 +62,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
     };
 
     return (
-        <Modal
-            visible={visible}
-            onDismiss={onDismiss}
-            contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}
-        >
+        <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
             <ScrollView>
                 <Text variant="titleLarge" style={styles.modalTitle}>
                     Add Pitcher
@@ -99,7 +91,9 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
                     keyboardType="numeric"
                     style={styles.input}
                 />
-                <Text variant="labelMedium" style={styles.fieldLabel}>Pitcher Type</Text>
+                <Text variant="labelMedium" style={styles.fieldLabel}>
+                    Pitcher Type
+                </Text>
                 <SegmentedButtons
                     value={throws}
                     onValueChange={(v) => {

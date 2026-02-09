@@ -22,30 +22,21 @@ const initialState: OfflineState = {
 };
 
 // No-op thunks - always return online state
-export const checkNetworkStatus = createAsyncThunk(
-    'offline/checkNetworkStatus',
-    async () => {
-        return {
-            isConnected: true,
-            isInternetReachable: true,
-            type: 'wifi',
-        };
-    }
-);
+export const checkNetworkStatus = createAsyncThunk('offline/checkNetworkStatus', async () => {
+    return {
+        isConnected: true,
+        isInternetReachable: true,
+        type: 'wifi',
+    };
+});
 
-export const loadPendingCount = createAsyncThunk(
-    'offline/loadPendingCount',
-    async () => {
-        return 0;
-    }
-);
+export const loadPendingCount = createAsyncThunk('offline/loadPendingCount', async () => {
+    return 0;
+});
 
-export const loadPendingActions = createAsyncThunk(
-    'offline/loadPendingActions',
-    async () => {
-        return [];
-    }
-);
+export const loadPendingActions = createAsyncThunk('offline/loadPendingActions', async () => {
+    return [];
+});
 
 const offlineSlice = createSlice({
     name: 'offline',

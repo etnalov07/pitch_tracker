@@ -50,10 +50,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                         <View style={styles.countItem}>
                             <Text style={styles.countLabel}>B</Text>
                             {[0, 1, 2, 3].map((i) => (
-                                <View
-                                    key={`ball-${i}`}
-                                    style={[styles.countDot, i < balls ? styles.ballDot : styles.emptyDot]}
-                                />
+                                <View key={`ball-${i}`} style={[styles.countDot, i < balls ? styles.ballDot : styles.emptyDot]} />
                             ))}
                         </View>
                         <View style={styles.countItem}>
@@ -68,10 +65,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                         <View style={styles.countItem}>
                             <Text style={styles.countLabel}>O</Text>
                             {[0, 1, 2].map((i) => (
-                                <View
-                                    key={`out-${i}`}
-                                    style={[styles.countDot, i < outs ? styles.outDot : styles.emptyDot]}
-                                />
+                                <View key={`out-${i}`} style={[styles.countDot, i < outs ? styles.outDot : styles.emptyDot]} />
                             ))}
                         </View>
                     </View>
@@ -95,9 +89,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                 >
                     <Text style={styles.playerLabel}>P</Text>
                     <Text style={styles.playerName} numberOfLines={1}>
-                        {currentPitcher
-                            ? `${currentPitcher.first_name[0]}. ${currentPitcher.last_name}`
-                            : 'Select'}
+                        {currentPitcher ? `${currentPitcher.first_name[0]}. ${currentPitcher.last_name}` : 'Select'}
                     </Text>
                 </Pressable>
                 <Text style={styles.vs}>vs</Text>

@@ -92,12 +92,14 @@ export default function TeamsScreen() {
 
         setCreating(true);
         try {
-            await dispatch(createTeam({
-                name: newTeamName.trim(),
-                team_type: newTeamType || undefined,
-                season: newTeamSeason || undefined,
-                year: newTeamYear ? parseInt(newTeamYear, 10) : undefined,
-            })).unwrap();
+            await dispatch(
+                createTeam({
+                    name: newTeamName.trim(),
+                    team_type: newTeamType || undefined,
+                    season: newTeamSeason || undefined,
+                    year: newTeamYear ? parseInt(newTeamYear, 10) : undefined,
+                })
+            ).unwrap();
             setModalVisible(false);
             setNewTeamName('');
             setNewTeamType('');
@@ -128,18 +130,18 @@ export default function TeamsScreen() {
     return (
         <View style={styles.container}>
             <ScrollView
-                contentContainerStyle={[
-                    styles.scrollContent,
-                    teams.length === 0 && styles.scrollContentEmpty,
-                ]}
-                refreshControl={
-                    <RefreshControl refreshing={loading} onRefresh={loadTeams} />
-                }
+                contentContainerStyle={[styles.scrollContent, teams.length === 0 && styles.scrollContentEmpty]}
+                refreshControl={<RefreshControl refreshing={loading} onRefresh={loadTeams} />}
             >
                 {teams.length > 0 ? (
                     <>
                         {hasTypes && (
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                style={styles.filterRow}
+                                contentContainerStyle={styles.filterRowContent}
+                            >
                                 <Chip
                                     selected={filterType === ''}
                                     onPress={() => setFilterType('')}
@@ -163,11 +165,7 @@ export default function TeamsScreen() {
                         )}
                         <View style={[styles.teamList, isTablet && styles.teamListTablet]}>
                             {filteredTeams.map((team) => (
-                                <TeamCard
-                                    key={team.id}
-                                    team={team}
-                                    onPress={() => handleTeamPress(team)}
-                                />
+                                <TeamCard key={team.id} team={team} onPress={() => handleTeamPress(team)} />
                             ))}
                             {filteredTeams.length === 0 && (
                                 <Text variant="bodyMedium" style={styles.noResults}>
@@ -212,7 +210,9 @@ export default function TeamsScreen() {
                         style={styles.input}
                         autoFocus
                     />
-                    <Text variant="labelMedium" style={styles.pickerLabel}>Team Type</Text>
+                    <Text variant="labelMedium" style={styles.pickerLabel}>
+                        Team Type
+                    </Text>
                     <View style={styles.chipRow}>
                         {(['high_school', 'travel', 'club', 'college'] as TeamType[]).map((type) => (
                             <Button
@@ -226,7 +226,9 @@ export default function TeamsScreen() {
                             </Button>
                         ))}
                     </View>
-                    <Text variant="labelMedium" style={styles.pickerLabel}>Season</Text>
+                    <Text variant="labelMedium" style={styles.pickerLabel}>
+                        Season
+                    </Text>
                     <View style={styles.chipRow}>
                         {(['Spring', 'Summer', 'Fall', 'Winter'] as TeamSeason[]).map((s) => (
                             <Button
@@ -250,9 +252,7 @@ export default function TeamsScreen() {
                         placeholder={`e.g., ${new Date().getFullYear()}`}
                     />
                     <View style={styles.modalActions}>
-                        <Button onPress={() => setModalVisible(false)}>
-                            Cancel
-                        </Button>
+                        <Button onPress={() => setModalVisible(false)}>Cancel</Button>
                         <Button
                             mode="contained"
                             onPress={handleCreateSubmit}

@@ -10,17 +10,13 @@ interface PlayerListItemProps {
 
 const PlayerListItem: React.FC<PlayerListItemProps> = ({ player, onDelete }) => (
     <View style={styles.rosterRow}>
-        <Text style={styles.rosterJersey}>
-            {player.jersey_number != null ? `#${player.jersey_number}` : '-'}
-        </Text>
+        <Text style={styles.rosterJersey}>{player.jersey_number != null ? `#${player.jersey_number}` : '-'}</Text>
         <View style={styles.rosterNameCol}>
             <Text style={styles.rosterName} numberOfLines={1}>
                 {player.first_name} {player.last_name}
             </Text>
         </View>
-        <Text style={styles.rosterType}>
-            {player.throws === 'L' ? 'LHP' : 'RHP'}
-        </Text>
+        <Text style={styles.rosterType}>{player.throws === 'L' ? 'LHP' : 'RHP'}</Text>
         <IconButton
             icon="trash-can-outline"
             size={18}

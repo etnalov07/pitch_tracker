@@ -35,13 +35,15 @@ export default function RegisterScreen() {
         }
 
         setLocalError(null);
-        dispatch(registerUser({
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            email: email.trim(),
-            password,
-            registration_type: registrationType as 'coach' | 'player' | 'org_admin',
-        }));
+        dispatch(
+            registerUser({
+                first_name: firstName.trim(),
+                last_name: lastName.trim(),
+                email: email.trim(),
+                password,
+                registration_type: registrationType as 'coach' | 'player' | 'org_admin',
+            })
+        );
     };
 
     const handleInputChange = () => {
@@ -52,14 +54,8 @@ export default function RegisterScreen() {
     const displayError = localError || error;
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <Surface style={styles.surface} elevation={2}>
                     <Text variant="headlineMedium" style={styles.title}>
                         Create Account
@@ -72,7 +68,10 @@ export default function RegisterScreen() {
                         <TextInput
                             label="First Name"
                             value={firstName}
-                            onChangeText={(text) => { setFirstName(text); handleInputChange(); }}
+                            onChangeText={(text) => {
+                                setFirstName(text);
+                                handleInputChange();
+                            }}
                             mode="outlined"
                             autoCapitalize="words"
                             style={[styles.input, styles.nameInput]}
@@ -80,14 +79,19 @@ export default function RegisterScreen() {
                         <TextInput
                             label="Last Name"
                             value={lastName}
-                            onChangeText={(text) => { setLastName(text); handleInputChange(); }}
+                            onChangeText={(text) => {
+                                setLastName(text);
+                                handleInputChange();
+                            }}
                             mode="outlined"
                             autoCapitalize="words"
                             style={[styles.input, styles.nameInput]}
                         />
                     </View>
 
-                    <Text variant="bodyMedium" style={styles.roleLabel}>I am a...</Text>
+                    <Text variant="bodyMedium" style={styles.roleLabel}>
+                        I am a...
+                    </Text>
                     <SegmentedButtons
                         value={registrationType}
                         onValueChange={setRegistrationType}
@@ -102,7 +106,10 @@ export default function RegisterScreen() {
                     <TextInput
                         label="Email"
                         value={email}
-                        onChangeText={(text) => { setEmail(text); handleInputChange(); }}
+                        onChangeText={(text) => {
+                            setEmail(text);
+                            handleInputChange();
+                        }}
                         mode="outlined"
                         keyboardType="email-address"
                         autoCapitalize="none"
@@ -113,7 +120,10 @@ export default function RegisterScreen() {
                     <TextInput
                         label="Password"
                         value={password}
-                        onChangeText={(text) => { setPassword(text); handleInputChange(); }}
+                        onChangeText={(text) => {
+                            setPassword(text);
+                            handleInputChange();
+                        }}
                         mode="outlined"
                         secureTextEntry={!showPassword}
                         autoCapitalize="none"
@@ -129,7 +139,10 @@ export default function RegisterScreen() {
                     <TextInput
                         label="Confirm Password"
                         value={confirmPassword}
-                        onChangeText={(text) => { setConfirmPassword(text); handleInputChange(); }}
+                        onChangeText={(text) => {
+                            setConfirmPassword(text);
+                            handleInputChange();
+                        }}
                         mode="outlined"
                         secureTextEntry={!showPassword}
                         autoCapitalize="none"

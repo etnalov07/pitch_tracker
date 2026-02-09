@@ -11,13 +11,7 @@ interface EmptyStateProps {
     onAction?: () => void;
 }
 
-const EmptyState: React.FC<EmptyStateProps> = ({
-    icon = 'inbox-outline',
-    title,
-    message,
-    actionLabel,
-    onAction,
-}) => {
+const EmptyState: React.FC<EmptyStateProps> = ({ icon = 'inbox-outline', title, message, actionLabel, onAction }) => {
     const theme = useTheme();
 
     const handleAction = () => {

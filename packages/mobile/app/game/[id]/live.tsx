@@ -42,9 +42,16 @@ import {
     fetchBaseRunners,
 } from '../../../src/state';
 import {
-    StrikeZone, PitchTypeGrid, ResultButtons, GameHeader, InPlayModal,
-    PitcherSelectorModal, BatterSelectorModal, InningChangeModal,
-    BaserunnerOutModal, RunnerAdvancementModal,
+    StrikeZone,
+    PitchTypeGrid,
+    ResultButtons,
+    GameHeader,
+    InPlayModal,
+    PitcherSelectorModal,
+    BatterSelectorModal,
+    InningChangeModal,
+    BaserunnerOutModal,
+    RunnerAdvancementModal,
 } from '../../../src/components/live';
 import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/components/common';
 import { HitLocation } from '../../../src/components/live/InPlayModal';
@@ -57,8 +64,19 @@ export default function LiveGameScreen() {
     const { isTablet, isLandscape } = useDeviceType();
     const { isOnline, logPitchOffline } = useOfflineActions();
 
-    const { currentGameState, selectedGame, currentAtBat, currentInning, gamePitchers, opponentLineup, pitches, baseRunners, gameStateLoading, loading, error } =
-        useAppSelector((state) => state.games);
+    const {
+        currentGameState,
+        selectedGame,
+        currentAtBat,
+        currentInning,
+        gamePitchers,
+        opponentLineup,
+        pitches,
+        baseRunners,
+        gameStateLoading,
+        loading,
+        error,
+    } = useAppSelector((state) => state.games);
     const teamPlayers = useAppSelector((state) => state.teams.players) || [];
 
     // Local state for pitch entry
@@ -94,16 +112,16 @@ export default function LiveGameScreen() {
 
     const game = currentGameState?.game || selectedGame;
 
-    const activeBatters = opponentLineup
-        .filter((b) => !b.replaced_by_id)
-        .sort((a, b) => a.batting_order - b.batting_order);
+    const activeBatters = opponentLineup.filter((b) => !b.replaced_by_id).sort((a, b) => a.batting_order - b.batting_order);
 
     // Load game state on mount
     useEffect(() => {
         if (id) {
             dispatch(fetchCurrentGameState(id))
                 .unwrap()
-                .catch(() => { dispatch(fetchGameById(id)); });
+                .catch(() => {
+                    dispatch(fetchGameById(id));
+                });
             dispatch(fetchCurrentInning(id));
             dispatch(fetchGamePitchers(id));
             dispatch(fetchOpponentLineup(id));
@@ -127,7 +145,8 @@ export default function LiveGameScreen() {
 
     useEffect(() => {
         if (currentPitcher?.player_id) {
-            gamesApi.getPitcherPitchTypes(currentPitcher.player_id)
+            gamesApi
+                .getPitcherPitchTypes(currentPitcher.player_id)
                 .then((types) => {
                     setPitcherPitchTypes(types as PitchType[]);
                     if (types.length > 0 && selectedPitchType && !types.includes(selectedPitchType)) {
@@ -153,47 +172,67 @@ export default function LiveGameScreen() {
     const strikes = Math.min(effectiveStrikes, 2);
 
     // Start at-bat for a specific batter
-    const startAtBatForBatter = useCallback(async (
-        batter: OpponentLineupPlayer, outs: number, inning: Inning | null
-    ): Promise<boolean> => {
-        if (!id || !currentPitcher || !inning) return false;
-        try {
-            await dispatch(createAtBat({
-                game_id: id, inning_id: inning.id, opponent_batter_id: batter.id,
-                pitcher_id: currentPitcher.player_id, batting_order: batter.batting_order,
-                balls: 0, strikes: 0, outs_before: outs,
-            })).unwrap();
-            return true;
-        } catch { console.error('Failed to start at-bat'); return false; }
-    }, [id, currentPitcher, dispatch]);
-
-    const handleEndAtBat = useCallback(async (result: string) => {
-        if (!currentAtBat) return;
-        try {
-            const outsFromPlay = getOutsForResult(result);
-            const newOutCount = currentOuts + outsFromPlay;
-            await dispatch(updateAtBat({ id: currentAtBat.id, data: { result, outs_after: Math.min(newOutCount, 3) } })).unwrap();
-            dispatch(setCurrentAtBat(null));
-            dispatch(clearPitches());
-
-            if (outsFromPlay > 0 && newOutCount >= 3) {
-                setCurrentOuts(0);
-                setTeamRunsScored('0');
-                setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
-                setShowInningChange(true);
-            } else {
-                if (outsFromPlay > 0) setCurrentOuts(newOutCount);
-                const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
-                setCurrentBattingOrder(nextOrder);
-                const nextBatter = activeBatters.find((p) => p.batting_order === nextOrder);
-                if (nextBatter) {
-                    setCurrentBatter(nextBatter);
-                    await startAtBatForBatter(nextBatter, outsFromPlay > 0 ? newOutCount : currentOuts, currentInning);
-                } else { setCurrentBatter(null); }
+    const startAtBatForBatter = useCallback(
+        async (batter: OpponentLineupPlayer, outs: number, inning: Inning | null): Promise<boolean> => {
+            if (!id || !currentPitcher || !inning) return false;
+            try {
+                await dispatch(
+                    createAtBat({
+                        game_id: id,
+                        inning_id: inning.id,
+                        opponent_batter_id: batter.id,
+                        pitcher_id: currentPitcher.player_id,
+                        batting_order: batter.batting_order,
+                        balls: 0,
+                        strikes: 0,
+                        outs_before: outs,
+                    })
+                ).unwrap();
+                return true;
+            } catch {
+                console.error('Failed to start at-bat');
+                return false;
             }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch { Alert.alert('Error', 'Failed to end at-bat'); }
-    }, [currentAtBat, currentOuts, currentBattingOrder, activeBatters, currentInning, game, dispatch, startAtBatForBatter]);
+        },
+        [id, currentPitcher, dispatch]
+    );
+
+    const handleEndAtBat = useCallback(
+        async (result: string) => {
+            if (!currentAtBat) return;
+            try {
+                const outsFromPlay = getOutsForResult(result);
+                const newOutCount = currentOuts + outsFromPlay;
+                await dispatch(
+                    updateAtBat({ id: currentAtBat.id, data: { result, outs_after: Math.min(newOutCount, 3) } })
+                ).unwrap();
+                dispatch(setCurrentAtBat(null));
+                dispatch(clearPitches());
+
+                if (outsFromPlay > 0 && newOutCount >= 3) {
+                    setCurrentOuts(0);
+                    setTeamRunsScored('0');
+                    setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
+                    setShowInningChange(true);
+                } else {
+                    if (outsFromPlay > 0) setCurrentOuts(newOutCount);
+                    const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+                    setCurrentBattingOrder(nextOrder);
+                    const nextBatter = activeBatters.find((p) => p.batting_order === nextOrder);
+                    if (nextBatter) {
+                        setCurrentBatter(nextBatter);
+                        await startAtBatForBatter(nextBatter, outsFromPlay > 0 ? newOutCount : currentOuts, currentInning);
+                    } else {
+                        setCurrentBatter(null);
+                    }
+                }
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch {
+                Alert.alert('Error', 'Failed to end at-bat');
+            }
+        },
+        [currentAtBat, currentOuts, currentBattingOrder, activeBatters, currentInning, game, dispatch, startAtBatForBatter]
+    );
 
     const handleInningChangeConfirm = useCallback(async () => {
         if (!id || !game) return;
@@ -215,21 +254,33 @@ export default function LiveGameScreen() {
                 setCurrentBatter(firstBatter);
                 await startAtBatForBatter(firstBatter, 0, newInning);
                 dispatch(fetchCurrentInning(id));
-            } else { setCurrentBatter(null); dispatch(fetchCurrentInning(id)); }
+            } else {
+                setCurrentBatter(null);
+                dispatch(fetchCurrentInning(id));
+            }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch { Alert.alert('Error', 'Failed to advance inning'); }
+        } catch {
+            Alert.alert('Error', 'Failed to advance inning');
+        }
     }, [id, game, teamRunsScored, activeBatters, dispatch, startAtBatForBatter]);
 
     const handleSelectPitcher = async (player: Player) => {
         if (!id || !currentInning) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         const activePitcher = gamePitchers.find((p) => !p.inning_exited);
-        if (activePitcher && activePitcher.player_id === player.id) { setPitcherModalVisible(false); return; }
+        if (activePitcher && activePitcher.player_id === player.id) {
+            setPitcherModalVisible(false);
+            return;
+        }
         try {
-            const result = await dispatch(changePitcher({ gameId: id, playerId: player.id, inningEntered: game?.current_inning || 1 })).unwrap();
+            const result = await dispatch(
+                changePitcher({ gameId: id, playerId: player.id, inningEntered: game?.current_inning || 1 })
+            ).unwrap();
             setCurrentPitcher(result);
             setPitcherModalVisible(false);
-        } catch { Alert.alert('Error', 'Failed to change pitcher'); }
+        } catch {
+            Alert.alert('Error', 'Failed to change pitcher');
+        }
     };
 
     const handleSelectBatter = (batter: OpponentLineupPlayer) => {
@@ -243,123 +294,174 @@ export default function LiveGameScreen() {
         if (!id || !game) return;
         Alert.alert('End Game', 'Are you sure you want to end this game? This will mark it as completed.', [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'End Game', style: 'destructive', onPress: async () => {
-                try {
-                    await gamesApi.endGame(id, { home_score: game.home_score || 0, away_score: game.away_score || 0 });
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    router.back();
-                } catch { Alert.alert('Error', 'Failed to end game'); }
-            }},
+            {
+                text: 'End Game',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        await gamesApi.endGame(id, { home_score: game.home_score || 0, away_score: game.away_score || 0 });
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        router.back();
+                    } catch {
+                        Alert.alert('Error', 'Failed to end game');
+                    }
+                },
+            },
         ]);
     }, [id, game, router]);
 
     const handleStartAtBat = useCallback(async () => {
         if (!currentPitcher || !currentBatter || !id || !currentInning) return;
         try {
-            await dispatch(createAtBat({
-                game_id: id, inning_id: currentInning.id, opponent_batter_id: currentBatter.id,
-                pitcher_id: currentPitcher.player_id, batting_order: currentBatter.batting_order,
-                balls: 0, strikes: 0, outs_before: currentOuts,
-            })).unwrap();
+            await dispatch(
+                createAtBat({
+                    game_id: id,
+                    inning_id: currentInning.id,
+                    opponent_batter_id: currentBatter.id,
+                    pitcher_id: currentPitcher.player_id,
+                    batting_order: currentBatter.batting_order,
+                    balls: 0,
+                    strikes: 0,
+                    outs_before: currentOuts,
+                })
+            ).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch { Alert.alert('Error', 'Failed to create at-bat. You can still log pitches offline.'); }
+        } catch {
+            Alert.alert('Error', 'Failed to create at-bat. You can still log pitches offline.');
+        }
     }, [currentPitcher, currentBatter, id, currentInning, currentOuts, dispatch]);
 
     const handleLogPitch = async () => {
         if (!selectedPitchType || !selectedResult || !pitchLocation) {
-            Alert.alert('Missing Info', 'Please select pitch type, location, and result'); return;
+            Alert.alert('Missing Info', 'Please select pitch type, location, and result');
+            return;
         }
-        if (!currentPitcher) { Alert.alert('No Pitcher', 'Please select a pitcher first'); return; }
+        if (!currentPitcher) {
+            Alert.alert('No Pitcher', 'Please select a pitcher first');
+            return;
+        }
         setIsLogging(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         try {
             const result = await logPitchOffline({
-                at_bat_id: currentAtBat?.id || '', game_id: id!, pitcher_id: currentPitcher.player_id,
-                pitch_type: selectedPitchType, pitch_result: selectedResult,
-                location_x: pitchLocation.x, location_y: pitchLocation.y,
-                target_location_x: targetLocation?.x, target_location_y: targetLocation?.y,
+                at_bat_id: currentAtBat?.id || '',
+                game_id: id!,
+                pitcher_id: currentPitcher.player_id,
+                pitch_type: selectedPitchType,
+                pitch_result: selectedResult,
+                location_x: pitchLocation.x,
+                location_y: pitchLocation.y,
+                target_location_x: targetLocation?.x,
+                target_location_y: targetLocation?.y,
             });
             const newBalls = balls + (selectedResult === 'ball' ? 1 : 0);
-            const newStrikes = effectiveStrikes + (
-                (selectedResult === 'called_strike' || selectedResult === 'swinging_strike') ? 1 :
-                (selectedResult === 'foul' && effectiveStrikes < 2) ? 1 : 0
-            );
-            setSelectedPitchType(null); setSelectedResult(null); setPitchLocation(null); setTargetLocation(null);
+            const newStrikes =
+                effectiveStrikes +
+                (selectedResult === 'called_strike' || selectedResult === 'swinging_strike'
+                    ? 1
+                    : selectedResult === 'foul' && effectiveStrikes < 2
+                      ? 1
+                      : 0);
+            setSelectedPitchType(null);
+            setSelectedResult(null);
+            setPitchLocation(null);
+            setTargetLocation(null);
             if (result.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             if (newBalls >= 4) await handleEndAtBat('walk');
             else if (newStrikes >= 3) await handleEndAtBat('strikeout');
             else if (selectedResult === 'in_play') setShowInPlayModal(true);
-        } catch { Alert.alert('Error', 'Failed to log pitch'); }
-        finally { setIsLogging(false); }
+        } catch {
+            Alert.alert('Error', 'Failed to log pitch');
+        } finally {
+            setIsLogging(false);
+        }
     };
 
-    const handleInPlayResult = useCallback(async (result: string, hitLocation?: HitLocation) => {
-        setShowInPlayModal(false);
-        // For hits, show runner advancement modal
-        const hitResults = ['single', 'double', 'triple', 'home_run', 'walk', 'hit_by_pitch'];
-        const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
-        if (hitResults.includes(result) && hasRunnersOnBase) {
-            setPendingHitResult(result);
-            setShowRunnerAdvancementModal(true);
-        } else if (hitResults.includes(result)) {
-            // No runners on base, just apply standard advancement
-            const { suggestedRunners, suggestedRuns } = getSuggestedAdvancement(baseRunners, result);
-            dispatch(setBaseRunners(suggestedRunners));
-            if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: suggestedRunners }));
-            await handleEndAtBat(result);
-        } else {
-            // Out result - just end at-bat
-            await handleEndAtBat(result);
-        }
-    }, [handleEndAtBat, baseRunners, id, dispatch]);
-
-    const handleRunnerAdvancementConfirm = useCallback(async (newRunners: BaseRunners, runsScored: number) => {
-        if (!pendingHitResult) return;
-        dispatch(setBaseRunners(newRunners));
-        if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
-        // Runs scored while our team is pitching go to opponent (away_score)
-        if (runsScored > 0 && game) {
-            await gamesApi.updateScore(id, game.home_score || 0, (game.away_score || 0) + runsScored);
-            dispatch(fetchGameById(id));
-        }
-        setShowRunnerAdvancementModal(false);
-        await handleEndAtBat(pendingHitResult);
-        setPendingHitResult(null);
-    }, [pendingHitResult, id, game, dispatch, handleEndAtBat]);
-
-    const handleRecordBaserunnerOut = useCallback(async (eventType: BaserunnerEventType, runnerBase: RunnerBase) => {
-        if (!id || !currentInning) return;
-        try {
-            await dispatch(recordBaserunnerEvent({
-                game_id: id,
-                inning_id: currentInning.id,
-                at_bat_id: currentAtBat?.id,
-                event_type: eventType,
-                runner_base: runnerBase,
-                outs_before: currentOuts,
-            })).unwrap();
-            const newOuts = currentOuts + 1;
-            setCurrentOuts(newOuts);
-            if (newOuts >= 3) {
-                setTeamRunsScored('0');
-                setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
-                setShowInningChange(true);
+    const handleInPlayResult = useCallback(
+        async (result: string, hitLocation?: HitLocation) => {
+            setShowInPlayModal(false);
+            // For hits, show runner advancement modal
+            const hitResults = ['single', 'double', 'triple', 'home_run', 'walk', 'hit_by_pitch'];
+            const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
+            if (hitResults.includes(result) && hasRunnersOnBase) {
+                setPendingHitResult(result);
+                setShowRunnerAdvancementModal(true);
+            } else if (hitResults.includes(result)) {
+                // No runners on base, just apply standard advancement
+                const { suggestedRunners, suggestedRuns } = getSuggestedAdvancement(baseRunners, result);
+                dispatch(setBaseRunners(suggestedRunners));
+                if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: suggestedRunners }));
+                await handleEndAtBat(result);
+            } else {
+                // Out result - just end at-bat
+                await handleEndAtBat(result);
             }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch { Alert.alert('Error', 'Failed to record baserunner out'); }
-    }, [id, currentInning, currentAtBat, currentOuts, game, dispatch]);
+        },
+        [handleEndAtBat, baseRunners, id, dispatch]
+    );
 
-    const handleRunnerPress = useCallback((base: RunnerBase) => {
-        // Show baserunner out modal if there are runners on base
-        if (baseRunners[base]) {
-            setShowBaserunnerOutModal(true);
-        }
-    }, [baseRunners]);
+    const handleRunnerAdvancementConfirm = useCallback(
+        async (newRunners: BaseRunners, runsScored: number) => {
+            if (!pendingHitResult) return;
+            dispatch(setBaseRunners(newRunners));
+            if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
+            // Runs scored while our team is pitching go to opponent (away_score)
+            if (runsScored > 0 && game) {
+                await gamesApi.updateScore(id, game.home_score || 0, (game.away_score || 0) + runsScored);
+                dispatch(fetchGameById(id));
+            }
+            setShowRunnerAdvancementModal(false);
+            await handleEndAtBat(pendingHitResult);
+            setPendingHitResult(null);
+        },
+        [pendingHitResult, id, game, dispatch, handleEndAtBat]
+    );
+
+    const handleRecordBaserunnerOut = useCallback(
+        async (eventType: BaserunnerEventType, runnerBase: RunnerBase) => {
+            if (!id || !currentInning) return;
+            try {
+                await dispatch(
+                    recordBaserunnerEvent({
+                        game_id: id,
+                        inning_id: currentInning.id,
+                        at_bat_id: currentAtBat?.id,
+                        event_type: eventType,
+                        runner_base: runnerBase,
+                        outs_before: currentOuts,
+                    })
+                ).unwrap();
+                const newOuts = currentOuts + 1;
+                setCurrentOuts(newOuts);
+                if (newOuts >= 3) {
+                    setTeamRunsScored('0');
+                    setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
+                    setShowInningChange(true);
+                }
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch {
+                Alert.alert('Error', 'Failed to record baserunner out');
+            }
+        },
+        [id, currentInning, currentAtBat, currentOuts, game, dispatch]
+    );
+
+    const handleRunnerPress = useCallback(
+        (base: RunnerBase) => {
+            // Show baserunner out modal if there are runners on base
+            if (baseRunners[base]) {
+                setShowBaserunnerOutModal(true);
+            }
+        },
+        [baseRunners]
+    );
 
     const canLogPitch = selectedPitchType && selectedResult && pitchLocation && !isLogging;
     const canStartAtBat = currentPitcher && currentBatter && !currentAtBat;
     const activePitcherDisplay = currentPitcher?.player || null;
-    const activeBatterDisplay = currentBatter ? { name: currentBatter.player_name, batting_order: currentBatter.batting_order } : null;
+    const activeBatterDisplay = currentBatter
+        ? { name: currentBatter.player_name, batting_order: currentBatter.batting_order }
+        : null;
 
     if (gameStateLoading || loading) {
         return (
@@ -377,34 +479,55 @@ export default function LiveGameScreen() {
                     <Text variant="titleLarge">Live Game</Text>
                     <View style={{ width: 48 }} />
                 </View>
-                <ErrorScreen title="Game not found" message={error || 'The game could not be loaded'}
-                    onRetry={() => id && dispatch(fetchGameById(id))} onGoBack={() => router.back()} />
+                <ErrorScreen
+                    title="Game not found"
+                    message={error || 'The game could not be loaded'}
+                    onRetry={() => id && dispatch(fetchGameById(id))}
+                    onGoBack={() => router.back()}
+                />
             </SafeAreaView>
         );
     }
 
     const renderGameHeader = () => (
-        <GameHeader game={game} currentPitcher={activePitcherDisplay} currentBatter={activeBatterDisplay}
-            balls={balls} strikes={strikes} outs={currentOuts} runners={baseRunners}
+        <GameHeader
+            game={game}
+            currentPitcher={activePitcherDisplay}
+            currentBatter={activeBatterDisplay}
+            balls={balls}
+            strikes={strikes}
+            outs={currentOuts}
+            runners={baseRunners}
             onPitcherPress={game.status === 'in_progress' ? () => setPitcherModalVisible(true) : undefined}
             onBatterPress={game.status === 'in_progress' ? () => setBatterModalVisible(true) : undefined}
-            onRunnerPress={game.status === 'in_progress' ? handleRunnerPress : undefined} />
+            onRunnerPress={game.status === 'in_progress' ? handleRunnerPress : undefined}
+        />
     );
 
     const renderAtBatControls = () => {
         if (game.status !== 'in_progress') return null;
         if (canStartAtBat) {
             return (
-                <Button mode="contained" onPress={handleStartAtBat} style={styles.startAtBatButton}
-                    contentStyle={styles.logButtonContent} icon="baseball-bat">Start At-Bat</Button>
+                <Button
+                    mode="contained"
+                    onPress={handleStartAtBat}
+                    style={styles.startAtBatButton}
+                    contentStyle={styles.logButtonContent}
+                    icon="baseball-bat"
+                >
+                    Start At-Bat
+                </Button>
             );
         }
         if (!currentPitcher || !currentBatter) {
             return (
                 <View style={styles.selectPrompt}>
                     <Text style={styles.selectPromptText}>
-                        {!currentPitcher && !currentBatter ? 'Select a pitcher and batter to begin'
-                            : !currentPitcher ? 'Select a pitcher to begin' : 'Select a batter to begin'}
+                        {!currentPitcher && !currentBatter
+                            ? 'Select a pitcher and batter to begin'
+                            : !currentPitcher
+                              ? 'Select a pitcher to begin'
+                              : 'Select a batter to begin'}
                     </Text>
                 </View>
             );
@@ -417,30 +540,51 @@ export default function LiveGameScreen() {
     const renderModals = () => (
         <Portal>
             <PitcherSelectorModal
-                visible={pitcherModalVisible} onDismiss={() => setPitcherModalVisible(false)}
-                gamePitchers={gamePitchers} currentPitcher={currentPitcher} teamPlayers={teamPlayers}
-                onSelectExistingPitcher={(gp) => { setCurrentPitcher(gp); setPitcherModalVisible(false); }}
-                onSelectNewPitcher={handleSelectPitcher} isTablet={isTablet} />
+                visible={pitcherModalVisible}
+                onDismiss={() => setPitcherModalVisible(false)}
+                gamePitchers={gamePitchers}
+                currentPitcher={currentPitcher}
+                teamPlayers={teamPlayers}
+                onSelectExistingPitcher={(gp) => {
+                    setCurrentPitcher(gp);
+                    setPitcherModalVisible(false);
+                }}
+                onSelectNewPitcher={handleSelectPitcher}
+                isTablet={isTablet}
+            />
             <BatterSelectorModal
-                visible={batterModalVisible} onDismiss={() => setBatterModalVisible(false)}
-                activeBatters={activeBatters} currentBatter={currentBatter}
-                onSelectBatter={handleSelectBatter} isTablet={isTablet} />
+                visible={batterModalVisible}
+                onDismiss={() => setBatterModalVisible(false)}
+                activeBatters={activeBatters}
+                currentBatter={currentBatter}
+                onSelectBatter={handleSelectBatter}
+                isTablet={isTablet}
+            />
             <InningChangeModal
-                visible={showInningChange} inningChangeInfo={inningChangeInfo}
-                teamRunsScored={teamRunsScored} onRunsChange={setTeamRunsScored}
-                onConfirm={handleInningChangeConfirm} isTablet={isTablet} />
+                visible={showInningChange}
+                inningChangeInfo={inningChangeInfo}
+                teamRunsScored={teamRunsScored}
+                onRunsChange={setTeamRunsScored}
+                onConfirm={handleInningChangeConfirm}
+                isTablet={isTablet}
+            />
             <BaserunnerOutModal
                 visible={showBaserunnerOutModal}
                 onDismiss={() => setShowBaserunnerOutModal(false)}
                 runners={baseRunners}
                 currentOuts={currentOuts}
-                onRecordOut={handleRecordBaserunnerOut} />
+                onRecordOut={handleRecordBaserunnerOut}
+            />
             <RunnerAdvancementModal
                 visible={showRunnerAdvancementModal}
-                onDismiss={() => { setShowRunnerAdvancementModal(false); setPendingHitResult(null); }}
+                onDismiss={() => {
+                    setShowRunnerAdvancementModal(false);
+                    setPendingHitResult(null);
+                }}
                 currentRunners={baseRunners}
                 hitResult={pendingHitResult || 'single'}
-                onConfirm={handleRunnerAdvancementConfirm} />
+                onConfirm={handleRunnerAdvancementConfirm}
+            />
         </Portal>
     );
 
@@ -471,7 +615,9 @@ export default function LiveGameScreen() {
                     </View>
                     {game.status === 'in_progress' ? (
                         <IconButton icon="flag-checkered" onPress={handleEndGame} />
-                    ) : <View style={{ width: 48 }} />}
+                    ) : (
+                        <View style={{ width: 48 }} />
+                    )}
                 </View>
                 <View style={styles.tabletContent}>
                     <View style={styles.statsPanel}>
@@ -479,26 +625,46 @@ export default function LiveGameScreen() {
                         {renderRunnerOutButton()}
                         {renderAtBatControls()}
                         <View style={styles.statsPlaceholder}>
-                            <Text variant="titleSmall" style={{ marginTop: 16 }}>Pitcher Stats</Text>
-                            <Text variant="bodySmall" style={styles.placeholder}>Total Pitches: {pitches.length}</Text>
+                            <Text variant="titleSmall" style={{ marginTop: 16 }}>
+                                Pitcher Stats
+                            </Text>
+                            <Text variant="bodySmall" style={styles.placeholder}>
+                                Total Pitches: {pitches.length}
+                            </Text>
                         </View>
                     </View>
                     <ScrollView style={styles.mainPanel} contentContainerStyle={styles.mainPanelContent}>
-                        <StrikeZone onLocationSelect={(x, y) => setPitchLocation({ x, y })}
+                        <StrikeZone
+                            onLocationSelect={(x, y) => setPitchLocation({ x, y })}
                             onTargetSelect={(x, y) => setTargetLocation({ x, y })}
                             onTargetClear={() => setTargetLocation(null)}
-                            targetLocation={targetLocation} previousPitches={pitches} disabled={isLogging} />
+                            targetLocation={targetLocation}
+                            previousPitches={pitches}
+                            disabled={isLogging}
+                        />
                         <View style={styles.controlsRow}>
                             <View style={styles.controlsHalf}>
-                                <PitchTypeGrid selectedType={selectedPitchType} onSelect={setSelectedPitchType}
-                                    availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined} disabled={isLogging} />
+                                <PitchTypeGrid
+                                    selectedType={selectedPitchType}
+                                    onSelect={setSelectedPitchType}
+                                    availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
+                                    disabled={isLogging}
+                                />
                             </View>
                             <View style={styles.controlsHalf}>
                                 <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} />
                             </View>
                         </View>
-                        <Button mode="contained" onPress={handleLogPitch} disabled={!canLogPitch}
-                            loading={isLogging} style={styles.logButton} contentStyle={styles.logButtonContent}>Log Pitch</Button>
+                        <Button
+                            mode="contained"
+                            onPress={handleLogPitch}
+                            disabled={!canLogPitch}
+                            loading={isLogging}
+                            style={styles.logButton}
+                            contentStyle={styles.logButtonContent}
+                        >
+                            Log Pitch
+                        </Button>
                     </ScrollView>
                 </View>
                 {renderModals()}
@@ -518,21 +684,41 @@ export default function LiveGameScreen() {
                 </View>
                 {game.status === 'in_progress' ? (
                     <IconButton icon="flag-checkered" onPress={handleEndGame} />
-                ) : <View style={{ width: 48 }} />}
+                ) : (
+                    <View style={{ width: 48 }} />
+                )}
             </View>
             <ScrollView style={styles.phoneContent} contentContainerStyle={styles.phoneContentInner}>
                 {renderGameHeader()}
                 {renderRunnerOutButton()}
                 {renderAtBatControls()}
-                <PitchTypeGrid selectedType={selectedPitchType} onSelect={setSelectedPitchType}
-                    availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined} disabled={isLogging} compact />
-                <StrikeZone onLocationSelect={(x, y) => setPitchLocation({ x, y })}
+                <PitchTypeGrid
+                    selectedType={selectedPitchType}
+                    onSelect={setSelectedPitchType}
+                    availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
+                    disabled={isLogging}
+                    compact
+                />
+                <StrikeZone
+                    onLocationSelect={(x, y) => setPitchLocation({ x, y })}
                     onTargetSelect={(x, y) => setTargetLocation({ x, y })}
                     onTargetClear={() => setTargetLocation(null)}
-                    targetLocation={targetLocation} previousPitches={pitches} disabled={isLogging} compact />
+                    targetLocation={targetLocation}
+                    previousPitches={pitches}
+                    disabled={isLogging}
+                    compact
+                />
                 <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
-                <Button mode="contained" onPress={handleLogPitch} disabled={!canLogPitch}
-                    loading={isLogging} style={styles.logButton} contentStyle={styles.logButtonContent}>Log Pitch</Button>
+                <Button
+                    mode="contained"
+                    onPress={handleLogPitch}
+                    disabled={!canLogPitch}
+                    loading={isLogging}
+                    style={styles.logButton}
+                    contentStyle={styles.logButtonContent}
+                >
+                    Log Pitch
+                </Button>
             </ScrollView>
             {renderModals()}
             <InPlayModal visible={showInPlayModal} onDismiss={() => setShowInPlayModal(false)} onResult={handleInPlayResult} />
@@ -542,7 +728,15 @@ export default function LiveGameScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 4,
+        paddingVertical: 4,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+    },
     headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     tabletContent: { flex: 1, flexDirection: 'row' },
     statsPanel: { width: 320, borderRightWidth: 1, borderRightColor: '#e5e7eb', padding: 16 },

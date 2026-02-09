@@ -75,10 +75,10 @@ export default function TeamDetailScreen() {
                     </View>
                     <Divider />
                     {playerList.map((player, idx) => (
-                        <React.Fragment key={player.id}>
-                            <PlayerListItem player={player} onDelete={handleDeletePlayer} />
+                        <>
+                            <PlayerListItem key={player.id} player={player} onDelete={handleDeletePlayer} />
                             {idx < playerList.length - 1 && <Divider />}
-                        </React.Fragment>
+                        </>
                     ))}
                 </Card>
             </View>

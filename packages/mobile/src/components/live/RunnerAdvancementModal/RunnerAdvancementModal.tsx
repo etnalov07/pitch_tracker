@@ -87,8 +87,7 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
     };
 
     // Calculate how many runners were on base before
-    const runnersOnBefore =
-        (currentRunners.first ? 1 : 0) + (currentRunners.second ? 1 : 0) + (currentRunners.third ? 1 : 0);
+    const runnersOnBefore = (currentRunners.first ? 1 : 0) + (currentRunners.second ? 1 : 0) + (currentRunners.third ? 1 : 0);
 
     return (
         <Portal>

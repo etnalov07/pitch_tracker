@@ -55,7 +55,9 @@ export default function GameDetailScreen() {
                 <View style={styles.centered}>
                     <Text variant="bodyLarge">Game not found</Text>
                     {error && (
-                        <Text variant="bodySmall" style={{ color: '#ef4444', marginTop: 8 }}>{error}</Text>
+                        <Text variant="bodySmall" style={{ color: '#ef4444', marginTop: 8 }}>
+                            {error}
+                        </Text>
                     )}
                     <Button mode="contained" onPress={() => router.back()} style={{ marginTop: 16 }}>
                         Go Back
@@ -72,20 +74,29 @@ export default function GameDetailScreen() {
 
     const getStatusColor = () => {
         switch (game.status) {
-            case 'in_progress': return theme.colors.primary;
-            case 'completed': return '#10b981';
-            case 'cancelled': return '#ef4444';
-            default: return '#6b7280';
+            case 'in_progress':
+                return theme.colors.primary;
+            case 'completed':
+                return '#10b981';
+            case 'cancelled':
+                return '#ef4444';
+            default:
+                return '#6b7280';
         }
     };
 
     const getStatusLabel = () => {
         switch (game.status) {
-            case 'in_progress': return 'In Progress';
-            case 'completed': return 'Final';
-            case 'scheduled': return 'Scheduled';
-            case 'cancelled': return 'Cancelled';
-            default: return game.status;
+            case 'in_progress':
+                return 'In Progress';
+            case 'completed':
+                return 'Final';
+            case 'scheduled':
+                return 'Scheduled';
+            case 'cancelled':
+                return 'Cancelled';
+            default:
+                return game.status;
         }
     };
 
@@ -107,11 +118,7 @@ export default function GameDetailScreen() {
                 <Card style={styles.scoreCard}>
                     <Card.Content>
                         <View style={styles.statusRow}>
-                            <Chip
-                                compact
-                                textStyle={{ fontSize: 11, color: '#fff' }}
-                                style={{ backgroundColor: getStatusColor() }}
-                            >
+                            <Chip compact textStyle={{ fontSize: 11, color: '#fff' }} style={{ backgroundColor: getStatusColor() }}>
                                 {getStatusLabel()}
                             </Chip>
                             {game.status === 'in_progress' && (
@@ -136,7 +143,9 @@ export default function GameDetailScreen() {
                                 </Text>
                             </View>
 
-                            <Text variant="titleLarge" style={styles.vs}>-</Text>
+                            <Text variant="titleLarge" style={styles.vs}>
+                                -
+                            </Text>
 
                             <View style={styles.teamScore}>
                                 <Text variant="titleMedium" style={styles.teamName}>
@@ -153,30 +162,40 @@ export default function GameDetailScreen() {
                 {/* Game Info Card */}
                 <Card style={styles.infoCard}>
                     <Card.Content>
-                        <Text variant="titleMedium" style={styles.sectionTitle}>Game Info</Text>
+                        <Text variant="titleMedium" style={styles.sectionTitle}>
+                            Game Info
+                        </Text>
                         <Divider style={styles.divider} />
 
                         <View style={styles.infoRow}>
-                            <Text variant="bodyMedium" style={styles.infoLabel}>Date</Text>
+                            <Text variant="bodyMedium" style={styles.infoLabel}>
+                                Date
+                            </Text>
                             <Text variant="bodyMedium">{formatDate(game.game_date)}</Text>
                         </View>
 
                         {game.game_time && (
                             <View style={styles.infoRow}>
-                                <Text variant="bodyMedium" style={styles.infoLabel}>Time</Text>
+                                <Text variant="bodyMedium" style={styles.infoLabel}>
+                                    Time
+                                </Text>
                                 <Text variant="bodyMedium">{game.game_time}</Text>
                             </View>
                         )}
 
                         {game.location && (
                             <View style={styles.infoRow}>
-                                <Text variant="bodyMedium" style={styles.infoLabel}>Location</Text>
+                                <Text variant="bodyMedium" style={styles.infoLabel}>
+                                    Location
+                                </Text>
                                 <Text variant="bodyMedium">{game.location}</Text>
                             </View>
                         )}
 
                         <View style={styles.infoRow}>
-                            <Text variant="bodyMedium" style={styles.infoLabel}>Innings</Text>
+                            <Text variant="bodyMedium" style={styles.infoLabel}>
+                                Innings
+                            </Text>
                             <Text variant="bodyMedium">{game.current_inning}</Text>
                         </View>
                     </Card.Content>

@@ -28,10 +28,7 @@ const generateId = (): string => {
     });
 };
 
-export const queueAction = async (
-    actionType: OfflineActionType,
-    payload: object
-): Promise<string> => {
+export const queueAction = async (actionType: OfflineActionType, payload: object): Promise<string> => {
     const db = await getDatabase();
     const id = generateId();
     const now = Date.now();
@@ -70,9 +67,7 @@ export const getPendingActions = async (): Promise<OfflineAction[]> => {
 
 export const getPendingActionCount = async (): Promise<number> => {
     const db = await getDatabase();
-    const result = await db.getFirstAsync<{ count: number }>(
-        'SELECT COUNT(*) as count FROM pending_actions'
-    );
+    const result = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM pending_actions');
     return result?.count ?? 0;
 };
 
@@ -81,10 +76,7 @@ export const removeAction = async (id: string): Promise<void> => {
     await db.runAsync('DELETE FROM pending_actions WHERE id = ?', [id]);
 };
 
-export const updateActionRetry = async (
-    id: string,
-    error: string
-): Promise<void> => {
+export const updateActionRetry = async (id: string, error: string): Promise<void> => {
     const db = await getDatabase();
     const now = Date.now();
     await db.runAsync(
@@ -115,10 +107,7 @@ export const cacheGame = async (gameId: string, data: unknown): Promise<void> =>
 
 export const getCachedGame = async <T>(gameId: string): Promise<T | null> => {
     const db = await getDatabase();
-    const result = await db.getFirstAsync<{ data: string }>(
-        'SELECT data FROM cached_games WHERE id = ?',
-        [gameId]
-    );
+    const result = await db.getFirstAsync<{ data: string }>('SELECT data FROM cached_games WHERE id = ?', [gameId]);
     return result ? JSON.parse(result.data) : null;
 };
 
@@ -134,27 +123,18 @@ export const cacheGameState = async (gameId: string, data: unknown): Promise<voi
 
 export const getCachedGameState = async <T>(gameId: string): Promise<T | null> => {
     const db = await getDatabase();
-    const result = await db.getFirstAsync<{ data: string }>(
-        'SELECT data FROM cached_game_states WHERE game_id = ?',
-        [gameId]
-    );
+    const result = await db.getFirstAsync<{ data: string }>('SELECT data FROM cached_game_states WHERE game_id = ?', [gameId]);
     return result ? JSON.parse(result.data) : null;
 };
 
 // Sync metadata
 export const setSyncMetadata = async (key: string, value: string): Promise<void> => {
     const db = await getDatabase();
-    await db.runAsync(
-        `INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?)`,
-        [key, value]
-    );
+    await db.runAsync(`INSERT OR REPLACE INTO sync_metadata (key, value) VALUES (?, ?)`, [key, value]);
 };
 
 export const getSyncMetadata = async (key: string): Promise<string | null> => {
     const db = await getDatabase();
-    const result = await db.getFirstAsync<{ value: string }>(
-        'SELECT value FROM sync_metadata WHERE key = ?',
-        [key]
-    );
+    const result = await db.getFirstAsync<{ value: string }>('SELECT value FROM sync_metadata WHERE key = ?', [key]);
     return result?.value ?? null;
 };

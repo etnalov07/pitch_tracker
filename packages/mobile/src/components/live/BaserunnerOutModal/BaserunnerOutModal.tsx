@@ -27,13 +27,7 @@ const BASE_LABELS: { base: RunnerBase; label: string }[] = [
     { base: 'third', label: '3rd Base' },
 ];
 
-const BaserunnerOutModal: React.FC<BaserunnerOutModalProps> = ({
-    visible,
-    onDismiss,
-    runners,
-    currentOuts,
-    onRecordOut,
-}) => {
+const BaserunnerOutModal: React.FC<BaserunnerOutModalProps> = ({ visible, onDismiss, runners, currentOuts, onRecordOut }) => {
     const theme = useTheme();
     const [selectedBase, setSelectedBase] = useState<RunnerBase | null>(null);
     const [selectedEventType, setSelectedEventType] = useState<BaserunnerEventType | null>(null);
@@ -91,10 +85,7 @@ const BaserunnerOutModal: React.FC<BaserunnerOutModalProps> = ({
                                     key={b.base}
                                     selected={selectedBase === b.base}
                                     onPress={() => setSelectedBase(b.base)}
-                                    style={[
-                                        styles.chip,
-                                        selectedBase === b.base && { backgroundColor: colors.primary[100] },
-                                    ]}
+                                    style={[styles.chip, selectedBase === b.base && { backgroundColor: colors.primary[100] }]}
                                     textStyle={selectedBase === b.base ? { color: colors.primary[700] } : undefined}
                                 >
                                     {b.label}
@@ -119,9 +110,7 @@ const BaserunnerOutModal: React.FC<BaserunnerOutModalProps> = ({
                                     styles.eventChip,
                                     selectedEventType === event.type && { backgroundColor: colors.primary[100] },
                                 ]}
-                                textStyle={
-                                    selectedEventType === event.type ? { color: colors.primary[700] } : undefined
-                                }
+                                textStyle={selectedEventType === event.type ? { color: colors.primary[700] } : undefined}
                             >
                                 {event.label}
                             </Chip>

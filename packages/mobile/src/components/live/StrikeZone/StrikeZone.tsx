@@ -159,7 +159,15 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                             )}
 
                             {/* Outer border */}
-                            <Rect x="0" y="0" width={ZONE_WIDTH} height={ZONE_HEIGHT} fill="none" stroke="#808080" strokeWidth="2" />
+                            <Rect
+                                x="0"
+                                y="0"
+                                width={ZONE_WIDTH}
+                                height={ZONE_HEIGHT}
+                                fill="none"
+                                stroke="#808080"
+                                strokeWidth="2"
+                            />
                         </G>
 
                         {/* Previous pitches */}
@@ -250,7 +258,13 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
             {/* Clear target button */}
             {targetLocation && onTargetClear && (
-                <Pressable style={styles.clearButton} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onTargetClear(); }}>
+                <Pressable
+                    style={styles.clearButton}
+                    onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        onTargetClear();
+                    }}
+                >
                     <Text style={styles.clearButtonText}>Clear Target</Text>
                 </Pressable>
             )}

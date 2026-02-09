@@ -8,12 +8,7 @@ import {
     decrementPendingCount,
     loadPendingCount,
 } from '../state/offline/offlineSlice';
-import {
-    getPendingActions,
-    removeAction,
-    updateActionRetry,
-    OfflineAction,
-} from '../db/offlineQueue';
+import { getPendingActions, removeAction, updateActionRetry, OfflineAction } from '../db/offlineQueue';
 import { gamesApi } from '../state/games/api/gamesApi';
 import { AtBat, Pitch, Play } from '@pitch-tracker/shared';
 

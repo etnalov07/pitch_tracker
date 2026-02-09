@@ -11,9 +11,7 @@ interface SyncStatusBadgeProps {
 }
 
 const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({ compact = false }) => {
-    const { isOnline, isSyncing, pendingCount, lastSyncTime } = useAppSelector(
-        (state) => state.offline
-    );
+    const { isOnline, isSyncing, pendingCount, lastSyncTime } = useAppSelector((state) => state.offline);
 
     const handlePress = async () => {
         // Offline sync disabled for iOS 26.2 beta testing
@@ -41,12 +39,8 @@ const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({ compact = false }) =>
         return (
             <Pressable onPress={handlePress}>
                 <View style={[styles.dot, { backgroundColor: getStatusColor() }]}>
-                    {pendingCount > 0 && !isSyncing && (
-                        <Text style={styles.dotCount}>{pendingCount}</Text>
-                    )}
-                    {isSyncing && (
-                        <ActivityIndicator size={8} color="#fff" />
-                    )}
+                    {pendingCount > 0 && !isSyncing && <Text style={styles.dotCount}>{pendingCount}</Text>}
+                    {isSyncing && <ActivityIndicator size={8} color="#fff" />}
                 </View>
             </Pressable>
         );
@@ -57,9 +51,7 @@ const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({ compact = false }) =>
             <View style={[styles.indicator, { backgroundColor: getStatusColor() }]} />
             <View style={styles.content}>
                 <Text style={styles.statusText}>{getStatusText()}</Text>
-                {isSyncing && (
-                    <ActivityIndicator size={12} style={styles.spinner} />
-                )}
+                {isSyncing && <ActivityIndicator size={12} style={styles.spinner} />}
             </View>
             {pendingCount > 0 && !isSyncing && (
                 <View style={styles.badge}>

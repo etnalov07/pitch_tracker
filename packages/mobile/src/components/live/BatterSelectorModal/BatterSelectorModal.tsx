@@ -21,12 +21,10 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
     isTablet,
 }) => {
     return (
-        <Modal
-            visible={visible}
-            onDismiss={onDismiss}
-            contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}
-        >
-            <Text variant="titleLarge" style={styles.modalTitle}>Select Batter</Text>
+        <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
+            <Text variant="titleLarge" style={styles.modalTitle}>
+                Select Batter
+            </Text>
             <ScrollView style={styles.playerList}>
                 {activeBatters.length === 0 ? (
                     <Text variant="bodyMedium" style={styles.emptyText}>
@@ -55,7 +53,9 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                     ))
                 )}
             </ScrollView>
-            <Button onPress={onDismiss} style={styles.modalClose}>Cancel</Button>
+            <Button onPress={onDismiss} style={styles.modalClose}>
+                Cancel
+            </Button>
         </Modal>
     );
 };
@@ -66,13 +66,26 @@ const styles = StyleSheet.create({
     modalTitle: { marginBottom: 16 },
     modalClose: { marginTop: 8 },
     playerList: { maxHeight: 400 },
-    playerOption: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+    playerOption: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6',
+    },
     playerOptionSelected: { backgroundColor: '#eff6ff' },
     playerOptionInfo: { gap: 2 },
     playerOptionName: { fontSize: 16, fontWeight: '600', color: '#111827' },
     playerOptionDetail: { fontSize: 13, color: '#6b7280' },
     batterOptionRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    batterOrder: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#e5e7eb', alignItems: 'center', justifyContent: 'center' },
+    batterOrder: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#e5e7eb',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     batterOrderText: { fontSize: 14, fontWeight: 'bold', color: '#374151' },
     emptyText: { textAlign: 'center', color: '#6b7280', padding: 24 },
 });

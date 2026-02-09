@@ -25,16 +25,16 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
     isTablet,
 }) => {
     return (
-        <Modal
-            visible={visible}
-            onDismiss={onDismiss}
-            contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}
-        >
-            <Text variant="titleLarge" style={styles.modalTitle}>Select Pitcher</Text>
+        <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
+            <Text variant="titleLarge" style={styles.modalTitle}>
+                Select Pitcher
+            </Text>
 
             {gamePitchers.length > 0 && (
                 <>
-                    <Text variant="titleSmall" style={styles.sectionLabel}>In-Game Pitchers</Text>
+                    <Text variant="titleSmall" style={styles.sectionLabel}>
+                        In-Game Pitchers
+                    </Text>
                     {gamePitchers
                         .filter((gp) => !gp.inning_exited)
                         .map((gp) => (
@@ -47,9 +47,7 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
                                     <Text style={styles.playerOptionName}>
                                         {gp.player.first_name} {gp.player.last_name}
                                     </Text>
-                                    <Text style={styles.playerOptionDetail}>
-                                        #{gp.player.jersey_number} · Active
-                                    </Text>
+                                    <Text style={styles.playerOptionDetail}>#{gp.player.jersey_number} · Active</Text>
                                 </View>
                             </Pressable>
                         ))}
@@ -57,7 +55,9 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
                 </>
             )}
 
-            <Text variant="titleSmall" style={styles.sectionLabel}>Available Pitchers</Text>
+            <Text variant="titleSmall" style={styles.sectionLabel}>
+                Available Pitchers
+            </Text>
             <ScrollView style={styles.playerList}>
                 {teamPlayers.length === 0 ? (
                     <Text variant="bodyMedium" style={styles.emptyText}>
@@ -65,9 +65,7 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
                     </Text>
                 ) : (
                     teamPlayers.map((player) => {
-                        const alreadyInGame = gamePitchers.some(
-                            (gp) => gp.player_id === player.id && !gp.inning_exited
-                        );
+                        const alreadyInGame = gamePitchers.some((gp) => gp.player_id === player.id && !gp.inning_exited);
                         return (
                             <Pressable
                                 key={player.id}
@@ -90,7 +88,9 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
                     })
                 )}
             </ScrollView>
-            <Button onPress={onDismiss} style={styles.modalClose}>Cancel</Button>
+            <Button onPress={onDismiss} style={styles.modalClose}>
+                Cancel
+            </Button>
         </Modal>
     );
 };
@@ -103,7 +103,13 @@ const styles = StyleSheet.create({
     sectionLabel: { color: '#6b7280', marginBottom: 8, marginTop: 4 },
     sectionDivider: { marginVertical: 12 },
     playerList: { maxHeight: 400 },
-    playerOption: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+    playerOption: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6',
+    },
     playerOptionSelected: { backgroundColor: '#eff6ff' },
     playerOptionDisabled: { opacity: 0.5 },
     playerOptionInfo: { gap: 2 },
