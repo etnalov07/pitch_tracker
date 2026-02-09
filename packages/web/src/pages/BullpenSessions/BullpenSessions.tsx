@@ -24,6 +24,7 @@ import {
     IntensityBadge,
     ViewButton,
     EmptyState,
+    NewSessionButton,
     LoadingText,
     ErrorText,
 } from './styles';
@@ -130,6 +131,7 @@ const BullpenSessions: React.FC = () => {
                         {team && <Subtitle>{team.name}</Subtitle>}
                     </TeamInfo>
                 </HeaderLeft>
+                <NewSessionButton onClick={() => navigate(`/teams/${team_id}/bullpen/new`)}>+ New Session</NewSessionButton>
             </Header>
 
             <Content>

@@ -1,5 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import BullpenLive from './pages/BullpenLive';
+import BullpenNew from './pages/BullpenNew';
 import BullpenSessions from './pages/BullpenSessions';
 import Dashboard from './pages/Dashboard/Dashboard';
 import GameHistory from './pages/GameHistory/GameHistory';
@@ -88,6 +90,22 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <BullpenSessions />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/teams/:team_id/bullpen/new"
+                    element={
+                        <ProtectedRoute>
+                            <BullpenNew />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/teams/:team_id/bullpen/:session_id/live"
+                    element={
+                        <ProtectedRoute>
+                            <BullpenLive />
                         </ProtectedRoute>
                     }
                 />

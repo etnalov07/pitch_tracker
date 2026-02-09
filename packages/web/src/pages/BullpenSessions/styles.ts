@@ -181,6 +181,22 @@ export const EmptyState = styled.div({
     fontSize: theme.fontSize.base,
 });
 
+export const NewSessionButton = styled.button({
+    padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    color: 'white',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+
+    '&:hover': {
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    },
+});
+
 export const LoadingText = styled.p({
     textAlign: 'center',
     color: theme.colors.gray[600],
