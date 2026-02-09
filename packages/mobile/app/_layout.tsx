@@ -1,7 +1,6 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme, InteractionManager } from 'react-native';
 import { Provider as ReduxProvider } from 'react-redux';
@@ -20,8 +19,7 @@ export const unstable_settings = {
     initialRouteName: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+// expo-splash-screen removed for iOS 26.2 beta compatibility (native crash on launch)
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
     const dispatch = useAppDispatch();
@@ -127,9 +125,7 @@ export default function RootLayout() {
     }, [error]);
 
     useEffect(() => {
-        if (loaded) {
-            SplashScreen.hideAsync();
-        }
+        // SplashScreen.hideAsync() removed for iOS 26.2 beta compatibility
     }, [loaded]);
 
     if (!loaded) {
