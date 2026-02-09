@@ -49,7 +49,7 @@ const BullpenSessions: React.FC = () => {
                     api.get(`/teams/${team_id}`),
                     bullpenService.getTeamSessions(team_id),
                 ]);
-                setTeam(teamRes.data);
+                setTeam(teamRes.data.team);
                 setSessions(sessionsRes);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load bullpen sessions');
