@@ -34,7 +34,10 @@ ErrorUtils.setGlobalHandler((error, isFatal) => {
             // Alert might not be available this early
         }
     }
-    if (originalHandler) {
+    // For non-fatal errors, still call original handler
+    // For fatal errors, do NOT call originalHandler — it triggers RCTFatal which kills
+    // the process before Alert can display. We want to see the error message first.
+    if (!isFatal && originalHandler) {
         originalHandler(error, isFatal);
     }
 });
