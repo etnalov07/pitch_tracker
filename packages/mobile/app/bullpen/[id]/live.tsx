@@ -70,6 +70,10 @@ export default function BullpenLiveScreen() {
     const displayJersey = currentSession?.pitcher_jersey_number ?? (jerseyNumber ? parseInt(jerseyNumber, 10) : undefined);
     const displayIntensity = (currentSession?.intensity || intensityParam || 'medium') as BullpenIntensity;
     const totalPitches = currentSession?.total_pitches ?? pitches.length;
+    const totalStrikes =
+        currentSession?.strikes ??
+        pitches.filter((p) => p.result && ['called_strike', 'swinging_strike', 'foul'].includes(p.result)).length;
+    const totalBalls = currentSession?.balls ?? pitches.filter((p) => p.result === 'ball').length;
 
     const handleLogPitch = useCallback(async () => {
         if (!selectedPitchType || !pitchLocation || !id) {
@@ -138,6 +142,8 @@ export default function BullpenLiveScreen() {
                     pitcherName={displayName}
                     jerseyNumber={displayJersey}
                     totalPitches={totalPitches}
+                    strikes={totalStrikes}
+                    balls={totalBalls}
                     intensity={displayIntensity}
                 />
 

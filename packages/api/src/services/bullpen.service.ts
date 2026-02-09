@@ -187,10 +187,22 @@ export class BullpenService {
         velocity?: number;
         result?: string;
     }): Promise<BullpenPitch> {
-        const { session_id, pitch_type, target_x, target_y, actual_x, actual_y, velocity, result: pitchResult } = data;
+        const { session_id, pitch_type, target_x, target_y, actual_x, actual_y, velocity, result: explicitResult } = data;
 
         if (!session_id || !pitch_type) {
             throw new Error('session_id and pitch_type are required');
+        }
+
+        // Auto-determine ball/strike from pitch location if no explicit result provided.
+        // Strike zone is normalized 0-1 on both axes. A baseball is ~2.9" diameter vs ~17" zone width,
+        // so the ball radius in normalized coords is ~0.085. A strike means any part of the ball
+        // touches the zone: ball center must be within (-radius, 1+radius) on both axes.
+        const BALL_RADIUS = 0.085;
+        let pitchResult = explicitResult || null;
+        if (!pitchResult && actual_x != null && actual_y != null) {
+            const touchesZone =
+                actual_x > -BALL_RADIUS && actual_x < 1 + BALL_RADIUS && actual_y > -BALL_RADIUS && actual_y < 1 + BALL_RADIUS;
+            pitchResult = touchesZone ? 'called_strike' : 'ball';
         }
 
         const pitch = await transaction(async (client) => {
@@ -205,7 +217,7 @@ export class BullpenService {
                 `INSERT INTO bullpen_pitches (id, session_id, pitch_number, pitch_type, target_x, target_y, actual_x, actual_y, velocity, result)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING *`,
-                [id, session_id, pitchNumber, pitch_type, target_x, target_y, actual_x, actual_y, velocity, pitchResult || null]
+                [id, session_id, pitchNumber, pitch_type, target_x, target_y, actual_x, actual_y, velocity, pitchResult]
             );
 
             // Auto-add pitch type to pitcher's profile if not already present

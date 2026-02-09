@@ -18,8 +18,16 @@ const INTENSITY_COLORS: Record<BullpenIntensity, { bg: string; text: string }> =
     high: { bg: '#fee2e2', text: '#dc2626' },
 };
 
-const SessionHeader: React.FC<SessionHeaderProps> = ({ pitcherName, jerseyNumber, totalPitches, intensity }) => {
+const SessionHeader: React.FC<SessionHeaderProps> = ({
+    pitcherName,
+    jerseyNumber,
+    totalPitches,
+    strikes = 0,
+    balls = 0,
+    intensity,
+}) => {
     const colors = INTENSITY_COLORS[intensity];
+    const strikePercentage = totalPitches > 0 ? Math.round((strikes / totalPitches) * 100) : 0;
 
     return (
         <View style={styles.container}>
@@ -42,6 +50,18 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({ pitcherName, jerseyNumber
                 <View style={styles.stat}>
                     <Text style={styles.statValue}>{totalPitches}</Text>
                     <Text style={styles.statLabel}>Pitches</Text>
+                </View>
+                <View style={styles.stat}>
+                    <Text style={[styles.statValue, { color: '#22c55e' }]}>{strikes}</Text>
+                    <Text style={styles.statLabel}>Strikes</Text>
+                </View>
+                <View style={styles.stat}>
+                    <Text style={[styles.statValue, { color: '#6b7280' }]}>{balls}</Text>
+                    <Text style={styles.statLabel}>Balls</Text>
+                </View>
+                <View style={styles.stat}>
+                    <Text style={[styles.statValue, { color: '#2563eb' }]}>{strikePercentage}%</Text>
+                    <Text style={styles.statLabel}>Strike %</Text>
                 </View>
             </View>
         </View>

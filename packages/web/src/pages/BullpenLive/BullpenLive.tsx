@@ -103,7 +103,10 @@ const BullpenLive: React.FC = () => {
     // Computed stats
     const stats = useMemo(() => {
         const total = pitches.length;
-        return { total };
+        const strikes = pitches.filter((p) => p.result && ['called_strike', 'swinging_strike', 'foul'].includes(p.result)).length;
+        const balls = pitches.filter((p) => p.result === 'ball').length;
+        const strikePct = total > 0 ? Math.round((strikes / total) * 100) : 0;
+        return { total, strikes, balls, strikePct };
     }, [pitches]);
 
     // Map BullpenPitch[] → Pitch[] for StrikeZone component
@@ -212,6 +215,16 @@ const BullpenLive: React.FC = () => {
                     <StatBox>
                         <StatValue>{stats.total}</StatValue>
                         <StatLabel>Pitches</StatLabel>
+                    </StatBox>
+                    <StatBox>
+                        <StatValue>
+                            {stats.balls}/{stats.strikes}
+                        </StatValue>
+                        <StatLabel>B/S</StatLabel>
+                    </StatBox>
+                    <StatBox>
+                        <StatValue>{stats.strikePct}%</StatValue>
+                        <StatLabel>Strike %</StatLabel>
                     </StatBox>
                     <EndSessionButton onClick={() => setShowEndModal(true)}>End Session</EndSessionButton>
                 </StatsRow>
