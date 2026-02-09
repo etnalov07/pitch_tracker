@@ -589,7 +589,7 @@ export interface BullpenPitch {
     actual_x?: number;
     actual_y?: number;
     velocity?: number;
-    result: BullpenPitchResult;
+    result?: BullpenPitchResult | null;
     created_at: string;
 }
 

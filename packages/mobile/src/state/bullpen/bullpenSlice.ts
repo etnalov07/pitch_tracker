@@ -56,7 +56,7 @@ export const logBullpenPitch = createAsyncThunk(
         actual_x?: number;
         actual_y?: number;
         velocity?: number;
-        result: string;
+        result?: string;
     }) => {
         return await bullpenApi.logPitch(data);
     }
@@ -150,7 +150,9 @@ const bullpenSlice = createSlice({
             // Update current session counts
             if (state.currentSession) {
                 state.currentSession.total_pitches = state.pitches.length;
-                const strikes = state.pitches.filter((p) => ['called_strike', 'swinging_strike', 'foul'].includes(p.result)).length;
+                const strikes = state.pitches.filter(
+                    (p) => p.result && ['called_strike', 'swinging_strike', 'foul'].includes(p.result)
+                ).length;
                 const balls = state.pitches.filter((p) => p.result === 'ball').length;
                 state.currentSession.strikes = strikes;
                 state.currentSession.balls = balls;

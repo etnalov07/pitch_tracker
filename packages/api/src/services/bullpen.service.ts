@@ -185,12 +185,12 @@ export class BullpenService {
         actual_x?: number;
         actual_y?: number;
         velocity?: number;
-        result: string;
+        result?: string;
     }): Promise<BullpenPitch> {
         const { session_id, pitch_type, target_x, target_y, actual_x, actual_y, velocity, result: pitchResult } = data;
 
-        if (!session_id || !pitch_type || !pitchResult) {
-            throw new Error('session_id, pitch_type, and result are required');
+        if (!session_id || !pitch_type) {
+            throw new Error('session_id and pitch_type are required');
         }
 
         const pitch = await transaction(async (client) => {
@@ -205,7 +205,7 @@ export class BullpenService {
                 `INSERT INTO bullpen_pitches (id, session_id, pitch_number, pitch_type, target_x, target_y, actual_x, actual_y, velocity, result)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING *`,
-                [id, session_id, pitchNumber, pitch_type, target_x, target_y, actual_x, actual_y, velocity, pitchResult]
+                [id, session_id, pitchNumber, pitch_type, target_x, target_y, actual_x, actual_y, velocity, pitchResult || null]
             );
 
             // Auto-add pitch type to pitcher's profile if not already present

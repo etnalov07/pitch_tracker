@@ -48,7 +48,7 @@ export const bullpenApi = {
         actual_x?: number;
         actual_y?: number;
         velocity?: number;
-        result: string;
+        result?: string;
     }): Promise<BullpenPitch> => {
         const response = await api.post<{ pitch: BullpenPitch }>('/bullpen/pitches', data);
         return response.data.pitch;

@@ -33,7 +33,7 @@ export const teamsApi = {
     },
 
     addPlayer: async (teamId: string, playerData: Partial<Player>): Promise<Player> => {
-        const response = await api.post<{ player: Player }>(`/teams/${teamId}/players`, playerData);
+        const response = await api.post<{ player: Player }>('/players', { ...playerData, team_id: teamId });
         return response.data.player;
     },
 

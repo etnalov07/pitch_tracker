@@ -1,17 +1,8 @@
-import {
-    BullpenIntensity,
-    BullpenPitch,
-    BullpenPitchResult,
-    BullpenSessionWithDetails,
-    Pitch,
-    PitchResult,
-    PitchType,
-} from '@pitch-tracker/shared';
+import { BullpenIntensity, BullpenPitch, BullpenSessionWithDetails, Pitch, PitchResult, PitchType } from '@pitch-tracker/shared';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import StrikeZone from '../../components/live/StrikeZone';
 import { bullpenService } from '../../services/bullpenService';
-import { theme } from '../../styles/theme';
 import {
     Container,
     SessionHeader,
@@ -41,8 +32,6 @@ import {
     FormGroup,
     Label,
     Input,
-    ResultButtons,
-    ResultButton,
     LogButton,
     ModalOverlay,
     Modal,
@@ -83,7 +72,6 @@ const BullpenLive: React.FC = () => {
     const [targetLocation, setTargetLocation] = useState<{ x: number; y: number } | null>(null);
     const [pitchLocation, setPitchLocation] = useState<{ x: number; y: number } | null>(null);
     const [velocity, setVelocity] = useState<string>('');
-    const [pitchResult, setPitchResult] = useState<BullpenPitchResult | null>(null);
     const [logging, setLogging] = useState(false);
 
     // End session modal
@@ -115,10 +103,7 @@ const BullpenLive: React.FC = () => {
     // Computed stats
     const stats = useMemo(() => {
         const total = pitches.length;
-        const strikes = pitches.filter((p) => ['called_strike', 'swinging_strike', 'foul'].includes(p.result)).length;
-        const balls = pitches.filter((p) => p.result === 'ball').length;
-        const strikePct = total > 0 ? Math.round((strikes / total) * 100) : 0;
-        return { total, strikes, balls, strikePct };
+        return { total };
     }, [pitches]);
 
     // Map BullpenPitch[] → Pitch[] for StrikeZone component
@@ -138,7 +123,7 @@ const BullpenLive: React.FC = () => {
                 target_location_y: bp.target_y,
                 balls_before: 0,
                 strikes_before: 0,
-                pitch_result: bp.result as PitchResult,
+                pitch_result: (bp.result as PitchResult) || ('called_strike' as PitchResult),
                 created_at: bp.created_at,
             })),
         [pitches]
@@ -157,13 +142,12 @@ const BullpenLive: React.FC = () => {
     }, []);
 
     const handleLogPitch = async () => {
-        if (!session_id || !pitchLocation || !pitchResult) return;
+        if (!session_id || !pitchLocation) return;
         try {
             setLogging(true);
             const newPitch = await bullpenService.logPitch({
                 session_id,
                 pitch_type: pitchType,
-                result: pitchResult,
                 actual_x: pitchLocation.x,
                 actual_y: pitchLocation.y,
                 target_x: targetLocation?.x,
@@ -175,7 +159,6 @@ const BullpenLive: React.FC = () => {
             setTargetLocation(null);
             setPitchLocation(null);
             setVelocity('');
-            setPitchResult(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to log pitch');
         } finally {
@@ -230,16 +213,6 @@ const BullpenLive: React.FC = () => {
                         <StatValue>{stats.total}</StatValue>
                         <StatLabel>Pitches</StatLabel>
                     </StatBox>
-                    <StatBox>
-                        <StatValue>
-                            {stats.balls}/{stats.strikes}
-                        </StatValue>
-                        <StatLabel>B/S</StatLabel>
-                    </StatBox>
-                    <StatBox>
-                        <StatValue>{stats.strikePct}%</StatValue>
-                        <StatLabel>Strike %</StatLabel>
-                    </StatBox>
                     <EndSessionButton onClick={() => setShowEndModal(true)}>End Session</EndSessionButton>
                 </StatsRow>
             </SessionHeader>
@@ -265,20 +238,6 @@ const BullpenLive: React.FC = () => {
                             {pitchLocation ? '\u2713' : '3'}
                         </StepNumber>
                         <StepLabel active={!!pitchType && !pitchLocation}>Location</StepLabel>
-                    </Step>
-                    <StepConnector completed={!!pitchLocation} />
-                    <Step completed={!!velocity} active={!!pitchLocation && !velocity}>
-                        <StepNumber completed={!!velocity} active={!!pitchLocation && !velocity}>
-                            {velocity ? '\u2713' : '4'}
-                        </StepNumber>
-                        <StepLabel active={!!pitchLocation && !velocity}>Velocity</StepLabel>
-                    </Step>
-                    <StepConnector completed={!!velocity || !!pitchResult} />
-                    <Step completed={!!pitchResult} active={!!pitchLocation}>
-                        <StepNumber completed={!!pitchResult} active={!!pitchLocation}>
-                            {pitchResult ? '\u2713' : '5'}
-                        </StepNumber>
-                        <StepLabel active={!!pitchLocation}>Result</StepLabel>
                     </Step>
                 </StepIndicator>
 
@@ -306,7 +265,7 @@ const BullpenLive: React.FC = () => {
 
                     <PitchForm>
                         <FormGroup>
-                            <Label>Step 4: Velocity (mph) - Optional</Label>
+                            <Label>Velocity (mph) - Optional</Label>
                             <Input
                                 type="number"
                                 value={velocity}
@@ -317,41 +276,7 @@ const BullpenLive: React.FC = () => {
                             />
                         </FormGroup>
 
-                        <FormGroup style={{ marginTop: theme.spacing.md }}>
-                            <Label>Step 5: Result</Label>
-                            <ResultButtons>
-                                <ResultButton
-                                    active={pitchResult === 'ball'}
-                                    onClick={() => setPitchResult('ball')}
-                                    color={theme.colors.gray[400]}
-                                >
-                                    Ball
-                                </ResultButton>
-                                <ResultButton
-                                    active={pitchResult === 'called_strike'}
-                                    onClick={() => setPitchResult('called_strike')}
-                                    color={theme.colors.green[500]}
-                                >
-                                    Called Strike
-                                </ResultButton>
-                                <ResultButton
-                                    active={pitchResult === 'swinging_strike'}
-                                    onClick={() => setPitchResult('swinging_strike')}
-                                    color={theme.colors.red[500]}
-                                >
-                                    Swinging Strike
-                                </ResultButton>
-                                <ResultButton
-                                    active={pitchResult === 'foul'}
-                                    onClick={() => setPitchResult('foul')}
-                                    color={theme.colors.yellow[500]}
-                                >
-                                    Foul
-                                </ResultButton>
-                            </ResultButtons>
-                        </FormGroup>
-
-                        <LogButton onClick={handleLogPitch} disabled={!pitchLocation || !pitchResult || logging}>
+                        <LogButton onClick={handleLogPitch} disabled={!pitchLocation || logging}>
                             {logging ? 'Logging...' : 'Log Pitch'}
                         </LogButton>
                     </PitchForm>

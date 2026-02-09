@@ -33,7 +33,7 @@ export const bullpenService = {
     logPitch: async (data: {
         session_id: string;
         pitch_type: PitchType;
-        result: BullpenPitchResult;
+        result?: BullpenPitchResult;
         actual_x?: number;
         actual_y?: number;
         target_x?: number;

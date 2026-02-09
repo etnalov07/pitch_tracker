@@ -6,30 +6,32 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-// Watch the shared package for changes
-config.watchFolders = [
-    path.resolve(workspaceRoot, 'packages/shared'),
-];
+// Watch the entire workspace so Metro can resolve hoisted packages (react-native, etc.)
+config.watchFolders = [workspaceRoot];
 
-// Resolve from mobile's node_modules first, then shared package
-config.resolver.nodeModulesPaths = [
-    path.resolve(projectRoot, 'node_modules'),
-];
+// Resolve from mobile's node_modules first, then workspace root for hoisted packages
+config.resolver.nodeModulesPaths = [path.resolve(projectRoot, 'node_modules'), path.resolve(workspaceRoot, 'node_modules')];
 
-// Map the shared package to its location
-config.resolver.extraNodeModules = new Proxy(
-    {
-        '@pitch-tracker/shared': path.resolve(workspaceRoot, 'packages/shared'),
-    },
-    {
-        get: (target, name) => {
-            if (target.hasOwnProperty(name)) {
-                return target[name];
-            }
-            // Fall back to mobile's node_modules for everything else
-            return path.resolve(projectRoot, 'node_modules', name);
-        },
+// Map the shared package
+config.resolver.extraNodeModules = {
+    '@pitch-tracker/shared': path.resolve(workspaceRoot, 'packages/shared'),
+};
+
+// Force all imports of 'react' and 'react-dom' to resolve from mobile's node_modules
+// to prevent duplicate React instances (root has 19.2.3, mobile has 19.1.0)
+const mobileReact = path.resolve(projectRoot, 'node_modules/react');
+const mobileReactDom = path.resolve(projectRoot, 'node_modules/react-dom');
+
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+    if (moduleName === 'react' || moduleName.startsWith('react/')) {
+        const newContext = { ...context, originModulePath: path.resolve(projectRoot, 'index.js') };
+        return context.resolveRequest(newContext, moduleName, platform);
     }
-);
+    if (moduleName === 'react-dom' || moduleName.startsWith('react-dom/')) {
+        const newContext = { ...context, originModulePath: path.resolve(projectRoot, 'index.js') };
+        return context.resolveRequest(newContext, moduleName, platform);
+    }
+    return context.resolveRequest(context, moduleName, platform);
+};
 
 module.exports = config;

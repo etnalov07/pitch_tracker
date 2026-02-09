@@ -159,15 +159,11 @@ const BullpenSessions: React.FC = () => {
                                 <Th>Pitcher</Th>
                                 <Th align="center">Intensity</Th>
                                 <Th align="center">Pitches</Th>
-                                <Th align="center">B/S</Th>
-                                <Th align="center">Strike %</Th>
                                 <Th align="center"></Th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredSessions.map((session) => {
-                                const strikePercent =
-                                    session.total_pitches > 0 ? Math.round((session.strikes / session.total_pitches) * 100) : 0;
                                 return (
                                     <Row key={session.id} onClick={() => handleSessionClick(session)}>
                                         <Td>{formatDate(session.date)}</Td>
@@ -181,12 +177,6 @@ const BullpenSessions: React.FC = () => {
                                             </IntensityBadge>
                                         </Td>
                                         <Td align="center">{session.total_pitches}</Td>
-                                        <Td align="center">
-                                            {session.balls}/{session.strikes}
-                                        </Td>
-                                        <Td align="center" highlight>
-                                            {strikePercent}%
-                                        </Td>
                                         <Td align="center">
                                             <ViewButton
                                                 onClick={(e) => {
