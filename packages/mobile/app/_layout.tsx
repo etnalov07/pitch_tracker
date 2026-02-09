@@ -1,25 +1,50 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme, InteractionManager } from 'react-native';
+import { useColorScheme, InteractionManager, Alert, Platform } from 'react-native';
 import { Provider as ReduxProvider } from 'react-redux';
 import { PaperProvider } from 'react-native-paper';
 
 import { store, useAppDispatch, useAppSelector, initializeAuth } from '../src/state';
 import { lightTheme, darkTheme } from '../src/styles/theme';
-// Offline service disabled for iOS 26.2 beta testing (TurboModule crash)
-// import { startOfflineService, stopOfflineService } from '../src/services/offlineService';
 
-export {
-    ErrorBoundary,
-} from 'expo-router';
+export { ErrorBoundary } from 'expo-router';
 
 export const unstable_settings = {
     initialRouteName: '(tabs)',
 };
 
-// expo-splash-screen removed for iOS 26.2 beta compatibility (native crash on launch)
+// Global JS error interceptor for iOS 26.2 beta debugging
+// This captures the actual error message before RCTFatal kills the app
+const originalHandler = ErrorUtils.getGlobalHandler();
+ErrorUtils.setGlobalHandler((error, isFatal) => {
+    if (isFatal) {
+        // Log the error so we can see it in crash diagnostics
+        const message = error?.message || String(error);
+        const stack = error?.stack || '';
+        console.error(`[FATAL JS ERROR] ${message}\n${stack}`);
+        // Show alert so the user can report the error text
+        try {
+            Alert.alert('App Error (iOS 26.2 debug)', `${message}\n\nPlease screenshot this and report via TestFlight.`, [
+                { text: 'OK' },
+            ]);
+        } catch {
+            // Alert might not be available this early
+        }
+    }
+    if (originalHandler) {
+        originalHandler(error, isFatal);
+    }
+});
+
+// Wrap splash screen in try-catch for iOS 26.2 beta compatibility
+try {
+    SplashScreen.preventAutoHideAsync();
+} catch (e) {
+    console.warn('SplashScreen.preventAutoHideAsync failed:', e);
+}
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
     const dispatch = useAppDispatch();
@@ -27,9 +52,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const segments = useSegments();
     const router = useRouter();
 
-    // Initialize auth and offline service on mount
+    // Initialize auth on mount
     // Use InteractionManager to defer native module access until after animations complete
-    // This helps avoid TurboModule race conditions on iOS 26 beta
     useEffect(() => {
         const task = InteractionManager.runAfterInteractions(() => {
             const initialize = async () => {
@@ -38,13 +62,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
                 } catch (err) {
                     console.warn('Failed to initialize auth:', err);
                 }
-
-                // Offline service disabled for iOS 26.2 beta testing
-                // try {
-                //     await startOfflineService();
-                // } catch (err) {
-                //     console.warn('Failed to start offline service:', err);
-                // }
             };
 
             initialize();
@@ -52,7 +69,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
         return () => {
             task.cancel();
-            // stopOfflineService(); // Disabled for iOS 26.2 beta testing
         };
     }, [dispatch]);
 
@@ -64,10 +80,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         const inInvite = (segments[0] as string) === 'invite';
 
         if (!isAuthenticated && !inAuthGroup && !inInvite) {
-            // Redirect to login if not authenticated (allow invite screen)
             router.replace('/login');
         } else if (isAuthenticated && inAuthGroup) {
-            // Redirect to home if authenticated but on auth screen
             router.replace('/');
         }
     }, [isAuthenticated, initializing, segments, router]);
@@ -125,7 +139,13 @@ export default function RootLayout() {
     }, [error]);
 
     useEffect(() => {
-        // SplashScreen.hideAsync() removed for iOS 26.2 beta compatibility
+        if (loaded) {
+            try {
+                SplashScreen.hideAsync();
+            } catch (e) {
+                console.warn('SplashScreen.hideAsync failed:', e);
+            }
+        }
     }, [loaded]);
 
     if (!loaded) {

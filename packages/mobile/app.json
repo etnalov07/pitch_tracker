@@ -8,6 +8,11 @@
     "scheme": "pitchtracker",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2563eb"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.bvolante.pitch-tracker",
