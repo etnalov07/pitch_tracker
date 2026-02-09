@@ -106,7 +106,7 @@ export default function DashboardScreen() {
 
     const handleFabPress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        router.push('/teams');
+        router.push('/game/new' as any);
     };
 
     return (
