@@ -1,9 +1,9 @@
+import { PitchType, Player } from '@pitch-tracker/shared';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PitchType, Player } from '@pitch-tracker/shared';
+import StrikeZone from '../../components/live/StrikeZone';
 import { bullpenService } from '../../services/bullpenService';
 import { teamService } from '../../services/teamService';
-import StrikeZone from '../../components/live/StrikeZone';
 import {
     Container,
     Header,
@@ -138,11 +138,6 @@ const BullpenPlanEditor: React.FC = () => {
     const updatePitch = (index: number, updates: Partial<PlanPitchEntry>) => {
         setPitches((prev) => prev.map((p, i) => (i === index ? { ...p, ...updates } : p)));
     };
-
-    const handleTargetSelect = useCallback((_x: number, _y: number) => {
-        // StrikeZone uses right-click for target, but we want left-click here
-        // We'll use onLocationSelect instead since this is target-only mode
-    }, []);
 
     const handleLocationAsTarget = useCallback(
         (x: number, y: number) => {

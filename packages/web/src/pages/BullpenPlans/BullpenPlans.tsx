@@ -1,6 +1,6 @@
+import { BullpenPlan } from '@pitch-tracker/shared';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BullpenPlan } from '@pitch-tracker/shared';
 import { bullpenService } from '../../services/bullpenService';
 import {
     Container,
@@ -114,9 +114,9 @@ const BullpenPlans: React.FC = () => {
                                                 : '-'}
                                         </Description>
                                     </Td>
-                                    <Td align="center">{(plan as any).pitch_count ?? '-'}</Td>
+                                    <Td align="center">{plan.pitch_count ?? '-'}</Td>
                                     <Td align="center">{plan.max_pitches ?? '-'}</Td>
-                                    <Td align="center">{(plan as any).assignment_count ?? 0}</Td>
+                                    <Td align="center">{plan.assignment_count ?? 0}</Td>
                                     <Td align="center">
                                         <EditButton
                                             onClick={(e) => {

@@ -155,7 +155,7 @@ const BullpenLive: React.FC = () => {
                 setTargetLocation(null);
             }
         }
-    }, [currentPlanPitch?.sequence]);
+    }, [currentPlanPitch]);
 
     // Map BullpenPitch[] → Pitch[] for StrikeZone component
     const mappedPitches: Pitch[] = useMemo(
