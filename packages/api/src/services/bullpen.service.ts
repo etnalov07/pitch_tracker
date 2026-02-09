@@ -208,6 +208,23 @@ export class BullpenService {
                 [id, session_id, pitchNumber, pitch_type, target_x, target_y, actual_x, actual_y, velocity, pitchResult]
             );
 
+            // Auto-add pitch type to pitcher's profile if not already present
+            const sessionResult = await client.query('SELECT pitcher_id FROM bullpen_sessions WHERE id = $1', [session_id]);
+            if (sessionResult.rows.length > 0) {
+                const pitcherId = sessionResult.rows[0].pitcher_id;
+                const existing = await client.query('SELECT 1 FROM pitcher_pitch_types WHERE player_id = $1 AND pitch_type = $2', [
+                    pitcherId,
+                    pitch_type,
+                ]);
+                if (existing.rows.length === 0) {
+                    await client.query('INSERT INTO pitcher_pitch_types (id, player_id, pitch_type) VALUES ($1, $2, $3)', [
+                        uuidv4(),
+                        pitcherId,
+                        pitch_type,
+                    ]);
+                }
+            }
+
             return insertResult.rows[0];
         });
 
