@@ -3,8 +3,8 @@ import { View, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native'
 import { Text, Button, useTheme, IconButton, ActivityIndicator } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from '../../src/utils/haptics';
-import { Player, BullpenIntensity } from '@pitch-tracker/shared';
-import { useAppDispatch, useAppSelector, fetchTeamPlayers } from '../../src/state';
+import { Player, BullpenIntensity, Team } from '@pitch-tracker/shared';
+import { useAppDispatch, useAppSelector, fetchTeamPlayers, fetchAllTeams } from '../../src/state';
 import { createBullpenSession } from '../../src/state/bullpen/bullpenSlice';
 import { IntensitySelector } from '../../src/components/bullpen';
 
@@ -12,29 +12,64 @@ export default function NewBullpenScreen() {
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
-    const { teamId } = useLocalSearchParams<{ teamId: string }>();
+    const { teamId: teamIdParam } = useLocalSearchParams<{ teamId: string }>();
 
+    const teams = useAppSelector((state) => state.teams.teams) || [];
     const teamPlayers = useAppSelector((state) => state.teams.players) || [];
+    const [resolvedTeamId, setResolvedTeamId] = useState<string | undefined>(teamIdParam);
     const [selectedPitcher, setSelectedPitcher] = useState<Player | null>(null);
     const [intensity, setIntensity] = useState<BullpenIntensity>('medium');
     const [creating, setCreating] = useState(false);
     const [loadingPlayers, setLoadingPlayers] = useState(true);
+    const [loadingTeams, setLoadingTeams] = useState(!teamIdParam);
 
+    // If no teamId param, fetch user's teams to resolve one
     useEffect(() => {
-        if (teamId) {
-            dispatch(fetchTeamPlayers(teamId)).finally(() => setLoadingPlayers(false));
+        if (teamIdParam) {
+            setResolvedTeamId(teamIdParam);
+            setLoadingTeams(false);
+            return;
         }
-    }, [teamId, dispatch]);
+        // If teams are already in Redux, pick from them
+        if (teams.length > 0) {
+            setResolvedTeamId(teams[0].id);
+            setLoadingTeams(false);
+            return;
+        }
+        // Otherwise fetch teams
+        dispatch(fetchAllTeams()).finally(() => setLoadingTeams(false));
+    }, [teamIdParam, dispatch]);
+
+    // Once teams load from Redux, auto-select the first one
+    useEffect(() => {
+        if (!teamIdParam && !resolvedTeamId && teams.length > 0) {
+            setResolvedTeamId(teams[0].id);
+        }
+    }, [teams, teamIdParam, resolvedTeamId]);
+
+    // Fetch players once we have a resolved team ID
+    useEffect(() => {
+        if (resolvedTeamId) {
+            setLoadingPlayers(true);
+            dispatch(fetchTeamPlayers(resolvedTeamId)).finally(() => setLoadingPlayers(false));
+        }
+    }, [resolvedTeamId, dispatch]);
 
     const pitchers = teamPlayers.filter((p) => p.primary_position === 'P' && p.is_active !== false);
 
+    const handleSelectTeam = (team: Team) => {
+        Haptics.selectionAsync();
+        setResolvedTeamId(team.id);
+        setSelectedPitcher(null);
+    };
+
     const handleStart = async () => {
-        if (!selectedPitcher || !teamId) return;
+        if (!selectedPitcher || !resolvedTeamId) return;
         setCreating(true);
         try {
             const session = await dispatch(
                 createBullpenSession({
-                    team_id: teamId,
+                    team_id: resolvedTeamId,
                     pitcher_id: selectedPitcher.id,
                     intensity,
                 })
@@ -59,11 +94,36 @@ export default function NewBullpenScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
+                {/* Team Selection (only when multiple teams and no teamId param) */}
+                {!teamIdParam && teams.length > 1 && (
+                    <>
+                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                            Select Team
+                        </Text>
+                        <View style={styles.pitcherGrid}>
+                            {teams.map((team) => {
+                                const isSelected = resolvedTeamId === team.id;
+                                return (
+                                    <Button
+                                        key={team.id}
+                                        mode={isSelected ? 'contained' : 'outlined'}
+                                        onPress={() => handleSelectTeam(team)}
+                                        style={styles.pitcherButton}
+                                        compact
+                                    >
+                                        {team.name}
+                                    </Button>
+                                );
+                            })}
+                        </View>
+                    </>
+                )}
+
                 {/* Pitcher Selection */}
                 <Text variant="labelLarge" style={styles.sectionLabel}>
                     Select Pitcher
                 </Text>
-                {loadingPlayers ? (
+                {loadingTeams || loadingPlayers ? (
                     <ActivityIndicator style={{ marginVertical: 20 }} />
                 ) : pitchers.length === 0 ? (
                     <Text style={styles.emptyText}>No pitchers found on this team</Text>
