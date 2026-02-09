@@ -50,6 +50,7 @@ import {
     TeamCardName,
     TeamCardCity,
     TeamCardAbbr,
+    RoleBadge,
     SectionHeader,
     TeamCardHeader,
     TeamCardInfo,
@@ -79,6 +80,15 @@ const Dashboard: React.FC = () => {
     const [teamRosters, setTeamRosters] = useState<Record<string, Player[]>>({});
 
     const loading = gamesLoading || teamsLoading;
+
+    // Derive the user's primary role from team memberships
+    const ROLE_PRIORITY: Record<string, number> = { owner: 0, coach: 1, assistant: 2, player: 3 };
+    const primaryRole = teams.reduce<string | null>((best, team) => {
+        const role = (team as any).user_role as string | undefined;
+        if (!role) return best;
+        if (!best) return role;
+        return (ROLE_PRIORITY[role] ?? 99) < (ROLE_PRIORITY[best] ?? 99) ? role : best;
+    }, null);
 
     useEffect(() => {
         dispatch(fetchAllGames());
@@ -172,6 +182,7 @@ const Dashboard: React.FC = () => {
                     <WelcomeText>Welcome back, {user?.first_name || 'Coach'}!</WelcomeText>
                 </HeaderLeft>
                 <HeaderRight>
+                    {primaryRole && <RoleBadge>{primaryRole === 'owner' ? 'Coach' : primaryRole} Mode</RoleBadge>}
                     <LogoutButton onClick={handleLogout}>Sign Out</LogoutButton>
                 </HeaderRight>
             </Header>

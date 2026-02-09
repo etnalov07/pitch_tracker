@@ -18,7 +18,24 @@ export const Header = styled.header({
 
 export const HeaderLeft = styled.div({});
 
-export const HeaderRight = styled.div({});
+export const HeaderRight = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+});
+
+export const RoleBadge = styled.span({
+    display: 'inline-block',
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    color: 'white',
+    textTransform: 'capitalize',
+    letterSpacing: '0.05em',
+});
 
 export const Logo = styled.h1({
     fontSize: theme.fontSize['2xl'],
