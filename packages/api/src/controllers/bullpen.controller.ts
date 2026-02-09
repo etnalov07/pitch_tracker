@@ -128,6 +128,94 @@ export class BullpenController {
             next(error);
         }
     }
+    // Plan endpoints
+
+    async createPlan(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const plan = await bullpenService.createPlan({
+                ...req.body,
+                created_by: req.user?.id,
+            });
+            res.status(201).json({ message: 'Bullpen plan created', plan });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getPlan(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { planId } = req.params;
+            const plan = await bullpenService.getPlanById(planId as string);
+            if (!plan) {
+                res.status(404).json({ error: 'Plan not found' });
+                return;
+            }
+            res.status(200).json({ plan });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getTeamPlans(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { teamId } = req.params;
+            const plans = await bullpenService.getPlansByTeam(teamId as string);
+            res.status(200).json({ plans });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async updatePlan(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { planId } = req.params;
+            const plan = await bullpenService.updatePlan(planId as string, req.body);
+            res.status(200).json({ message: 'Plan updated', plan });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deletePlan(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { planId } = req.params;
+            await bullpenService.deletePlan(planId as string);
+            res.status(200).json({ message: 'Plan deleted' });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async assignPlan(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { planId } = req.params;
+            const { pitcher_ids } = req.body;
+            const assignments = await bullpenService.assignPlan(planId as string, pitcher_ids, req.user?.id);
+            res.status(200).json({ message: 'Plan assigned', assignments });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async unassignPlan(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { planId, pitcherId } = req.params;
+            await bullpenService.unassignPlan(planId as string, pitcherId as string);
+            res.status(200).json({ message: 'Assignment removed' });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getPitcherAssignments(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { pitcherId } = req.params;
+            const plans = await bullpenService.getPitcherAssignments(pitcherId as string);
+            res.status(200).json({ plans });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new BullpenController();

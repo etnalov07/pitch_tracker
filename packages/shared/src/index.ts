@@ -598,6 +598,7 @@ export interface BullpenPlan {
     team_id: string;
     name: string;
     description?: string;
+    max_pitches?: number;
     created_by?: string;
     created_at: string;
     updated_at?: string;
@@ -613,8 +614,17 @@ export interface BullpenPlanPitch {
     instruction?: string;
 }
 
+export interface BullpenPlanAssignment {
+    id: string;
+    plan_id: string;
+    pitcher_id: string;
+    assigned_by?: string;
+    created_at: string;
+}
+
 export interface BullpenPlanWithPitches extends BullpenPlan {
     pitches: BullpenPlanPitch[];
+    assignments?: BullpenPlanAssignment[];
 }
 
 export interface BullpenSessionSummary {

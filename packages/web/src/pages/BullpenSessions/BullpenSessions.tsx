@@ -131,7 +131,10 @@ const BullpenSessions: React.FC = () => {
                         {team && <Subtitle>{team.name}</Subtitle>}
                     </TeamInfo>
                 </HeaderLeft>
-                <NewSessionButton onClick={() => navigate(`/teams/${team_id}/bullpen/new`)}>+ New Session</NewSessionButton>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <NewSessionButton onClick={() => navigate(`/teams/${team_id}/bullpen/plans`)}>Plans</NewSessionButton>
+                    <NewSessionButton onClick={() => navigate(`/teams/${team_id}/bullpen/new`)}>+ New Session</NewSessionButton>
+                </div>
             </Header>
 
             <Content>

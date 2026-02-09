@@ -1,4 +1,12 @@
-import { BullpenIntensity, BullpenPitch, BullpenSessionWithDetails, Pitch, PitchResult, PitchType } from '@pitch-tracker/shared';
+import {
+    BullpenIntensity,
+    BullpenPitch,
+    BullpenPlanWithPitches,
+    BullpenSessionWithDetails,
+    Pitch,
+    PitchResult,
+    PitchType,
+} from '@pitch-tracker/shared';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import StrikeZone from '../../components/live/StrikeZone';
@@ -40,6 +48,13 @@ import {
     ModalActions,
     ModalCancelButton,
     ModalConfirmButton,
+    PlanGuidanceCard,
+    PlanPitchNumber,
+    PlanPitchType,
+    PlanInstruction,
+    PlanProgress,
+    PlanCompleteCard,
+    PitchLimitReached,
     LoadingText,
     ErrorText,
 } from './styles';
@@ -79,6 +94,9 @@ const BullpenLive: React.FC = () => {
     const [notes, setNotes] = useState('');
     const [ending, setEnding] = useState(false);
 
+    // Plan guidance
+    const [plan, setPlan] = useState<BullpenPlanWithPitches | null>(null);
+
     // Load session and pitches
     useEffect(() => {
         const loadData = async () => {
@@ -91,6 +109,16 @@ const BullpenLive: React.FC = () => {
                 ]);
                 setSession(sessionData);
                 setPitches(pitchesData);
+
+                // Load plan if session has one
+                if (sessionData.plan_id) {
+                    try {
+                        const planData = await bullpenService.getPlan(sessionData.plan_id);
+                        setPlan(planData);
+                    } catch {
+                        // Plan load failure is non-critical
+                    }
+                }
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load session');
             } finally {
@@ -108,6 +136,26 @@ const BullpenLive: React.FC = () => {
         const strikePct = total > 0 ? Math.round((strikes / total) * 100) : 0;
         return { total, strikes, balls, strikePct };
     }, [pitches]);
+
+    // Plan guidance computations
+    const planPitches = plan?.pitches || [];
+    const hasSequencePlan = planPitches.length > 0;
+    const maxPitches = plan?.max_pitches ?? (hasSequencePlan ? planPitches.length : null);
+    const pitchLimitReached = maxPitches !== null && pitches.length >= maxPitches;
+    const currentPlanPitch = hasSequencePlan && pitches.length < planPitches.length ? planPitches[pitches.length] : null;
+    const planComplete = hasSequencePlan && pitches.length >= planPitches.length;
+
+    // Auto-populate pitch type and target from plan when moving to next pitch
+    useEffect(() => {
+        if (currentPlanPitch) {
+            setPitchType(currentPlanPitch.pitch_type);
+            if (currentPlanPitch.target_x != null && currentPlanPitch.target_y != null) {
+                setTargetLocation({ x: Number(currentPlanPitch.target_x), y: Number(currentPlanPitch.target_y) });
+            } else {
+                setTargetLocation(null);
+            }
+        }
+    }, [currentPlanPitch?.sequence]);
 
     // Map BullpenPitch[] → Pitch[] for StrikeZone component
     const mappedPitches: Pitch[] = useMemo(
@@ -158,10 +206,13 @@ const BullpenLive: React.FC = () => {
                 velocity: velocity ? Number(velocity) : undefined,
             });
             setPitches((prev) => [...prev, newPitch]);
-            // Reset form for next pitch (keep pitch type)
-            setTargetLocation(null);
+            // Reset form for next pitch
             setPitchLocation(null);
             setVelocity('');
+            // Plan auto-populate is handled by the useEffect on currentPlanPitch
+            if (!hasSequencePlan) {
+                setTargetLocation(null);
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to log pitch');
         } finally {
@@ -213,7 +264,7 @@ const BullpenLive: React.FC = () => {
 
                 <StatsRow>
                     <StatBox>
-                        <StatValue>{stats.total}</StatValue>
+                        <StatValue>{maxPitches !== null ? `${stats.total}/${maxPitches}` : stats.total}</StatValue>
                         <StatLabel>Pitches</StatLabel>
                     </StatBox>
                     <StatBox>
@@ -254,6 +305,41 @@ const BullpenLive: React.FC = () => {
                     </Step>
                 </StepIndicator>
 
+                {pitchLimitReached && (
+                    <PitchLimitReached>
+                        Pitch limit reached ({maxPitches} pitches). End session or continue freestyle.
+                    </PitchLimitReached>
+                )}
+
+                {plan && !pitchLimitReached && currentPlanPitch && (
+                    <PlanGuidanceCard>
+                        <PlanPitchNumber>
+                            Pitch #{pitches.length + 1}
+                            {maxPitches !== null ? ` of ${maxPitches}` : ''}
+                        </PlanPitchNumber>
+                        <PlanPitchType>
+                            {ALL_PITCH_TYPES.find((t) => t.value === currentPlanPitch.pitch_type)?.label ||
+                                currentPlanPitch.pitch_type}
+                        </PlanPitchType>
+                        {currentPlanPitch.instruction && <PlanInstruction>{currentPlanPitch.instruction}</PlanInstruction>}
+                        <PlanProgress>
+                            {pitches.length}/{planPitches.length} complete
+                        </PlanProgress>
+                    </PlanGuidanceCard>
+                )}
+
+                {plan && !pitchLimitReached && planComplete && (
+                    <PlanCompleteCard>Plan complete! Continue throwing freestyle or end session.</PlanCompleteCard>
+                )}
+
+                {plan && !hasSequencePlan && !pitchLimitReached && maxPitches !== null && (
+                    <PlanGuidanceCard>
+                        <PlanProgress>
+                            {pitches.length}/{maxPitches} pitches
+                        </PlanProgress>
+                    </PlanGuidanceCard>
+                )}
+
                 <PitchTypeSection>
                     <PitchTypeSectionTitle>Step 1: Select Pitch Type</PitchTypeSectionTitle>
                     <PitchTypeGrid>
@@ -289,8 +375,8 @@ const BullpenLive: React.FC = () => {
                             />
                         </FormGroup>
 
-                        <LogButton onClick={handleLogPitch} disabled={!pitchLocation || logging}>
-                            {logging ? 'Logging...' : 'Log Pitch'}
+                        <LogButton onClick={handleLogPitch} disabled={!pitchLocation || logging || pitchLimitReached}>
+                            {logging ? 'Logging...' : pitchLimitReached ? 'Limit Reached' : 'Log Pitch'}
                         </LogButton>
                     </PitchForm>
                 </StrikeZoneRow>

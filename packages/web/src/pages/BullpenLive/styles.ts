@@ -389,6 +389,74 @@ export const ModalConfirmButton = styled.button({
     },
 });
 
+// Plan Guidance
+export const PlanGuidanceCard = styled.div({
+    backgroundColor: theme.colors.primary[50],
+    border: `1px solid ${theme.colors.primary[200]}`,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    flexWrap: 'wrap',
+});
+
+export const PlanPitchNumber = styled.div({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.primary[700],
+    backgroundColor: theme.colors.primary[100],
+    borderRadius: theme.borderRadius.sm,
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    whiteSpace: 'nowrap',
+});
+
+export const PlanPitchType = styled.div({
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[900],
+});
+
+export const PlanInstruction = styled.div({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[600],
+    fontStyle: 'italic',
+    flex: 1,
+    minWidth: '120px',
+});
+
+export const PlanProgress = styled.div({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.primary[700],
+    whiteSpace: 'nowrap',
+});
+
+export const PlanCompleteCard = styled.div({
+    backgroundColor: theme.colors.green[50],
+    border: `1px solid ${theme.colors.green[200]}`,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+    color: theme.colors.green[700],
+    fontWeight: theme.fontWeight.semibold,
+    fontSize: theme.fontSize.sm,
+});
+
+export const PitchLimitReached = styled.div({
+    backgroundColor: theme.colors.red[50],
+    border: `1px solid ${theme.colors.red[200]}`,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+    color: theme.colors.red[700],
+    fontWeight: theme.fontWeight.semibold,
+    fontSize: theme.fontSize.sm,
+});
+
 export const LoadingText = styled.p({
     textAlign: 'center',
     color: theme.colors.gray[600],

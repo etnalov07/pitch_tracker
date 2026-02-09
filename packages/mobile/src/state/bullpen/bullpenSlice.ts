@@ -1,5 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { BullpenSession, BullpenSessionWithDetails, BullpenPitch, BullpenSessionSummary } from '@pitch-tracker/shared';
+import {
+    BullpenSession,
+    BullpenSessionWithDetails,
+    BullpenPitch,
+    BullpenSessionSummary,
+    BullpenPlan,
+    BullpenPlanWithPitches,
+} from '@pitch-tracker/shared';
 import { bullpenApi } from './api/bullpenApi';
 
 interface BullpenState {
@@ -7,6 +14,10 @@ interface BullpenState {
     currentSession: BullpenSessionWithDetails | null;
     pitches: BullpenPitch[];
     summary: BullpenSessionSummary | null;
+    plans: BullpenPlan[];
+    currentPlan: BullpenPlanWithPitches | null;
+    pitcherAssignments: BullpenPlanWithPitches[];
+    plansLoading: boolean;
     loading: boolean;
     error: string | null;
 }
@@ -16,6 +27,10 @@ const initialState: BullpenState = {
     currentSession: null,
     pitches: [],
     summary: null,
+    plans: [],
+    currentPlan: null,
+    pitcherAssignments: [],
+    plansLoading: false,
     loading: false,
     error: null,
 };
@@ -70,6 +85,18 @@ export const fetchSessionSummary = createAsyncThunk('bullpen/fetchSummary', asyn
     return await bullpenApi.getSessionSummary(sessionId);
 });
 
+export const fetchTeamPlans = createAsyncThunk('bullpen/fetchTeamPlans', async (teamId: string) => {
+    return await bullpenApi.getTeamPlans(teamId);
+});
+
+export const fetchPlan = createAsyncThunk('bullpen/fetchPlan', async (planId: string) => {
+    return await bullpenApi.getPlan(planId);
+});
+
+export const fetchPitcherAssignments = createAsyncThunk('bullpen/fetchPitcherAssignments', async (pitcherId: string) => {
+    return await bullpenApi.getPitcherAssignments(pitcherId);
+});
+
 const bullpenSlice = createSlice({
     name: 'bullpen',
     initialState,
@@ -78,12 +105,16 @@ const bullpenSlice = createSlice({
             state.currentSession = null;
             state.pitches = [];
             state.summary = null;
+            state.currentPlan = null;
         },
         clearBullpenError: (state) => {
             state.error = null;
         },
         addBullpenPitch: (state, action: PayloadAction<BullpenPitch>) => {
             state.pitches.push(action.payload);
+        },
+        clearCurrentPlan: (state) => {
+            state.currentPlan = null;
         },
     },
     extraReducers: (builder) => {
@@ -168,8 +199,31 @@ const bullpenSlice = createSlice({
         builder.addCase(fetchSessionSummary.fulfilled, (state, action) => {
             state.summary = action.payload;
         });
+
+        // Fetch team plans
+        builder
+            .addCase(fetchTeamPlans.pending, (state) => {
+                state.plansLoading = true;
+            })
+            .addCase(fetchTeamPlans.fulfilled, (state, action) => {
+                state.plansLoading = false;
+                state.plans = action.payload;
+            })
+            .addCase(fetchTeamPlans.rejected, (state) => {
+                state.plansLoading = false;
+            });
+
+        // Fetch single plan
+        builder.addCase(fetchPlan.fulfilled, (state, action) => {
+            state.currentPlan = action.payload;
+        });
+
+        // Fetch pitcher assignments
+        builder.addCase(fetchPitcherAssignments.fulfilled, (state, action) => {
+            state.pitcherAssignments = action.payload;
+        });
     },
 });
 
-export const { clearCurrentSession, clearBullpenError, addBullpenPitch } = bullpenSlice.actions;
+export const { clearCurrentSession, clearBullpenError, addBullpenPitch, clearCurrentPlan } = bullpenSlice.actions;
 export default bullpenSlice.reducer;

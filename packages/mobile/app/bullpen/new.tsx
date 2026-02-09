@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
-import { Text, Button, useTheme, IconButton, ActivityIndicator } from 'react-native-paper';
+import { Text, Button, useTheme, IconButton, ActivityIndicator, Chip } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from '../../src/utils/haptics';
-import { Player, BullpenIntensity, Team } from '@pitch-tracker/shared';
-import { useAppDispatch, useAppSelector, fetchTeamPlayers, fetchAllTeams } from '../../src/state';
+import { Player, BullpenIntensity, BullpenPlanWithPitches, Team } from '@pitch-tracker/shared';
+import {
+    useAppDispatch,
+    useAppSelector,
+    fetchTeamPlayers,
+    fetchAllTeams,
+    fetchTeamPlans,
+    fetchPitcherAssignments,
+} from '../../src/state';
 import { createBullpenSession } from '../../src/state/bullpen/bullpenSlice';
 import { IntensitySelector } from '../../src/components/bullpen';
 
@@ -22,6 +29,9 @@ export default function NewBullpenScreen() {
     const [creating, setCreating] = useState(false);
     const [loadingPlayers, setLoadingPlayers] = useState(true);
     const [loadingTeams, setLoadingTeams] = useState(!teamIdParam);
+    const [selectedPlanId, setSelectedPlanId] = useState<string | undefined>(undefined);
+
+    const { plans: teamPlans, pitcherAssignments, plansLoading } = useAppSelector((state) => state.bullpen);
 
     // If no teamId param, fetch user's teams to resolve one
     useEffect(() => {
@@ -55,6 +65,31 @@ export default function NewBullpenScreen() {
         }
     }, [resolvedTeamId, dispatch]);
 
+    // Fetch team plans when team is resolved
+    useEffect(() => {
+        if (resolvedTeamId) {
+            dispatch(fetchTeamPlans(resolvedTeamId));
+        }
+    }, [resolvedTeamId, dispatch]);
+
+    // Fetch pitcher assignments when pitcher is selected
+    useEffect(() => {
+        if (selectedPitcher) {
+            dispatch(fetchPitcherAssignments(selectedPitcher.id)).then((result) => {
+                if (result.meta.requestStatus === 'fulfilled') {
+                    const assignments = result.payload as BullpenPlanWithPitches[];
+                    if (assignments.length > 0) {
+                        setSelectedPlanId(assignments[0].id);
+                    } else {
+                        setSelectedPlanId(undefined);
+                    }
+                }
+            });
+        } else {
+            setSelectedPlanId(undefined);
+        }
+    }, [selectedPitcher, dispatch]);
+
     const pitchers = teamPlayers.filter((p) => p.primary_position === 'P' && p.is_active !== false);
 
     const handleSelectTeam = (team: Team) => {
@@ -72,6 +107,7 @@ export default function NewBullpenScreen() {
                     team_id: resolvedTeamId,
                     pitcher_id: selectedPitcher.id,
                     intensity,
+                    plan_id: selectedPlanId,
                 })
             ).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -153,6 +189,60 @@ export default function NewBullpenScreen() {
                 {/* Intensity */}
                 <IntensitySelector selected={intensity} onSelect={setIntensity} />
 
+                {/* Plan Selection */}
+                {selectedPitcher && (
+                    <>
+                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                            Bullpen Plan (optional)
+                        </Text>
+                        {plansLoading ? (
+                            <ActivityIndicator style={{ marginVertical: 8 }} />
+                        ) : (
+                            <View style={styles.planChips}>
+                                <Chip
+                                    selected={!selectedPlanId}
+                                    onPress={() => {
+                                        Haptics.selectionAsync();
+                                        setSelectedPlanId(undefined);
+                                    }}
+                                    style={styles.planChip}
+                                >
+                                    Freestyle
+                                </Chip>
+                                {pitcherAssignments.map((plan) => (
+                                    <Chip
+                                        key={plan.id}
+                                        selected={selectedPlanId === plan.id}
+                                        onPress={() => {
+                                            Haptics.selectionAsync();
+                                            setSelectedPlanId(plan.id);
+                                        }}
+                                        style={styles.planChip}
+                                        icon="star"
+                                    >
+                                        {plan.name}
+                                    </Chip>
+                                ))}
+                                {teamPlans
+                                    .filter((p) => !pitcherAssignments.some((a) => a.id === p.id))
+                                    .map((plan) => (
+                                        <Chip
+                                            key={plan.id}
+                                            selected={selectedPlanId === plan.id}
+                                            onPress={() => {
+                                                Haptics.selectionAsync();
+                                                setSelectedPlanId(plan.id);
+                                            }}
+                                            style={styles.planChip}
+                                        >
+                                            {plan.name}
+                                        </Chip>
+                                    ))}
+                            </View>
+                        )}
+                    </>
+                )}
+
                 {/* Start Button */}
                 <Button
                     mode="contained"
@@ -203,6 +293,14 @@ const styles = StyleSheet.create({
         color: '#9ca3af',
         textAlign: 'center',
         paddingVertical: 20,
+    },
+    planChips: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    planChip: {
+        marginBottom: 0,
     },
     startButton: {
         marginTop: 8,

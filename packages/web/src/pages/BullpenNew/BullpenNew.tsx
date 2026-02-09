@@ -1,4 +1,4 @@
-import { BullpenIntensity, Player } from '@pitch-tracker/shared';
+import { BullpenIntensity, BullpenPlan, BullpenPlanWithPitches, Player } from '@pitch-tracker/shared';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
@@ -34,27 +34,65 @@ const BullpenNew: React.FC = () => {
     const [intensity, setIntensity] = useState<BullpenIntensity | null>(null);
     const [creating, setCreating] = useState(false);
 
+    // Plan selection
+    const [teamPlans, setTeamPlans] = useState<BullpenPlan[]>([]);
+    const [pitcherPlans, setPitcherPlans] = useState<BullpenPlanWithPitches[]>([]);
+    const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+
     useEffect(() => {
-        const loadPitchers = async () => {
+        const loadData = async () => {
             if (!team_id) return;
             try {
                 setLoading(true);
-                const response = await api.get<{ pitchers: Player[] }>(`/players/pitchers/team/${team_id}`);
-                setPitchers(response.data.pitchers || []);
+                const [pitchersRes, plansRes] = await Promise.all([
+                    api.get<{ pitchers: Player[] }>(`/players/pitchers/team/${team_id}`),
+                    bullpenService.getTeamPlans(team_id),
+                ]);
+                setPitchers(pitchersRes.data.pitchers || []);
+                setTeamPlans(plansRes);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load pitchers');
             } finally {
                 setLoading(false);
             }
         };
-        loadPitchers();
+        loadData();
     }, [team_id]);
+
+    // When pitcher is selected, fetch their assignments
+    useEffect(() => {
+        if (!selectedPitcher) {
+            setPitcherPlans([]);
+            return;
+        }
+        const loadAssignments = async () => {
+            try {
+                const plans = await bullpenService.getPitcherAssignments(selectedPitcher);
+                setPitcherPlans(plans);
+                // Auto-select the first assigned plan
+                if (plans.length > 0) {
+                    setSelectedPlanId(plans[0].id);
+                } else {
+                    setSelectedPlanId(null);
+                }
+            } catch {
+                // Non-critical — plan selection is optional
+            }
+        };
+        loadAssignments();
+    }, [selectedPitcher]);
 
     const handleStart = async () => {
         if (!team_id || !selectedPitcher || !intensity) return;
         try {
             setCreating(true);
-            const session = await bullpenService.createSession(team_id, selectedPitcher, intensity);
+            const session = await bullpenService.createSession(
+                team_id,
+                selectedPitcher,
+                intensity,
+                undefined,
+                selectedPlanId || undefined
+            );
             navigate(`/teams/${team_id}/bullpen/${session.id}/live`);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create session');
@@ -124,6 +162,54 @@ const BullpenNew: React.FC = () => {
                         </IntensityButton>
                     </IntensityGroup>
                 </Section>
+
+                {selectedPitcher && (teamPlans.length > 0 || pitcherPlans.length > 0) && (
+                    <Section>
+                        <SectionTitle>
+                            Bullpen Plan (Optional)
+                            {pitcherPlans.length > 0 && (
+                                <span style={{ fontSize: '14px', fontWeight: 'normal', color: '#6b7280', marginLeft: '8px' }}>
+                                    {pitcherPlans.length} assigned
+                                </span>
+                            )}
+                        </SectionTitle>
+                        <PitcherGrid>
+                            <PitcherButton selected={selectedPlanId === null} onClick={() => setSelectedPlanId(null)}>
+                                <span>No Plan (Freestyle)</span>
+                            </PitcherButton>
+                            {pitcherPlans.map((plan) => (
+                                <PitcherButton
+                                    key={plan.id}
+                                    selected={selectedPlanId === plan.id}
+                                    onClick={() => setSelectedPlanId(plan.id)}
+                                >
+                                    <span>
+                                        {plan.name}
+                                        {plan.max_pitches
+                                            ? ` (${plan.max_pitches}p)`
+                                            : plan.pitches.length > 0
+                                              ? ` (${plan.pitches.length}p)`
+                                              : ''}
+                                    </span>
+                                </PitcherButton>
+                            ))}
+                            {teamPlans
+                                .filter((tp) => !pitcherPlans.some((pp) => pp.id === tp.id))
+                                .map((plan) => (
+                                    <PitcherButton
+                                        key={plan.id}
+                                        selected={selectedPlanId === plan.id}
+                                        onClick={() => setSelectedPlanId(plan.id)}
+                                    >
+                                        <span>
+                                            {plan.name}
+                                            {plan.max_pitches ? ` (${plan.max_pitches}p)` : ''}
+                                        </span>
+                                    </PitcherButton>
+                                ))}
+                        </PitcherGrid>
+                    </Section>
+                )}
 
                 <StartButton disabled={!selectedPitcher || !intensity || creating} onClick={handleStart}>
                     {creating ? 'Starting...' : 'Start Session'}

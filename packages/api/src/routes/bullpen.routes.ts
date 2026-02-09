@@ -23,4 +23,16 @@ router.get('/pitches/session/:sessionId', bullpenController.getSessionPitches.bi
 // Pitcher bullpen logs
 router.get('/pitcher/:pitcherId/logs', bullpenController.getPitcherBullpenLogs.bind(bullpenController));
 
+// Pitcher plan assignments
+router.get('/pitcher/:pitcherId/assignments', bullpenController.getPitcherAssignments.bind(bullpenController));
+
+// Plan routes
+router.post('/plans', bullpenController.createPlan.bind(bullpenController));
+router.get('/plans/team/:teamId', bullpenController.getTeamPlans.bind(bullpenController));
+router.get('/plans/:planId', bullpenController.getPlan.bind(bullpenController));
+router.put('/plans/:planId', bullpenController.updatePlan.bind(bullpenController));
+router.delete('/plans/:planId', bullpenController.deletePlan.bind(bullpenController));
+router.post('/plans/:planId/assign', bullpenController.assignPlan.bind(bullpenController));
+router.delete('/plans/:planId/assign/:pitcherId', bullpenController.unassignPlan.bind(bullpenController));
+
 export default router;

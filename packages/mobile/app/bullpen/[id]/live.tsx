@@ -1,13 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput as RNTextInput } from 'react-native';
-import { Text, Button, useTheme, IconButton, Modal, TextInput } from 'react-native-paper';
+import { Text, Button, useTheme, IconButton, Modal, TextInput, Card } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
-import { PitchType, BullpenIntensity, Pitch } from '@pitch-tracker/shared';
-import { useAppDispatch, useAppSelector, fetchBullpenSession, fetchSessionPitches } from '../../../src/state';
+import { PitchType, BullpenIntensity, BullpenPlanWithPitches, Pitch } from '@pitch-tracker/shared';
+import { useAppDispatch, useAppSelector, fetchBullpenSession, fetchSessionPitches, fetchPlan } from '../../../src/state';
 import { logBullpenPitch, endBullpenSession } from '../../../src/state/bullpen/bullpenSlice';
 import { StrikeZone, PitchTypeGrid } from '../../../src/components/live';
 import { SessionHeader } from '../../../src/components/bullpen';
+
+const PITCH_TYPE_LABELS: Record<string, string> = {
+    fastball: 'Fastball',
+    '4-seam': '4-Seam',
+    '2-seam': '2-Seam',
+    cutter: 'Cutter',
+    sinker: 'Sinker',
+    slider: 'Slider',
+    curveball: 'Curve',
+    changeup: 'Change',
+    splitter: 'Splitter',
+    knuckleball: 'Knuckle',
+    other: 'Other',
+};
 
 export default function BullpenLiveScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,7 +38,7 @@ export default function BullpenLiveScreen() {
     const theme = useTheme();
     const dispatch = useAppDispatch();
 
-    const { currentSession, pitches } = useAppSelector((state) => state.bullpen);
+    const { currentSession, pitches, currentPlan } = useAppSelector((state) => state.bullpen);
 
     // Pitch entry state
     const [selectedPitchType, setSelectedPitchType] = useState<PitchType | null>(null);
@@ -44,6 +58,33 @@ export default function BullpenLiveScreen() {
             dispatch(fetchSessionPitches(id));
         }
     }, [id, dispatch]);
+
+    // Load plan if session has one
+    useEffect(() => {
+        if (currentSession?.plan_id) {
+            dispatch(fetchPlan(currentSession.plan_id));
+        }
+    }, [currentSession?.plan_id, dispatch]);
+
+    // Plan guidance computations
+    const planPitches = currentPlan?.pitches || [];
+    const hasSequencePlan = planPitches.length > 0;
+    const maxPitches = currentPlan?.max_pitches ?? (hasSequencePlan ? planPitches.length : null);
+    const pitchLimitReached = maxPitches !== null && pitches.length >= maxPitches;
+    const currentPlanPitch = hasSequencePlan && pitches.length < planPitches.length ? planPitches[pitches.length] : null;
+    const planComplete = hasSequencePlan && pitches.length >= planPitches.length;
+
+    // Auto-populate pitch type and target from plan
+    useEffect(() => {
+        if (currentPlanPitch) {
+            setSelectedPitchType(currentPlanPitch.pitch_type);
+            if (currentPlanPitch.target_x != null && currentPlanPitch.target_y != null) {
+                setTargetLocation({ x: Number(currentPlanPitch.target_x), y: Number(currentPlanPitch.target_y) });
+            } else {
+                setTargetLocation(null);
+            }
+        }
+    }, [currentPlanPitch?.sequence]);
 
     // Map bullpen pitches to Pitch-like objects for StrikeZone
     const previousPitchesForZone: Pitch[] = pitches.map((bp) => ({
@@ -95,11 +136,13 @@ export default function BullpenLiveScreen() {
                 })
             ).unwrap();
 
-            // Reset for next pitch
-            setSelectedPitchType(null);
+            // Reset for next pitch (plan auto-populate handled by useEffect)
             setPitchLocation(null);
-            setTargetLocation(null);
             setVelocity('');
+            if (!hasSequencePlan) {
+                setSelectedPitchType(null);
+                setTargetLocation(null);
+            }
         } catch {
             Alert.alert('Error', 'Failed to log pitch');
         } finally {
@@ -119,7 +162,7 @@ export default function BullpenLiveScreen() {
         }
     }, [id, sessionNotes, dispatch, router]);
 
-    const canLogPitch = selectedPitchType && pitchLocation && !isLogging;
+    const canLogPitch = selectedPitchType && pitchLocation && !isLogging && !pitchLimitReached;
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -146,6 +189,58 @@ export default function BullpenLiveScreen() {
                     balls={totalBalls}
                     intensity={displayIntensity}
                 />
+
+                {/* Plan guidance */}
+                {pitchLimitReached && (
+                    <Card style={styles.planCard} mode="outlined">
+                        <Card.Content style={styles.planCardContent}>
+                            <Text variant="labelLarge" style={styles.limitReachedText}>
+                                Pitch limit reached ({maxPitches} pitches)
+                            </Text>
+                        </Card.Content>
+                    </Card>
+                )}
+
+                {currentPlan && !pitchLimitReached && currentPlanPitch && (
+                    <Card style={styles.planCard} mode="outlined">
+                        <Card.Content style={styles.planCardContent}>
+                            <View style={styles.planRow}>
+                                <Text variant="labelMedium" style={styles.planPitchNum}>
+                                    #{pitches.length + 1}
+                                    {maxPitches !== null ? `/${maxPitches}` : ''}
+                                </Text>
+                                <Text variant="bodyMedium" style={styles.planPitchType}>
+                                    {PITCH_TYPE_LABELS[currentPlanPitch.pitch_type] || currentPlanPitch.pitch_type}
+                                </Text>
+                                {currentPlanPitch.instruction && (
+                                    <Text variant="bodySmall" style={styles.planInstruction} numberOfLines={1}>
+                                        {currentPlanPitch.instruction}
+                                    </Text>
+                                )}
+                            </View>
+                        </Card.Content>
+                    </Card>
+                )}
+
+                {currentPlan && !pitchLimitReached && planComplete && (
+                    <Card style={styles.planCard} mode="outlined">
+                        <Card.Content style={styles.planCardContent}>
+                            <Text variant="labelMedium" style={styles.planCompleteText}>
+                                Plan complete! Continue freestyle or end session.
+                            </Text>
+                        </Card.Content>
+                    </Card>
+                )}
+
+                {currentPlan && !hasSequencePlan && !pitchLimitReached && maxPitches !== null && (
+                    <Card style={styles.planCard} mode="outlined">
+                        <Card.Content style={styles.planCardContent}>
+                            <Text variant="labelMedium" style={styles.planProgress}>
+                                {pitches.length}/{maxPitches} pitches
+                            </Text>
+                        </Card.Content>
+                    </Card>
+                )}
 
                 <PitchTypeGrid selectedType={selectedPitchType} onSelect={setSelectedPitchType} disabled={isLogging} compact />
 
@@ -183,7 +278,7 @@ export default function BullpenLiveScreen() {
                     style={styles.logButton}
                     contentStyle={styles.logButtonContent}
                 >
-                    Log Pitch
+                    {pitchLimitReached ? 'Limit Reached' : 'Log Pitch'}
                 </Button>
             </ScrollView>
 
@@ -250,6 +345,23 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         color: '#111827',
     },
+    planCard: { marginBottom: 0 },
+    planCardContent: { paddingVertical: 8, paddingHorizontal: 12 },
+    planRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+    planPitchNum: {
+        color: '#1d4ed8',
+        fontWeight: '700',
+        backgroundColor: '#dbeafe',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    planPitchType: { fontWeight: '600', color: '#111827' },
+    planInstruction: { color: '#6b7280', fontStyle: 'italic', flex: 1, minWidth: 80 },
+    planProgress: { color: '#1d4ed8', fontWeight: '600' },
+    planCompleteText: { color: '#15803d', fontWeight: '600', textAlign: 'center' },
+    limitReachedText: { color: '#dc2626', fontWeight: '600', textAlign: 'center' },
     logButton: { marginTop: 4 },
     logButtonContent: { paddingVertical: 6 },
     modal: {

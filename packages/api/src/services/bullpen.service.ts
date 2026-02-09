@@ -1,5 +1,13 @@
 import { query, transaction } from '../config/database';
-import { BullpenSession, BullpenSessionWithDetails, BullpenPitch, BullpenSessionSummary } from '../types';
+import {
+    BullpenSession,
+    BullpenSessionWithDetails,
+    BullpenPitch,
+    BullpenSessionSummary,
+    BullpenPlan,
+    BullpenPlanWithPitches,
+    BullpenPlanAssignment,
+} from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 const TARGET_ACCURACY_THRESHOLD = 0.15;
@@ -353,6 +361,210 @@ export class BullpenService {
         }
 
         return { sessions, total_count: totalCount };
+    }
+    // ============================================================================
+    // Plan CRUD
+    // ============================================================================
+
+    async createPlan(data: {
+        team_id: string;
+        name: string;
+        description?: string;
+        max_pitches?: number;
+        created_by?: string;
+        pitches?: Array<{
+            sequence: number;
+            pitch_type: string;
+            target_x?: number;
+            target_y?: number;
+            instruction?: string;
+        }>;
+    }): Promise<BullpenPlanWithPitches> {
+        const { team_id, name, description, max_pitches, created_by, pitches = [] } = data;
+
+        if (!team_id || !name) {
+            throw new Error('team_id and name are required');
+        }
+
+        const plan = await transaction(async (client) => {
+            const planId = uuidv4();
+            const planResult = await client.query(
+                `INSERT INTO bullpen_plans (id, team_id, name, description, max_pitches, created_by)
+                 VALUES ($1, $2, $3, $4, $5, $6)
+                 RETURNING *`,
+                [planId, team_id, name, description || null, max_pitches || null, created_by || null]
+            );
+
+            const insertedPitches = [];
+            for (const p of pitches) {
+                const pitchId = uuidv4();
+                const pitchResult = await client.query(
+                    `INSERT INTO bullpen_plan_pitches (id, plan_id, sequence, pitch_type, target_x, target_y, instruction)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7)
+                     RETURNING *`,
+                    [pitchId, planId, p.sequence, p.pitch_type, p.target_x ?? null, p.target_y ?? null, p.instruction || null]
+                );
+                insertedPitches.push(pitchResult.rows[0]);
+            }
+
+            return { ...planResult.rows[0], pitches: insertedPitches, assignments: [] };
+        });
+
+        return plan;
+    }
+
+    async getPlanById(planId: string): Promise<BullpenPlanWithPitches | null> {
+        const planResult = await query('SELECT * FROM bullpen_plans WHERE id = $1', [planId]);
+        if (planResult.rows.length === 0) return null;
+
+        const pitchesResult = await query('SELECT * FROM bullpen_plan_pitches WHERE plan_id = $1 ORDER BY sequence ASC', [planId]);
+
+        const assignmentsResult = await query(
+            `SELECT bpa.*, p.first_name, p.last_name, p.jersey_number
+             FROM bullpen_plan_assignments bpa
+             JOIN players p ON bpa.pitcher_id = p.id
+             WHERE bpa.plan_id = $1
+             ORDER BY p.last_name, p.first_name`,
+            [planId]
+        );
+
+        return {
+            ...planResult.rows[0],
+            pitches: pitchesResult.rows,
+            assignments: assignmentsResult.rows,
+        };
+    }
+
+    async getPlansByTeam(teamId: string): Promise<BullpenPlan[]> {
+        const result = await query(
+            `SELECT bp.*,
+                    (SELECT COUNT(*)::int FROM bullpen_plan_pitches WHERE plan_id = bp.id) AS pitch_count,
+                    (SELECT COUNT(*)::int FROM bullpen_plan_assignments WHERE plan_id = bp.id) AS assignment_count
+             FROM bullpen_plans bp
+             WHERE bp.team_id = $1
+             ORDER BY bp.name ASC`,
+            [teamId]
+        );
+        return result.rows;
+    }
+
+    async updatePlan(
+        planId: string,
+        data: {
+            name?: string;
+            description?: string;
+            max_pitches?: number | null;
+            pitches?: Array<{
+                sequence: number;
+                pitch_type: string;
+                target_x?: number;
+                target_y?: number;
+                instruction?: string;
+            }>;
+        }
+    ): Promise<BullpenPlanWithPitches> {
+        const plan = await transaction(async (client) => {
+            // Update plan metadata
+            const updateFields: string[] = [];
+            const updateParams: any[] = [];
+            let paramIdx = 1;
+
+            if (data.name !== undefined) {
+                updateFields.push(`name = $${paramIdx++}`);
+                updateParams.push(data.name);
+            }
+            if (data.description !== undefined) {
+                updateFields.push(`description = $${paramIdx++}`);
+                updateParams.push(data.description);
+            }
+            if (data.max_pitches !== undefined) {
+                updateFields.push(`max_pitches = $${paramIdx++}`);
+                updateParams.push(data.max_pitches);
+            }
+
+            if (updateFields.length > 0) {
+                updateParams.push(planId);
+                await client.query(`UPDATE bullpen_plans SET ${updateFields.join(', ')} WHERE id = $${paramIdx}`, updateParams);
+            }
+
+            // Replace pitches if provided
+            if (data.pitches !== undefined) {
+                await client.query('DELETE FROM bullpen_plan_pitches WHERE plan_id = $1', [planId]);
+                for (const p of data.pitches) {
+                    const pitchId = uuidv4();
+                    await client.query(
+                        `INSERT INTO bullpen_plan_pitches (id, plan_id, sequence, pitch_type, target_x, target_y, instruction)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                        [pitchId, planId, p.sequence, p.pitch_type, p.target_x ?? null, p.target_y ?? null, p.instruction || null]
+                    );
+                }
+            }
+
+            // Fetch updated plan
+            const planResult = await client.query('SELECT * FROM bullpen_plans WHERE id = $1', [planId]);
+            const pitchesResult = await client.query(
+                'SELECT * FROM bullpen_plan_pitches WHERE plan_id = $1 ORDER BY sequence ASC',
+                [planId]
+            );
+            const assignmentsResult = await client.query('SELECT * FROM bullpen_plan_assignments WHERE plan_id = $1', [planId]);
+
+            return {
+                ...planResult.rows[0],
+                pitches: pitchesResult.rows,
+                assignments: assignmentsResult.rows,
+            };
+        });
+
+        return plan;
+    }
+
+    async deletePlan(planId: string): Promise<void> {
+        await query('DELETE FROM bullpen_plans WHERE id = $1', [planId]);
+    }
+
+    async assignPlan(planId: string, pitcherIds: string[], assignedBy?: string): Promise<BullpenPlanAssignment[]> {
+        const assignments: BullpenPlanAssignment[] = [];
+
+        for (const pitcherId of pitcherIds) {
+            const id = uuidv4();
+            const result = await query(
+                `INSERT INTO bullpen_plan_assignments (id, plan_id, pitcher_id, assigned_by)
+                 VALUES ($1, $2, $3, $4)
+                 ON CONFLICT (plan_id, pitcher_id) DO NOTHING
+                 RETURNING *`,
+                [id, planId, pitcherId, assignedBy || null]
+            );
+            if (result.rows.length > 0) {
+                assignments.push(result.rows[0]);
+            }
+        }
+
+        return assignments;
+    }
+
+    async unassignPlan(planId: string, pitcherId: string): Promise<void> {
+        await query('DELETE FROM bullpen_plan_assignments WHERE plan_id = $1 AND pitcher_id = $2', [planId, pitcherId]);
+    }
+
+    async getPitcherAssignments(pitcherId: string): Promise<BullpenPlanWithPitches[]> {
+        const plansResult = await query(
+            `SELECT bp.*
+             FROM bullpen_plans bp
+             JOIN bullpen_plan_assignments bpa ON bp.id = bpa.plan_id
+             WHERE bpa.pitcher_id = $1
+             ORDER BY bp.name ASC`,
+            [pitcherId]
+        );
+
+        const plans: BullpenPlanWithPitches[] = [];
+        for (const plan of plansResult.rows) {
+            const pitchesResult = await query('SELECT * FROM bullpen_plan_pitches WHERE plan_id = $1 ORDER BY sequence ASC', [
+                plan.id,
+            ]);
+            plans.push({ ...plan, pitches: pitchesResult.rows });
+        }
+
+        return plans;
     }
 }
 

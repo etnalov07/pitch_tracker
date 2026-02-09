@@ -1,5 +1,12 @@
 import api from '../../../services/api';
-import { BullpenSession, BullpenSessionWithDetails, BullpenPitch, BullpenSessionSummary } from '@pitch-tracker/shared';
+import {
+    BullpenSession,
+    BullpenSessionWithDetails,
+    BullpenPitch,
+    BullpenSessionSummary,
+    BullpenPlan,
+    BullpenPlanWithPitches,
+} from '@pitch-tracker/shared';
 
 export const bullpenApi = {
     // Session CRUD
@@ -70,5 +77,21 @@ export const bullpenApi = {
             `/bullpen/pitcher/${pitcherId}/logs`
         );
         return response.data;
+    },
+
+    // Plans
+    getTeamPlans: async (teamId: string): Promise<BullpenPlan[]> => {
+        const response = await api.get<{ plans: BullpenPlan[] }>(`/bullpen/plans/team/${teamId}`);
+        return response.data.plans;
+    },
+
+    getPlan: async (planId: string): Promise<BullpenPlanWithPitches> => {
+        const response = await api.get<{ plan: BullpenPlanWithPitches }>(`/bullpen/plans/${planId}`);
+        return response.data.plan;
+    },
+
+    getPitcherAssignments: async (pitcherId: string): Promise<BullpenPlanWithPitches[]> => {
+        const response = await api.get<{ plans: BullpenPlanWithPitches[] }>(`/bullpen/pitcher/${pitcherId}/assignments`);
+        return response.data.plans;
     },
 };
