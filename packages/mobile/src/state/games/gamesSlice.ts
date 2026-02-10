@@ -187,6 +187,32 @@ export const fetchOpponentLineup = createAsyncThunk('games/fetchOpponentLineup',
     }
 });
 
+export const createOpponentLineup = createAsyncThunk(
+    'games/createOpponentLineup',
+    async (
+        {
+            gameId,
+            players,
+        }: {
+            gameId: string;
+            players: {
+                player_name: string;
+                batting_order: number;
+                position?: string;
+                bats: 'R' | 'L' | 'S';
+                is_starter: boolean;
+            }[];
+        },
+        { rejectWithValue }
+    ) => {
+        try {
+            return await gamesApi.createOpponentLineupBulk(gameId, players);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to create opponent lineup'));
+        }
+    }
+);
+
 export const fetchTeamPitcherRoster = createAsyncThunk(
     'games/fetchTeamPitcherRoster',
     async (teamId: string, { rejectWithValue }) => {
@@ -443,6 +469,11 @@ const gamesSlice = createSlice({
 
         // Fetch Opponent Lineup
         builder.addCase(fetchOpponentLineup.fulfilled, (state, action) => {
+            state.opponentLineup = action.payload;
+        });
+
+        // Create Opponent Lineup
+        builder.addCase(createOpponentLineup.fulfilled, (state, action) => {
             state.opponentLineup = action.payload;
         });
 

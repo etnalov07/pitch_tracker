@@ -23,6 +23,7 @@ export {
     fetchGamePitchers,
     changePitcher,
     fetchOpponentLineup,
+    createOpponentLineup,
     fetchTeamPitcherRoster,
     createAtBat,
     updateAtBat,

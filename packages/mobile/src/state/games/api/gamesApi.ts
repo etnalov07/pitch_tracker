@@ -127,6 +127,22 @@ export const gamesApi = {
         return response.data.lineup;
     },
 
+    createOpponentLineupBulk: async (
+        gameId: string,
+        players: {
+            player_name: string;
+            batting_order: number;
+            position?: string;
+            bats: 'R' | 'L' | 'S';
+            is_starter: boolean;
+        }[]
+    ): Promise<OpponentLineupPlayer[]> => {
+        const response = await api.post<{ lineup: OpponentLineupPlayer[] }>(`/opponent-lineup/game/${gameId}/bulk`, {
+            players,
+        });
+        return response.data.lineup;
+    },
+
     // Team pitchers (roster)
     getTeamPitchers: async (teamId: string): Promise<Player[]> => {
         const response = await api.get<{ pitchers: Player[] }>(`/players/pitchers/team/${teamId}`);
