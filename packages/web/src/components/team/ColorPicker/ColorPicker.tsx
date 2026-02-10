@@ -139,7 +139,7 @@ const ContrastWarning = styled.div`
 `;
 
 const PRESET_COLORS = [
-    '#3b82f6', // Blue
+    '#0B1F3A', // Navy
     '#ef4444', // Red
     '#22c55e', // Green
     '#f59e0b', // Amber

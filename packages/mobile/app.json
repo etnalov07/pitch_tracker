@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Pitch Chart",
+    "name": "PitchChart",
     "slug": "pitch-tracker",
     "version": "1.0.0",
     "orientation": "default",
@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#2563eb"
+      "backgroundColor": "#0B1F3A"
     },
     "ios": {
       "supportsTablet": true,
@@ -25,7 +25,7 @@
       "package": "com.bvolante.pitch_tracker",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#2563eb"
+        "backgroundColor": "#0B1F3A"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [

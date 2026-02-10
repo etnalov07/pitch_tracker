@@ -8,7 +8,7 @@ export const Container = styled.div({
 });
 
 export const Header = styled.header({
-    background: `linear-gradient(135deg, ${theme.colors.primary[600]} 0%, ${theme.colors.primary[800]} 100%)`,
+    background: `linear-gradient(135deg, ${theme.colors.primary[800]} 0%, ${theme.colors.primary[900]} 100%)`,
     color: 'white',
     padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
     display: 'flex',

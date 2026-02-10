@@ -122,7 +122,7 @@ const BullpenSessions: React.FC = () => {
 
     return (
         <Container>
-            <Header style={{ '--team-primary': '#2563eb', '--team-secondary': '#1d4ed8' } as React.CSSProperties}>
+            <Header style={{ '--team-primary': '#243b53', '--team-secondary': '#0B1F3A' } as React.CSSProperties}>
                 <HeaderLeft>
                     <BackButton onClick={() => navigate(`/teams/${team_id}`)}>Back to Team</BackButton>
                     {team && <TeamLogo team={team} size="md" />}

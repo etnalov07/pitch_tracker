@@ -179,7 +179,7 @@ const Dashboard: React.FC = () => {
         <Container>
             <Header>
                 <HeaderLeft>
-                    <Logo>Pitch Chart</Logo>
+                    <Logo>PitchChart</Logo>
                     <WelcomeText>Welcome back, {user?.first_name || 'Coach'}!</WelcomeText>
                 </HeaderLeft>
                 <HeaderRight>

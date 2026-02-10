@@ -10,7 +10,7 @@ interface TeamThemeContextValue {
 const TeamThemeContext = createContext<TeamThemeContextValue | undefined>(undefined);
 
 const DEFAULT_COLORS = {
-    primary: '#3b82f6',
+    primary: '#486581',
     secondary: '#1f2937',
     accent: '#22c55e',
 };

@@ -7,7 +7,7 @@ export const Container = styled.div({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: `linear-gradient(135deg, ${theme.colors.primary[600]} 0%, ${theme.colors.primary[800]} 100%)`,
+    background: `linear-gradient(135deg, ${theme.colors.primary[800]} 0%, ${theme.colors.primary[900]} 100%)`,
     padding: theme.spacing.lg,
 });
 
@@ -24,7 +24,7 @@ export const Logo = styled.div({
     fontSize: theme.fontSize['3xl'],
     fontWeight: theme.fontWeight.bold,
     textAlign: 'center',
-    color: theme.colors.primary[600],
+    color: theme.colors.primary[900],
     marginBottom: theme.spacing.lg,
 });
 

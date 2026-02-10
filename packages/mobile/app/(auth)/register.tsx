@@ -61,7 +61,7 @@ export default function RegisterScreen() {
                         Create Account
                     </Text>
                     <Text variant="bodyMedium" style={styles.subtitle}>
-                        Join Pitch Chart
+                        Join PitchChart
                     </Text>
 
                     <View style={styles.nameRow}>
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     link: {
-        color: '#2563eb',
+        color: '#334e68',
         fontWeight: '600',
     },
 });

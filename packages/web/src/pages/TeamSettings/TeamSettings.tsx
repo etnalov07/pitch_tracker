@@ -27,7 +27,7 @@ const TeamSettings: React.FC = () => {
     const { selectedTeam: team, loading } = useAppSelector((state) => state.teams);
 
     const [colors, setColors] = useState({
-        primary_color: '#3b82f6',
+        primary_color: '#486581',
         secondary_color: '#1f2937',
         accent_color: '#22c55e',
     });
@@ -45,7 +45,7 @@ const TeamSettings: React.FC = () => {
     useEffect(() => {
         if (team) {
             setColors({
-                primary_color: team.primary_color || '#3b82f6',
+                primary_color: team.primary_color || '#486581',
                 secondary_color: team.secondary_color || '#1f2937',
                 accent_color: team.accent_color || '#22c55e',
             });

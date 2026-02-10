@@ -3,16 +3,16 @@ import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 // Colors matching the web app theme
 export const colors = {
     primary: {
-        50: '#eff6ff',
-        100: '#dbeafe',
-        200: '#bfdbfe',
-        300: '#93c5fd',
-        400: '#60a5fa',
-        500: '#3b82f6',
-        600: '#2563eb',
-        700: '#1d4ed8',
-        800: '#1e40af',
-        900: '#1e3a8a',
+        50: '#f0f4f8',
+        100: '#d9e2ec',
+        200: '#bcccdc',
+        300: '#9fb3c8',
+        400: '#829ab1',
+        500: '#627d98',
+        600: '#486581',
+        700: '#334e68',
+        800: '#243b53',
+        900: '#0B1F3A',
     },
     gray: {
         50: '#f9fafb',
@@ -44,7 +44,7 @@ export const colors = {
         300: '#fca5a5',
         400: '#f87171',
         500: '#ef4444',
-        600: '#dc2626',
+        600: '#C62828',
         700: '#b91c1c',
         800: '#991b1b',
     },
@@ -65,7 +65,7 @@ export const lightTheme = {
     ...MD3LightTheme,
     colors: {
         ...MD3LightTheme.colors,
-        primary: colors.primary[600],
+        primary: colors.primary[700],
         primaryContainer: colors.primary[100],
         secondary: colors.gray[600],
         secondaryContainer: colors.gray[100],
@@ -90,7 +90,7 @@ export const darkTheme = {
     ...MD3DarkTheme,
     colors: {
         ...MD3DarkTheme.colors,
-        primary: colors.primary[400],
+        primary: colors.primary[300],
         primaryContainer: colors.primary[800],
         secondary: colors.gray[400],
         secondaryContainer: colors.gray[700],

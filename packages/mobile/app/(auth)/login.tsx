@@ -34,7 +34,7 @@ export default function LoginScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <Surface style={styles.surface} elevation={2}>
                     <Text variant="headlineMedium" style={styles.title}>
-                        Pitch Chart
+                        PitchChart
                     </Text>
                     <Text variant="bodyMedium" style={styles.subtitle}>
                         Sign in to your account
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     link: {
-        color: '#2563eb',
+        color: '#334e68',
         fontWeight: '600',
     },
 });

@@ -349,9 +349,9 @@ const styles = StyleSheet.create({
     planCardContent: { paddingVertical: 8, paddingHorizontal: 12 },
     planRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
     planPitchNum: {
-        color: '#1d4ed8',
+        color: '#334e68',
         fontWeight: '700',
-        backgroundColor: '#dbeafe',
+        backgroundColor: '#d9e2ec',
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 4,
@@ -359,9 +359,9 @@ const styles = StyleSheet.create({
     },
     planPitchType: { fontWeight: '600', color: '#111827' },
     planInstruction: { color: '#6b7280', fontStyle: 'italic', flex: 1, minWidth: 80 },
-    planProgress: { color: '#1d4ed8', fontWeight: '600' },
+    planProgress: { color: '#334e68', fontWeight: '600' },
     planCompleteText: { color: '#15803d', fontWeight: '600', textAlign: 'center' },
-    limitReachedText: { color: '#dc2626', fontWeight: '600', textAlign: 'center' },
+    limitReachedText: { color: '#C62828', fontWeight: '600', textAlign: 'center' },
     logButton: { marginTop: 4 },
     logButtonContent: { paddingVertical: 6 },
     modal: {

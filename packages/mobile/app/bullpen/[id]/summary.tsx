@@ -97,7 +97,7 @@ export default function BullpenSummaryScreen() {
                                 <Text style={styles.statLabel}>Balls</Text>
                             </View>
                             <View style={styles.statItem}>
-                                <Text style={[styles.statValue, { color: '#2563eb' }]}>{summary.strike_percentage}%</Text>
+                                <Text style={[styles.statValue, { color: '#486581' }]}>{summary.strike_percentage}%</Text>
                                 <Text style={styles.statLabel}>Strike %</Text>
                             </View>
                             {summary.target_accuracy_percentage != null && (

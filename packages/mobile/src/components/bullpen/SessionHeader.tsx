@@ -60,7 +60,7 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
                     <Text style={styles.statLabel}>Balls</Text>
                 </View>
                 <View style={styles.stat}>
-                    <Text style={[styles.statValue, { color: '#2563eb' }]}>{strikePercentage}%</Text>
+                    <Text style={[styles.statValue, { color: '#486581' }]}>{strikePercentage}%</Text>
                     <Text style={styles.statLabel}>Strike %</Text>
                 </View>
             </View>
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     jerseyNumber: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#2563eb',
+        color: '#486581',
     },
     pitcherName: {
         fontWeight: '600',
