@@ -1,19 +1,51 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(npm install:*)",
-      "Bash(dir:*)",
-      "Bash(grep:*)",
-      "Bash(npm run build:web:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(npm run build:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npm run lint:*)",
-      "Bash(npx prettier:*)",
-      "Bash(npm run build:shared:*)",
-      "Bash(npx eslint:*)"
-    ]
-  }
+    "hooks": {
+        "PreToolUse": [
+            {
+                "matcher": "Bash",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "bash $CLAUDE_PROJECT_DIR/.claude/hooks/pre-commit-lint.sh",
+                        "timeout": 120
+                    }
+                ]
+            }
+        ]
+    },
+    "permissions": {
+        "allow": [
+            "Bash(npm install:*)",
+            "Bash(dir:*)",
+            "Bash(grep:*)",
+            "Bash(npm run build:web:*)",
+            "Bash(git add:*)",
+            "Bash(git commit:*)",
+            "Bash(git push:*)",
+            "Bash(npm run build:*)",
+            "Bash(npx tsc:*)",
+            "Bash(npm run lint:*)",
+            "Bash(npx prettier:*)",
+            "Bash(npm run build:shared:*)",
+            "Bash(npx eslint:*)",
+            "Bash(npx create-expo-app@latest:*)",
+            "Bash(npx expo start:*)",
+            "Bash(curl:*)",
+            "Bash(if not exist \"c:\\\\SVNViews\\\\pitch_tracker\\\\packages\\\\mobile\\\\src\\\\state\\\\offline\" mkdir \"c:\\\\SVNViews\\\\pitch_tracker\\\\packages\\\\mobile\\\\src\\\\state\\\\offline\")",
+            "Bash(npx expo:*)",
+            "Bash(git status:*)",
+            "Bash(wc:*)",
+            "Bash(move packageswebsrccomponentsliveHeatZoneOverlay.tsx packageswebsrccomponentsliveHeatZoneOverlayHeatZoneOverlay.tsx)",
+            "Bash(unzip:*)",
+            "WebFetch(domain:expo.dev)",
+            "Bash(npm run lint:fix:*)",
+            "Bash(npm run format:*)",
+            "WebFetch(domain:github.com)",
+            "WebFetch(domain:stackademic.com)",
+            "WebFetch(domain:medium.com)",
+            "Bash(node -e:*)",
+            "Bash(npx --yes sharp-cli:*)",
+            "Bash(move:*)"
+        ]
+    }
 }
