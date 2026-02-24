@@ -233,6 +233,7 @@ export interface Game {
     inning_half: InningHalf;
     home_team_name?: string;
     base_runners?: BaseRunners;
+    total_pitches?: number;
     created_by: string;
     created_at: string;
     updated_at?: string;

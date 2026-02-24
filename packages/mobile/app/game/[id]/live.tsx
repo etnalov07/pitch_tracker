@@ -508,7 +508,7 @@ export default function LiveGameScreen() {
             onPitcherPress={game.status === 'in_progress' ? () => setPitcherModalVisible(true) : undefined}
             onBatterPress={game.status === 'in_progress' ? () => setBatterModalVisible(true) : undefined}
             onRunnerPress={game.status === 'in_progress' ? handleRunnerPress : undefined}
-            onSwapPress={handleToggleHomeAway}
+            onSwapPress={!game.total_pitches ? handleToggleHomeAway : undefined}
         />
     );
 

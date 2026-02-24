@@ -137,7 +137,7 @@ export default function GameDetailScreen() {
                                     {game.current_inning} Innings
                                 </Text>
                             )}
-                            <IconButton icon="swap-horizontal" size={20} onPress={handleToggleHomeAway} />
+                            {!game.total_pitches && <IconButton icon="swap-horizontal" size={20} onPress={handleToggleHomeAway} />}
                         </View>
 
                         <View style={styles.scoreRow}>

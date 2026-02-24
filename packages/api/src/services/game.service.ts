@@ -45,7 +45,8 @@ export class GameService {
             `SELECT g.*,
               ht.name as home_team_name,
               at.name as away_team_name,
-              COALESCE(at.name, g.opponent_name) as opponent_display_name
+              COALESCE(at.name, g.opponent_name) as opponent_display_name,
+              (SELECT COUNT(*)::int FROM pitches p WHERE p.game_id = g.id) as total_pitches
        FROM games g
        JOIN teams ht ON g.home_team_id = ht.id
        LEFT JOIN teams at ON g.away_team_id = at.id

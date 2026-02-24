@@ -167,9 +167,11 @@ const LiveGame: React.FC = () => {
                                   ? 'In Progress'
                                   : 'Completed'}
                         </GameStatus>
-                        <SwapButton onClick={actions.handleToggleHomeAway} title="Swap home/away">
-                            ⇄ Home/Away
-                        </SwapButton>
+                        {!game.total_pitches && (
+                            <SwapButton onClick={actions.handleToggleHomeAway} title="Swap home/away">
+                                ⇄ Home/Away
+                            </SwapButton>
+                        )}
                         {game.status === 'in_progress' && <EndGameButton onClick={actions.handleEndGame}>End Game</EndGameButton>}
                         {game.status === 'completed' && (
                             <ResumeGameButton onClick={actions.handleResumeGame}>Resume Game</ResumeGameButton>
