@@ -136,7 +136,7 @@ export default function GameDetailScreen() {
                         <View style={styles.scoreRow}>
                             <View style={styles.teamScore}>
                                 <Text variant="titleMedium" style={styles.teamName}>
-                                    {game.is_home_game === false ? (game as any).home_team_name || 'Your Team' : 'Home'}
+                                    {game.is_home_game === false ? game.home_team_name || 'Your Team' : 'Home'}
                                 </Text>
                                 <Text variant="displaySmall" style={[styles.score, { color: theme.colors.primary }]}>
                                     {game.is_home_game === false ? game.away_score : game.home_score}

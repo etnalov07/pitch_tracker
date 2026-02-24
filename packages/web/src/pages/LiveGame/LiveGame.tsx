@@ -183,9 +183,7 @@ const LiveGame: React.FC = () => {
                 <GameHeader>
                     <TeamInfo>
                         <TeamName>
-                            {game.is_home_game === false
-                                ? (game as any).home_team_name || 'Your Team'
-                                : game.opponent_name || 'Away Team'}
+                            {game.is_home_game === false ? game.home_team_name || 'Your Team' : game.opponent_name || 'Away Team'}
                         </TeamName>
                         <Score>{game.is_home_game === false ? game.home_score || 0 : game.away_score || 0}</Score>
                     </TeamInfo>
@@ -220,9 +218,7 @@ const LiveGame: React.FC = () => {
                     </GameInfo>
                     <TeamInfo>
                         <TeamName>
-                            {game.is_home_game === false
-                                ? game.opponent_name || 'Home Team'
-                                : (game as any).home_team_name || 'Your Team'}
+                            {game.is_home_game === false ? game.opponent_name || 'Home Team' : game.home_team_name || 'Your Team'}
                         </TeamName>
                         <Score>{game.is_home_game === false ? game.away_score || 0 : game.home_score || 0}</Score>
                     </TeamInfo>

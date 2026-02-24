@@ -231,6 +231,7 @@ export interface Game {
     away_score: number;
     current_inning: number;
     inning_half: InningHalf;
+    home_team_name?: string;
     base_runners?: BaseRunners;
     created_by: string;
     created_at: string;
