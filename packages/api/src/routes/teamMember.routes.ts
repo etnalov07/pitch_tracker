@@ -8,10 +8,7 @@ const router = Router();
 router.use(authenticateToken, loadUserRoles);
 
 // Get team members
-router.get(
-    '/:team_id/members',
-    teamMemberController.getMembers.bind(teamMemberController)
-);
+router.get('/:team_id/members', teamMemberController.getMembers.bind(teamMemberController));
 
 // Update member role (coach/owner only)
 router.put(

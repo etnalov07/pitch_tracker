@@ -11,93 +11,93 @@ export interface TeamBrandingUpdate {
 }
 
 export class TeamService {
-  async createTeam(userId: string, teamData: Partial<Team>): Promise<Team> {
-    const { name, organization, age_group, season, organization_id, team_type, year } = teamData;
+    async createTeam(userId: string, teamData: Partial<Team>): Promise<Team> {
+        const { name, organization, age_group, season, organization_id, team_type, year } = teamData;
 
-    if (!name) {
-      throw new Error('Team name is required');
-    }
+        if (!name) {
+            throw new Error('Team name is required');
+        }
 
-    return await transaction(async (client) => {
-      const team_id = uuidv4();
-      const result = await client.query(
-        `INSERT INTO teams (id, name, owner_id, organization, age_group, season, organization_id, team_type, year)
+        return await transaction(async (client) => {
+            const team_id = uuidv4();
+            const result = await client.query(
+                `INSERT INTO teams (id, name, owner_id, organization, age_group, season, organization_id, team_type, year)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING *`,
-        [team_id, name, userId, organization, age_group, season, organization_id || null, team_type || null, year || null]
-      );
+                [team_id, name, userId, organization, age_group, season, organization_id || null, team_type || null, year || null]
+            );
 
-      // Also create team_members entry for owner
-      await client.query(
-        `INSERT INTO team_members (id, team_id, user_id, role)
+            // Also create team_members entry for owner
+            await client.query(
+                `INSERT INTO team_members (id, team_id, user_id, role)
          VALUES ($1, $2, $3, 'owner')`,
-        [uuidv4(), team_id, userId]
-      );
+                [uuidv4(), team_id, userId]
+            );
 
-      return result.rows[0];
-    });
-  }
+            return result.rows[0];
+        });
+    }
 
-  async getTeamById(team_id: string): Promise<Team | null> {
-    const result = await query('SELECT * FROM teams WHERE id = $1', [team_id]);
-    return result.rows[0] || null;
-  }
+    async getTeamById(team_id: string): Promise<Team | null> {
+        const result = await query('SELECT * FROM teams WHERE id = $1', [team_id]);
+        return result.rows[0] || null;
+    }
 
-  async getTeamsByOwner(userId: string): Promise<Team[]> {
-    // Query via team_members to include teams where user has any role,
-    // plus legacy owner_id for backwards compatibility
-    const result = await query(
-      `SELECT DISTINCT t.*, tm.role as user_role
+    async getTeamsByOwner(userId: string): Promise<Team[]> {
+        // Query via team_members to include teams where user has any role,
+        // plus legacy owner_id for backwards compatibility
+        const result = await query(
+            `SELECT DISTINCT t.*, tm.role as user_role
        FROM teams t
        LEFT JOIN team_members tm ON tm.team_id = t.id AND tm.user_id = $1
        WHERE t.owner_id = $1 OR tm.user_id = $1
        ORDER BY t.created_at DESC`,
-      [userId]
-    );
-    return result.rows;
-  }
+            [userId]
+        );
+        return result.rows;
+    }
 
-  async getAllTeams(): Promise<Team[]> {
-    const result = await query('SELECT * FROM teams ORDER BY name ASC');
-    return result.rows;
-  }
+    async getAllTeams(): Promise<Team[]> {
+        const result = await query('SELECT * FROM teams ORDER BY name ASC');
+        return result.rows;
+    }
 
-  async searchTeams(searchQuery: string, limit = 20): Promise<Team[]> {
-    const result = await query(
-      `SELECT id, name, organization, age_group, season, logo_path, primary_color, team_type, year
+    async searchTeams(searchQuery: string, limit = 20): Promise<Team[]> {
+        const result = await query(
+            `SELECT id, name, organization, age_group, season, logo_path, primary_color, team_type, year
        FROM teams
        WHERE LOWER(name) LIKE LOWER($1)
        ORDER BY name
        LIMIT $2`,
-      [`%${searchQuery}%`, limit]
-    );
-    return result.rows;
-  }
-
-  private async verifyTeamAccess(team_id: string, userId: string): Promise<Team> {
-    const team = await this.getTeamById(team_id);
-    if (!team) {
-      throw new Error('Team not found');
+            [`%${searchQuery}%`, limit]
+        );
+        return result.rows;
     }
-    // Check legacy owner_id OR team_members role
-    if (team.owner_id === userId) return team;
 
-    const memberResult = await query(
-      `SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2 AND role IN ('owner', 'coach')`,
-      [team_id, userId]
-    );
-    if (memberResult.rows.length > 0) return team;
+    private async verifyTeamAccess(team_id: string, userId: string): Promise<Team> {
+        const team = await this.getTeamById(team_id);
+        if (!team) {
+            throw new Error('Team not found');
+        }
+        // Check legacy owner_id OR team_members role
+        if (team.owner_id === userId) return team;
 
-    throw new Error('Unauthorized: You do not have access to this team');
-  }
+        const memberResult = await query(
+            `SELECT role FROM team_members WHERE team_id = $1 AND user_id = $2 AND role IN ('owner', 'coach')`,
+            [team_id, userId]
+        );
+        if (memberResult.rows.length > 0) return team;
 
-  async updateTeam(team_id: string, userId: string, updates: Partial<Team>): Promise<Team> {
-    await this.verifyTeamAccess(team_id, userId);
+        throw new Error('Unauthorized: You do not have access to this team');
+    }
 
-    const { name, organization, age_group, season, team_type, year } = updates;
+    async updateTeam(team_id: string, userId: string, updates: Partial<Team>): Promise<Team> {
+        await this.verifyTeamAccess(team_id, userId);
 
-    const result = await query(
-      `UPDATE teams
+        const { name, organization, age_group, season, team_type, year } = updates;
+
+        const result = await query(
+            `UPDATE teams
        SET name = COALESCE($1, name),
            organization = COALESCE($2, organization),
            age_group = COALESCE($3, age_group),
@@ -106,45 +106,40 @@ export class TeamService {
            year = COALESCE($6, year)
        WHERE id = $7
        RETURNING *`,
-      [name, organization, age_group, season, team_type, year, team_id]
-    );
+            [name, organization, age_group, season, team_type, year, team_id]
+        );
 
-    return result.rows[0];
-  }
-
-  async deleteTeam(team_id: string, userId: string): Promise<void> {
-    await this.verifyTeamAccess(team_id, userId);
-    await query('DELETE FROM teams WHERE id = $1', [team_id]);
-  }
-
-  async getTeamWithPlayers(team_id: string): Promise<any> {
-    const teamResult = await query('SELECT * FROM teams WHERE id = $1', [team_id]);
-    if (teamResult.rows.length === 0) {
-      throw new Error('Team not found');
+        return result.rows[0];
     }
 
-    const playersResult = await query(
-      'SELECT * FROM players WHERE team_id = $1 AND is_active = true ORDER BY jersey_number',
-      [team_id]
-    );
+    async deleteTeam(team_id: string, userId: string): Promise<void> {
+        await this.verifyTeamAccess(team_id, userId);
+        await query('DELETE FROM teams WHERE id = $1', [team_id]);
+    }
 
-    return {
-      ...teamResult.rows[0],
-      players: playersResult.rows,
-    };
-  }
+    async getTeamWithPlayers(team_id: string): Promise<any> {
+        const teamResult = await query('SELECT * FROM teams WHERE id = $1', [team_id]);
+        if (teamResult.rows.length === 0) {
+            throw new Error('Team not found');
+        }
 
-  async updateTeamBranding(
-    team_id: string,
-    userId: string,
-    updates: TeamBrandingUpdate
-  ): Promise<Team> {
-    await this.verifyTeamAccess(team_id, userId);
+        const playersResult = await query('SELECT * FROM players WHERE team_id = $1 AND is_active = true ORDER BY jersey_number', [
+            team_id,
+        ]);
 
-    const { logo_path, primary_color, secondary_color, accent_color } = updates;
+        return {
+            ...teamResult.rows[0],
+            players: playersResult.rows,
+        };
+    }
 
-    const result = await query(
-      `UPDATE teams
+    async updateTeamBranding(team_id: string, userId: string, updates: TeamBrandingUpdate): Promise<Team> {
+        await this.verifyTeamAccess(team_id, userId);
+
+        const { logo_path, primary_color, secondary_color, accent_color } = updates;
+
+        const result = await query(
+            `UPDATE teams
        SET logo_path = COALESCE($1, logo_path),
            primary_color = COALESCE($2, primary_color),
            secondary_color = COALESCE($3, secondary_color),
@@ -152,57 +147,53 @@ export class TeamService {
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $5
        RETURNING *`,
-      [logo_path, primary_color, secondary_color, accent_color, team_id]
-    );
+            [logo_path, primary_color, secondary_color, accent_color, team_id]
+        );
 
-    return result.rows[0];
-  }
-
-  async updateTeamColors(
-    team_id: string,
-    userId: string,
-    colors: { primary_color?: string; secondary_color?: string; accent_color?: string }
-  ): Promise<Team> {
-    return this.updateTeamBranding(team_id, userId, colors);
-  }
-
-  async deleteLogo(team_id: string, userId: string): Promise<Team> {
-    const team = await this.verifyTeamAccess(team_id, userId);
-
-    // Delete logo files from filesystem
-    if (team.logo_path) {
-      deleteLogoFiles(team_id);
+        return result.rows[0];
     }
 
-    const result = await query(
-      `UPDATE teams
+    async updateTeamColors(
+        team_id: string,
+        userId: string,
+        colors: { primary_color?: string; secondary_color?: string; accent_color?: string }
+    ): Promise<Team> {
+        return this.updateTeamBranding(team_id, userId, colors);
+    }
+
+    async deleteLogo(team_id: string, userId: string): Promise<Team> {
+        const team = await this.verifyTeamAccess(team_id, userId);
+
+        // Delete logo files from filesystem
+        if (team.logo_path) {
+            deleteLogoFiles(team_id);
+        }
+
+        const result = await query(
+            `UPDATE teams
        SET logo_path = NULL, updated_at = CURRENT_TIMESTAMP
        WHERE id = $1
        RETURNING *`,
-      [team_id]
-    );
+            [team_id]
+        );
 
-    return result.rows[0];
-  }
-
-  /**
-   * Validates that a player is not already on a high_school team for the given year.
-   * Coaches are exempt — only role='player' is restricted.
-   */
-  async validateHighSchoolLimit(
-    userId: string,
-    year: number,
-    excludeTeamId?: string
-  ): Promise<void> {
-    const params: (string | number)[] = [userId, year];
-    let excludeClause = '';
-    if (excludeTeamId) {
-      excludeClause = ' AND t.id != $3';
-      params.push(excludeTeamId);
+        return result.rows[0];
     }
 
-    const result = await query(
-      `SELECT t.id, t.name
+    /**
+     * Validates that a player is not already on a high_school team for the given year.
+     * Coaches are exempt — only role='player' is restricted.
+     */
+    async validateHighSchoolLimit(userId: string, year: number, excludeTeamId?: string): Promise<void> {
+        const params: (string | number)[] = [userId, year];
+        let excludeClause = '';
+        if (excludeTeamId) {
+            excludeClause = ' AND t.id != $3';
+            params.push(excludeTeamId);
+        }
+
+        const result = await query(
+            `SELECT t.id, t.name
        FROM team_members tm
        JOIN teams t ON t.id = tm.team_id
        WHERE tm.user_id = $1
@@ -210,16 +201,14 @@ export class TeamService {
          AND t.year = $2
          AND tm.role = 'player'${excludeClause}
        LIMIT 1`,
-      params
-    );
+            params
+        );
 
-    if (result.rows.length > 0) {
-      const existingTeam = result.rows[0];
-      throw new Error(
-        `Player is already on a high school team for ${year}: ${existingTeam.name}`
-      );
+        if (result.rows.length > 0) {
+            const existingTeam = result.rows[0];
+            throw new Error(`Player is already on a high school team for ${year}: ${existingTeam.name}`);
+        }
     }
-  }
 }
 
 export default new TeamService();

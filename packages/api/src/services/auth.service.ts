@@ -5,106 +5,97 @@ import { UserWithPassword, UserResponse, RegisterData, LoginCredentials } from '
 import { v4 as uuidv4 } from 'uuid';
 
 export class AuthService {
-  async register(data: RegisterData): Promise<{ user: UserResponse; token: string }> {
-    const { email, password, first_name, last_name } = data;
+    async register(data: RegisterData): Promise<{ user: UserResponse; token: string }> {
+        const { email, password, first_name, last_name } = data;
 
-    // Check if user already exists
-    const existingUser = await query(
-      'SELECT id FROM users WHERE email = $1',
-      [email]
-    );
+        // Check if user already exists
+        const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
 
-    if (existingUser.rows.length > 0) {
-      throw new Error('User with this email already exists');
-    }
+        if (existingUser.rows.length > 0) {
+            throw new Error('User with this email already exists');
+        }
 
-    // Hash password
-    const password_hash = await hashPassword(password);
+        // Hash password
+        const password_hash = await hashPassword(password);
 
-    // Create user
-    const userId = uuidv4();
-    const result = await query(
-      `INSERT INTO users (id, email, password_hash, first_name, last_name)
+        // Create user
+        const userId = uuidv4();
+        const result = await query(
+            `INSERT INTO users (id, email, password_hash, first_name, last_name)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, email, first_name, last_name, created_at`,
-      [userId, email, password_hash, first_name, last_name]
-    );
+            [userId, email, password_hash, first_name, last_name]
+        );
 
-    const user = result.rows[0];
+        const user = result.rows[0];
 
-    // Generate JWT token
-    const token = generateToken({ id: user.id, email: user.email });
+        // Generate JWT token
+        const token = generateToken({ id: user.id, email: user.email });
 
-    return { user, token };
-  }
-
-  async login(credentials: LoginCredentials): Promise<{ user: UserResponse; token: string }> {
-    const { email, password } = credentials;
-
-    // Find user
-    const result = await query(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
-    );
-
-    if (result.rows.length === 0) {
-      throw new Error('Invalid email or password');
+        return { user, token };
     }
 
-    const user: UserWithPassword = result.rows[0];
+    async login(credentials: LoginCredentials): Promise<{ user: UserResponse; token: string }> {
+        const { email, password } = credentials;
 
-    // Verify password
-    const isValidPassword = await comparePassword(password, user.password_hash);
+        // Find user
+        const result = await query('SELECT * FROM users WHERE email = $1', [email]);
 
-    if (!isValidPassword) {
-      throw new Error('Invalid email or password');
+        if (result.rows.length === 0) {
+            throw new Error('Invalid email or password');
+        }
+
+        const user: UserWithPassword = result.rows[0];
+
+        // Verify password
+        const isValidPassword = await comparePassword(password, user.password_hash);
+
+        if (!isValidPassword) {
+            throw new Error('Invalid email or password');
+        }
+
+        // Generate JWT token
+        const token = generateToken({ id: user.id, email: user.email });
+
+        // Return user without password
+        const { password_hash, ...userResponse } = user;
+
+        return { user: userResponse as UserResponse, token };
     }
 
-    // Generate JWT token
-    const token = generateToken({ id: user.id, email: user.email });
+    async getUserById(userId: string): Promise<UserResponse | null> {
+        const result = await query('SELECT id, email, first_name, last_name, created_at FROM users WHERE id = $1', [userId]);
 
-    // Return user without password
-    const { password_hash, ...userResponse } = user;
+        if (result.rows.length === 0) return null;
 
-    return { user: userResponse as UserResponse, token };
-  }
+        const user = result.rows[0];
 
-  async getUserById(userId: string): Promise<UserResponse | null> {
-    const result = await query(
-      'SELECT id, email, first_name, last_name, created_at FROM users WHERE id = $1',
-      [userId]
-    );
-
-    if (result.rows.length === 0) return null;
-
-    const user = result.rows[0];
-
-    // Load role memberships
-    const [teamMemberships, orgMemberships] = await Promise.all([
-      query(
-        `SELECT tm.id, tm.team_id, tm.user_id, tm.role, tm.player_id, tm.created_at,
+        // Load role memberships
+        const [teamMemberships, orgMemberships] = await Promise.all([
+            query(
+                `SELECT tm.id, tm.team_id, tm.user_id, tm.role, tm.player_id, tm.created_at,
                 t.name as team_name
          FROM team_members tm
          JOIN teams t ON t.id = tm.team_id
          WHERE tm.user_id = $1`,
-        [userId]
-      ),
-      query(
-        `SELECT om.id, om.organization_id, om.user_id, om.role, om.created_at,
+                [userId]
+            ),
+            query(
+                `SELECT om.id, om.organization_id, om.user_id, om.role, om.created_at,
                 o.name as org_name
          FROM organization_members om
          JOIN organizations o ON o.id = om.organization_id
          WHERE om.user_id = $1`,
-        [userId]
-      ),
-    ]);
+                [userId]
+            ),
+        ]);
 
-    return {
-      ...user,
-      team_memberships: teamMemberships.rows,
-      org_memberships: orgMemberships.rows,
-    };
-  }
+        return {
+            ...user,
+            team_memberships: teamMemberships.rows,
+            org_memberships: orgMemberships.rows,
+        };
+    }
 }
 
 export default new AuthService();

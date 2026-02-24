@@ -9,11 +9,7 @@ const router = Router();
 router.get('/token/:token', inviteController.getByToken.bind(inviteController));
 
 // Accept invite (auth required, no role check — any authenticated user can accept)
-router.post(
-    '/token/:token/accept',
-    authenticateToken,
-    inviteController.accept.bind(inviteController)
-);
+router.post('/token/:token/accept', authenticateToken, inviteController.accept.bind(inviteController));
 
 // Protected routes below require auth + roles
 router.use(authenticateToken, loadUserRoles);

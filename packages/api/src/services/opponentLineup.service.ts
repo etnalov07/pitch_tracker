@@ -58,10 +58,7 @@ export class OpponentLineupService {
     }
 
     async getPlayerById(playerId: string): Promise<OpponentLineupPlayer | null> {
-        const result = await query(
-            `SELECT * FROM opponent_lineup WHERE id = $1`,
-            [playerId]
-        );
+        const result = await query(`SELECT * FROM opponent_lineup WHERE id = $1`, [playerId]);
         return result.rows[0] || null;
     }
 
@@ -102,13 +99,18 @@ export class OpponentLineupService {
             `INSERT INTO opponent_lineup (id, game_id, player_name, batting_order, position, bats, is_starter, inning_entered)
              VALUES ($1, $2, $3, $4, $5, $6, false, $7)
              RETURNING *`,
-            [newPlayerId, original.game_id, newPlayerName, original.batting_order, position || original.position, bats, inningEntered]
+            [
+                newPlayerId,
+                original.game_id,
+                newPlayerName,
+                original.batting_order,
+                position || original.position,
+                bats,
+                inningEntered,
+            ]
         );
 
-        await query(
-            `UPDATE opponent_lineup SET replaced_by_id = $1 WHERE id = $2`,
-            [newPlayerId, originalPlayerId]
-        );
+        await query(`UPDATE opponent_lineup SET replaced_by_id = $1 WHERE id = $2`, [newPlayerId, originalPlayerId]);
 
         return result.rows[0];
     }

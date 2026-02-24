@@ -4,10 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import teamService from './team.service';
 
 export class JoinRequestService {
-    async createRequest(
-        userId: string,
-        data: { team_id: string; message?: string }
-    ): Promise<JoinRequest> {
+    async createRequest(userId: string, data: { team_id: string; message?: string }): Promise<JoinRequest> {
         const { team_id, message } = data;
 
         // Verify team exists
@@ -17,10 +14,7 @@ export class JoinRequestService {
         }
 
         // Check not already a member
-        const existingMember = await query(
-            'SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2',
-            [team_id, userId]
-        );
+        const existingMember = await query('SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2', [team_id, userId]);
         if (existingMember.rows.length > 0) {
             throw new Error('You are already a member of this team');
         }
@@ -71,17 +65,10 @@ export class JoinRequestService {
         return result.rows;
     }
 
-    async approveRequest(
-        requestId: string,
-        reviewerId: string,
-        linkedPlayerId?: string
-    ): Promise<void> {
+    async approveRequest(requestId: string, reviewerId: string, linkedPlayerId?: string): Promise<void> {
         await transaction(async (client) => {
             // Get request
-            const reqResult = await client.query(
-                `SELECT * FROM join_requests WHERE id = $1 FOR UPDATE`,
-                [requestId]
-            );
+            const reqResult = await client.query(`SELECT * FROM join_requests WHERE id = $1 FOR UPDATE`, [requestId]);
             if (reqResult.rows.length === 0) {
                 throw new Error('Join request not found');
             }
@@ -92,10 +79,7 @@ export class JoinRequestService {
             }
 
             // HS validation: players can only be on one high_school team per year
-            const teamResult = await client.query(
-                'SELECT team_type, year FROM teams WHERE id = $1',
-                [request.team_id]
-            );
+            const teamResult = await client.query('SELECT team_type, year FROM teams WHERE id = $1', [request.team_id]);
             const team = teamResult.rows[0];
             if (team?.team_type === 'high_school' && team.year) {
                 await teamService.validateHighSchoolLimit(request.user_id, team.year, request.team_id);
@@ -120,16 +104,10 @@ export class JoinRequestService {
 
             // Link player record if specified
             if (linkedPlayerId) {
-                await client.query(
-                    'UPDATE players SET user_id = $1 WHERE id = $2',
-                    [request.user_id, linkedPlayerId]
-                );
+                await client.query('UPDATE players SET user_id = $1 WHERE id = $2', [request.user_id, linkedPlayerId]);
             } else {
                 // Create a new player record from user's name
-                const userResult = await client.query(
-                    'SELECT first_name, last_name FROM users WHERE id = $1',
-                    [request.user_id]
-                );
+                const userResult = await client.query('SELECT first_name, last_name FROM users WHERE id = $1', [request.user_id]);
                 if (userResult.rows.length > 0) {
                     const user = userResult.rows[0];
                     const playerId = uuidv4();
@@ -140,10 +118,11 @@ export class JoinRequestService {
                     );
 
                     // Update team_members with the new player_id
-                    await client.query(
-                        'UPDATE team_members SET player_id = $1 WHERE team_id = $2 AND user_id = $3',
-                        [playerId, request.team_id, request.user_id]
-                    );
+                    await client.query('UPDATE team_members SET player_id = $1 WHERE team_id = $2 AND user_id = $3', [
+                        playerId,
+                        request.team_id,
+                        request.user_id,
+                    ]);
                 }
             }
         });

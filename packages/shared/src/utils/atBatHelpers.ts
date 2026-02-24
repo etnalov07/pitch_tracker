@@ -54,29 +54,19 @@ export interface RunnerAdvancementResult {
  * For example, on a single, standard advancement is +1 base,
  * but a runner on first could go to third (user adjusts manually).
  */
-export const getSuggestedAdvancement = (
-    currentRunners: BaseRunners,
-    result: string
-): RunnerAdvancementResult => {
+export const getSuggestedAdvancement = (currentRunners: BaseRunners, result: string): RunnerAdvancementResult => {
     let runs = 0;
     const newRunners: BaseRunners = { first: false, second: false, third: false };
 
     switch (result) {
         case 'home_run':
             // All runners + batter score, bases cleared
-            runs =
-                (currentRunners.first ? 1 : 0) +
-                (currentRunners.second ? 1 : 0) +
-                (currentRunners.third ? 1 : 0) +
-                1; // +1 for batter
+            runs = (currentRunners.first ? 1 : 0) + (currentRunners.second ? 1 : 0) + (currentRunners.third ? 1 : 0) + 1; // +1 for batter
             break;
 
         case 'triple':
             // All runners score, batter to 3rd
-            runs =
-                (currentRunners.first ? 1 : 0) +
-                (currentRunners.second ? 1 : 0) +
-                (currentRunners.third ? 1 : 0);
+            runs = (currentRunners.first ? 1 : 0) + (currentRunners.second ? 1 : 0) + (currentRunners.third ? 1 : 0);
             newRunners.third = true; // Batter to 3rd
             break;
 

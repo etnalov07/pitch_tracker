@@ -15,12 +15,7 @@ export class TeamMemberService {
         return result.rows;
     }
 
-    async addMember(
-        teamId: string,
-        userId: string,
-        role: TeamRole = 'player',
-        playerId?: string
-    ): Promise<TeamMember> {
+    async addMember(teamId: string, userId: string, role: TeamRole = 'player', playerId?: string): Promise<TeamMember> {
         const id = uuidv4();
         const result = await query(
             `INSERT INTO team_members (id, team_id, user_id, role, player_id)
@@ -32,10 +27,7 @@ export class TeamMemberService {
     }
 
     async updateMemberRole(memberId: string, role: TeamRole): Promise<TeamMember> {
-        const result = await query(
-            `UPDATE team_members SET role = $1 WHERE id = $2 RETURNING *`,
-            [role, memberId]
-        );
+        const result = await query(`UPDATE team_members SET role = $1 WHERE id = $2 RETURNING *`, [role, memberId]);
         if (result.rows.length === 0) {
             throw new Error('Member not found');
         }
@@ -50,10 +42,9 @@ export class TeamMemberService {
 
         const member = memberResult.rows[0];
         if (member.role === 'owner') {
-            const ownerCount = await query(
-                `SELECT COUNT(*) FROM team_members WHERE team_id = $1 AND role = 'owner'`,
-                [member.team_id]
-            );
+            const ownerCount = await query(`SELECT COUNT(*) FROM team_members WHERE team_id = $1 AND role = 'owner'`, [
+                member.team_id,
+            ]);
             if (parseInt(ownerCount.rows[0].count, 10) <= 1) {
                 throw new Error('Cannot remove the last owner');
             }
@@ -63,10 +54,7 @@ export class TeamMemberService {
     }
 
     async linkPlayerToMember(memberId: string, playerId: string): Promise<TeamMember> {
-        const result = await query(
-            `UPDATE team_members SET player_id = $1 WHERE id = $2 RETURNING *`,
-            [playerId, memberId]
-        );
+        const result = await query(`UPDATE team_members SET player_id = $1 WHERE id = $2 RETURNING *`, [playerId, memberId]);
         if (result.rows.length === 0) {
             throw new Error('Member not found');
         }
@@ -79,10 +67,7 @@ export class TeamMemberService {
     }
 
     async getMemberByUserAndTeam(userId: string, teamId: string): Promise<TeamMember | null> {
-        const result = await query(
-            'SELECT * FROM team_members WHERE user_id = $1 AND team_id = $2',
-            [userId, teamId]
-        );
+        const result = await query('SELECT * FROM team_members WHERE user_id = $1 AND team_id = $2', [userId, teamId]);
         return result.rows[0] || null;
     }
 

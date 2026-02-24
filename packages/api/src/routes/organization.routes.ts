@@ -36,6 +36,10 @@ router.get('/:org_id/members', requireOrgMember, organizationController.getMembe
 router.post('/:org_id/members', requireOrgRole('owner', 'admin'), organizationController.addMember.bind(organizationController));
 
 // Remove member
-router.delete('/:org_id/members/:member_id', requireOrgRole('owner', 'admin'), organizationController.removeMember.bind(organizationController));
+router.delete(
+    '/:org_id/members/:member_id',
+    requireOrgRole('owner', 'admin'),
+    organizationController.removeMember.bind(organizationController)
+);
 
 export default router;

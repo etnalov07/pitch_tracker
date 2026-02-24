@@ -12,10 +12,7 @@ function slugify(text: string): string {
 }
 
 export class OrganizationService {
-    async createOrganization(
-        userId: string,
-        data: { name: string; slug?: string; description?: string }
-    ): Promise<Organization> {
+    async createOrganization(userId: string, data: { name: string; slug?: string; description?: string }): Promise<Organization> {
         const { name, description } = data;
         if (!name?.trim()) {
             throw new Error('Organization name is required');

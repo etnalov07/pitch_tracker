@@ -90,10 +90,7 @@ export class InviteService {
     async acceptInvite(token: string, userId: string): Promise<{ team_id: string }> {
         return await transaction(async (client) => {
             // Get invite
-            const inviteResult = await client.query(
-                `SELECT * FROM invites WHERE token = $1 FOR UPDATE`,
-                [token]
-            );
+            const inviteResult = await client.query(`SELECT * FROM invites WHERE token = $1 FOR UPDATE`, [token]);
 
             if (inviteResult.rows.length === 0) {
                 throw new Error('Invite not found');
@@ -111,10 +108,10 @@ export class InviteService {
             }
 
             // Check if already a member
-            const existingMember = await client.query(
-                'SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2',
-                [invite.team_id, userId]
-            );
+            const existingMember = await client.query('SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2', [
+                invite.team_id,
+                userId,
+            ]);
 
             if (existingMember.rows.length > 0) {
                 throw new Error('You are already a member of this team');
@@ -122,10 +119,7 @@ export class InviteService {
 
             // HS validation: players can only be on one high_school team per year
             if (invite.role === 'player') {
-                const teamResult = await client.query(
-                    'SELECT team_type, year FROM teams WHERE id = $1',
-                    [invite.team_id]
-                );
+                const teamResult = await client.query('SELECT team_type, year FROM teams WHERE id = $1', [invite.team_id]);
                 const team = teamResult.rows[0];
                 if (team?.team_type === 'high_school' && team.year) {
                     await teamService.validateHighSchoolLimit(userId, team.year, invite.team_id);
@@ -142,10 +136,7 @@ export class InviteService {
 
             // Link player record to user if specified
             if (invite.player_id) {
-                await client.query(
-                    'UPDATE players SET user_id = $1 WHERE id = $2',
-                    [userId, invite.player_id]
-                );
+                await client.query('UPDATE players SET user_id = $1 WHERE id = $2', [userId, invite.player_id]);
             }
 
             // Mark invite as accepted
@@ -160,10 +151,9 @@ export class InviteService {
     }
 
     async revokeInvite(inviteId: string): Promise<void> {
-        const result = await query(
-            `UPDATE invites SET status = 'revoked' WHERE id = $1 AND status = 'pending' RETURNING id`,
-            [inviteId]
-        );
+        const result = await query(`UPDATE invites SET status = 'revoked' WHERE id = $1 AND status = 'pending' RETURNING id`, [
+            inviteId,
+        ]);
         if (result.rows.length === 0) {
             throw new Error('Invite not found or already used');
         }

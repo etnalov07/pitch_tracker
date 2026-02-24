@@ -26,7 +26,7 @@ export class GamePitcherService {
             [gameId]
         );
 
-        return result.rows.map(row => ({
+        return result.rows.map((row) => ({
             id: row.id,
             game_id: row.game_id,
             player_id: row.player_id,
@@ -43,8 +43,8 @@ export class GamePitcherService {
                 primary_position: 'P',
                 bats: 'R',
                 throws: row.throws,
-                created_at: ''
-            }
+                created_at: '',
+            },
         }));
     }
 
@@ -82,8 +82,8 @@ export class GamePitcherService {
                 primary_position: 'P',
                 bats: 'R',
                 throws: row.throws,
-                created_at: ''
-            }
+                created_at: '',
+            },
         };
     }
 
@@ -91,10 +91,7 @@ export class GamePitcherService {
         const currentPitcher = await this.getCurrentPitcher(gameId);
 
         if (currentPitcher) {
-            await query(
-                `UPDATE game_pitchers SET inning_exited = $1 WHERE id = $2`,
-                [inningEntered, currentPitcher.id]
-            );
+            await query(`UPDATE game_pitchers SET inning_exited = $1 WHERE id = $2`, [inningEntered, currentPitcher.id]);
         }
 
         const nextOrder = currentPitcher ? currentPitcher.pitching_order + 1 : 1;
@@ -102,10 +99,10 @@ export class GamePitcherService {
     }
 
     async updatePitcherExit(pitcherId: string, inningExited: number): Promise<GamePitcher> {
-        const result = await query(
-            `UPDATE game_pitchers SET inning_exited = $1 WHERE id = $2 RETURNING *`,
-            [inningExited, pitcherId]
-        );
+        const result = await query(`UPDATE game_pitchers SET inning_exited = $1 WHERE id = $2 RETURNING *`, [
+            inningExited,
+            pitcherId,
+        ]);
 
         if (result.rows.length === 0) {
             throw new Error('Pitcher not found');

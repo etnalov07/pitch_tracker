@@ -15,10 +15,7 @@ const LOGO_SIZES: LogoSize[] = [
     { name: 'medium', width: 192, height: 192 },
 ];
 
-export async function processLogoUpload(
-    filePath: string,
-    teamId: string
-): Promise<string> {
+export async function processLogoUpload(filePath: string, teamId: string): Promise<string> {
     const ext = path.extname(filePath).toLowerCase();
 
     // For SVG files, just rename and return
@@ -49,12 +46,7 @@ export async function processLogoUpload(
 
 export function deleteLogoFiles(teamId: string): void {
     // Try to delete all possible logo files
-    const possibleFiles = [
-        `${teamId}.svg`,
-        `${teamId}_thumbnail.png`,
-        `${teamId}_small.png`,
-        `${teamId}_medium.png`,
-    ];
+    const possibleFiles = [`${teamId}.svg`, `${teamId}_thumbnail.png`, `${teamId}_small.png`, `${teamId}_medium.png`];
 
     for (const filename of possibleFiles) {
         const filePath = path.join(LOGO_UPLOAD_DIR, filename);

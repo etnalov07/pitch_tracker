@@ -7,11 +7,7 @@ import { TeamRole, OrgRole } from '@pitch-tracker/shared';
  * Middleware: load user's team and org roles from DB, attach to request.
  * Must run after authenticateToken.
  */
-export const loadUserRoles = async (
-    req: RoleAwareRequest,
-    res: Response,
-    next: NextFunction
-): Promise<void> => {
+export const loadUserRoles = async (req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> => {
     if (!req.user) {
         next();
         return;

@@ -26,12 +26,14 @@ const app: Application = express();
 
 // Middleware
 console.log('CORS origins configured:', config.cors.origin);
-app.use(cors({
-  origin: config.cors.origin,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+    cors({
+        origin: config.cors.origin,
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+    })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -40,27 +42,30 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Request logging middleware
 app.use((req: Request, res: Response, next) => {
-  console.log('📥 Incoming Request:');
-  console.log('  Method:', req.method);
-  console.log('  Path:', req.path);
-  console.log('  URL:', req.url);
-  console.log('  Query:', JSON.stringify(req.query));
-  console.log('  Body:', JSON.stringify(req.body));
-  console.log('  Headers:', JSON.stringify({
-    'content-type': req.headers['content-type'],
-    'origin': req.headers['origin'],
-    'user-agent': req.headers['user-agent']
-  }));
-  next();
+    console.log('📥 Incoming Request:');
+    console.log('  Method:', req.method);
+    console.log('  Path:', req.path);
+    console.log('  URL:', req.url);
+    console.log('  Query:', JSON.stringify(req.query));
+    console.log('  Body:', JSON.stringify(req.body));
+    console.log(
+        '  Headers:',
+        JSON.stringify({
+            'content-type': req.headers['content-type'],
+            origin: req.headers['origin'],
+            'user-agent': req.headers['user-agent'],
+        })
+    );
+    next();
 });
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: config.nodeEnv,
-  });
+    res.status(200).json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        environment: config.nodeEnv,
+    });
 });
 
 // API Routes (prefixed with /bt-api for Namecheap routing)
@@ -83,15 +88,15 @@ app.use('/bt-api/teams', teamMemberRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
-  console.log('❌ 404 Not Found:');
-  console.log('  Method:', req.method);
-  console.log('  Path:', req.path);
-  console.log('  URL:', req.url);
-  res.status(404).json({
-    error: 'Route not found',
-    path: req.path,
-    method: req.method
-  });
+    console.log('❌ 404 Not Found:');
+    console.log('  Method:', req.method);
+    console.log('  Path:', req.path);
+    console.log('  URL:', req.url);
+    res.status(404).json({
+        error: 'Route not found',
+        path: req.path,
+        method: req.method,
+    });
 });
 
 // Error handling middleware (must be last)

@@ -102,10 +102,7 @@ export class ScoutingService {
     // Calculate tendencies from pitch data
     async calculateTendencies(profileId: string): Promise<BatterTendencies> {
         // Get all opponent_lineup IDs linked to this profile
-        const lineupIds = await query(
-            `SELECT opponent_lineup_id FROM opponent_lineup_profiles WHERE profile_id = $1`,
-            [profileId]
-        );
+        const lineupIds = await query(`SELECT opponent_lineup_id FROM opponent_lineup_profiles WHERE profile_id = $1`, [profileId]);
 
         const batterIds = lineupIds.rows.map((r: { opponent_lineup_id: string }) => r.opponent_lineup_id);
 

@@ -30,10 +30,7 @@ export class BaserunnerEventService {
             );
 
             // Update game base_runners to remove the caught runner
-            const gameResult = await client.query(
-                `SELECT base_runners FROM games WHERE id = $1`,
-                [game_id]
-            );
+            const gameResult = await client.query(`SELECT base_runners FROM games WHERE id = $1`, [game_id]);
             const currentRunners: BaseRunners = gameResult.rows[0]?.base_runners || {
                 first: false,
                 second: false,
@@ -41,28 +38,19 @@ export class BaserunnerEventService {
             };
             const updatedRunners = removeRunner(currentRunners, runner_base as RunnerBase);
 
-            await client.query(`UPDATE games SET base_runners = $1 WHERE id = $2`, [
-                JSON.stringify(updatedRunners),
-                game_id,
-            ]);
+            await client.query(`UPDATE games SET base_runners = $1 WHERE id = $2`, [JSON.stringify(updatedRunners), game_id]);
 
             return result.rows[0];
         });
     }
 
     async getEventsByGame(gameId: string): Promise<BaserunnerEvent[]> {
-        const result = await query(
-            `SELECT * FROM baserunner_events WHERE game_id = $1 ORDER BY created_at`,
-            [gameId]
-        );
+        const result = await query(`SELECT * FROM baserunner_events WHERE game_id = $1 ORDER BY created_at`, [gameId]);
         return result.rows;
     }
 
     async getEventsByInning(inningId: string): Promise<BaserunnerEvent[]> {
-        const result = await query(
-            `SELECT * FROM baserunner_events WHERE inning_id = $1 ORDER BY created_at`,
-            [inningId]
-        );
+        const result = await query(`SELECT * FROM baserunner_events WHERE inning_id = $1 ORDER BY created_at`, [inningId]);
         return result.rows;
     }
 

@@ -33,6 +33,9 @@ yarn-error.log*
 # Testing
 coverage/
 
+# Agent pipeline output
+packages/agents/output/
+
 # Misc
 *.log
 .cache

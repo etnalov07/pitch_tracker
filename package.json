@@ -6,7 +6,8 @@
         "packages/api",
         "packages/shared",
         "packages/web",
-        "packages/mobile"
+        "packages/mobile",
+        "packages/agents"
     ],
     "scripts": {
         "dev:web": "npm run start --workspace=@pitch-tracker/web",
@@ -14,7 +15,9 @@
         "build:web": "npm run build --workspace=@pitch-tracker/web",
         "build:api": "npm run build --workspace=@pitch-tracker/api",
         "build:shared": "npm run build --workspace=@pitch-tracker/shared",
+        "build:agents": "npm run build --workspace=@pitch-tracker/agents",
         "build": "npm run build:shared && npm run build:api && npm run build:web",
+        "agents": "npm run start --workspace=@pitch-tracker/agents --",
         "lint": "npm run lint --workspaces --if-present",
         "test": "npm run test --workspaces --if-present"
     },
