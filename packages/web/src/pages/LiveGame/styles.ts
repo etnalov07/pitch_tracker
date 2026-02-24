@@ -87,6 +87,26 @@ export const Score = styled.div({
     fontWeight: theme.fontWeight.bold,
 });
 
+export const SwapButton = styled.button({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '28px',
+    height: '28px',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    color: 'white',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    borderRadius: '50%',
+    fontSize: theme.fontSize.sm,
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    flexShrink: 0,
+
+    '&:hover': {
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    },
+});
+
 export const GameInfo = styled.div({
     display: 'flex',
     flexDirection: 'column',

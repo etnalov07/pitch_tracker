@@ -3,7 +3,7 @@ import { View, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Text, Button, useTheme, IconButton, Card, Chip, Divider, ActivityIndicator } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
-import { useAppDispatch, useAppSelector, fetchGameById } from '../../../src/state';
+import { useAppDispatch, useAppSelector, fetchGameById, toggleHomeAway } from '../../../src/state';
 
 export default function GameDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -105,6 +105,12 @@ export default function GameDetailScreen() {
         router.push(`/game/${id}/live`);
     };
 
+    const handleToggleHomeAway = async () => {
+        if (!id) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await dispatch(toggleHomeAway(id));
+    };
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <View style={styles.header}>
@@ -143,9 +149,7 @@ export default function GameDetailScreen() {
                                 </Text>
                             </View>
 
-                            <Text variant="titleLarge" style={styles.vs}>
-                                -
-                            </Text>
+                            <IconButton icon="swap-horizontal" size={20} onPress={handleToggleHomeAway} />
 
                             <View style={styles.teamScore}>
                                 <Text variant="titleMedium" style={styles.teamName}>

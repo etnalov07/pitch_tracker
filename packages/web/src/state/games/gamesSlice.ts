@@ -112,6 +112,14 @@ export const advanceInning = createAsyncThunk('games/advanceInning', async (game
     }
 });
 
+export const toggleHomeAway = createAsyncThunk('games/toggleHomeAway', async (gameId: string, { rejectWithValue }) => {
+    try {
+        return await gamesApi.toggleHomeAway(gameId);
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to toggle home/away'));
+    }
+});
+
 export const fetchCurrentGameState = createAsyncThunk('games/fetchCurrentState', async (gameId: string, { rejectWithValue }) => {
     try {
         return await gamesApi.getCurrentGameState(gameId);
@@ -297,6 +305,21 @@ const gamesSlice = createSlice({
                 }
             })
             .addCase(advanceInning.rejected, (state, action) => {
+                state.error = action.payload as string;
+            });
+
+        // Toggle Home/Away
+        builder
+            .addCase(toggleHomeAway.fulfilled, (state, action) => {
+                const index = state.games.findIndex((g) => g.id === action.payload.id);
+                if (index !== -1) {
+                    state.games[index] = action.payload;
+                }
+                if (state.selectedGame?.id === action.payload.id) {
+                    state.selectedGame = action.payload;
+                }
+            })
+            .addCase(toggleHomeAway.rejected, (state, action) => {
                 state.error = action.payload as string;
             });
 

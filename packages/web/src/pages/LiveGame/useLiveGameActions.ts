@@ -1,5 +1,14 @@
 import { BaseRunners, BaserunnerEventType, RunnerBase, getSuggestedAdvancement, clearBases } from '@pitch-tracker/shared';
-import { fetchGameById, startGame, logPitch, createAtBat, updateAtBat, setCurrentAtBat, clearPitches } from '../../state';
+import {
+    fetchGameById,
+    startGame,
+    logPitch,
+    createAtBat,
+    updateAtBat,
+    setCurrentAtBat,
+    clearPitches,
+    toggleHomeAway,
+} from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { OpponentLineupPlayer, GamePitcherWithPlayer, getOutsForResult } from '../../types';
 import { LiveGameState } from './useLiveGameState';
@@ -427,6 +436,16 @@ export function useLiveGameActions(state: LiveGameState) {
         setTargetLocation(null);
     };
 
+    const handleToggleHomeAway = async () => {
+        if (!gameId) return;
+
+        try {
+            await dispatch(toggleHomeAway(gameId)).unwrap();
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : 'Failed to toggle home/away');
+        }
+    };
+
     return {
         handleLogPitch,
         handleEndAtBat,
@@ -443,5 +462,6 @@ export function useLiveGameActions(state: LiveGameState) {
         handleLocationSelect,
         handleTargetSelect,
         handleTargetClear,
+        handleToggleHomeAway,
     };
 }

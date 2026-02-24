@@ -75,6 +75,7 @@ import {
     PitchTypeSelectorTitle,
     PitchTypeGrid,
     PitchTypeButton,
+    SwapButton,
 } from './styles';
 import { useLiveGameActions } from './useLiveGameActions';
 import { useLiveGameState } from './useLiveGameState';
@@ -187,6 +188,9 @@ const LiveGame: React.FC = () => {
                         </TeamName>
                         <Score>{game.is_home_game === false ? game.home_score || 0 : game.away_score || 0}</Score>
                     </TeamInfo>
+                    <SwapButton onClick={actions.handleToggleHomeAway} title="Swap home/away">
+                        ⇄
+                    </SwapButton>
                     <GameInfo>
                         <Inning>Inning {game.current_inning || 1}</Inning>
                         <InningHalf>{game.inning_half === 'top' ? '▲ Top' : '▼ Bottom'}</InningHalf>
