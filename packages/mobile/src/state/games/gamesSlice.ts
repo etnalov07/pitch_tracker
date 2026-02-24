@@ -244,6 +244,14 @@ export const fetchBaseRunners = createAsyncThunk('games/fetchBaseRunners', async
     }
 });
 
+export const toggleHomeAway = createAsyncThunk('games/toggleHomeAway', async (gameId: string, { rejectWithValue }) => {
+    try {
+        return await gamesApi.toggleHomeAway(gameId);
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to toggle home/away'));
+    }
+});
+
 export const recordBaserunnerEvent = createAsyncThunk(
     'games/recordBaserunnerEvent',
     async (
@@ -488,6 +496,17 @@ const gamesSlice = createSlice({
         // Fetch Base Runners
         builder.addCase(fetchBaseRunners.fulfilled, (state, action) => {
             state.baseRunners = action.payload;
+        });
+
+        // Toggle Home/Away
+        builder.addCase(toggleHomeAway.fulfilled, (state, action) => {
+            const index = state.games.findIndex((g) => g.id === action.payload.id);
+            if (index !== -1) {
+                state.games[index] = action.payload;
+            }
+            if (state.selectedGame?.id === action.payload.id) {
+                state.selectedGame = action.payload;
+            }
         });
 
         // Record Baserunner Event (updates happen on server, refetch runners)

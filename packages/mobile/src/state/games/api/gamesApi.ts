@@ -176,4 +176,9 @@ export const gamesApi = {
         const response = await api.get<{ events: BaserunnerEvent[] }>(`/baserunner-events/game/${gameId}`);
         return response.data.events;
     },
+
+    toggleHomeAway: async (id: string): Promise<Game> => {
+        const response = await api.post<{ game: Game }>(`/games/${id}/toggle-home-away`);
+        return response.data.game;
+    },
 };

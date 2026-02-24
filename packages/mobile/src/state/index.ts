@@ -32,6 +32,7 @@ export {
     updateBaseRunners,
     fetchBaseRunners,
     recordBaserunnerEvent,
+    toggleHomeAway,
     clearGamesError,
     clearSelectedGame,
     setSelectedGame,

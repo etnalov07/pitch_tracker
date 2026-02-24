@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, Alert, Platform } from 'react-native';
-import { Text, Button, useTheme, IconButton, ActivityIndicator, TextInput } from 'react-native-paper';
+import { Text, Button, useTheme, IconButton, ActivityIndicator, TextInput, SegmentedButtons } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import * as Haptics from '../../src/utils/haptics';
 import { Team } from '@pitch-tracker/shared';
@@ -16,6 +16,7 @@ export default function NewGameScreen() {
     const [loadingTeams, setLoadingTeams] = useState(true);
 
     const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+    const [isHomeGame, setIsHomeGame] = useState(true);
     const [opponentName, setOpponentName] = useState('');
     const [gameDate, setGameDate] = useState(new Date().toISOString().split('T')[0]);
     const [gameTime, setGameTime] = useState('18:00');
@@ -52,6 +53,7 @@ export default function NewGameScreen() {
                 createGame({
                     home_team_id: selectedTeamId,
                     opponent_name: opponentName.trim(),
+                    is_home_game: isHomeGame,
                     game_date: gameDateTime.toISOString(),
                     location: location.trim() || undefined,
                 })
@@ -114,6 +116,23 @@ export default function NewGameScreen() {
                                 </Button>
                             ))}
                         </View>
+
+                        {/* Home / Away */}
+                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                            Home / Away
+                        </Text>
+                        <SegmentedButtons
+                            value={isHomeGame ? 'home' : 'away'}
+                            onValueChange={(value) => {
+                                Haptics.selectionAsync();
+                                setIsHomeGame(value === 'home');
+                            }}
+                            buttons={[
+                                { value: 'home', label: 'Home' },
+                                { value: 'away', label: 'Away' },
+                            ]}
+                            style={styles.segmented}
+                        />
 
                         {/* Opponent */}
                         <TextInput
@@ -202,6 +221,9 @@ const styles = StyleSheet.create({
     },
     teamButton: {
         marginBottom: 0,
+    },
+    segmented: {
+        marginBottom: 4,
     },
     input: {
         backgroundColor: '#ffffff',

@@ -136,10 +136,10 @@ export default function GameDetailScreen() {
                         <View style={styles.scoreRow}>
                             <View style={styles.teamScore}>
                                 <Text variant="titleMedium" style={styles.teamName}>
-                                    Home
+                                    {game.is_home_game === false ? (game as any).home_team_name || 'Your Team' : 'Home'}
                                 </Text>
                                 <Text variant="displaySmall" style={[styles.score, { color: theme.colors.primary }]}>
-                                    {game.home_score}
+                                    {game.is_home_game === false ? game.away_score : game.home_score}
                                 </Text>
                             </View>
 
@@ -149,10 +149,10 @@ export default function GameDetailScreen() {
 
                             <View style={styles.teamScore}>
                                 <Text variant="titleMedium" style={styles.teamName}>
-                                    {game.opponent_name || 'Away'}
+                                    {game.is_home_game === false ? 'Your Team' : game.opponent_name || 'Away'}
                                 </Text>
                                 <Text variant="displaySmall" style={[styles.score, { color: theme.colors.primary }]}>
-                                    {game.away_score}
+                                    {game.is_home_game === false ? game.home_score : game.away_score}
                                 </Text>
                             </View>
                         </View>

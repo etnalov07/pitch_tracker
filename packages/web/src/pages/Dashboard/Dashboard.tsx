@@ -217,12 +217,24 @@ const Dashboard: React.FC = () => {
                                     <GameStatus color={getStatusColor(game.status)}>{getStatusLabel(game.status)}</GameStatus>
                                     <GameTeams>
                                         <TeamRow>
-                                            <TeamName>{getOpponentName(game)}</TeamName>
-                                            <Score>{game.away_score ?? 0}</Score>
+                                            <TeamName>
+                                                {game.is_home_game === false
+                                                    ? getTeamName(game.home_team_id)
+                                                    : getOpponentName(game)}
+                                            </TeamName>
+                                            <Score>
+                                                {game.is_home_game === false ? (game.home_score ?? 0) : (game.away_score ?? 0)}
+                                            </Score>
                                         </TeamRow>
                                         <TeamRow>
-                                            <TeamName>{getTeamName(game.home_team_id)}</TeamName>
-                                            <Score>{game.home_score ?? 0}</Score>
+                                            <TeamName>
+                                                {game.is_home_game === false
+                                                    ? getOpponentName(game)
+                                                    : getTeamName(game.home_team_id)}
+                                            </TeamName>
+                                            <Score>
+                                                {game.is_home_game === false ? (game.away_score ?? 0) : (game.home_score ?? 0)}
+                                            </Score>
                                         </TeamRow>
                                     </GameTeams>
                                     <GameInfo>
@@ -261,7 +273,9 @@ const Dashboard: React.FC = () => {
                                         <GameListItem key={game.id} onClick={() => navigate(`/game/${game.id}`)}>
                                             <GameDate>{formatDate(game.game_date)}</GameDate>
                                             <GameMatchup>
-                                                {getOpponentName(game)} @ {getTeamName(game.home_team_id)}
+                                                {game.is_home_game === false
+                                                    ? `${getTeamName(game.home_team_id)} @ ${getOpponentName(game)}`
+                                                    : `${getOpponentName(game)} @ ${getTeamName(game.home_team_id)}`}
                                             </GameMatchup>
                                             <GameLocation>{game.location || 'TBD'}</GameLocation>
                                             <GameStatusBadge color={getStatusColor(game.status)}>
@@ -284,10 +298,14 @@ const Dashboard: React.FC = () => {
                                         <GameListItem key={game.id} onClick={() => navigate(`/game/${game.id}`)}>
                                             <GameDate>{formatDate(game.game_date)}</GameDate>
                                             <GameMatchup>
-                                                {getOpponentName(game)} @ {getTeamName(game.home_team_id)}
+                                                {game.is_home_game === false
+                                                    ? `${getTeamName(game.home_team_id)} @ ${getOpponentName(game)}`
+                                                    : `${getOpponentName(game)} @ ${getTeamName(game.home_team_id)}`}
                                             </GameMatchup>
                                             <GameScore>
-                                                {game.away_score} - {game.home_score}
+                                                {game.is_home_game === false
+                                                    ? `${game.home_score} - ${game.away_score}`
+                                                    : `${game.away_score} - ${game.home_score}`}
                                             </GameScore>
                                             <GameStatusBadge color={getStatusColor(game.status)}>
                                                 {getStatusLabel(game.status)}

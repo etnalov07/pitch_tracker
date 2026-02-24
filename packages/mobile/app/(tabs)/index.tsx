@@ -46,7 +46,7 @@ const GameCard: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress
                 <Card.Content>
                     <View style={styles.gameHeader}>
                         <Text variant="titleMedium" numberOfLines={1} style={styles.gameTitle}>
-                            vs {game.opponent_name || 'TBD'}
+                            {game.is_home_game === false ? '@' : 'vs'} {game.opponent_name || 'TBD'}
                         </Text>
                         <Chip compact textStyle={{ fontSize: 10, color: '#fff' }} style={{ backgroundColor: getStatusColor() }}>
                             {getStatusLabel()}

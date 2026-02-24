@@ -40,6 +40,8 @@ import {
     WarningText,
     CreateTeamButton,
     LoadingText,
+    HomeAwayToggle,
+    ToggleOption,
 } from './styles';
 
 const GameSetup: React.FC = () => {
@@ -58,6 +60,7 @@ const GameSetup: React.FC = () => {
     const [formData, setFormData] = useState({
         home_team_id: '',
         opponent_name: '',
+        is_home_game: true,
         game_date: new Date().toISOString().split('T')[0],
         game_time: '18:00',
         location: '',
@@ -105,6 +108,7 @@ const GameSetup: React.FC = () => {
                 createGame({
                     home_team_id: formData.home_team_id,
                     opponent_name: formData.opponent_name.trim(),
+                    is_home_game: formData.is_home_game,
                     game_date: game_dateTime.toISOString(),
                     location: formData.location.trim() || undefined,
                 })
@@ -213,6 +217,23 @@ const GameSetup: React.FC = () => {
                                         )}
                                     </TeamSelectGroup>
                                 </TeamsRow>
+
+                                <HomeAwayToggle>
+                                    <ToggleOption
+                                        type="button"
+                                        active={formData.is_home_game}
+                                        onClick={() => setFormData((prev) => ({ ...prev, is_home_game: true }))}
+                                    >
+                                        Home
+                                    </ToggleOption>
+                                    <ToggleOption
+                                        type="button"
+                                        active={!formData.is_home_game}
+                                        onClick={() => setFormData((prev) => ({ ...prev, is_home_game: false }))}
+                                    >
+                                        Away
+                                    </ToggleOption>
+                                </HomeAwayToggle>
                             </TeamSelectionSection>
 
                             <Divider />
@@ -261,9 +282,19 @@ const GameSetup: React.FC = () => {
                                 <GamePreview>
                                     <PreviewTitle>Game Preview</PreviewTitle>
                                     <PreviewMatchup>
-                                        <PreviewTeam>{formData.opponent_name}</PreviewTeam>
-                                        <PreviewAt>@</PreviewAt>
-                                        <PreviewTeam>{getTeamName(formData.home_team_id)}</PreviewTeam>
+                                        {formData.is_home_game ? (
+                                            <>
+                                                <PreviewTeam>{formData.opponent_name}</PreviewTeam>
+                                                <PreviewAt>@</PreviewAt>
+                                                <PreviewTeam>{getTeamName(formData.home_team_id)}</PreviewTeam>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <PreviewTeam>{getTeamName(formData.home_team_id)}</PreviewTeam>
+                                                <PreviewAt>@</PreviewAt>
+                                                <PreviewTeam>{formData.opponent_name}</PreviewTeam>
+                                            </>
+                                        )}
                                     </PreviewMatchup>
                                     <PreviewDetails>
                                         {new Date(`${formData.game_date}T${formData.game_time}`).toLocaleDateString('en-US', {

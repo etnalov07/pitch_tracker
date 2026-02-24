@@ -132,6 +132,37 @@ export const TeamBadge = styled.div<{ isHome?: boolean }>((props) => ({
     fontWeight: theme.fontWeight.medium,
 }));
 
+export const HomeAwayToggle = styled.div({
+    display: 'flex',
+    justifyContent: 'center',
+    gap: 0,
+    marginTop: theme.spacing.md,
+});
+
+export const ToggleOption = styled.button<{ active?: boolean }>((props) => ({
+    padding: `${theme.spacing.sm} ${theme.spacing.xl}`,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    border: `1px solid ${theme.colors.primary[300]}`,
+    background: props.active ? theme.colors.primary[600] : 'white',
+    color: props.active ? 'white' : theme.colors.primary[600],
+    transition: 'all 0.15s ease',
+
+    '&:first-of-type': {
+        borderRadius: `${theme.borderRadius.md} 0 0 ${theme.borderRadius.md}`,
+        borderRight: 'none',
+    },
+
+    '&:last-of-type': {
+        borderRadius: `0 ${theme.borderRadius.md} ${theme.borderRadius.md} 0`,
+    },
+
+    '&:hover': {
+        background: props.active ? theme.colors.primary[700] : theme.colors.primary[50],
+    },
+}));
+
 export const Divider = styled.hr({
     border: 'none',
     borderTop: `1px solid ${theme.colors.gray[200]}`,

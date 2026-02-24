@@ -39,7 +39,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
             {/* Top row: Score + Count inline */}
             <View style={styles.topRow}>
                 <View style={styles.teamScore}>
-                    <Text style={styles.teamLabel}>HOME</Text>
+                    <Text style={styles.teamLabel}>{game.is_home_game === false ? 'AWAY' : 'HOME'}</Text>
                     <Text style={styles.score}>{game.home_score || 0}</Text>
                 </View>
                 <View style={styles.centerColumn}>
@@ -71,7 +71,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                     </View>
                 </View>
                 <View style={styles.teamScore}>
-                    <Text style={styles.teamLabel}>AWAY</Text>
+                    <Text style={styles.teamLabel}>{game.is_home_game === false ? 'HOME' : 'AWAY'}</Text>
                     <Text style={styles.score}>{game.away_score || 0}</Text>
                 </View>
                 {/* Base runners diamond */}

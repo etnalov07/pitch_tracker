@@ -201,20 +201,38 @@ const GameHistory: React.FC = () => {
                                     </Td>
                                     <Td>
                                         <MatchupCell>
-                                            <TeamText>{getOpponentName(game)}</TeamText>
-                                            <AtText>@</AtText>
-                                            <TeamText>{getTeamName(game.home_team_id)}</TeamText>
+                                            {game.is_home_game === false ? (
+                                                <>
+                                                    <TeamText>{getTeamName(game.home_team_id)}</TeamText>
+                                                    <AtText>@</AtText>
+                                                    <TeamText>{getOpponentName(game)}</TeamText>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <TeamText>{getOpponentName(game)}</TeamText>
+                                                    <AtText>@</AtText>
+                                                    <TeamText>{getTeamName(game.home_team_id)}</TeamText>
+                                                </>
+                                            )}
                                         </MatchupCell>
                                     </Td>
                                     <Td>
                                         {game.status === 'completed' || game.status === 'in_progress' ? (
                                             <ScoreCell>
                                                 <ScoreTeam>
-                                                    <ScoreValue>{game.away_score ?? 0}</ScoreValue>
+                                                    <ScoreValue>
+                                                        {game.is_home_game === false
+                                                            ? (game.home_score ?? 0)
+                                                            : (game.away_score ?? 0)}
+                                                    </ScoreValue>
                                                 </ScoreTeam>
                                                 <ScoreDivider>-</ScoreDivider>
                                                 <ScoreTeam>
-                                                    <ScoreValue>{game.home_score ?? 0}</ScoreValue>
+                                                    <ScoreValue>
+                                                        {game.is_home_game === false
+                                                            ? (game.away_score ?? 0)
+                                                            : (game.home_score ?? 0)}
+                                                    </ScoreValue>
                                                 </ScoreTeam>
                                             </ScoreCell>
                                         ) : (

@@ -115,4 +115,9 @@ export const gamesApi = {
         const response = await api.post<{ event: BaserunnerEvent }>('/baserunner-events', eventData);
         return response.data.event;
     },
+
+    toggleHomeAway: async (id: string): Promise<Game> => {
+        const response = await api.post<{ game: Game }>(`/games/${id}/toggle-home-away`);
+        return response.data.game;
+    },
 };
