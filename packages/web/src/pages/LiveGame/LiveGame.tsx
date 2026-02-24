@@ -167,6 +167,9 @@ const LiveGame: React.FC = () => {
                                   ? 'In Progress'
                                   : 'Completed'}
                         </GameStatus>
+                        <SwapButton onClick={actions.handleToggleHomeAway} title="Swap home/away">
+                            ⇄ Home/Away
+                        </SwapButton>
                         {game.status === 'in_progress' && <EndGameButton onClick={actions.handleEndGame}>End Game</EndGameButton>}
                         {game.status === 'completed' && (
                             <ResumeGameButton onClick={actions.handleResumeGame}>Resume Game</ResumeGameButton>
@@ -188,9 +191,6 @@ const LiveGame: React.FC = () => {
                         </TeamName>
                         <Score>{game.is_home_game === false ? game.home_score || 0 : game.away_score || 0}</Score>
                     </TeamInfo>
-                    <SwapButton onClick={actions.handleToggleHomeAway} title="Swap home/away">
-                        ⇄
-                    </SwapButton>
                     <GameInfo>
                         <Inning>Inning {game.current_inning || 1}</Inning>
                         <InningHalf>{game.inning_half === 'top' ? '▲ Top' : '▼ Bottom'}</InningHalf>

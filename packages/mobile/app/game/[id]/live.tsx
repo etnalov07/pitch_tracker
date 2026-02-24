@@ -26,6 +26,7 @@ import {
     useAppSelector,
     fetchCurrentGameState,
     fetchGameById,
+    toggleHomeAway,
     fetchTeamPlayers,
     fetchCurrentInning,
     fetchGamePitchers,
@@ -310,6 +311,12 @@ export default function LiveGameScreen() {
         ]);
     }, [id, game, router]);
 
+    const handleToggleHomeAway = useCallback(async () => {
+        if (!id) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await dispatch(toggleHomeAway(id));
+    }, [id, dispatch]);
+
     const handleStartAtBat = useCallback(async () => {
         if (!currentPitcher || !currentBatter || !id || !currentInning) return;
         try {
@@ -501,6 +508,7 @@ export default function LiveGameScreen() {
             onPitcherPress={game.status === 'in_progress' ? () => setPitcherModalVisible(true) : undefined}
             onBatterPress={game.status === 'in_progress' ? () => setBatterModalVisible(true) : undefined}
             onRunnerPress={game.status === 'in_progress' ? handleRunnerPress : undefined}
+            onSwapPress={handleToggleHomeAway}
         />
     );
 

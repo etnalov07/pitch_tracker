@@ -137,6 +137,7 @@ export default function GameDetailScreen() {
                                     {game.current_inning} Innings
                                 </Text>
                             )}
+                            <IconButton icon="swap-horizontal" size={20} onPress={handleToggleHomeAway} />
                         </View>
 
                         <View style={styles.scoreRow}>
@@ -149,7 +150,9 @@ export default function GameDetailScreen() {
                                 </Text>
                             </View>
 
-                            <IconButton icon="swap-horizontal" size={20} onPress={handleToggleHomeAway} />
+                            <Text variant="titleLarge" style={styles.vs}>
+                                -
+                            </Text>
 
                             <View style={styles.teamScore}>
                                 <Text variant="titleMedium" style={styles.teamName}>

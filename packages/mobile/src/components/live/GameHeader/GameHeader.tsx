@@ -15,6 +15,7 @@ interface GameHeaderProps {
     onPitcherPress?: () => void;
     onBatterPress?: () => void;
     onRunnerPress?: (base: RunnerBase) => void;
+    onSwapPress?: () => void;
 }
 
 const GameHeader: React.FC<GameHeaderProps> = ({
@@ -28,6 +29,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
     onPitcherPress,
     onBatterPress,
     onRunnerPress,
+    onSwapPress,
 }) => {
     const getInningDisplay = () => {
         const half = game.inning_half === 'top' ? '▲' : '▼';
@@ -43,8 +45,15 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                     <Text style={styles.score}>{game.home_score || 0}</Text>
                 </View>
                 <View style={styles.centerColumn}>
-                    <View style={styles.inningContainer}>
-                        <Text style={styles.inning}>{getInningDisplay()}</Text>
+                    <View style={styles.statusRow}>
+                        <View style={styles.inningContainer}>
+                            <Text style={styles.inning}>{getInningDisplay()}</Text>
+                        </View>
+                        {onSwapPress && (
+                            <Pressable style={styles.swapButton} onPress={onSwapPress}>
+                                <Text style={styles.swapText}>⇄</Text>
+                            </Pressable>
+                        )}
                     </View>
                     <View style={styles.countRow}>
                         <View style={styles.countItem}>
@@ -143,12 +152,28 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginHorizontal: 12,
     },
+    statusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 4,
+    },
+    swapButton: {
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+    },
+    swapText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#ffffff',
+    },
     inningContainer: {
         paddingHorizontal: 10,
         paddingVertical: 3,
         backgroundColor: 'rgba(255,255,255,0.2)',
         borderRadius: 6,
-        marginBottom: 4,
     },
     inning: {
         fontSize: 14,
