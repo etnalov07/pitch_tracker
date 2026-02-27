@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Text, Button, useTheme, IconButton, Card, Chip, Divider, ActivityIndicator } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
-import { useAppDispatch, useAppSelector, fetchGameById, toggleHomeAway } from '../../../src/state';
+import { useAppDispatch, useAppSelector, fetchGameById, toggleHomeAway, startGame } from '../../../src/state';
 
 export default function GameDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -103,6 +103,22 @@ export default function GameDetailScreen() {
     const handleLivePress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         router.push(`/game/${id}/live`);
+    };
+
+    const [starting, setStarting] = useState(false);
+
+    const handleStartGame = async () => {
+        if (!id) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setStarting(true);
+        try {
+            await dispatch(startGame(id)).unwrap();
+            router.push(`/game/${id}/live` as any);
+        } catch (_err) {
+            // Error handled by Redux slice
+        } finally {
+            setStarting(false);
+        }
     };
 
     const handleToggleHomeAway = async () => {
@@ -209,6 +225,20 @@ export default function GameDetailScreen() {
                 </Card>
 
                 {/* Actions */}
+                {game.status === 'scheduled' && (
+                    <Button
+                        mode="contained"
+                        icon="play"
+                        loading={starting}
+                        disabled={starting}
+                        onPress={handleStartGame}
+                        style={styles.actionButton}
+                        contentStyle={styles.actionButtonContent}
+                    >
+                        Start Game
+                    </Button>
+                )}
+
                 {game.status === 'in_progress' && (
                     <Button
                         mode="contained"

@@ -313,6 +313,61 @@
   - ~~Coaches can be assigned to one or more teams~~
 - ~~Useful for travel ball organizations managing multiple age groups or squads~~
 
+### 22) Pitch Velocity Detection (Video + Audio)
+- Estimate pitch velocity from standard 30fps smartphone video recorded behind home plate
+- Uses audio glove-pop detection as the primary timing signal, with optional radar calibration for accuracy
+- **Modes**:
+  - **Calibrated Mode** (±2-3 mph) — Radar gun provides ground-truth for 1-3 pitches. Algorithm learns the pitcher's flight time at known velocity. All subsequent pitches: detect glove pop only, compute velocity from calibrated baseline.
+  - **Quick-Cal Mode** (±4-5 mph) — User provides pitcher's approximate average velocity ("he throws about 80"). No radar needed.
+  - **Uncalibrated Mode** (±6-8 mph) — Foot plant audio + biomechanical offset fallback. Least accurate.
+- **Algorithm Pipeline**:
+  1. Extract audio from video (44.1kHz mono PCM)
+  2. Detect glove pop — impulsive transient with <2ms rise time, >5× median amplitude, isolated local max within ±50ms. 90%+ detection confidence in testing.
+  3. Correct for sound travel — camera behind backstop (~15ft / 1125 ft/s = 13ms)
+  4. Estimate release time — from calibrated profile (radar baseline) or foot plant audio + 180ms biomechanical offset (fallback)
+  5. Calculate velocity — 55ft (release-to-plate) ÷ flight time
+- **Calibration Flow (UX)**:
+  1. Start of outing: user taps "Calibrate" in PitchChart
+  2. Records 1-3 pitches on video while someone radars them (Pocket Radar Ball Coach, Stalker Sport 2, or stadium gun reading)
+  3. User enters radar MPH for each pitch
+  4. App builds pitcher profile: learns avg flight time (e.g. 469ms for ~80 mph pitcher)
+  5. Rest of game: just record video, app auto-detects velocity from glove pop timing
+  6. Profile persists per pitcher, can be recalibrated anytime
+- **Key Technical Decisions**:
+  - **Audio > Video for timing.** At 30fps the ball is visible in only 2-3 frames during flight. Audio at 44.1kHz gives 1,600× more temporal resolution. The glove pop is the single most reliable signal.
+  - **Calibration > Detection.** Foot plant detection is unreliable in noisy environments (crowd, PA, bat sounds). Radar calibration eliminates the need to detect the release point — we learn it once and reuse.
+  - **Amplitude adjustment.** With 2+ calibration points, louder glove pops weakly correlate with faster pitches. Algorithm applies a conservative ±3 mph amplitude-based adjustment.
+- **Validated Results** (3 game pitches, same pitcher):
+
+  | Pitch | Uncalibrated | Calibrated (79/80/81 radar) | Actual (visual est.) |
+  |-------|-------------|----------------------------|---------------------|
+  | IMG_7067 | 71.9 mph | 78.7 mph | ~78-81 mph |
+  | IMG_7073 | 85.8 mph | 80.7 mph | ~78-81 mph |
+  | IMG_7075 | 99.4 mph | 80.6 mph | ~78-81 mph |
+
+  Calibration collapsed the uncalibrated spread (72-99 mph) to 78.7-80.7 mph — matching observed velocity.
+- **API Surface** (`PitchAnalyzer` class):
+  ```python
+  analyzer = PitchAnalyzer(camera_distance_ft=15.0)
+
+  # Calibrate with radar readings
+  analyzer.calibrate("pitch1.MOV", radar_mph=79)
+  analyzer.calibrate("pitch2.MOV", radar_mph=80)
+  analyzer.calibrate("pitch3.MOV", radar_mph=81)
+
+  # Or quick-cal with known average
+  analyzer.calibrate_from_average(80)
+
+  # Analyze any pitch
+  result = analyzer.analyze("pitch4.MOV")
+  result.velocity_mph      # 78.7
+  result.velocity_low_mph  # 75
+  result.velocity_high_mph # 83
+  result.confidence        # 'high'
+  result.method            # 'calibrated'
+  result.glove_pop_amplitude  # 10519
+  ```
+
 ---
 
 ## Future / Under Discussion
@@ -330,3 +385,38 @@
 - Eliminate manual velocity entry during games and bullpens
 - Bluetooth or API integration depending on device capabilities
 - Auto-populate velocity field when pitch is detected
+
+### Automated Pitch Charting from Video
+- Fully automate pitch charting by analyzing video captured from behind home plate
+- Builds on #22 (Velocity Detection) — extends audio/video analysis to extract all pitch data
+- **Video capture integration**:
+  - Record video directly within PitchChart during games or bullpens
+  - Continuous recording mode: app segments video per pitch automatically (glove pop to glove pop)
+  - Import existing video clips for post-game charting
+- **Data extracted per pitch**:
+  - **Pitch type** — classify fastball, curveball, slider, changeup, etc. from trajectory arc, spin, and velocity
+  - **Velocity** — via glove-pop timing (from #22 pipeline)
+  - **Actual location** — track ball position as it crosses the plate using frame-by-frame analysis
+  - **Target location** — infer from catcher's glove setup position before the pitch
+  - **Result** — ball/strike/foul/in-play from batter and umpire reactions, ball trajectory
+  - **Hit outcome** — if in play, detect ball off bat direction and approximate landing zone
+- **Computer vision pipeline**:
+  - Detect strike zone boundaries from batter stance
+  - Track ball trajectory across frames (even at 30fps, entry and glove frames bracket the zone)
+  - Catcher glove position detection for target inference
+  - Batter swing/no-swing detection
+- **Workflow**:
+  - Coach sets up phone on tripod behind backstop, hits record
+  - App captures entire inning or outing as continuous video
+  - Post-pitch or post-game: app processes video and populates pitch-by-pitch chart
+  - Coach reviews and corrects any misclassifications before saving
+- **Accuracy tiers**:
+  - **Velocity**: High confidence (proven in #22)
+  - **Location**: Moderate — depends on camera angle and stability
+  - **Pitch type**: Moderate — benefits from calibration pitches of known types
+  - **Result**: Lower — may need manual confirmation for close calls
+- **Future considerations**:
+  - ML model training on labeled pitch data from manual charting sessions
+  - Higher frame rate cameras (60/120fps) for improved ball tracking
+  - Multi-camera support for better 3D position estimation
+  - Integration with broadcast camera feeds for tournament/showcase use

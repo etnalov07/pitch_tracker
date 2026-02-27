@@ -1,9 +1,9 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { Text, Card, Button, useTheme, FAB, ActivityIndicator, Chip } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import * as Haptics from '../../src/utils/haptics';
-import { useAppSelector, useAppDispatch, fetchAllGames } from '../../src/state';
+import { useAppSelector, useAppDispatch, fetchAllGames, startGame } from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
 import { SyncStatusBadge, EmptyState } from '../../src/components/common';
 import { Game } from '@pitch-tracker/shared';
@@ -93,14 +93,27 @@ export default function DashboardScreen() {
     const recentGames = games.filter((g) => g.status === 'completed').slice(0, 5);
     const scheduledGames = games.filter((g) => g.status === 'scheduled').slice(0, 3);
 
+    const [startingGameId, setStartingGameId] = useState<string | null>(null);
+
     const handleGamePress = (game: Game) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         if (game.status === 'in_progress') {
             router.push(`/game/${game.id}/live`);
-        } else if (game.status === 'scheduled') {
-            router.push(`/game/${game.id}/setup`);
         } else {
-            router.push(`/game/${game.id}`);
+            router.push(`/game/${game.id}` as any);
+        }
+    };
+
+    const handleStartGame = async (game: Game) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        setStartingGameId(game.id);
+        try {
+            await dispatch(startGame(game.id)).unwrap();
+            router.push(`/game/${game.id}/live` as any);
+        } catch (_err) {
+            // Error handled by Redux slice
+        } finally {
+            setStartingGameId(null);
         }
     };
 
@@ -131,6 +144,47 @@ export default function DashboardScreen() {
                         <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
                             {activeGames.map((game) => (
                                 <GameCard key={game.id} game={game} onPress={() => handleGamePress(game)} />
+                            ))}
+                        </View>
+                    </View>
+                )}
+
+                {/* Scheduled Games Section */}
+                {scheduledGames.length > 0 && (
+                    <View style={styles.section}>
+                        <Text variant="titleMedium" style={styles.sectionTitle}>
+                            Upcoming Games
+                        </Text>
+                        <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
+                            {scheduledGames.map((game) => (
+                                <Pressable key={game.id} onPress={() => handleGamePress(game)}>
+                                    <Card style={styles.gameCard}>
+                                        <Card.Content>
+                                            <View style={styles.gameHeader}>
+                                                <Text variant="titleMedium" numberOfLines={1} style={styles.gameTitle}>
+                                                    {game.is_home_game === false ? '@' : 'vs'} {game.opponent_name || 'TBD'}
+                                                </Text>
+                                                <Text variant="bodySmall" style={styles.gameDate}>
+                                                    {new Date(game.game_date).toLocaleDateString('en-US', {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                    })}
+                                                </Text>
+                                            </View>
+                                            <Button
+                                                mode="contained"
+                                                icon="play"
+                                                loading={startingGameId === game.id}
+                                                disabled={startingGameId !== null}
+                                                onPress={() => handleStartGame(game)}
+                                                compact
+                                                style={{ marginTop: 8 }}
+                                            >
+                                                Start Game
+                                            </Button>
+                                        </Card.Content>
+                                    </Card>
+                                </Pressable>
                             ))}
                         </View>
                     </View>
