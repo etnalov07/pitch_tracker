@@ -11,3 +11,4 @@ export { default as InPlayModal } from './InPlayModal';
 export { default as PitcherSelectorModal } from './PitcherSelectorModal';
 export { default as BatterSelectorModal } from './BatterSelectorModal';
 export { default as InningChangeModal } from './InningChangeModal';
+export { default as TeamAtBatModal } from './TeamAtBatModal';

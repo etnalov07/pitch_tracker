@@ -2,18 +2,20 @@ import React from 'react';
 import { StyleSheet, TextInput } from 'react-native';
 import { Text, Button, Modal } from 'react-native-paper';
 
-interface InningChangeModalProps {
+interface TeamAtBatModalProps {
     visible: boolean;
-    inningChangeInfo: { inning: number; half: string } | null;
+    inning: number;
+    inningHalf: string;
     teamRunsScored: string;
     onRunsChange: (value: string) => void;
     onConfirm: () => void;
     isTablet?: boolean;
 }
 
-const InningChangeModal: React.FC<InningChangeModalProps> = ({
+const TeamAtBatModal: React.FC<TeamAtBatModalProps> = ({
     visible,
-    inningChangeInfo,
+    inning,
+    inningHalf,
     teamRunsScored,
     onRunsChange,
     onConfirm,
@@ -22,13 +24,13 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
     return (
         <Modal visible={visible} onDismiss={() => {}} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
             <Text variant="titleLarge" style={styles.modalTitle}>
-                Inning Over
+                Your Team At Bat
             </Text>
-            <Text style={styles.inningChangeText}>
-                3 outs recorded.{'\n'}
-                {inningChangeInfo && `End of ${inningChangeInfo.half === 'top' ? 'Top' : 'Bottom'} ${inningChangeInfo.inning}`}
+            <Text style={styles.infoText}>
+                {inningHalf === 'top' ? 'Top' : 'Bottom'} of Inning {inning}
+                {'\n'}Enter your team's runs scored
             </Text>
-            <Text style={styles.runsLabel}>Opponent runs scored this inning:</Text>
+            <Text style={styles.runsLabel}>Runs Scored</Text>
             <TextInput
                 style={styles.runsInput}
                 value={teamRunsScored}
@@ -36,8 +38,8 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
                 keyboardType="number-pad"
                 selectTextOnFocus
             />
-            <Button mode="contained" onPress={onConfirm} style={styles.inningChangeButton}>
-                Next Inning
+            <Button mode="contained" onPress={onConfirm} style={styles.confirmButton}>
+                Continue
             </Button>
         </Modal>
     );
@@ -46,8 +48,8 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
 const styles = StyleSheet.create({
     modal: { backgroundColor: '#ffffff', margin: 20, padding: 20, borderRadius: 12, maxHeight: '80%' },
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
-    modalTitle: { marginBottom: 16 },
-    inningChangeText: { fontSize: 16, color: '#374151', textAlign: 'center', marginBottom: 16, lineHeight: 24 },
+    modalTitle: { marginBottom: 16, textAlign: 'center' },
+    infoText: { fontSize: 16, color: '#374151', textAlign: 'center', marginBottom: 16, lineHeight: 24 },
     runsLabel: { fontSize: 14, color: '#6b7280', marginBottom: 8 },
     runsInput: {
         borderWidth: 1,
@@ -60,7 +62,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         color: '#111827',
     },
-    inningChangeButton: { marginTop: 4 },
+    confirmButton: { marginTop: 4 },
 });
 
-export default InningChangeModal;
+export default TeamAtBatModal;

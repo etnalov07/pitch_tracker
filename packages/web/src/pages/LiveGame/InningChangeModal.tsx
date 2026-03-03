@@ -22,9 +22,9 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({ inningChangeInfo,
         <InningChangeOverlay>
             <InningChangeModalStyled>
                 <InningChangeText>End of Inning {inningChangeInfo.inning}</InningChangeText>
-                <InningChangeSubtext>3 outs recorded. Enter runs scored by your team:</InningChangeSubtext>
+                <InningChangeSubtext>3 outs recorded. Enter opponent runs scored this inning:</InningChangeSubtext>
                 <RunsInputSection>
-                    <RunsInputLabel>Runs Scored</RunsInputLabel>
+                    <RunsInputLabel>Opponent Runs Scored</RunsInputLabel>
                     <RunsInput
                         type="number"
                         min="0"

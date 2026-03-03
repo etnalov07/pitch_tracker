@@ -51,6 +51,7 @@ import {
     PitcherSelectorModal,
     BatterSelectorModal,
     InningChangeModal,
+    TeamAtBatModal,
     BaserunnerOutModal,
     RunnerAdvancementModal,
 } from '../../../src/components/live';
@@ -111,6 +112,10 @@ export default function LiveGameScreen() {
     const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
     const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
 
+    // Team at bat modal state (visitor games)
+    const [showTeamAtBat, setShowTeamAtBat] = useState(false);
+    const [teamAtBatRuns, setTeamAtBatRuns] = useState('0');
+
     const game = currentGameState?.game || selectedGame;
 
     const activeBatters = opponentLineup.filter((b) => !b.replaced_by_id).sort((a, b) => a.batting_order - b.batting_order);
@@ -159,6 +164,14 @@ export default function LiveGameScreen() {
             setPitcherPitchTypes([]);
         }
     }, [currentPitcher?.player_id]);
+
+    // Auto-show TeamAtBat modal when user's team is batting (visitor games)
+    const isUserBatting = game && game.status === 'in_progress' && !game.is_home_game && game.inning_half === 'top';
+    useEffect(() => {
+        if (isUserBatting && !showInningChange) {
+            setShowTeamAtBat(true);
+        }
+    }, [isUserBatting, game?.current_inning, game?.inning_half, showInningChange]);
 
     // Calculate count from pitches
     const balls = pitches.filter((p) => p.pitch_result === 'ball').length;
@@ -241,13 +254,65 @@ export default function LiveGameScreen() {
             const runsToAdd = parseInt(teamRunsScored, 10) || 0;
             // Runs scored while our team is pitching go to opponent (away_score)
             await gamesApi.updateScore(id, game.home_score || 0, (game.away_score || 0) + runsToAdd);
-            await gamesApi.advanceInning(id);
-            await gamesApi.advanceInning(id);
+
+            if (game.is_home_game === false) {
+                // Visitor game: advance 1 half (to user's batting half)
+                await gamesApi.advanceInning(id);
+            } else {
+                // Home game: skip opponent's batting half (advance 2)
+                await gamesApi.advanceInning(id);
+                await gamesApi.advanceInning(id);
+            }
+
             // Clear base runners on inning change (also done server-side)
             dispatch(setBaseRunners(clearBases()));
             dispatch(fetchGameById(id));
             const newInning = await gamesApi.getCurrentInning(id);
             setShowInningChange(false);
+
+            if (game.is_home_game !== false) {
+                // Home game: set up next batter immediately
+                const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+                setCurrentBattingOrder(nextOrder);
+                const firstBatter = activeBatters.find((p) => p.batting_order === nextOrder);
+                if (firstBatter && newInning) {
+                    setCurrentBatter(firstBatter);
+                    await startAtBatForBatter(firstBatter, 0, newInning);
+                    dispatch(fetchCurrentInning(id));
+                } else {
+                    setCurrentBatter(null);
+                    dispatch(fetchCurrentInning(id));
+                }
+            } else {
+                // For visitor games, TeamAtBat modal will auto-show via useEffect
+                dispatch(fetchCurrentInning(id));
+            }
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+            Alert.alert('Error', 'Failed to advance inning');
+        }
+    }, [id, game, teamRunsScored, currentBattingOrder, activeBatters, dispatch, startAtBatForBatter]);
+
+    const handleTeamAtBatConfirm = useCallback(async () => {
+        if (!id || !game) return;
+        try {
+            const runsToAdd = parseInt(teamAtBatRuns, 10) || 0;
+
+            // User's runs go to home_score (user is always home_score)
+            await gamesApi.updateScore(id, (game.home_score || 0) + runsToAdd, game.away_score || 0);
+
+            // Advance 1 half-inning (from user's batting half to opponent's batting half)
+            await gamesApi.advanceInning(id);
+
+            // Clear base runners
+            dispatch(setBaseRunners(clearBases()));
+            dispatch(fetchGameById(id));
+            const newInning = await gamesApi.getCurrentInning(id);
+
+            setShowTeamAtBat(false);
+            setTeamAtBatRuns('0');
+
+            // Set up next opponent batter
             const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
             setCurrentBattingOrder(nextOrder);
             const firstBatter = activeBatters.find((p) => p.batting_order === nextOrder);
@@ -263,7 +328,7 @@ export default function LiveGameScreen() {
         } catch {
             Alert.alert('Error', 'Failed to advance inning');
         }
-    }, [id, game, teamRunsScored, activeBatters, dispatch, startAtBatForBatter]);
+    }, [id, game, teamAtBatRuns, currentBattingOrder, activeBatters, dispatch, startAtBatForBatter]);
 
     const handleSelectPitcher = async (player: Player) => {
         if (!id || !currentInning) return;
@@ -576,6 +641,15 @@ export default function LiveGameScreen() {
                 teamRunsScored={teamRunsScored}
                 onRunsChange={setTeamRunsScored}
                 onConfirm={handleInningChangeConfirm}
+                isTablet={isTablet}
+            />
+            <TeamAtBatModal
+                visible={showTeamAtBat}
+                inning={game?.current_inning || 1}
+                inningHalf={game?.inning_half || 'top'}
+                teamRunsScored={teamAtBatRuns}
+                onRunsChange={setTeamAtBatRuns}
+                onConfirm={handleTeamAtBatConfirm}
                 isTablet={isTablet}
             />
             <BaserunnerOutModal

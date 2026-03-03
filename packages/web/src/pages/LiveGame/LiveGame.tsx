@@ -77,6 +77,7 @@ import {
     PitchTypeButton,
     SwapButton,
 } from './styles';
+import TeamAtBatModal from './TeamAtBatModal';
 import { useLiveGameActions } from './useLiveGameActions';
 import { useLiveGameState } from './useLiveGameState';
 
@@ -128,6 +129,9 @@ const LiveGame: React.FC = () => {
         showRunnerAdvancementModal,
         setShowRunnerAdvancementModal,
         pendingHitResult,
+        showTeamAtBat,
+        teamAtBatRuns,
+        setTeamAtBatRuns,
     } = state;
 
     if (loading) {
@@ -455,6 +459,16 @@ const LiveGame: React.FC = () => {
                     currentBattingOrder={currentBattingOrder}
                     onBatterSelected={actions.handleBatterSelected}
                     onClose={() => setShowBatterSelector(false)}
+                />
+            )}
+
+            {showTeamAtBat && game && (
+                <TeamAtBatModal
+                    inning={game.current_inning || 1}
+                    inningHalf={game.inning_half || 'top'}
+                    teamRunsScored={teamAtBatRuns}
+                    onTeamRunsChange={setTeamAtBatRuns}
+                    onConfirm={actions.handleTeamAtBatConfirm}
                 />
             )}
 

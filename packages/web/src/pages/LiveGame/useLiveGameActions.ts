@@ -55,6 +55,9 @@ export function useLiveGameActions(state: LiveGameState) {
         setShowBaserunnerOutModal,
         setShowRunnerAdvancementModal,
         setPendingHitResult,
+        setShowTeamAtBat,
+        teamAtBatRuns,
+        setTeamAtBatRuns,
     } = state;
 
     const startAtBatForBatter = async (batter: OpponentLineupPlayer, outs: number, inning: typeof currentInning) => {
@@ -255,8 +258,15 @@ export function useLiveGameActions(state: LiveGameState) {
             const currentAwayScore = game.away_score || 0;
             await gamesApi.updateScore(gameId, currentHomeScore, currentAwayScore + runsToAdd);
 
-            await gamesApi.advanceInning(gameId);
-            await gamesApi.advanceInning(gameId);
+            if (game.is_home_game === false) {
+                // Visitor game: advance 1 half (to user's batting half)
+                // TeamAtBat modal will handle the next transition
+                await gamesApi.advanceInning(gameId);
+            } else {
+                // Home game: skip opponent's batting half (advance 2)
+                await gamesApi.advanceInning(gameId);
+                await gamesApi.advanceInning(gameId);
+            }
 
             // Clear base runners on inning change
             setBaseRunners(clearBases());
@@ -268,6 +278,51 @@ export function useLiveGameActions(state: LiveGameState) {
 
             setShowInningChange(false);
 
+            if (game.is_home_game !== false) {
+                // Home game: set up next batter immediately
+                const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+                setCurrentBattingOrder(nextOrder);
+                const firstBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
+                if (firstBatter && newInning) {
+                    setCurrentBatter(firstBatter);
+                    await startAtBatForBatter(firstBatter, 0, newInning);
+                } else {
+                    setCurrentBatter(null);
+                }
+            }
+            // For visitor games, TeamAtBat modal will auto-show via useEffect
+        } catch (error) {
+            console.error('Failed to advance inning:', error);
+            alert('Failed to advance inning');
+        }
+    };
+
+    const handleTeamAtBatConfirm = async () => {
+        if (!gameId || !game) return;
+
+        try {
+            const runsToAdd = parseInt(teamAtBatRuns, 10) || 0;
+
+            // User's runs go to home_score (user is always home_score)
+            const currentHomeScore = game.home_score || 0;
+            const currentAwayScore = game.away_score || 0;
+            await gamesApi.updateScore(gameId, currentHomeScore + runsToAdd, currentAwayScore);
+
+            // Advance 1 half-inning (from user's batting half to opponent's batting half)
+            await gamesApi.advanceInning(gameId);
+
+            // Clear base runners
+            setBaseRunners(clearBases());
+
+            dispatch(fetchGameById(gameId));
+
+            const newInning = await gamesApi.getCurrentInning(gameId);
+            setCurrentInning(newInning);
+
+            setShowTeamAtBat(false);
+            setTeamAtBatRuns('0');
+
+            // Set up next opponent batter
             const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
             setCurrentBattingOrder(nextOrder);
             const firstBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
@@ -278,7 +333,7 @@ export function useLiveGameActions(state: LiveGameState) {
                 setCurrentBatter(null);
             }
         } catch (error) {
-            console.error('Failed to advance inning:', error);
+            console.error('Failed to confirm team at bat:', error);
             alert('Failed to advance inning');
         }
     };
@@ -451,6 +506,7 @@ export function useLiveGameActions(state: LiveGameState) {
         handleEndAtBat,
         handleDiamondResult,
         handleInningChangeConfirm,
+        handleTeamAtBatConfirm,
         handleRunnerAdvancementConfirm,
         handleRecordBaserunnerOut,
         handleStartAtBat,

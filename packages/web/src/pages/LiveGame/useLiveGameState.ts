@@ -88,6 +88,18 @@ export function useLiveGameState() {
     const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
     const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
 
+    // Team at bat modal (visitor games)
+    const [showTeamAtBat, setShowTeamAtBat] = useState(false);
+    const [teamAtBatRuns, setTeamAtBatRuns] = useState<string>('0');
+
+    // Auto-show TeamAtBat modal when user's team is batting (visitor games)
+    const isUserBatting = game && game.status === 'in_progress' && !game.is_home_game && game.inning_half === 'top';
+    useEffect(() => {
+        if (isUserBatting && !showInningChange) {
+            setShowTeamAtBat(true);
+        }
+    }, [isUserBatting, game?.current_inning, game?.inning_half, showInningChange]);
+
     useEffect(() => {
         if (gameId) {
             dispatch(fetchGameById(gameId));
@@ -205,6 +217,11 @@ export function useLiveGameState() {
         setShowRunnerAdvancementModal,
         pendingHitResult,
         setPendingHitResult,
+        // Team at bat (visitor games)
+        showTeamAtBat,
+        setShowTeamAtBat,
+        teamAtBatRuns,
+        setTeamAtBatRuns,
     };
 }
 
