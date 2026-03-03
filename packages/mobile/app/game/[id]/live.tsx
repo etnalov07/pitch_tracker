@@ -425,7 +425,12 @@ export default function LiveGameScreen() {
                 location_y: pitchLocation.y,
                 target_location_x: targetLocation?.x,
                 target_location_y: targetLocation?.y,
+                opponent_batter_id: currentBatter?.id,
             });
+            if (!result.success) {
+                Alert.alert('Error', 'Failed to log pitch');
+                return;
+            }
             const newBalls = balls + (selectedResult === 'ball' ? 1 : 0);
             const newStrikes =
                 effectiveStrikes +

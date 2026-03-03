@@ -10,6 +10,7 @@ interface LogPitchPayload {
     at_bat_id: string;
     game_id: string;
     pitcher_id?: string;
+    opponent_batter_id?: string;
     pitch_type: PitchType;
     pitch_result: PitchResult;
     location_x: number;
@@ -45,10 +46,11 @@ export const useOfflineActions = () => {
 
     const logPitchOffline = useCallback(
         async (payload: LogPitchPayload): Promise<{ success: boolean; queued: boolean }> => {
-            const pitchData: Partial<Pitch> = {
+            const pitchData: Partial<Pitch> & { opponent_batter_id?: string } = {
                 at_bat_id: payload.at_bat_id,
                 game_id: payload.game_id,
                 pitcher_id: payload.pitcher_id,
+                opponent_batter_id: payload.opponent_batter_id,
                 pitch_type: payload.pitch_type,
                 pitch_result: payload.pitch_result,
                 location_x: payload.location_x,
