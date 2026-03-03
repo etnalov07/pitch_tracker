@@ -5,9 +5,13 @@
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc",
-        "watch": "tsc --watch"
+        "watch": "tsc --watch",
+        "test": "jest"
     },
     "devDependencies": {
+        "@types/jest": "^27.5.2",
+        "jest": "^30.2.0",
+        "ts-jest": "^29.4.6",
         "typescript": "^5.9.3"
     }
 }

@@ -24,18 +24,22 @@
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jest": "^27.5.2",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
     "@types/node": "^25.0.6",
     "@types/pg": "^8.16.0",
     "@types/uuid": "^10.0.0",
+    "jest": "^30.2.0",
     "nodemon": "^3.1.11",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest"
   }
 }
