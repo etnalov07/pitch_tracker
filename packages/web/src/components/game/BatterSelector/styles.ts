@@ -135,3 +135,98 @@ export const AddBatterButton = styled.button({
         color: theme.colors.primary[600],
     },
 });
+
+export const AddBatterForm = styled.div({
+    marginTop: theme.spacing.md,
+    padding: theme.spacing.md,
+    border: `1px solid ${theme.colors.gray[200]}`,
+    borderRadius: theme.borderRadius.md,
+    background: theme.colors.gray[50],
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.sm,
+});
+
+export const FormRow = styled.div({
+    display: 'flex',
+    gap: theme.spacing.sm,
+    alignItems: 'center',
+});
+
+export const FormLabel = styled.label({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.gray[700],
+    minWidth: '80px',
+});
+
+export const FormInput = styled.input({
+    flex: 1,
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    border: `1px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.sm,
+    outline: 'none',
+
+    '&:focus': {
+        borderColor: theme.colors.primary[500],
+        boxShadow: `0 0 0 2px ${theme.colors.primary[100]}`,
+    },
+});
+
+export const FormSelect = styled.select({
+    flex: 1,
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    border: `1px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.sm,
+    background: 'white',
+    outline: 'none',
+
+    '&:focus': {
+        borderColor: theme.colors.primary[500],
+        boxShadow: `0 0 0 2px ${theme.colors.primary[100]}`,
+    },
+});
+
+export const FormActions = styled.div({
+    display: 'flex',
+    gap: theme.spacing.sm,
+    justifyContent: 'flex-end',
+    marginTop: theme.spacing.xs,
+});
+
+export const SaveButton = styled.button({
+    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+    backgroundColor: theme.colors.primary[600],
+    color: 'white',
+    border: 'none',
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    cursor: 'pointer',
+
+    '&:hover': {
+        backgroundColor: theme.colors.primary[700],
+    },
+
+    '&:disabled': {
+        backgroundColor: theme.colors.gray[400],
+        cursor: 'not-allowed',
+    },
+});
+
+export const CancelButton = styled.button({
+    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+    backgroundColor: 'white',
+    color: theme.colors.gray[600],
+    border: `1px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    cursor: 'pointer',
+
+    '&:hover': {
+        backgroundColor: theme.colors.gray[50],
+    },
+});

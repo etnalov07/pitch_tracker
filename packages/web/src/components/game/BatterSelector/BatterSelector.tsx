@@ -16,6 +16,14 @@ import {
     NextUpBadge,
     EmptyMessage,
     AddBatterButton,
+    AddBatterForm,
+    FormRow,
+    FormLabel,
+    FormInput,
+    FormSelect,
+    FormActions,
+    SaveButton,
+    CancelButton,
 } from './styles';
 
 interface BatterSelectorProps {
@@ -28,6 +36,12 @@ interface BatterSelectorProps {
 const BatterSelector: React.FC<BatterSelectorProps> = ({ gameId, currentBattingOrder = 1, onBatterSelected, onClose }) => {
     const [lineup, setLineup] = useState<OpponentLineupPlayer[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [newName, setNewName] = useState('');
+    const [newBattingOrder, setNewBattingOrder] = useState('');
+    const [newPosition, setNewPosition] = useState('');
+    const [newBats, setNewBats] = useState<'R' | 'L' | 'S'>('R');
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         const fetchLineup = async () => {
@@ -70,6 +84,50 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({ gameId, currentBattingO
     // Determine next batter based on batting order
     const nextBatterOrder = ((currentBattingOrder - 1) % 9) + 1;
 
+    // Find next available batting order slot
+    const usedOrders = new Set(activeLineup.map((b) => b.batting_order));
+    const getNextAvailableOrder = (): string => {
+        for (let i = 1; i <= 9; i++) {
+            if (!usedOrders.has(i)) return String(i);
+        }
+        return '1';
+    };
+
+    const handleShowAddForm = () => {
+        setNewBattingOrder(getNextAvailableOrder());
+        setShowAddForm(true);
+    };
+
+    const handleCancelAdd = () => {
+        setShowAddForm(false);
+        setNewName('');
+        setNewBattingOrder('');
+        setNewPosition('');
+        setNewBats('R');
+    };
+
+    const handleSaveNewBatter = async () => {
+        if (!newName.trim()) return;
+        setSaving(true);
+        try {
+            const response = await api.post<{ player: OpponentLineupPlayer }>(`/opponent-lineup/game/${gameId}`, {
+                player_name: newName.trim(),
+                batting_order: parseInt(newBattingOrder, 10),
+                position: newPosition.trim() || null,
+                bats: newBats,
+                is_starter: false,
+                inning_entered: null,
+            });
+            setLineup((prev) => [...prev, response.data.player]);
+            handleCancelAdd();
+        } catch (error) {
+            console.error('Failed to add batter:', error);
+            alert('Failed to add batter. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
         <Overlay onClick={onClose}>
             <Modal onClick={(e) => e.stopPropagation()}>
@@ -80,7 +138,7 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({ gameId, currentBattingO
 
                 {loading ? (
                     <EmptyMessage>Loading lineup...</EmptyMessage>
-                ) : activeLineup.length === 0 ? (
+                ) : activeLineup.length === 0 && !showAddForm ? (
                     <EmptyMessage>No lineup entered. Go back to add opponent lineup.</EmptyMessage>
                 ) : (
                     <BatterList>
@@ -106,7 +164,57 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({ gameId, currentBattingO
                     </BatterList>
                 )}
 
-                <AddBatterButton onClick={() => alert('Add batter feature coming soon')}>+ Add Batter</AddBatterButton>
+                {showAddForm ? (
+                    <AddBatterForm>
+                        <FormRow>
+                            <FormLabel>Name</FormLabel>
+                            <FormInput
+                                type="text"
+                                placeholder="Player name"
+                                value={newName}
+                                onChange={(e) => setNewName(e.target.value)}
+                                autoFocus
+                            />
+                        </FormRow>
+                        <FormRow>
+                            <FormLabel>Order</FormLabel>
+                            <FormSelect value={newBattingOrder} onChange={(e) => setNewBattingOrder(e.target.value)}>
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                                    <option key={n} value={n}>
+                                        {n}
+                                    </option>
+                                ))}
+                            </FormSelect>
+                        </FormRow>
+                        <FormRow>
+                            <FormLabel>Position</FormLabel>
+                            <FormInput
+                                type="text"
+                                placeholder="e.g. SS, CF"
+                                value={newPosition}
+                                onChange={(e) => setNewPosition(e.target.value)}
+                            />
+                        </FormRow>
+                        <FormRow>
+                            <FormLabel>Bats</FormLabel>
+                            <FormSelect value={newBats} onChange={(e) => setNewBats(e.target.value as 'R' | 'L' | 'S')}>
+                                <option value="R">Right</option>
+                                <option value="L">Left</option>
+                                <option value="S">Switch</option>
+                            </FormSelect>
+                        </FormRow>
+                        <FormActions>
+                            <CancelButton type="button" onClick={handleCancelAdd} disabled={saving}>
+                                Cancel
+                            </CancelButton>
+                            <SaveButton type="button" onClick={handleSaveNewBatter} disabled={saving || !newName.trim()}>
+                                {saving ? 'Saving...' : 'Save'}
+                            </SaveButton>
+                        </FormActions>
+                    </AddBatterForm>
+                ) : (
+                    <AddBatterButton onClick={handleShowAddForm}>+ Add Batter</AddBatterButton>
+                )}
             </Modal>
         </Overlay>
     );

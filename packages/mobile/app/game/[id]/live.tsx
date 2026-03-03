@@ -567,6 +567,8 @@ export default function LiveGameScreen() {
                 currentBatter={currentBatter}
                 onSelectBatter={handleSelectBatter}
                 isTablet={isTablet}
+                gameId={id!}
+                onBatterAdded={() => dispatch(fetchOpponentLineup(id!))}
             />
             <InningChangeModal
                 visible={showInningChange}
