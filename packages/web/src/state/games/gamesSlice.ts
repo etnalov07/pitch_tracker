@@ -147,6 +147,20 @@ export const updateAtBat = createAsyncThunk(
     }
 );
 
+export const endAtBat = createAsyncThunk(
+    'games/endAtBat',
+    async (
+        { id, data }: { id: string; data: { result: string; outs_after: number; rbi?: number; runs_scored?: number } },
+        { rejectWithValue }
+    ) => {
+        try {
+            return await gamesApi.endAtBat(id, data);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to end at-bat'));
+        }
+    }
+);
+
 export const logPitch = createAsyncThunk('games/logPitch', async (pitchData: Partial<Pitch>, { rejectWithValue }) => {
     try {
         return await gamesApi.logPitch(pitchData);
@@ -355,6 +369,15 @@ const gamesSlice = createSlice({
                 state.currentAtBat = action.payload;
             })
             .addCase(updateAtBat.rejected, (state, action) => {
+                state.error = action.payload as string;
+            });
+
+        // End At-Bat
+        builder
+            .addCase(endAtBat.fulfilled, (state, action) => {
+                state.currentAtBat = action.payload;
+            })
+            .addCase(endAtBat.rejected, (state, action) => {
                 state.error = action.payload as string;
             });
 

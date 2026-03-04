@@ -19,6 +19,8 @@ export {
     endGame,
     advanceInning,
     fetchCurrentGameState,
+    resumeGame,
+    endAtBat,
     fetchCurrentInning,
     fetchGamePitchers,
     changePitcher,

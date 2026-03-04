@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../../services/api';
+import { gamesApi } from '../../../state/games/api/gamesApi';
 import { Player, GamePitcherWithPlayer } from '../../../types';
 import {
     Overlay,
@@ -35,12 +35,12 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
         const fetchData = async () => {
             try {
                 // Fetch team pitchers only (position = 'P')
-                const rosterResponse = await api.get<{ pitchers: Player[] }>(`/players/pitchers/team/${teamId}`);
-                setRoster(rosterResponse.data.pitchers || []);
+                const pitchers = await gamesApi.getTeamPitchers(teamId);
+                setRoster(pitchers || []);
 
                 // Fetch game pitchers (who has pitched in this game)
-                const pitchersResponse = await api.get<{ pitchers: GamePitcherWithPlayer[] }>(`/game-pitchers/game/${gameId}`);
-                setGamePitchers(pitchersResponse.data.pitchers || []);
+                const gamePitchersList = await gamesApi.getGamePitchers(gameId);
+                setGamePitchers(gamePitchersList || []);
             } catch (error) {
                 console.error('Failed to fetch pitchers:', error);
             } finally {
@@ -61,12 +61,9 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
             }
 
             // Add or change pitcher
-            const response = await api.post<{ pitcher: GamePitcherWithPlayer }>(`/game-pitchers/game/${gameId}/change`, {
-                player_id: player.id,
-                inning_entered: currentInning,
-            });
+            const newPitcher = await gamesApi.changePitcher(gameId, player.id, currentInning);
 
-            onPitcherSelected(response.data.pitcher);
+            onPitcherSelected(newPitcher);
             onClose();
         } catch (error) {
             console.error('Failed to set pitcher:', error);

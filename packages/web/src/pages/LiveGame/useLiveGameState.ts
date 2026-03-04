@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
 import useHeatZones from '../../hooks/useHeatZones';
-import api from '../../services/api';
 import { useAppDispatch, useAppSelector, fetchGameById } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import {
@@ -103,11 +102,11 @@ export function useLiveGameState() {
     useEffect(() => {
         if (gameId) {
             dispatch(fetchGameById(gameId));
-            api.get<{ lineup: OpponentLineupPlayer[] }>(`/opponent-lineup/game/${gameId}`)
-                .then((response) => {
-                    const lineup = response.data.lineup || [];
-                    setOpponentLineup(lineup);
-                    if (lineup.length > 0) {
+            gamesApi
+                .getOpponentLineup(gameId)
+                .then((lineup) => {
+                    setOpponentLineup(lineup || []);
+                    if (lineup && lineup.length > 0) {
                         const firstBatter = lineup.find((p) => p.batting_order === 1);
                         if (firstBatter) {
                             setCurrentBatter((prev) => (prev ? prev : firstBatter));
@@ -126,9 +125,10 @@ export function useLiveGameState() {
     // Load pitcher's pitch types when pitcher changes
     useEffect(() => {
         if (currentPitcher?.player_id) {
-            api.get<{ pitch_types: string[] }>(`/players/${currentPitcher.player_id}/pitch-types`)
-                .then((response) => {
-                    const types = (response.data.pitch_types || []) as PitchType[];
+            gamesApi
+                .getPitcherPitchTypes(currentPitcher.player_id)
+                .then((pitchTypes) => {
+                    const types = (pitchTypes || []) as PitchType[];
                     setPitcherPitchTypes(types);
                     if (types.length > 0) {
                         setPitchType((prev) => (types.includes(prev) ? prev : types[0]));

@@ -4,7 +4,7 @@ import {
     startGame,
     logPitch,
     createAtBat,
-    updateAtBat,
+    endAtBat,
     setCurrentAtBat,
     clearPitches,
     toggleHomeAway,
@@ -90,7 +90,7 @@ export function useLiveGameActions(state: LiveGameState) {
             const newOutCount = currentOuts + outsFromPlay;
 
             await dispatch(
-                updateAtBat({
+                endAtBat({
                     id: currentAtBat.id,
                     data: {
                         result,

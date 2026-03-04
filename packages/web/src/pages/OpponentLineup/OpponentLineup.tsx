@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../../services/api';
+import { gamesApi } from '../../state/games/api/gamesApi';
 import { Game } from '../../types';
 import {
     Container,
@@ -63,8 +63,8 @@ const OpponentLineup: React.FC = () => {
         const fetchGame = async () => {
             if (!gameId) return;
             try {
-                const response = await api.get<{ game: Game }>(`/games/${gameId}`);
-                setGame(response.data.game);
+                const game = await gamesApi.getGameById(gameId);
+                setGame(game);
             } catch (err) {
                 setError('Failed to load game');
             } finally {
@@ -106,7 +106,7 @@ const OpponentLineup: React.FC = () => {
                 is_starter: true,
             }));
 
-            await api.post(`/opponent-lineup/game/${gameId}/bulk`, { players });
+            await gamesApi.createOpponentLineupBulk(gameId!, players);
 
             // Navigate to the game (or pitcher selection)
             navigate(`/game/${gameId}`);

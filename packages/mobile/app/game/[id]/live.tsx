@@ -35,6 +35,7 @@ import {
     fetchTeamPitcherRoster,
     createAtBat,
     updateAtBat,
+    endAtBat,
     setCurrentAtBat,
     clearPitches,
     setBaseRunners,
@@ -217,9 +218,7 @@ export default function LiveGameScreen() {
             try {
                 const outsFromPlay = getOutsForResult(result);
                 const newOutCount = currentOuts + outsFromPlay;
-                await dispatch(
-                    updateAtBat({ id: currentAtBat.id, data: { result, outs_after: Math.min(newOutCount, 3) } })
-                ).unwrap();
+                await dispatch(endAtBat({ id: currentAtBat.id, data: { result, outs_after: Math.min(newOutCount, 3) } })).unwrap();
                 dispatch(setCurrentAtBat(null));
                 dispatch(clearPitches());
 

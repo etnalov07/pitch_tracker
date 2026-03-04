@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { analyticsService } from '../../../services/pitchService';
+import { analyticsService } from '../../../services/analyticsService';
 import { BatterHistory as BatterHistoryType } from '../../../types';
 import BatterScoutingNotes from '../BatterScoutingNotes';
 import {

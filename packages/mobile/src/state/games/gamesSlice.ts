@@ -98,6 +98,14 @@ export const endGame = createAsyncThunk(
     }
 );
 
+export const resumeGame = createAsyncThunk('games/resume', async (gameId: string, { rejectWithValue }) => {
+    try {
+        return await gamesApi.resumeGame(gameId);
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to resume game'));
+    }
+});
+
 export const advanceInning = createAsyncThunk('games/advanceInning', async (gameId: string, { rejectWithValue }) => {
     try {
         return await gamesApi.advanceInning(gameId);
@@ -129,6 +137,20 @@ export const updateAtBat = createAsyncThunk(
             return await gamesApi.updateAtBat(id, data);
         } catch (error: unknown) {
             return rejectWithValue(getErrorMessage(error, 'Failed to update at-bat'));
+        }
+    }
+);
+
+export const endAtBat = createAsyncThunk(
+    'games/endAtBat',
+    async (
+        { id, data }: { id: string; data: { result: string; outs_after: number; rbi?: number; runs_scored?: number } },
+        { rejectWithValue }
+    ) => {
+        try {
+            return await gamesApi.endAtBat(id, data);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to end at-bat'));
         }
     }
 );
@@ -386,6 +408,21 @@ const gamesSlice = createSlice({
                 state.error = action.payload as string;
             });
 
+        // Resume Game
+        builder
+            .addCase(resumeGame.fulfilled, (state, action) => {
+                const index = state.games.findIndex((g) => g.id === action.payload.id);
+                if (index !== -1) {
+                    state.games[index] = action.payload;
+                }
+                if (state.selectedGame?.id === action.payload.id) {
+                    state.selectedGame = action.payload;
+                }
+            })
+            .addCase(resumeGame.rejected, (state, action) => {
+                state.error = action.payload as string;
+            });
+
         // Advance Inning
         builder
             .addCase(advanceInning.fulfilled, (state, action) => {
@@ -433,6 +470,15 @@ const gamesSlice = createSlice({
                 state.currentAtBat = action.payload;
             })
             .addCase(updateAtBat.rejected, (state, action) => {
+                state.error = action.payload as string;
+            });
+
+        // End At-Bat
+        builder
+            .addCase(endAtBat.fulfilled, (state, action) => {
+                state.currentAtBat = action.payload;
+            })
+            .addCase(endAtBat.rejected, (state, action) => {
                 state.error = action.payload as string;
             });
 

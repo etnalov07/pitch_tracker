@@ -1,5 +1,17 @@
 import api from '../../../services/api';
-import { Game, Team, Player, AtBat, Pitch, Play, Inning, BaseRunners, BaserunnerEvent } from '../../../types';
+import {
+    Game,
+    Team,
+    Player,
+    AtBat,
+    Pitch,
+    Play,
+    Inning,
+    BaseRunners,
+    BaserunnerEvent,
+    GamePitcherWithPlayer,
+    OpponentLineupPlayer,
+} from '../../../types';
 
 interface GameState {
     game: Game;
@@ -72,7 +84,7 @@ export const gamesApi = {
     },
 
     getCurrentGameState: async (id: string): Promise<GameState> => {
-        const response = await api.get<GameState>(`/games/${id}/state`);
+        const response = await api.get<GameState>(`/analytics/game/${id}/state`);
         return response.data;
     },
 
@@ -119,5 +131,62 @@ export const gamesApi = {
     toggleHomeAway: async (id: string): Promise<Game> => {
         const response = await api.post<{ game: Game }>(`/games/${id}/toggle-home-away`);
         return response.data.game;
+    },
+
+    // End at-bat (sets ab_end_time on server)
+    endAtBat: async (
+        id: string,
+        data: { result: string; outs_after: number; rbi?: number; runs_scored?: number }
+    ): Promise<AtBat> => {
+        const response = await api.post<{ atBat: AtBat }>(`/at-bats/${id}/end`, data);
+        return response.data.atBat;
+    },
+
+    // Game Pitcher operations
+    getGamePitchers: async (gameId: string): Promise<GamePitcherWithPlayer[]> => {
+        const response = await api.get<{ pitchers: GamePitcherWithPlayer[] }>(`/game-pitchers/game/${gameId}`);
+        return response.data.pitchers;
+    },
+
+    changePitcher: async (gameId: string, playerId: string, inningEntered: number): Promise<GamePitcherWithPlayer> => {
+        const response = await api.post<{ pitcher: GamePitcherWithPlayer }>(`/game-pitchers/game/${gameId}/change`, {
+            player_id: playerId,
+            inning_entered: inningEntered,
+        });
+        return response.data.pitcher;
+    },
+
+    // Opponent Lineup operations
+    getOpponentLineup: async (gameId: string): Promise<OpponentLineupPlayer[]> => {
+        const response = await api.get<{ lineup: OpponentLineupPlayer[] }>(`/opponent-lineup/game/${gameId}`);
+        return response.data.lineup;
+    },
+
+    createOpponentLineupBulk: async (
+        gameId: string,
+        players: {
+            player_name: string;
+            batting_order: number;
+            position?: string;
+            bats: 'R' | 'L' | 'S';
+            is_starter: boolean;
+        }[]
+    ): Promise<OpponentLineupPlayer[]> => {
+        const response = await api.post<{ lineup: OpponentLineupPlayer[] }>(`/opponent-lineup/game/${gameId}/bulk`, {
+            players,
+        });
+        return response.data.lineup;
+    },
+
+    // Team pitchers (roster)
+    getTeamPitchers: async (teamId: string): Promise<Player[]> => {
+        const response = await api.get<{ pitchers: Player[] }>(`/players/pitchers/team/${teamId}`);
+        return response.data.pitchers;
+    },
+
+    // Pitcher's pitch types
+    getPitcherPitchTypes: async (playerId: string): Promise<string[]> => {
+        const response = await api.get<{ pitch_types: string[] }>(`/players/${playerId}/pitch-types`);
+        return response.data.pitch_types || [];
     },
 };

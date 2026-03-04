@@ -1,56 +1,5 @@
-import {
-    AtBat,
-    Pitch,
-    Play,
-    BatterHistory,
-    PitchLocationHeatMap,
-    SprayChart,
-    BatterScoutingReport,
-    BatterScoutingNote,
-} from '../types';
+import { BatterHistory, PitchLocationHeatMap, SprayChart, BatterScoutingReport, BatterScoutingNote } from '../types';
 import api from './api';
-
-export const pitchService = {
-    // Create new at-bat
-    createAtBat: async (atBatData: Partial<AtBat>): Promise<AtBat> => {
-        const response = await api.post<AtBat>('/at-bats', atBatData);
-        return response.data;
-    },
-
-    // End at-bat
-    endAtBat: async (id: string, result: string, rbis?: number): Promise<AtBat> => {
-        const response = await api.post<AtBat>(`/at-bats/${id}/end`, { result, rbis });
-        return response.data;
-    },
-
-    // Log a pitch
-    logPitch: async (pitchData: Partial<Pitch>): Promise<Pitch> => {
-        const response = await api.post<Pitch>('/pitches', pitchData);
-        return response.data;
-    },
-
-    // Get pitches for an at-bat
-    getPitchesByAtBat: async (atBatId: string): Promise<Pitch[]> => {
-        const response = await api.get<Pitch[]>(`/pitches/at-bat/${atBatId}`);
-        return response.data;
-    },
-
-    // Record a play (ball in play)
-    recordPlay: async (playData: Partial<Play>): Promise<Play> => {
-        const response = await api.post<Play>('/plays', playData);
-        return response.data;
-    },
-
-    // Get play by at-bat
-    getPlayByAtBat: async (atBatId: string): Promise<Play | null> => {
-        try {
-            const response = await api.get<Play>(`/plays/at-bat/${atBatId}`);
-            return response.data;
-        } catch (error) {
-            return null;
-        }
-    },
-};
 
 // Analytics service
 export const analyticsService = {

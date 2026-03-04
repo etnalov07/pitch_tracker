@@ -56,6 +56,11 @@ export const gamesApi = {
         return response.data.game;
     },
 
+    resumeGame: async (id: string): Promise<Game> => {
+        const response = await api.post<{ game: Game }>(`/games/${id}/resume`);
+        return response.data.game;
+    },
+
     advanceInning: async (id: string): Promise<Game> => {
         const response = await api.post<{ game: Game }>(`/games/${id}/advance-inning`);
         return response.data.game;
@@ -82,6 +87,15 @@ export const gamesApi = {
 
     updateAtBat: async (id: string, atBatData: Partial<AtBat>): Promise<AtBat> => {
         const response = await api.put<{ atBat: AtBat }>(`/at-bats/${id}`, atBatData);
+        return response.data.atBat;
+    },
+
+    // End at-bat (sets ab_end_time on server)
+    endAtBat: async (
+        id: string,
+        data: { result: string; outs_after: number; rbi?: number; runs_scored?: number }
+    ): Promise<AtBat> => {
+        const response = await api.post<{ atBat: AtBat }>(`/at-bats/${id}/end`, data);
         return response.data.atBat;
     },
 

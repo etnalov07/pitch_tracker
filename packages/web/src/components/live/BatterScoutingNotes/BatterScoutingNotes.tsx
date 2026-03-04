@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { scoutingService } from '../../../services/pitchService';
+import { scoutingService } from '../../../services/analyticsService';
 import { theme } from '../../../styles/theme';
 import { BatterScoutingReport, TendencyConfidence } from '../../../types';
 import {
