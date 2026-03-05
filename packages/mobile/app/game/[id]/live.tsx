@@ -425,6 +425,8 @@ export default function LiveGameScreen() {
                 target_location_x: targetLocation?.x,
                 target_location_y: targetLocation?.y,
                 opponent_batter_id: currentBatter?.id,
+                balls_before: balls,
+                strikes_before: strikes,
             });
             if (!result.success) {
                 Alert.alert('Error', 'Failed to log pitch');

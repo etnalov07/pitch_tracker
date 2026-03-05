@@ -65,8 +65,8 @@ export class PitchService {
                     target_location_x,
                     target_location_y,
                     zone,
-                    balls_before,
-                    strikes_before,
+                    balls_before ?? 0,
+                    strikes_before ?? 0,
                     pitch_result,
                 ]
             );

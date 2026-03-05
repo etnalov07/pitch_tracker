@@ -18,6 +18,8 @@ interface LogPitchPayload {
     target_location_x?: number;
     target_location_y?: number;
     velocity?: number;
+    balls_before: number;
+    strikes_before: number;
 }
 
 interface CreateAtBatPayload extends Partial<AtBat> {
@@ -58,6 +60,8 @@ export const useOfflineActions = () => {
                 target_location_x: payload.target_location_x,
                 target_location_y: payload.target_location_y,
                 velocity: payload.velocity,
+                balls_before: payload.balls_before,
+                strikes_before: payload.strikes_before,
             };
 
             try {
