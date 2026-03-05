@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, Alert, Keyboard } from 'react-native';
 import { Text, Button, Modal, TextInput, SegmentedButtons } from 'react-native-paper';
 import { OpponentLineupPlayer } from '@pitch-tracker/shared';
 import api from '../../../services/api';
@@ -82,119 +82,122 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
 
     return (
         <Modal visible={visible} onDismiss={handleDismiss} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
-            <Text variant="titleLarge" style={styles.modalTitle}>
-                Select Batter
-            </Text>
-            <ScrollView style={styles.playerList}>
-                {activeBatters.length === 0 && !showAddForm ? (
-                    <Text variant="bodyMedium" style={styles.emptyText}>
-                        No opponent lineup found. Set up the opponent lineup before starting.
-                    </Text>
+            <Pressable onPress={Keyboard.dismiss} style={styles.modalInner}>
+                <Text variant="titleLarge" style={styles.modalTitle}>
+                    Select Batter
+                </Text>
+                <ScrollView style={styles.playerList} keyboardShouldPersistTaps="handled">
+                    {activeBatters.length === 0 && !showAddForm ? (
+                        <Text variant="bodyMedium" style={styles.emptyText}>
+                            No opponent lineup found. Set up the opponent lineup before starting.
+                        </Text>
+                    ) : (
+                        activeBatters.map((batter) => (
+                            <Pressable
+                                key={batter.id}
+                                style={[styles.playerOption, currentBatter?.id === batter.id && styles.playerOptionSelected]}
+                                onPress={() => onSelectBatter(batter)}
+                            >
+                                <View style={styles.batterOptionRow}>
+                                    <View style={styles.batterOrder}>
+                                        <Text style={styles.batterOrderText}>{batter.batting_order}</Text>
+                                    </View>
+                                    <View style={styles.playerOptionInfo}>
+                                        <Text style={styles.playerOptionName}>{batter.player_name}</Text>
+                                        <Text style={styles.playerOptionDetail}>
+                                            {batter.position || 'Unknown'}
+                                            {batter.bats ? ` · Bats ${batter.bats}` : ''}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Pressable>
+                        ))
+                    )}
+                </ScrollView>
+
+                {showAddForm ? (
+                    <View style={styles.addForm}>
+                        <TextInput
+                            label="Player Name"
+                            mode="outlined"
+                            value={newName}
+                            onChangeText={setNewName}
+                            dense
+                            autoFocus
+                            style={styles.formInput}
+                        />
+                        <View style={styles.formRow}>
+                            <TextInput
+                                label="Order (1-9)"
+                                mode="outlined"
+                                value={newBattingOrder}
+                                onChangeText={(text) => {
+                                    const n = parseInt(text, 10);
+                                    if (!text || (n >= 1 && n <= 9)) setNewBattingOrder(text);
+                                }}
+                                keyboardType="number-pad"
+                                dense
+                                style={styles.formInputSmall}
+                            />
+                            <TextInput
+                                label="Position"
+                                mode="outlined"
+                                value={newPosition}
+                                onChangeText={setNewPosition}
+                                placeholder="e.g. SS, CF"
+                                dense
+                                style={styles.formInputSmall}
+                            />
+                        </View>
+                        <Text variant="labelMedium" style={styles.batsLabel}>
+                            Bats
+                        </Text>
+                        <SegmentedButtons
+                            value={newBats}
+                            onValueChange={(value) => setNewBats(value as 'R' | 'L' | 'S')}
+                            buttons={[
+                                { value: 'R', label: 'Right' },
+                                { value: 'L', label: 'Left' },
+                                { value: 'S', label: 'Switch' },
+                            ]}
+                            density="small"
+                            style={styles.segmented}
+                        />
+                        <View style={styles.formActions}>
+                            <Button mode="text" onPress={handleCancelAdd} disabled={saving}>
+                                Cancel
+                            </Button>
+                            <Button
+                                mode="contained"
+                                onPress={handleSaveNewBatter}
+                                disabled={saving || !newName.trim()}
+                                loading={saving}
+                            >
+                                Save
+                            </Button>
+                        </View>
+                    </View>
                 ) : (
-                    activeBatters.map((batter) => (
-                        <Pressable
-                            key={batter.id}
-                            style={[styles.playerOption, currentBatter?.id === batter.id && styles.playerOptionSelected]}
-                            onPress={() => onSelectBatter(batter)}
-                        >
-                            <View style={styles.batterOptionRow}>
-                                <View style={styles.batterOrder}>
-                                    <Text style={styles.batterOrderText}>{batter.batting_order}</Text>
-                                </View>
-                                <View style={styles.playerOptionInfo}>
-                                    <Text style={styles.playerOptionName}>{batter.player_name}</Text>
-                                    <Text style={styles.playerOptionDetail}>
-                                        {batter.position || 'Unknown'}
-                                        {batter.bats ? ` · Bats ${batter.bats}` : ''}
-                                    </Text>
-                                </View>
-                            </View>
-                        </Pressable>
-                    ))
+                    <Button mode="outlined" onPress={handleShowAddForm} style={styles.addButton} icon="plus">
+                        Add Batter
+                    </Button>
                 )}
-            </ScrollView>
 
-            {showAddForm ? (
-                <View style={styles.addForm}>
-                    <TextInput
-                        label="Player Name"
-                        mode="outlined"
-                        value={newName}
-                        onChangeText={setNewName}
-                        dense
-                        autoFocus
-                        style={styles.formInput}
-                    />
-                    <View style={styles.formRow}>
-                        <TextInput
-                            label="Order (1-9)"
-                            mode="outlined"
-                            value={newBattingOrder}
-                            onChangeText={(text) => {
-                                const n = parseInt(text, 10);
-                                if (!text || (n >= 1 && n <= 9)) setNewBattingOrder(text);
-                            }}
-                            keyboardType="number-pad"
-                            dense
-                            style={styles.formInputSmall}
-                        />
-                        <TextInput
-                            label="Position"
-                            mode="outlined"
-                            value={newPosition}
-                            onChangeText={setNewPosition}
-                            placeholder="e.g. SS, CF"
-                            dense
-                            style={styles.formInputSmall}
-                        />
-                    </View>
-                    <Text variant="labelMedium" style={styles.batsLabel}>
-                        Bats
-                    </Text>
-                    <SegmentedButtons
-                        value={newBats}
-                        onValueChange={(value) => setNewBats(value as 'R' | 'L' | 'S')}
-                        buttons={[
-                            { value: 'R', label: 'Right' },
-                            { value: 'L', label: 'Left' },
-                            { value: 'S', label: 'Switch' },
-                        ]}
-                        density="small"
-                        style={styles.segmented}
-                    />
-                    <View style={styles.formActions}>
-                        <Button mode="text" onPress={handleCancelAdd} disabled={saving}>
-                            Cancel
-                        </Button>
-                        <Button
-                            mode="contained"
-                            onPress={handleSaveNewBatter}
-                            disabled={saving || !newName.trim()}
-                            loading={saving}
-                        >
-                            Save
-                        </Button>
-                    </View>
-                </View>
-            ) : (
-                <Button mode="outlined" onPress={handleShowAddForm} style={styles.addButton} icon="plus">
-                    Add Batter
+                <Button onPress={handleDismiss} style={styles.modalClose}>
+                    Cancel
                 </Button>
-            )}
-
-            <Button onPress={handleDismiss} style={styles.modalClose}>
-                Cancel
-            </Button>
+            </Pressable>
         </Modal>
     );
 };
 
 const styles = StyleSheet.create({
-    modal: { backgroundColor: '#ffffff', margin: 20, padding: 20, borderRadius: 12, maxHeight: '80%' },
+    modal: { backgroundColor: '#ffffff', margin: 20, borderRadius: 12, maxHeight: '90%' },
+    modalInner: { padding: 20, flex: 1 },
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
     modalTitle: { marginBottom: 16 },
     modalClose: { marginTop: 8 },
-    playerList: { maxHeight: 400 },
+    playerList: { flexGrow: 1, flexShrink: 1 },
     playerOption: {
         paddingVertical: 12,
         paddingHorizontal: 16,

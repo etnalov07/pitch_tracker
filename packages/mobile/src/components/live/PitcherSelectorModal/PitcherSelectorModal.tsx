@@ -58,7 +58,7 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
             <Text variant="titleSmall" style={styles.sectionLabel}>
                 Available Pitchers
             </Text>
-            <ScrollView style={styles.playerList}>
+            <ScrollView style={styles.playerList} keyboardShouldPersistTaps="handled">
                 {teamPlayers.length === 0 ? (
                     <Text variant="bodyMedium" style={styles.emptyText}>
                         No players found. Add players to your team first.
@@ -96,13 +96,13 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-    modal: { backgroundColor: '#ffffff', margin: 20, padding: 20, borderRadius: 12, maxHeight: '80%' },
+    modal: { backgroundColor: '#ffffff', margin: 20, padding: 20, borderRadius: 12, maxHeight: '90%' },
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
     modalTitle: { marginBottom: 16 },
     modalClose: { marginTop: 8 },
     sectionLabel: { color: '#6b7280', marginBottom: 8, marginTop: 4 },
     sectionDivider: { marginVertical: 12 },
-    playerList: { maxHeight: 400 },
+    playerList: { flexGrow: 1, flexShrink: 1 },
     playerOption: {
         paddingVertical: 12,
         paddingHorizontal: 16,
