@@ -15,6 +15,7 @@ import {
 import { extractVideoFeatures, classifyKNN } from './video';
 import { kMeans3, normalize, computeFbScore, mapClustersToTypes } from './classifier';
 import { generateSessionExcel, generateKhsExcel } from './excel';
+import { loadCalibration, saveCalibration, addEntries, computeVelocity, getCalibrationSummary } from './calibration';
 import type {
     PitchAnalysis,
     EnrichedPitch,
@@ -23,9 +24,18 @@ import type {
     KhsResult,
     GroundTruthEntry,
     VideoFeatures,
+    CalibrationDatabase,
 } from './types';
 
 const SAMPLE_RATE = 44100;
+const VIDEO_EXTENSIONS = ['.MOV', '.mov', '.MP4', '.mp4'];
+const isVideoFile = (f: string) => VIDEO_EXTENSIONS.some((ext) => f.endsWith(ext));
+const stripVideoExt = (f: string) => {
+    for (const ext of VIDEO_EXTENSIONS) {
+        if (f.endsWith(ext)) return f.slice(0, -ext.length);
+    }
+    return f;
+};
 
 const program = new Command();
 
@@ -44,13 +54,12 @@ program
         const baselineMph = parseFloat(opts.baselineMph);
 
         if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
-        const videoFiles = readdirSync(videoDir)
-            .filter((f) => f.endsWith('.MOV'))
-            .sort();
+        const videoFiles = readdirSync(videoDir).filter(isVideoFile).sort();
         console.log(`Analyzing ${videoFiles.length} pitches (velocity baseline: ${baselineMph} mph)\n`);
 
         const pitchData: Array<{
             pitchName: string;
+            ext: string;
             durationS: number;
             glovePop: { sampleIndex: number; timeS: number; amplitude: number; riseRatio: number };
             umpire: ReturnType<typeof detectUmpireCall>;
@@ -61,7 +70,7 @@ program
 
         for (const file of videoFiles) {
             const videoPath = join(videoDir, file);
-            const pitchName = basename(file, '.MOV');
+            const pitchName = stripVideoExt(file);
             process.stdout.write(`  ${pitchName}: `);
             try {
                 const rawPath = extractAudioToFile(videoPath, tempDir);
@@ -79,7 +88,8 @@ program
                         `peakR=${String(umpire.peakRatio).padEnd(5)} meanR=${String(umpire.meanRatio).padEnd(5)} ` +
                         `dur=${String(umpire.sustainedMs).padEnd(4)}ms  avail=${umpire.availableS}s`
                 );
-                pitchData.push({ pitchName, durationS, glovePop, umpire });
+                const ext = file.slice(pitchName.length);
+                pitchData.push({ pitchName, ext, durationS, glovePop, umpire });
             } catch (e: any) {
                 console.log(`ERROR: ${e.message}`);
             }
@@ -99,7 +109,7 @@ program
 
         const jsonResults: PitchAnalysis[] = pitchData.map((p, i) => ({
             pitch_number: i + 1,
-            video: p.pitchName + '.MOV',
+            video: p.pitchName + p.ext,
             estimated_velocity_mph: p.estimatedMph!,
             velocity_low_mph: p.velocityLow!,
             velocity_high_mph: p.velocityHigh!,
@@ -141,7 +151,7 @@ program
         const videoDir = resolve(opts.videoDir);
 
         const audioFeats = pitches.map((p) => {
-            const rawPath = join(tempDir, basename(p.video, '.MOV') + '.raw');
+            const rawPath = join(tempDir, stripVideoExt(p.video) + '.raw');
             const samples = readPCM(rawPath);
             const popIdx = Math.round(p.glove_pop_time_s * SAMPLE_RATE);
             return analyzePopSignature(samples, popIdx);
@@ -323,9 +333,7 @@ program
         const groundTruth: Record<string, GroundTruthEntry> = opts.groundTruth ? JSON.parse(opts.groundTruth) : {};
 
         if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
-        const videoFiles = readdirSync(videoDir)
-            .filter((f) => f.endsWith('.MOV'))
-            .sort();
+        const videoFiles = readdirSync(videoDir).filter(isVideoFile).sort();
 
         const FEATURE_NAMES = ['audio_amplitude', 'audio_fbScore', 'center_lateFlight', 'pitchLane_lateFlight'];
         const K = 7;
@@ -450,10 +458,117 @@ program
     .description('Generate Excel report for a KHS-style session analysis')
     .requiredOption('--input <path>', 'Path to session_analysis.json or khs_analysis.json')
     .option('--output <path>', 'Output Excel path', './Session_Analysis.xlsx')
-    .action(async (opts: { input: string; output: string }) => {
+    .option('--calibration <path>', 'Path to calibration.json for stable velocity estimates')
+    .action(async (opts: { input: string; output: string; calibration?: string }) => {
         const results: KhsResult[] = JSON.parse(readFileSync(resolve(opts.input), 'utf8'));
-        await generateKhsExcel(results, resolve(opts.output));
+        let calibDb: CalibrationDatabase | undefined;
+        if (opts.calibration) {
+            calibDb = loadCalibration(resolve(opts.calibration));
+            console.log(`Using calibration: ${calibDb.entries.length} entries`);
+        }
+        await generateKhsExcel(results, resolve(opts.output), calibDb);
         console.log(`Saved: ${opts.output}`);
+    });
+
+// ── calibrate add: Add reviewed pitches to calibration database ──────────
+program
+    .command('calibrate-add')
+    .description('Add reviewed session data to the calibration database')
+    .requiredOption('--input <path>', 'Path to session_analysis.json or ground_truth_comparison.json')
+    .requiredOption('--game <name>', 'Game identifier (e.g., "Gino_vs_Clear_Falls")')
+    .option('--date <date>', 'Game date (YYYY-MM-DD)', new Date().toISOString().split('T')[0])
+    .option('--calibration <path>', 'Path to calibration.json', './calibration.json')
+    .option('--radar <json>', 'JSON map of "video.MOV": velocity for radar gun readings')
+    .action(async (opts: { input: string; game: string; date: string; calibration: string; radar?: string }) => {
+        const results: KhsResult[] = JSON.parse(readFileSync(resolve(opts.input), 'utf8'));
+        const calibPath = resolve(opts.calibration);
+        const db = loadCalibration(calibPath);
+        const radar: Record<string, number> | undefined = opts.radar ? JSON.parse(opts.radar) : undefined;
+
+        const { added, updated, skipped } = addEntries(db, results, opts.game, opts.date, radar);
+        saveCalibration(db, calibPath);
+
+        console.log(`Calibration database: ${calibPath}`);
+        console.log(`  Added: ${added}, Updated: ${updated}, Skipped: ${skipped}`);
+        console.log(`  Total entries: ${db.entries.length}`);
+
+        if (radar) {
+            const radarCount = Object.keys(radar).length;
+            console.log(`  Radar readings added: ${radarCount}`);
+        }
+
+        // Show per-type counts
+        const types: Record<string, number> = {};
+        db.entries.forEach((e) => {
+            types[e.pitch_type] = (types[e.pitch_type] || 0) + 1;
+        });
+        console.log(
+            `  By type: ${Object.entries(types)
+                .map(([t, n]) => `${t}=${n}`)
+                .join(', ')}`
+        );
+    });
+
+// ── calibrate status: Show calibration database summary ─────────────────
+program
+    .command('calibrate-status')
+    .description('Show calibration database summary')
+    .option('--calibration <path>', 'Path to calibration.json', './calibration.json')
+    .action(async (opts: { calibration: string }) => {
+        const calibPath = resolve(opts.calibration);
+        if (!existsSync(calibPath)) {
+            console.log(`No calibration database found at ${calibPath}`);
+            console.log('Use "calibrate-add" to create one from reviewed session data.');
+            return;
+        }
+        const db = loadCalibration(calibPath);
+        console.log(getCalibrationSummary(db));
+    });
+
+// ── calibrate velocity: Re-estimate velocities using calibration data ───
+program
+    .command('calibrate-velocity')
+    .description('Re-estimate velocities for a session using the calibration database')
+    .requiredOption('--input <path>', 'Path to session_analysis.json')
+    .requiredOption('--calibration <path>', 'Path to calibration.json')
+    .option('--output <path>', 'Output Excel path')
+    .action(async (opts: { input: string; calibration: string; output?: string }) => {
+        const results: KhsResult[] = JSON.parse(readFileSync(resolve(opts.input), 'utf8'));
+        const db = loadCalibration(resolve(opts.calibration));
+
+        console.log(
+            `Calibration: ${db.entries.length} entries across ${[...new Set(db.entries.map((e) => e.game))].length} game(s)\n`
+        );
+
+        const valid = results.filter((r) => !r.error);
+        console.log('Video           Type        Calibrated   Session-Only   Diff    Sample  Confidence');
+        console.log('-'.repeat(90));
+
+        for (const r of valid) {
+            const pitchType = r.actual_pitch_type || r.detected_pitch_type || 'Fastball';
+            const features = {
+                glove_pop_amplitude: r.glove_pop_amplitude ?? 0,
+                fb_score: r.fb_score ?? 0,
+                decay_ratio: r.decay_ratio ?? 0,
+                pop_zcr: r.pop_zcr ?? 0,
+            };
+
+            const calVel = computeVelocity(pitchType, features, db);
+
+            // Session-only velocity (for comparison)
+            const sessionAmps = valid.map((v) => v.glove_pop_amplitude ?? 0);
+            const avgAmp = sessionAmps.reduce((s, v) => s + v, 0) / sessionAmps.length;
+            const stdAmp = Math.sqrt(sessionAmps.reduce((s, v) => s + (v - avgAmp) ** 2, 0) / sessionAmps.length) || 1;
+            const baselineMap: Record<string, number> = { Fastball: 79, Curveball: 65, Changeup: 72 };
+            const sessBaseline = baselineMap[pitchType] ?? 75;
+            const sessZ = ((r.glove_pop_amplitude ?? 0) - avgAmp) / stdAmp;
+            const sessVel = Math.round((sessBaseline + Math.max(-4, Math.min(4, sessZ * 2.0))) * 10) / 10;
+            const diff = Math.round((calVel.velocity - sessVel) * 10) / 10;
+
+            console.log(
+                `${r.video.padEnd(16)}${pitchType.padEnd(12)}${(calVel.velocity + ' mph').padStart(10)}   ${(sessVel + ' mph').padStart(10)}    ${(diff >= 0 ? '+' : '') + diff}      ${String(calVel.sample_size).padStart(3)}     ${calVel.confidence}`
+            );
+        }
     });
 
 program.parse();

@@ -8,7 +8,8 @@ const SAMPLE_RATE = 44100;
 
 export function extractAudioToFile(videoPath: string, tempDir: string): string {
     if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
-    const outPath = join(tempDir, basename(videoPath, '.MOV') + '.raw');
+    const ext = ['.MOV', '.mov', '.MP4', '.mp4'].find((e) => videoPath.endsWith(e)) || '.MOV';
+    const outPath = join(tempDir, basename(videoPath, ext) + '.raw');
     if (existsSync(outPath)) return outPath;
     execFileSync(
         ffmpegPath,
