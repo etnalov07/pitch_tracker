@@ -1,0 +1,21 @@
+{
+    "name": "@pitch-tracker/agents",
+    "version": "1.0.0",
+    "description": "Multi-agent development pipeline for Pitch Tracker",
+    "main": "dist/cli.js",
+    "bin": {
+        "pitch-agents": "./dist/cli.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/cli.js"
+    },
+    "dependencies": {
+        "@anthropic-ai/claude-code": "^1.0.0",
+        "commander": "^13.1.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.3",
+        "@types/node": "^22.15.0"
+    }
+}

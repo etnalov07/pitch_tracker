@@ -1,0 +1,618 @@
+[
+  {
+    "num": 1,
+    "video": "IMG_7142",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 77.1,
+    "bs": "Strike"
+  },
+  {
+    "num": 2,
+    "video": "IMG_7143",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.1,
+    "bs": "Ball"
+  },
+  {
+    "num": 3,
+    "video": "IMG_7144",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 81.2,
+    "bs": "Ball"
+  },
+  {
+    "num": 4,
+    "video": "IMG_7145",
+    "detected": "Fastball",
+    "actual": "Curveball",
+    "velocity": 80.1,
+    "bs": "Strike"
+  },
+  {
+    "num": 5,
+    "video": "IMG_7146",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 77.1,
+    "bs": "Strike"
+  },
+  {
+    "num": 6,
+    "video": "IMG_7147",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 82,
+    "bs": "Ball"
+  },
+  {
+    "num": 7,
+    "video": "IMG_7148",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.3,
+    "bs": "Strike"
+  },
+  {
+    "num": 8,
+    "video": "IMG_7149",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 78.4,
+    "bs": "Ball"
+  },
+  {
+    "num": 9,
+    "video": "IMG_7150",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 80.5,
+    "bs": "Ball"
+  },
+  {
+    "num": 10,
+    "video": "IMG_7152",
+    "detected": "Curveball",
+    "actual": "Changeup",
+    "velocity": 77.3,
+    "bs": "Strike"
+  },
+  {
+    "num": 11,
+    "video": "IMG_7153",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 81.7,
+    "bs": "Strike"
+  },
+  {
+    "num": 12,
+    "video": "IMG_7154",
+    "detected": "Curveball",
+    "actual": "Changeup",
+    "velocity": 77.3,
+    "bs": "Strike"
+  },
+  {
+    "num": 13,
+    "video": "IMG_7155",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 79.5,
+    "bs": "Ball"
+  },
+  {
+    "num": 14,
+    "video": "IMG_7156",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 77.6,
+    "bs": "Ball"
+  },
+  {
+    "num": 15,
+    "video": "IMG_7157",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 82,
+    "bs": "Ball"
+  },
+  {
+    "num": 16,
+    "video": "IMG_7158",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 77.2,
+    "bs": "Ball"
+  },
+  {
+    "num": 17,
+    "video": "IMG_7159",
+    "detected": "Fastball",
+    "actual": "Curveball",
+    "velocity": 79.5,
+    "bs": "Strike"
+  },
+  {
+    "num": 18,
+    "video": "IMG_7160",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 79.3,
+    "bs": "Strike"
+  },
+  {
+    "num": 19,
+    "video": "IMG_7161",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.6,
+    "bs": "Strike"
+  },
+  {
+    "num": 20,
+    "video": "IMG_7162",
+    "detected": "Changeup",
+    "actual": "Changeup",
+    "velocity": 79.1,
+    "bs": "Strike"
+  },
+  {
+    "num": 21,
+    "video": "IMG_7163",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 80.6,
+    "bs": "Strike"
+  },
+  {
+    "num": 22,
+    "video": "IMG_7164",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 80,
+    "bs": "Strike"
+  },
+  {
+    "num": 23,
+    "video": "IMG_7175",
+    "detected": "Fastball",
+    "actual": "Curveball",
+    "velocity": 80.6,
+    "bs": "Strike"
+  },
+  {
+    "num": 24,
+    "video": "IMG_7176",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 76.8,
+    "bs": "Strike"
+  },
+  {
+    "num": 25,
+    "video": "IMG_7177",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 79.7,
+    "bs": "Ball"
+  },
+  {
+    "num": 26,
+    "video": "IMG_7178",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 78,
+    "bs": "Ball"
+  },
+  {
+    "num": 27,
+    "video": "IMG_7179",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 78.6,
+    "bs": "Strike"
+  },
+  {
+    "num": 28,
+    "video": "IMG_7181",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.7,
+    "bs": "Strike"
+  },
+  {
+    "num": 30,
+    "video": "IMG_7183",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 76.5,
+    "bs": "Ball"
+  },
+  {
+    "num": 32,
+    "video": "IMG_7185",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 78.2,
+    "bs": "Strike"
+  },
+  {
+    "num": 33,
+    "video": "IMG_7186",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 77.5,
+    "bs": "Strike"
+  },
+  {
+    "num": 35,
+    "video": "IMG_7188",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 77.9,
+    "bs": "Ball"
+  },
+  {
+    "num": 36,
+    "video": "IMG_7189",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 77.8,
+    "bs": "Strike"
+  },
+  {
+    "num": 37,
+    "video": "IMG_7190",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 78.5,
+    "bs": "Ball"
+  },
+  {
+    "num": 38,
+    "video": "IMG_7191",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 81.8,
+    "bs": "Strike"
+  },
+  {
+    "num": 39,
+    "video": "IMG_7192",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 77.8,
+    "bs": "Strike"
+  },
+  {
+    "num": 40,
+    "video": "IMG_7193",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 76.7,
+    "bs": "Strike"
+  },
+  {
+    "num": 41,
+    "video": "IMG_7194",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 81.9,
+    "bs": "Ball"
+  },
+  {
+    "num": 42,
+    "video": "IMG_7198",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 80.2,
+    "bs": "Ball"
+  },
+  {
+    "num": 43,
+    "video": "IMG_7199",
+    "detected": "Fastball",
+    "actual": "Curveball",
+    "velocity": 79.8,
+    "bs": "Ball"
+  },
+  {
+    "num": 44,
+    "video": "IMG_7200",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 78.6,
+    "bs": "Ball"
+  },
+  {
+    "num": 45,
+    "video": "IMG_7201",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.3,
+    "bs": "Strike"
+  },
+  {
+    "num": 46,
+    "video": "IMG_7202",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.7,
+    "bs": "Strike"
+  },
+  {
+    "num": 47,
+    "video": "IMG_7203",
+    "detected": "Fastball",
+    "actual": "Curveball",
+    "velocity": 80.2,
+    "bs": "Strike"
+  },
+  {
+    "num": 48,
+    "video": "IMG_7213",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 78.6,
+    "bs": "Strike"
+  },
+  {
+    "num": 49,
+    "video": "IMG_7214",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.2,
+    "bs": "Strike"
+  },
+  {
+    "num": 50,
+    "video": "IMG_7215",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 80.1,
+    "bs": "Ball"
+  },
+  {
+    "num": 51,
+    "video": "IMG_7216",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 78.4,
+    "bs": "Ball"
+  },
+  {
+    "num": 52,
+    "video": "IMG_7217",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 81.1,
+    "bs": "Strike"
+  },
+  {
+    "num": 53,
+    "video": "IMG_7218",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 76.9,
+    "bs": "Strike"
+  },
+  {
+    "num": 54,
+    "video": "IMG_7219",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 78.3,
+    "bs": "Ball"
+  },
+  {
+    "num": 55,
+    "video": "IMG_7220",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 78.7,
+    "bs": "Strike"
+  },
+  {
+    "num": 56,
+    "video": "IMG_7221",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 78.9,
+    "bs": "Strike"
+  },
+  {
+    "num": 57,
+    "video": "IMG_7222",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 77,
+    "bs": "Strike"
+  },
+  {
+    "num": 58,
+    "video": "IMG_7223",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 78.4,
+    "bs": "Strike"
+  },
+  {
+    "num": 59,
+    "video": "IMG_7224",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 79.8,
+    "bs": "Strike"
+  },
+  {
+    "num": 60,
+    "video": "IMG_7225",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 77.2,
+    "bs": "Strike"
+  },
+  {
+    "num": 61,
+    "video": "IMG_7226",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 80,
+    "bs": "Strike"
+  },
+  {
+    "num": 62,
+    "video": "IMG_7227",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.4,
+    "bs": "Ball"
+  },
+  {
+    "num": 63,
+    "video": "IMG_7228",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.7,
+    "bs": "Strike"
+  },
+  {
+    "num": 64,
+    "video": "IMG_7229",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 77.2,
+    "bs": "Ball"
+  },
+  {
+    "num": 65,
+    "video": "IMG_7230",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 81.8,
+    "bs": "Strike"
+  },
+  {
+    "num": 66,
+    "video": "IMG_7231",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 77.5,
+    "bs": "Strike"
+  },
+  {
+    "num": 67,
+    "video": "IMG_7232",
+    "detected": "Curveball",
+    "actual": "Curveball",
+    "velocity": 77,
+    "bs": "Strike"
+  },
+  {
+    "num": 68,
+    "video": "IMG_7233",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.2,
+    "bs": "Strike"
+  },
+  {
+    "num": 69,
+    "video": "IMG_7234",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 79.5,
+    "bs": "Ball"
+  },
+  {
+    "num": 70,
+    "video": "IMG_7235",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 78.4,
+    "bs": "Strike"
+  },
+  {
+    "num": 71,
+    "video": "IMG_7236",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 77.7,
+    "bs": "Strike"
+  },
+  {
+    "num": 72,
+    "video": "IMG_7237",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 79.1,
+    "bs": "Strike"
+  },
+  {
+    "num": 73,
+    "video": "IMG_7238",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 81.4,
+    "bs": "Strike"
+  },
+  {
+    "num": 74,
+    "video": "IMG_7239",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 78.3,
+    "bs": "Ball"
+  },
+  {
+    "num": 75,
+    "video": "IMG_7240",
+    "detected": "Changeup",
+    "actual": "Fastball",
+    "velocity": 80,
+    "bs": "Ball"
+  },
+  {
+    "num": 76,
+    "video": "IMG_7241",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 81.5,
+    "bs": "Strike"
+  },
+  {
+    "num": 77,
+    "video": "IMG_7242",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 78.5,
+    "bs": "Ball"
+  },
+  {
+    "num": 78,
+    "video": "IMG_7243",
+    "detected": "Curveball",
+    "actual": "Fastball",
+    "velocity": 77.6,
+    "bs": "Ball"
+  },
+  {
+    "num": 79,
+    "video": "IMG_7244",
+    "detected": "Fastball",
+    "actual": "Fastball",
+    "velocity": 80.8,
+    "bs": "Strike"
+  },
+  {
+    "num": 80,
+    "video": "IMG_7245",
+    "detected": "Changeup",
+    "actual": "Curveball",
+    "velocity": 78.7,
+    "bs": "Strike"
+  }
+]

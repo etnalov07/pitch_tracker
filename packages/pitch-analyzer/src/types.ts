@@ -103,3 +103,23 @@ export interface GroundTruthEntry {
     pitch_type: string;
     result: string;
 }
+
+export interface CalibrationEntry {
+    video: string;
+    game: string;
+    date: string;
+    pitch_type: string;
+    glove_pop_amplitude: number;
+    audio_amplitude: number;
+    fb_score: number;
+    decay_ratio: number;
+    pop_zcr: number;
+    radar_velocity?: number;
+}
+
+export interface CalibrationDatabase {
+    version: number;
+    updated: string;
+    baselines: Record<string, number>;
+    entries: CalibrationEntry[];
+}

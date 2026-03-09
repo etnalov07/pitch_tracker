@@ -1,4 +1,5 @@
-import * as Network from 'expo-network';
+// Network check using fetch instead of expo-network (crashes on iOS 26.2 beta)
+import { AppState, AppStateStatus } from 'react-native';
 import { store } from '../state/store';
 import {
     setOnlineStatus,
@@ -16,7 +17,23 @@ const MAX_RETRIES = 3;
 const SYNC_INTERVAL = 30000; // 30 seconds
 
 let syncInterval: ReturnType<typeof setInterval> | null = null;
-let networkSubscription: { remove: () => void } | null = null;
+let appStateSubscription: { remove: () => void } | null = null;
+
+// Simple network check via fetch (replaces expo-network)
+const checkIsOnline = async (): Promise<boolean> => {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        await fetch('https://clients3.google.com/generate_204', {
+            method: 'HEAD',
+            signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        return true;
+    } catch {
+        return false;
+    }
+};
 
 // Execute a single queued action
 const executeAction = async (action: OfflineAction): Promise<void> => {
@@ -78,8 +95,8 @@ export const syncPendingActions = async (): Promise<{
 
         for (const action of actions) {
             // Check if we're still online
-            const networkState = await Network.getNetworkStateAsync();
-            if (!networkState.isConnected || !networkState.isInternetReachable) {
+            const isOnline = await checkIsOnline();
+            if (!isOnline) {
                 store.dispatch(setOnlineStatus(false));
                 break;
             }
@@ -118,14 +135,14 @@ export const syncPendingActions = async (): Promise<{
     return { synced, failed, remaining };
 };
 
-// Handle network state changes
-const handleNetworkChange = (state: Network.NetworkState): void => {
-    const isOnline = (state.isConnected ?? false) && (state.isInternetReachable ?? false);
-    store.dispatch(setOnlineStatus(isOnline));
-
-    if (isOnline) {
-        // Trigger sync when coming back online
-        syncPendingActions();
+// Handle app state changes (check network when app comes to foreground)
+const handleAppStateChange = async (nextState: AppStateStatus): Promise<void> => {
+    if (nextState === 'active') {
+        const isOnline = await checkIsOnline();
+        store.dispatch(setOnlineStatus(isOnline));
+        if (isOnline) {
+            syncPendingActions();
+        }
     }
 };
 
@@ -140,20 +157,16 @@ export const startOfflineService = async (): Promise<void> => {
 
     try {
         // Check initial network state
-        const networkState = await Network.getNetworkStateAsync();
-        handleNetworkChange(networkState);
+        const isOnline = await checkIsOnline();
+        store.dispatch(setOnlineStatus(isOnline));
     } catch (err) {
         console.warn('Failed to get network state:', err);
         // Default to online if we can't check
         store.dispatch(setOnlineStatus(true));
     }
 
-    try {
-        // Subscribe to network changes
-        networkSubscription = Network.addNetworkStateListener(handleNetworkChange);
-    } catch (err) {
-        console.warn('Failed to subscribe to network changes:', err);
-    }
+    // Listen for app state changes to detect coming back online
+    appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
 
     // Start periodic sync
     syncInterval = setInterval(async () => {
@@ -166,9 +179,9 @@ export const startOfflineService = async (): Promise<void> => {
 
 // Stop the offline service
 export const stopOfflineService = (): void => {
-    if (networkSubscription) {
-        networkSubscription.remove();
-        networkSubscription = null;
+    if (appStateSubscription) {
+        appStateSubscription.remove();
+        appStateSubscription = null;
     }
 
     if (syncInterval) {

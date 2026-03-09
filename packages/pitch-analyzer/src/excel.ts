@@ -1,4 +1,5 @@
-import type { GroundTruthPitch, VideoPitchResult, KhsResult } from './types';
+import type { GroundTruthPitch, VideoPitchResult, KhsResult, CalibrationDatabase } from './types';
+import { computeVelocity } from './calibration';
 
 const ExcelJS = require('exceljs');
 
@@ -344,12 +345,35 @@ export async function generateSessionExcel(
     await wb.xlsx.writeFile(outPath);
 }
 
-export async function generateKhsExcel(results: KhsResult[], outPath: string): Promise<void> {
+export async function generateKhsExcel(
+    results: KhsResult[],
+    outPath: string,
+    calibDb?: CalibrationDatabase
+): Promise<void> {
     const valid = results.filter((r) => !r.error);
     const labeled = valid.filter((r) => r.actual_pitch_type);
 
     const enriched = valid.map((r) => {
         const type = r.actual_pitch_type || r.detected_pitch_type || 'Fastball';
+
+        if (calibDb && calibDb.entries.length >= 3) {
+            // Use calibration database for stable velocity estimates
+            const vel = computeVelocity(type, {
+                glove_pop_amplitude: r.glove_pop_amplitude ?? 0,
+                fb_score: r.fb_score ?? 0,
+                decay_ratio: r.decay_ratio ?? 0,
+                pop_zcr: r.pop_zcr ?? 0,
+            }, calibDb);
+            return {
+                ...r,
+                pitch_type: type,
+                velocity: vel.velocity,
+                vel_low: vel.vel_low,
+                vel_high: vel.vel_high,
+            };
+        }
+
+        // Fallback: session-only z-score velocity
         const baseline = VELOCITY_BASELINES[type] ?? 75;
         const allAmps = valid.map((v) => v.glove_pop_amplitude ?? 0);
         const avgAmp = allAmps.reduce((s, v) => s + v, 0) / allAmps.length;
