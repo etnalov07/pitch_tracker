@@ -1,0 +1,37 @@
+appId: com.bvolante.pitch-tracker
+---
+# Game Detail screen - verify game detail elements
+- runFlow: login.yaml
+
+# Wait for dashboard to fully load
+- extendedWaitUntil:
+    visible: "Games"
+    timeout: 10000
+
+# Try to tap on a game card from the dashboard (if any games exist)
+# This will tap on the first game card visible
+- tapOn:
+    text: "vs.*|@.*"
+    optional: true
+- waitForAnimationToEnd
+
+# If we navigated to a game detail, verify elements
+- assertVisible:
+    text: "Game Details"
+    optional: true
+
+# Verify game info section (if game detail loaded)
+- assertVisible:
+    text: "Game Info"
+    optional: true
+
+- assertVisible:
+    text: "Date"
+    optional: true
+
+- assertVisible:
+    text: "Innings"
+    optional: true
+
+# Go back to dashboard
+- back

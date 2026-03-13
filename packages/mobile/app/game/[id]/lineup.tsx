@@ -85,14 +85,6 @@ export default function LineupScreen() {
         router.replace(`/game/${id}` as any);
     };
 
-    if (loading) {
-        return (
-            <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-                <ActivityIndicator style={{ marginVertical: 40 }} />
-            </SafeAreaView>
-        );
-    }
-
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <View style={styles.header}>
@@ -108,99 +100,103 @@ export default function LineupScreen() {
                 <View style={{ width: 48 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.content}>
-                <Text variant="bodyMedium" style={styles.helpText}>
-                    Enter the opposing team's batting order. You can add or change players during the game.
-                </Text>
+            {loading ? (
+                <ActivityIndicator style={{ marginVertical: 40 }} />
+            ) : (
+                <ScrollView contentContainerStyle={styles.content}>
+                    <Text variant="bodyMedium" style={styles.helpText}>
+                        Enter the opposing team's batting order. You can add or change players during the game.
+                    </Text>
 
-                {lineup.map((entry, index) => (
-                    <View key={index} style={styles.row}>
-                        <View style={styles.orderBadge}>
-                            <Text variant="titleMedium" style={styles.orderText}>
-                                {entry.batting_order}
-                            </Text>
-                        </View>
+                    {lineup.map((entry, index) => (
+                        <View key={index} style={styles.row}>
+                            <View style={styles.orderBadge}>
+                                <Text variant="titleMedium" style={styles.orderText}>
+                                    {entry.batting_order}
+                                </Text>
+                            </View>
 
-                        <View style={styles.rowFields}>
-                            <TextInput
-                                label="Player Name"
-                                value={entry.player_name}
-                                onChangeText={(text) => handlePlayerChange(index, 'player_name', text)}
-                                mode="outlined"
-                                placeholder={`Batter ${entry.batting_order}`}
-                                style={styles.nameInput}
-                                dense
-                            />
+                            <View style={styles.rowFields}>
+                                <TextInput
+                                    label="Player Name"
+                                    value={entry.player_name}
+                                    onChangeText={(text) => handlePlayerChange(index, 'player_name', text)}
+                                    mode="outlined"
+                                    placeholder={`Batter ${entry.batting_order}`}
+                                    style={styles.nameInput}
+                                    dense
+                                />
 
-                            <View style={styles.bottomRow}>
-                                <Menu
-                                    visible={positionMenuIndex === index}
-                                    onDismiss={() => setPositionMenuIndex(null)}
-                                    anchor={
-                                        <Button
-                                            mode="outlined"
-                                            onPress={() => setPositionMenuIndex(index)}
-                                            compact
-                                            style={styles.positionButton}
-                                            labelStyle={styles.positionLabel}
-                                        >
-                                            {entry.position || 'Pos'}
-                                        </Button>
-                                    }
-                                >
-                                    <Menu.Item
-                                        onPress={() => {
-                                            handlePlayerChange(index, 'position', '');
-                                            setPositionMenuIndex(null);
-                                        }}
-                                        title="--"
-                                    />
-                                    {POSITIONS.map((pos) => (
+                                <View style={styles.bottomRow}>
+                                    <Menu
+                                        visible={positionMenuIndex === index}
+                                        onDismiss={() => setPositionMenuIndex(null)}
+                                        anchor={
+                                            <Button
+                                                mode="outlined"
+                                                onPress={() => setPositionMenuIndex(index)}
+                                                compact
+                                                style={styles.positionButton}
+                                                labelStyle={styles.positionLabel}
+                                            >
+                                                {entry.position || 'Pos'}
+                                            </Button>
+                                        }
+                                    >
                                         <Menu.Item
-                                            key={pos}
                                             onPress={() => {
-                                                handlePlayerChange(index, 'position', pos);
+                                                handlePlayerChange(index, 'position', '');
                                                 setPositionMenuIndex(null);
                                             }}
-                                            title={pos}
+                                            title="--"
                                         />
-                                    ))}
-                                </Menu>
+                                        {POSITIONS.map((pos) => (
+                                            <Menu.Item
+                                                key={pos}
+                                                onPress={() => {
+                                                    handlePlayerChange(index, 'position', pos);
+                                                    setPositionMenuIndex(null);
+                                                }}
+                                                title={pos}
+                                            />
+                                        ))}
+                                    </Menu>
 
-                                <SegmentedButtons
-                                    value={entry.bats}
-                                    onValueChange={(v) => {
-                                        Haptics.selectionAsync();
-                                        handlePlayerChange(index, 'bats', v);
-                                    }}
-                                    buttons={[
-                                        { value: 'R', label: 'R' },
-                                        { value: 'L', label: 'L' },
-                                        { value: 'S', label: 'S' },
-                                    ]}
-                                    style={styles.batsToggle}
-                                    density="small"
-                                />
+                                    <SegmentedButtons
+                                        value={entry.bats}
+                                        onValueChange={(v) => {
+                                            Haptics.selectionAsync();
+                                            handlePlayerChange(index, 'bats', v);
+                                        }}
+                                        buttons={[
+                                            { value: 'R', label: 'R' },
+                                            { value: 'L', label: 'L' },
+                                            { value: 'S', label: 'S' },
+                                        ]}
+                                        style={styles.batsToggle}
+                                        density="small"
+                                    />
+                                </View>
                             </View>
                         </View>
-                    </View>
-                ))}
+                    ))}
 
-                <View style={styles.actions}>
-                    <Button mode="outlined" onPress={handleSkip} style={styles.skipButton}>
-                        Skip for Now
-                    </Button>
-                    <Button
-                        mode="contained"
-                        onPress={handleSubmit}
-                        disabled={submitting}
-                        loading={submitting}
-                        style={styles.saveButton}
-                    >
-                        Save & Continue
-                    </Button>
-                </View>
-            </ScrollView>
+                    <View style={styles.actions}>
+                        <Button mode="outlined" onPress={handleSkip} style={styles.skipButton}>
+                            Skip for Now
+                        </Button>
+                        <Button
+                            mode="contained"
+                            onPress={handleSubmit}
+                            disabled={submitting}
+                            loading={submitting}
+                            style={styles.saveButton}
+                        >
+                            Save & Continue
+                        </Button>
+                    </View>
+                </ScrollView>
+            )}
         </SafeAreaView>
     );
 }

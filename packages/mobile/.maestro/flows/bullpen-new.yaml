@@ -1,0 +1,30 @@
+appId: com.bvolante.pitch-tracker
+---
+# New Bullpen Session - verify setup screen
+- runFlow: login.yaml
+
+# Navigate to bullpen via quick action on dashboard
+- tapOn: "Start Bullpen"
+- waitForAnimationToEnd
+
+# Wait for the bullpen setup screen to load
+- extendedWaitUntil:
+    visible: "New Bullpen Session"
+    timeout: 10000
+
+# Verify pitcher selection section
+- assertVisible: "Select Pitcher"
+
+# Verify intensity selector is visible
+- assertVisible:
+    text: ".*ntensity.*"
+    optional: true
+
+# Verify start button
+- scrollUntilVisible:
+    element: "Start Bullpen"
+    direction: DOWN
+- assertVisible: "Start Bullpen"
+
+# Go back without starting
+- back

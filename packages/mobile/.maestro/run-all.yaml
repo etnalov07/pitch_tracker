@@ -1,0 +1,42 @@
+appId: com.bvolante.pitch-tracker
+---
+# Run all Maestro e2e test flows in sequence
+
+# Authentication screens (no login required)
+- runFlow: flows/auth.yaml
+
+# Core navigation
+- runFlow: flows/navigation.yaml
+
+# Dashboard
+- runFlow: flows/dashboard.yaml
+
+# Teams
+- runFlow: flows/teams.yaml
+
+# Team Detail
+- runFlow: flows/team-detail.yaml
+
+# Settings
+- runFlow: flows/settings.yaml
+
+# Join Team
+- runFlow: flows/join-team.yaml
+
+# Create Game
+- runFlow: flows/create-game.yaml
+
+# Game Detail
+- runFlow: flows/game-detail.yaml
+
+# Live Game
+- runFlow: flows/live-game.yaml
+
+# Bullpen - New Session
+- runFlow: flows/bullpen-new.yaml
+
+# Bullpen - Live Session
+- runFlow: flows/bullpen-live.yaml
+
+# Login (standalone verification)
+- runFlow: flows/login.yaml

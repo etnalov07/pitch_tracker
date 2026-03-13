@@ -1,0 +1,38 @@
+appId: com.bvolante.pitch-tracker
+---
+# Tab Navigation - verify all tabs work and show correct screens
+- runFlow: login.yaml
+
+# Verify Dashboard tab is active and content shows
+- assertVisible: "Dashboard"
+- assertVisible: "Welcome"
+
+# Navigate to Teams tab
+- tapOn: "Teams"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: ".*"
+    timeout: 5000
+
+# Navigate to Settings tab
+- tapOn: "Settings"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Account"
+    timeout: 5000
+- assertVisible: "Account"
+
+# Navigate back to Dashboard
+- tapOn: "Dashboard"
+- waitForAnimationToEnd
+- assertVisible: "Welcome"
+
+# Navigate to Teams tab again to confirm consistency
+- tapOn: "Teams"
+- waitForAnimationToEnd
+
+# Navigate back to Dashboard one more time
+- tapOn: "Dashboard"
+- waitForAnimationToEnd
+- assertVisible: "Welcome"

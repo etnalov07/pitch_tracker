@@ -1,0 +1,66 @@
+appId: com.bvolante.pitch-tracker
+---
+# Live Game screen - verify UI elements if an in-progress game exists
+- runFlow: login.yaml
+
+# Wait for dashboard to load
+- extendedWaitUntil:
+    visible: "Games"
+    timeout: 10000
+
+# Try to find and tap an "In Progress" game
+- tapOn:
+    text: "In Progress"
+    optional: true
+- waitForAnimationToEnd
+
+# If we navigated to a live game, verify key elements
+- assertVisible:
+    text: "Live Game"
+    optional: true
+
+# Verify pitch type buttons exist (compact labels)
+- assertVisible:
+    text: "FB"
+    optional: true
+
+- assertVisible:
+    text: "SL"
+    optional: true
+
+- assertVisible:
+    text: "CB"
+    optional: true
+
+- assertVisible:
+    text: "CH"
+    optional: true
+
+# Verify result buttons
+- assertVisible:
+    text: "Ball"
+    optional: true
+
+- assertVisible:
+    text: "Called"
+    optional: true
+
+- assertVisible:
+    text: "Swing"
+    optional: true
+
+- assertVisible:
+    text: "Foul"
+    optional: true
+
+- assertVisible:
+    text: "In Play"
+    optional: true
+
+# Verify Log Pitch button
+- assertVisible:
+    text: "Log Pitch"
+    optional: true
+
+# Go back
+- back

@@ -1,0 +1,48 @@
+appId: com.bvolante.pitch-tracker
+---
+# Create Game screen - verify new game form fields
+- runFlow: login.yaml
+
+# Navigate to new game via FAB on dashboard
+- tapOn:
+    id: ".*fab.*"
+    optional: true
+- waitForAnimationToEnd
+
+# Wait for the new game screen to load
+- extendedWaitUntil:
+    visible: "New Game"
+    timeout: 10000
+
+# Verify form fields
+- assertVisible: "New Game"
+- assertVisible: "Your Team"
+
+# Wait for teams to load
+- extendedWaitUntil:
+    visible: "Home / Away"
+    timeout: 10000
+
+# Verify Home/Away selector
+- assertVisible: "Home"
+- assertVisible: "Away"
+
+# Verify text input fields
+- assertVisible: "Opponent Name"
+- assertVisible: "Game Date"
+- assertVisible: "Game Time"
+
+# Scroll down to see remaining fields
+- scrollUntilVisible:
+    element: "Location (optional)"
+    direction: DOWN
+- assertVisible: "Location (optional)"
+
+# Verify create button
+- scrollUntilVisible:
+    element: "Create Game"
+    direction: DOWN
+- assertVisible: "Create Game"
+
+# Go back without creating
+- back

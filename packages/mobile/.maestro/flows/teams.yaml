@@ -1,0 +1,46 @@
+appId: com.bvolante.pitch-tracker
+---
+# Teams tab - verify team list and create team modal
+- runFlow: login.yaml
+
+# Navigate to Teams tab
+- tapOn: "Teams"
+- waitForAnimationToEnd
+
+# Wait for teams to load
+- extendedWaitUntil:
+    visible:
+      text: ".*"
+    timeout: 10000
+
+# The FAB should be visible for creating a new team
+- assertVisible:
+    id: ".*fab.*"
+    optional: true
+
+# Tap FAB to open create team modal
+- tapOn:
+    id: ".*fab.*"
+    optional: true
+- waitForAnimationToEnd
+
+# Verify create team modal fields
+- assertVisible: "Create Team"
+- assertVisible: "Team Name"
+- assertVisible: "Team Type"
+- assertVisible: "High School"
+- assertVisible: "Travel"
+- assertVisible: "Club"
+- assertVisible: "College"
+- assertVisible: "Season"
+- assertVisible: "Spring"
+- assertVisible: "Summer"
+- assertVisible: "Fall"
+- assertVisible: "Winter"
+- assertVisible: "Year"
+- assertVisible: "Cancel"
+- assertVisible: "Create"
+
+# Close the modal
+- tapOn: "Cancel"
+- waitForAnimationToEnd

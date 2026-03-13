@@ -1,0 +1,38 @@
+appId: com.bvolante.pitch-tracker
+---
+# Team Detail screen - verify roster and team info
+- runFlow: login.yaml
+
+# Navigate to Teams tab
+- tapOn: "Teams"
+- waitForAnimationToEnd
+
+# Wait for teams to load
+- extendedWaitUntil:
+    visible:
+      text: ".*"
+    timeout: 10000
+
+# Tap on the first team card (if teams exist)
+- tapOn:
+    id: ".*"
+    index: 0
+    optional: true
+- waitForAnimationToEnd
+
+# Verify team detail elements
+- extendedWaitUntil:
+    visible: "Players"
+    timeout: 10000
+
+# Verify roster stats section
+- assertVisible: "Players"
+- assertVisible: "Pitchers"
+
+# Verify Start Bullpen Session button
+- assertVisible: "Start Bullpen Session"
+
+# Verify add player FAB exists
+- assertVisible:
+    id: ".*fab.*"
+    optional: true

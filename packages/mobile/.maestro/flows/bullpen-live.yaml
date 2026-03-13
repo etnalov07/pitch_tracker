@@ -1,0 +1,66 @@
+appId: com.bvolante.pitch-tracker
+---
+# Live Bullpen session - verify UI elements
+# NOTE: This flow verifies the bullpen live screen elements.
+#       It requires a bullpen session to be started first,
+#       which depends on having a team with pitchers.
+- runFlow: login.yaml
+
+# Navigate to bullpen via quick action
+- tapOn: "Start Bullpen"
+- waitForAnimationToEnd
+
+# Wait for the bullpen setup screen
+- extendedWaitUntil:
+    visible: "New Bullpen Session"
+    timeout: 10000
+
+# Verify select pitcher section
+- assertVisible: "Select Pitcher"
+
+# If pitchers are available, try to select one and start
+# (These are optional since they depend on data existing)
+- tapOn:
+    text: "#.*"
+    index: 0
+    optional: true
+
+# Verify intensity options exist
+- assertVisible:
+    text: ".*ntensity.*"
+    optional: true
+
+# Scroll to and verify Start Bullpen button
+- scrollUntilVisible:
+    element: "Start Bullpen"
+    direction: DOWN
+- assertVisible: "Start Bullpen"
+
+# If a pitcher was selected, attempt to start session
+- tapOn:
+    text: "Start Bullpen"
+    optional: true
+- waitForAnimationToEnd
+
+# Verify bullpen live screen elements (if session started)
+- assertVisible:
+    text: "Bullpen"
+    optional: true
+
+# Verify pitch type grid
+- assertVisible:
+    text: "FB"
+    optional: true
+
+# Verify velocity input area
+- assertVisible:
+    text: "Velocity"
+    optional: true
+
+# Verify Log Pitch button
+- assertVisible:
+    text: "Log Pitch"
+    optional: true
+
+# Go back
+- back

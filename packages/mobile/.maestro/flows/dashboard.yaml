@@ -1,0 +1,38 @@
+appId: com.bvolante.pitch-tracker
+---
+# Dashboard screen - verify main dashboard elements after login
+- runFlow: login.yaml
+
+# Verify greeting
+- assertVisible: "Welcome"
+
+# Verify stats cards
+- assertVisible: "Games"
+- assertVisible: "Scheduled"
+
+# Verify quick actions
+- assertVisible: "Start Bullpen"
+- assertVisible: "Find a Team"
+
+# Verify FAB button exists (plus icon)
+- assertVisible:
+    id: ".*fab.*"
+    optional: true
+
+# Verify tab navigation is present
+- assertVisible: "Dashboard"
+- assertVisible: "Teams"
+- assertVisible: "Settings"
+
+# Test tab navigation - go to Teams
+- tapOn: "Teams"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: ".*"
+    timeout: 5000
+
+# Navigate back to Dashboard
+- tapOn: "Dashboard"
+- waitForAnimationToEnd
+- assertVisible: "Welcome"

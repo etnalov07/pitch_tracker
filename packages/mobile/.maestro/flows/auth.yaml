@@ -1,0 +1,47 @@
+appId: com.bvolante.pitch-tracker
+---
+# Authentication screens - verify login and register forms
+- launchApp:
+    clearState: true
+
+# Verify login screen elements
+- assertVisible: "PitchChart"
+- assertVisible: "Sign in to your account"
+- assertVisible: "Email"
+- assertVisible: "Password"
+- assertVisible: "Sign In"
+- assertVisible: "Don't have an account?"
+- assertVisible: "Sign Up"
+
+# Navigate to register screen
+- tapOn: "Sign Up"
+- waitForAnimationToEnd
+
+# Verify register form elements
+- assertVisible: "Create Account"
+- assertVisible: "Join PitchChart"
+- assertVisible: "First Name"
+- assertVisible: "Last Name"
+- assertVisible: "I am a..."
+- assertVisible: "Coach"
+- assertVisible: "Player"
+- assertVisible: "Org Admin"
+- assertVisible: "Email"
+- assertVisible: "Password"
+- scrollUntilVisible:
+    element: "Confirm Password"
+    direction: DOWN
+- assertVisible: "Confirm Password"
+- assertVisible: "Create Account"
+- assertVisible: "Already have an account?"
+- assertVisible: "Sign In"
+
+# Go back to login
+- tapOn:
+    text: "Sign In"
+    index: 1
+- waitForAnimationToEnd
+
+# Verify we're back on login
+- assertVisible: "PitchChart"
+- assertVisible: "Sign in to your account"

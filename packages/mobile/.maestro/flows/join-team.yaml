@@ -1,0 +1,28 @@
+appId: com.bvolante.pitch-tracker
+---
+# Join Team screen - verify search and request UI
+- runFlow: login.yaml
+
+# Navigate to join team via quick action on dashboard
+- tapOn: "Find a Team"
+- waitForAnimationToEnd
+
+# Wait for the join team screen to load
+- extendedWaitUntil:
+    visible: "Find a Team"
+    timeout: 10000
+
+# Verify search input
+- assertVisible: "Search teams by name..."
+
+# Verify search button
+- assertVisible: "Search"
+
+# Verify My Join Requests section
+- scrollUntilVisible:
+    element: "My Join Requests"
+    direction: DOWN
+- assertVisible: "My Join Requests"
+
+# Go back
+- back

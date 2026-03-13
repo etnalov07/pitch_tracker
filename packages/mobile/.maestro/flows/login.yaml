@@ -1,0 +1,25 @@
+appId: com.bvolante.pitch-tracker
+---
+# Shared login flow - reusable by other flows
+- launchApp:
+    clearState: true
+
+# Wait for login screen to load
+- assertVisible: "PitchChart"
+- assertVisible: "Sign in to your account"
+
+# Enter email
+- tapOn: "Email"
+- inputText: ${EMAIL}
+
+# Enter password
+- tapOn: "Password"
+- inputText: ${PASSWORD}
+
+# Tap Sign In
+- tapOn: "Sign In"
+
+# Wait for dashboard to appear
+- extendedWaitUntil:
+    visible: "Welcome"
+    timeout: 15000

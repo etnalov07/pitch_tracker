@@ -1,0 +1,39 @@
+appId: com.bvolante.pitch-tracker
+---
+# Settings screen - verify profile info, sync status, and options
+- runFlow: login.yaml
+
+# Navigate to Settings tab
+- tapOn: "Settings"
+- waitForAnimationToEnd
+
+# Wait for settings to load
+- extendedWaitUntil:
+    visible: "Account"
+    timeout: 10000
+
+# Verify profile info is displayed
+- assertVisible: "Account"
+- assertVisible: "Edit Profile"
+- assertVisible: "Change Password"
+
+# Verify Sync & Data section
+- assertVisible: "Sync & Data"
+- assertVisible: "Connection Status"
+- assertVisible: "Pending Actions"
+- assertVisible: "Last Sync"
+
+# Scroll down to verify About section
+- scrollUntilVisible:
+    element: "About"
+    direction: DOWN
+- assertVisible: "About"
+- assertVisible: "Version"
+- assertVisible: "Privacy Policy"
+- assertVisible: "Terms of Service"
+
+# Verify Sign Out button
+- scrollUntilVisible:
+    element: "Sign Out"
+    direction: DOWN
+- assertVisible: "Sign Out"
