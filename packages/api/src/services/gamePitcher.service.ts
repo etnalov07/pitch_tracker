@@ -87,7 +87,7 @@ export class GamePitcherService {
         };
     }
 
-    async changePitcher(gameId: string, newPlayerId: string, inningEntered: number): Promise<GamePitcher> {
+    async changePitcher(gameId: string, newPlayerId: string, inningEntered: number): Promise<GamePitcherWithPlayer> {
         const currentPitcher = await this.getCurrentPitcher(gameId);
 
         if (currentPitcher) {
@@ -95,7 +95,39 @@ export class GamePitcherService {
         }
 
         const nextOrder = currentPitcher ? currentPitcher.pitching_order + 1 : 1;
-        return this.addPitcher(gameId, newPlayerId, nextOrder, inningEntered);
+        const newPitcher = await this.addPitcher(gameId, newPlayerId, nextOrder, inningEntered);
+
+        // Re-fetch with player data joined
+        const result = await query(
+            `SELECT gp.*,
+                    p.first_name, p.last_name, p.jersey_number, p.throws
+             FROM game_pitchers gp
+             JOIN players p ON gp.player_id = p.id
+             WHERE gp.id = $1`,
+            [newPitcher.id]
+        );
+
+        const row = result.rows[0];
+        return {
+            id: row.id,
+            game_id: row.game_id,
+            player_id: row.player_id,
+            pitching_order: row.pitching_order,
+            inning_entered: row.inning_entered,
+            inning_exited: row.inning_exited,
+            created_at: row.created_at,
+            player: {
+                id: row.player_id,
+                team_id: '',
+                first_name: row.first_name,
+                last_name: row.last_name,
+                jersey_number: row.jersey_number,
+                primary_position: 'P',
+                bats: 'R',
+                throws: row.throws,
+                created_at: '',
+            },
+        };
     }
 
     async updatePitcherExit(pitcherId: string, inningExited: number): Promise<GamePitcher> {
