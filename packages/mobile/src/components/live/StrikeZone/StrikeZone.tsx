@@ -4,6 +4,7 @@ import Svg, { Rect, Circle, G, Text as SvgText, Line, Path, Ellipse } from 'reac
 import * as Haptics from '../../../utils/haptics';
 import { Pitch } from '@pitch-tracker/shared';
 import { colors } from '../../../styles/theme';
+import BatterSilhouette from './BatterSilhouette';
 
 interface StrikeZoneProps {
     onLocationSelect: (x: number, y: number) => void;
@@ -152,39 +153,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
                         {/* Batter silhouette */}
                         {batterSide && (
-                            <G transform={`translate(${batterX}, 144) scale(${batterScaleX}, 1)`} opacity={0.45}>
-                                <G fill="#808080">
-                                    {/* Head */}
-                                    <Ellipse cx="1" cy="-40" rx="7" ry="8" />
-                                    {/* Helmet dome */}
-                                    <Path d="M -7 -44 C -7 -53 11 -53 11 -44 L 11 -40 L -7 -40 Z" />
-                                    {/* Helmet bill */}
-                                    <Path d="M -7 -44 L -14 -43 L -14 -41 L -7 -41 Z" />
-                                    {/* Neck */}
-                                    <Rect x="-2" y="-33" width="6" height="5" rx="2" />
-                                    {/* Torso */}
-                                    <Path d="M -10 -28 C -12 -18 -10 -4 -7 4 L 10 4 C 13 -4 15 -18 13 -28 Z" />
-                                    {/* Belt */}
-                                    <Rect x="-8" y="2" width="19" height="4" rx="1" fill="#666666" />
-                                    {/* Back leg */}
-                                    <Path d="M -7 6 C -8 14 -10 20 -12 28 L -15 38 L -18 42 L -8 42 L -8 38 L -5 28 C -3 20 -2 14 -1 6 Z" />
-                                    {/* Front leg */}
-                                    <Path d="M 5 6 C 6 14 8 20 11 28 L 14 38 L 12 42 L 22 42 L 20 38 L 16 28 C 13 20 11 14 9 6 Z" />
-                                    {/* Back upper arm */}
-                                    <Path d="M -10 -26 C -14 -23 -17 -19 -17 -15 L -12 -13 C -11 -17 -9 -21 -7 -24 Z" />
-                                    {/* Back forearm */}
-                                    <Path d="M -15 -14 C -12 -19 -7 -25 -2 -29 L 2 -26 C -3 -22 -8 -17 -11 -12 Z" />
-                                    {/* Front upper arm */}
-                                    <Path d="M 13 -26 C 16 -23 17 -19 16 -15 L 11 -13 C 12 -17 12 -21 12 -24 Z" />
-                                    {/* Front forearm */}
-                                    <Path d="M 14 -14 C 11 -19 7 -25 3 -29 L -1 -26 C 4 -22 8 -17 11 -12 Z" />
-                                    {/* Hands */}
-                                    <Circle cx="0" cy="-28" r="5" />
-                                </G>
-                                {/* Bat handle */}
-                                <Line x1="0" y1="-28" x2="22" y2="-56" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />
-                                {/* Bat barrel */}
-                                <Line x1="18" y1="-52" x2="28" y2="-64" stroke="#795548" strokeWidth="6" strokeLinecap="round" />
+                            <G transform={`translate(${batterX}, 88) scale(${batterScaleX * 0.85}, 0.85) translate(-36, 0)`}>
+                                <BatterSilhouette />
                             </G>
                         )}
 
