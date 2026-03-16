@@ -24,7 +24,13 @@ interface StrikeZoneProps {
     previousPitches?: Pitch[];
     heatZones?: HeatZoneData[];
     showHeatZones?: boolean;
+    batterSide?: 'R' | 'L' | 'S' | null;
+    pitcherThrows?: 'R' | 'L' | null;
 }
+
+// Batter silhouette path (facing left, i.e. right-handed batter stance from pitcher's view)
+const BATTER_PATH_RIGHT =
+    'M 0 -38 C 2 -42 8 -44 10 -40 L 18 -50 C 20 -52 24 -50 22 -48 L 12 -36 C 14 -34 14 -30 12 -28 C 10 -26 6 -26 4 -28 L 2 -24 L 8 -8 L 14 -4 L 16 8 L 10 28 L 14 42 C 14 44 12 46 10 44 L 4 28 L 0 12 L -6 28 L -10 44 C -12 46 -14 44 -14 42 L -8 28 L -10 8 L -6 -8 L -4 -20 L -2 -24 C -4 -26 -4 -30 -2 -34 C 0 -36 0 -38 0 -38 Z';
 
 const StrikeZone: React.FC<StrikeZoneProps> = ({
     onLocationSelect,
@@ -34,6 +40,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     previousPitches = [],
     heatZones = [],
     showHeatZones = false,
+    batterSide,
+    pitcherThrows,
 }) => {
     const [selectedLocation, setSelectedLocation] = useState<{ x: number; y: number } | null>(null);
 
@@ -116,6 +124,14 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     // Target marker radius (ball-width, roughly 1/9 of zone width)
     const TARGET_RADIUS = 18;
 
+    // Determine batter position: from pitcher's perspective,
+    // a right-handed batter stands on the LEFT side of the plate,
+    // a left-handed batter stands on the RIGHT side.
+    // Switch hitters bat opposite the pitcher's throwing hand.
+    const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
+    const batterX = effectiveSide === 'R' ? 255 : 45;
+    const batterScaleX = effectiveSide === 'R' ? 1 : -1;
+
     return (
         <Container>
             <Title>Strike Zone</Title>
@@ -129,20 +145,32 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                     {/* Background */}
                     <rect x="0" y="0" width="300" height="280" fill="#f5f5f0" />
 
-                    {/* Home plate - 3D perspective view */}
+                    {/* Home plate - reversed (point facing pitcher/up) */}
                     <g transform="translate(150, 210)">
-                        {/* Plate shadow/ground */}
-                        <ellipse cx="0" cy="35" rx="85" ry="20" fill="#e0e0d8" />
-
-                        {/* Main plate surface - teal color */}
-                        <path d="M -70 0 L 70 0 L 70 25 L 0 55 L -70 25 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
-
-                        {/* Plate highlight - lighter inner area */}
-                        <path d="M -60 5 L 60 5 L 60 22 L 0 48 L -60 22 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
-
-                        {/* White inner plate */}
-                        <path d="M -50 10 L 50 10 L 50 18 L 0 42 L -50 18 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
+                        <ellipse cx="0" cy="30" rx="85" ry="20" fill="#e0e0d8" />
+                        <path d="M -70 45 L 70 45 L 70 20 L 0 -10 L -70 20 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
+                        <path d="M -60 40 L 60 40 L 60 22 L 0 -4 L -60 22 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
+                        <path d="M -50 36 L 50 36 L 50 24 L 0 2 L -50 24 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
                     </g>
+
+                    {/* Batter silhouette */}
+                    {batterSide && (
+                        <g transform={`translate(${batterX}, 140) scale(${batterScaleX}, 1) scale(1.6)`}>
+                            <path d={BATTER_PATH_RIGHT} fill="#9e9e9e" opacity={0.6} />
+                            <circle cx="0" cy="-48" r="8" fill="#9e9e9e" opacity={0.6} />
+                            <path d="M -9 -52 C -9 -60 9 -60 9 -52 L 9 -48 L -9 -48 Z" fill="#757575" opacity={0.5} />
+                            <line
+                                x1="14"
+                                y1="-36"
+                                x2="30"
+                                y2="-62"
+                                stroke="#8d6e63"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                opacity={0.7}
+                            />
+                        </g>
+                    )}
 
                     {/* Strike zone - 3x3 grid */}
                     <g transform="translate(85, 30)">

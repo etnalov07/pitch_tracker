@@ -362,6 +362,8 @@ const LiveGame: React.FC = () => {
                                     previousPitches={pitches}
                                     heatZones={heatZones}
                                     showHeatZones={showHeatZones}
+                                    batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
+                                    pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                                 />
                             </StrikeZoneContainer>
 
