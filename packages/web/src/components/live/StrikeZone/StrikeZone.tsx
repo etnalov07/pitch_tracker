@@ -2,8 +2,8 @@ import { HeatZoneData } from '@pitch-tracker/shared';
 import React, { useState, useEffect } from 'react';
 import { theme } from '../../../styles/theme';
 import { Pitch } from '../../../types';
-import BatterSilhouette from './BatterSilhouette';
 import HeatZoneOverlay from '../HeatZoneOverlay';
+import BatterSilhouette from './BatterSilhouette';
 import {
     Container,
     Title,
