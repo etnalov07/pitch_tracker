@@ -4,6 +4,7 @@ import { Invite, TeamRole } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config/env';
 import teamService from './team.service';
+import emailService from './email.service';
 
 export class InviteService {
     async createInvite(
@@ -39,6 +40,23 @@ export class InviteService {
         const invite = result.rows[0];
         invite.team_name = teamResult.rows[0].name;
         invite.invite_url = `${config.invite.baseUrl}/invite/${token}`;
+
+        if (invited_email) {
+            const inviterResult = await query("SELECT first_name || ' ' || last_name as full_name FROM users WHERE id = $1", [
+                invitedBy,
+            ]);
+            const inviterName = inviterResult.rows[0]?.full_name || 'A coach';
+
+            emailService
+                .sendInviteEmail({
+                    to: invited_email,
+                    teamName: teamResult.rows[0].name,
+                    inviterName,
+                    role,
+                    inviteUrl: invite.invite_url,
+                })
+                .catch((err) => console.error('Failed to send invite email:', err));
+        }
 
         return invite;
     }

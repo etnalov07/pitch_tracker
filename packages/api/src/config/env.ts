@@ -23,6 +23,11 @@ interface Config {
         defaultExpiryDays: number;
         baseUrl: string;
     };
+    email: {
+        resendApiKey: string;
+        fromEmail: string;
+        fromEmailName: string;
+    };
 }
 
 const getEnvVariable = (key: string, defaultValue?: string): string => {
@@ -55,6 +60,11 @@ export const config: Config = {
     invite: {
         defaultExpiryDays: parseInt(getEnvVariable('INVITE_EXPIRY_DAYS', '7'), 10),
         baseUrl: getEnvVariable('APP_BASE_URL', 'http://localhost:3000'),
+    },
+    email: {
+        resendApiKey: process.env.RESEND_API_KEY || '',
+        fromEmail: getEnvVariable('FROM_EMAIL', 'noreply@pitchchart.app'),
+        fromEmailName: getEnvVariable('FROM_EMAIL_NAME', 'Pitch Chart'),
     },
 };
 

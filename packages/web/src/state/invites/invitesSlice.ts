@@ -29,7 +29,7 @@ const initialState: InvitesState = {
 
 export const createInvite = createAsyncThunk(
     'invites/create',
-    async (data: { team_id: string; player_id?: string; role?: string }, { rejectWithValue }) => {
+    async (data: { team_id: string; player_id?: string; role?: string; invited_email?: string }, { rejectWithValue }) => {
         try {
             return await invitesApi.createInvite(data);
         } catch (error: unknown) {

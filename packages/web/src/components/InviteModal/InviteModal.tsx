@@ -15,21 +15,26 @@ const InviteModal: React.FC<InviteModalProps> = ({ teamId, players, onClose }) =
     const dispatch = useAppDispatch();
     const [selectedPlayerId, setSelectedPlayerId] = useState<string>('');
     const [role, setRole] = useState<string>('player');
+    const [email, setEmail] = useState<string>('');
     const [inviteLink, setInviteLink] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const [emailSent, setEmailSent] = useState(false);
 
     const handleGenerate = async () => {
         setLoading(true);
         setError(null);
 
-        const data: { team_id: string; player_id?: string; role?: string } = {
+        const data: { team_id: string; player_id?: string; role?: string; invited_email?: string } = {
             team_id: teamId,
             role,
         };
         if (selectedPlayerId) {
             data.player_id = selectedPlayerId;
+        }
+        if (email.trim()) {
+            data.invited_email = email.trim();
         }
 
         const result = await dispatch(createInvite(data));
@@ -39,6 +44,7 @@ const InviteModal: React.FC<InviteModalProps> = ({ teamId, players, onClose }) =
             const invite = result.payload;
             const baseUrl = window.location.origin;
             setInviteLink(`${baseUrl}/invite/${invite.token}`);
+            setEmailSent(!!email.trim());
         } else {
             setError((result.payload as string) || 'Failed to generate invite');
         }
@@ -103,13 +109,28 @@ const InviteModal: React.FC<InviteModalProps> = ({ teamId, players, onClose }) =
                             </FormGroup>
                         )}
 
+                        <FormGroup>
+                            <Label>Email Address (optional)</Label>
+                            <Input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="player@example.com"
+                            />
+                            <HelpText>If provided, the invite link will be emailed directly.</HelpText>
+                        </FormGroup>
+
                         <GenerateButton onClick={handleGenerate} disabled={loading}>
                             {loading ? 'Generating...' : 'Generate Link'}
                         </GenerateButton>
                     </>
                 ) : (
                     <>
-                        <SuccessText>Invite link generated! Share it with the person you want to invite.</SuccessText>
+                        <SuccessText>
+                            {emailSent
+                                ? 'Invite link generated! An email has been sent.'
+                                : 'Invite link generated! Share it with the person you want to invite.'}
+                        </SuccessText>
                         <LinkBox>
                             <LinkText>{inviteLink}</LinkText>
                             <CopyButton onClick={handleCopy}>{copied ? 'Copied!' : 'Copy'}</CopyButton>
@@ -118,6 +139,8 @@ const InviteModal: React.FC<InviteModalProps> = ({ teamId, players, onClose }) =
                             onClick={() => {
                                 setInviteLink(null);
                                 setCopied(false);
+                                setEmail('');
+                                setEmailSent(false);
                             }}
                         >
                             Generate Another
@@ -200,6 +223,18 @@ const Select = styled.select({
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.base,
     backgroundColor: 'white',
+
+    '&:focus': {
+        outline: 'none',
+        borderColor: theme.colors.primary[500],
+    },
+});
+
+const Input = styled.input({
+    padding: theme.spacing.md,
+    border: `1px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.base,
 
     '&:focus': {
         outline: 'none',
