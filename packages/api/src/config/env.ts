@@ -63,7 +63,7 @@ export const config: Config = {
     },
     email: {
         resendApiKey: process.env.RESEND_API_KEY || '',
-        fromEmail: getEnvVariable('FROM_EMAIL', 'noreply@pitchchart.app'),
+        fromEmail: getEnvVariable('FROM_EMAIL', 'noreply@bvolante.com'),
         fromEmailName: getEnvVariable('FROM_EMAIL_NAME', 'Pitch Chart'),
     },
 };
