@@ -55,8 +55,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         const svgY = ((e.clientY - rect.top) / rect.height) * 300;
 
         // Convert to 0-1 coordinates within strike zone
-        const zoneX = (svgX - 108) / 85;
-        const zoneY = (svgY - 108) / 95;
+        const zoneX = (svgX - 100) / 100;
+        const zoneY = (svgY - 109) / 123;
 
         return { zoneX, zoneY };
     };
@@ -114,19 +114,19 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
     // Convert 0-1 coordinates to SVG coordinates for pitch markers
     const toSvgCoords = (x: number, y: number) => ({
-        x: 108 + x * 85,
-        y: 108 + y * 95,
+        x: 100 + x * 100,
+        y: 109 + y * 123,
     });
 
     // Target marker radius (ball-width, roughly 1/9 of zone width)
-    const TARGET_RADIUS = 12;
+    const TARGET_RADIUS = 15;
 
     // Determine batter position: from pitcher's perspective,
     // a right-handed batter stands on the LEFT side of the plate,
     // a left-handed batter stands on the RIGHT side.
     // Switch hitters bat opposite the pitcher's throwing hand.
     const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
-    const batterX = effectiveSide === 'R' ? 225 : 75;
+    const batterX = effectiveSide === 'R' ? 235 : 65;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
 
     return (
@@ -143,34 +143,34 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                     <rect x="0" y="0" width="300" height="300" fill="#f5f5f0" />
 
                     {/* Home plate - reversed (point facing pitcher/up) */}
-                    <g transform="translate(150, 222)">
-                        <ellipse cx="0" cy="20" rx="55" ry="14" fill="#e0e0d8" />
-                        <path d="M -45 30 L 45 30 L 45 14 L 0 -6 L -45 14 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
-                        <path d="M -38 26 L 38 26 L 38 15 L 0 -2 L -38 15 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
-                        <path d="M -32 23 L 32 23 L 32 16 L 0 2 L -32 16 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
+                    <g transform="translate(150, 248)">
+                        <ellipse cx="0" cy="20" rx="60" ry="15" fill="#e0e0d8" />
+                        <path d="M -50 30 L 50 30 L 50 14 L 0 -6 L -50 14 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
+                        <path d="M -42 26 L 42 26 L 42 15 L 0 -2 L -42 15 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
+                        <path d="M -35 23 L 35 23 L 35 16 L 0 2 L -35 16 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
                     </g>
 
                     {/* Batter silhouette */}
                     {batterSide && (
-                        <g transform={`translate(${batterX}, 82) scale(${batterScaleX * 0.95}, 0.95) translate(-36, 0)`}>
+                        <g transform={`translate(${batterX}, 77) scale(${batterScaleX * 1.15}, 1.15) translate(-36, 0)`}>
                             <BatterSilhouette />
                         </g>
                     )}
 
                     {/* Strike zone - 3x3 grid */}
-                    <g transform="translate(108, 108)">
+                    <g transform="translate(100, 109)">
                         {/* Zone background */}
-                        <rect x="0" y="0" width="85" height="95" fill="rgba(255,255,255,0.85)" />
+                        <rect x="0" y="0" width="100" height="123" fill="rgba(255,255,255,0.85)" />
 
                         {/* Grid cells */}
                         {[0, 1, 2].map((row) =>
                             [0, 1, 2].map((col) => (
                                 <rect
                                     key={`cell-${row}-${col}`}
-                                    x={col * (85 / 3)}
-                                    y={row * (95 / 3)}
-                                    width={85 / 3}
-                                    height={95 / 3}
+                                    x={col * (100 / 3)}
+                                    y={row * (123 / 3)}
+                                    width={100 / 3}
+                                    height={123 / 3}
                                     fill="rgba(230, 230, 225, 0.6)"
                                     stroke="#a0a0a0"
                                     strokeWidth="1"
@@ -179,7 +179,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         )}
 
                         {/* Outer border */}
-                        <rect x="0" y="0" width="85" height="95" fill="none" stroke="#808080" strokeWidth="2" />
+                        <rect x="0" y="0" width="100" height="123" fill="none" stroke="#808080" strokeWidth="2" />
                     </g>
 
                     {/* Heat zone overlay */}
@@ -194,12 +194,12 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                 <circle
                                     cx={coords.x}
                                     cy={coords.y}
-                                    r="8"
+                                    r="11"
                                     fill={getPitchColor(pitch.pitch_result)}
                                     stroke="white"
                                     strokeWidth="2"
                                 />
-                                <text x={coords.x} y={coords.y + 4} textAnchor="middle" fontSize="8" fill="white" fontWeight="bold">
+                                <text x={coords.x} y={coords.y + 4} textAnchor="middle" fontSize="9" fill="white" fontWeight="bold">
                                     {idx + 1}
                                 </text>
                             </g>
@@ -220,18 +220,18 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                             />
                             {/* Crosshair inside target */}
                             <line
-                                x1={toSvgCoords(targetLocation.x, targetLocation.y).x - 6}
+                                x1={toSvgCoords(targetLocation.x, targetLocation.y).x - 8}
                                 y1={toSvgCoords(targetLocation.x, targetLocation.y).y}
-                                x2={toSvgCoords(targetLocation.x, targetLocation.y).x + 6}
+                                x2={toSvgCoords(targetLocation.x, targetLocation.y).x + 8}
                                 y2={toSvgCoords(targetLocation.x, targetLocation.y).y}
                                 stroke={theme.colors.primary[500]}
                                 strokeWidth="2"
                             />
                             <line
                                 x1={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                y1={toSvgCoords(targetLocation.x, targetLocation.y).y - 6}
+                                y1={toSvgCoords(targetLocation.x, targetLocation.y).y - 8}
                                 x2={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                y2={toSvgCoords(targetLocation.x, targetLocation.y).y + 6}
+                                y2={toSvgCoords(targetLocation.x, targetLocation.y).y + 8}
                                 stroke={theme.colors.primary[500]}
                                 strokeWidth="2"
                             />

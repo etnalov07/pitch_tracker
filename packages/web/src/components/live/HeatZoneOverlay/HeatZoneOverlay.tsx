@@ -38,10 +38,10 @@ const ZONE_RENDER_INFO: ZoneRenderInfo[] = [
 ];
 
 // Strike zone SVG coordinates from StrikeZone.tsx
-const ZONE_START_X = 108;
-const ZONE_START_Y = 108;
-const ZONE_WIDTH = 85;
-const ZONE_HEIGHT = 95;
+const ZONE_START_X = 100;
+const ZONE_START_Y = 109;
+const ZONE_WIDTH = 100;
+const ZONE_HEIGHT = 123;
 
 // Convert normalized coordinates to SVG coordinates
 function toSvgCoords(x: number, y: number): { x: number; y: number } {
