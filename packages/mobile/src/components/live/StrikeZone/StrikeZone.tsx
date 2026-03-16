@@ -20,10 +20,10 @@ interface StrikeZoneProps {
 
 const VIEWBOX_WIDTH = 300;
 const VIEWBOX_HEIGHT = 300;
-const ZONE_X = 100;
-const ZONE_Y = 109;
-const ZONE_WIDTH = 100;
-const ZONE_HEIGHT = 123;
+const ZONE_X = 113;
+const ZONE_Y = 120;
+const ZONE_WIDTH = 75;
+const ZONE_HEIGHT = 92;
 
 const StrikeZone: React.FC<StrikeZoneProps> = ({
     onLocationSelect,
@@ -126,7 +126,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     // a left-handed batter stands on the RIGHT side.
     // Switch hitters bat opposite the pitcher's throwing hand.
     const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
-    const batterX = effectiveSide === 'R' ? 235 : 65;
+    const batterX = effectiveSide === 'R' ? 245 : 55;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
 
     return (
@@ -144,16 +144,16 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         <Rect x="0" y="0" width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="#f5f5f0" />
 
                         {/* Home plate - reversed (point facing pitcher/up) */}
-                        <G transform="translate(150, 248)">
-                            <Ellipse cx="0" cy="20" rx="60" ry="15" fill="#e0e0d8" />
-                            <Path d="M -50 30 L 50 30 L 50 14 L 0 -6 L -50 14 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
-                            <Path d="M -42 26 L 42 26 L 42 15 L 0 -2 L -42 15 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
-                            <Path d="M -35 23 L 35 23 L 35 16 L 0 2 L -35 16 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
+                        <G transform="translate(150, 225)">
+                            <Ellipse cx="0" cy="15" rx="45" ry="11" fill="#e0e0d8" />
+                            <Path d="M -38 22 L 38 22 L 38 10 L 0 -5 L -38 10 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
+                            <Path d="M -32 20 L 32 20 L 32 11 L 0 -2 L -32 11 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
+                            <Path d="M -26 17 L 26 17 L 26 12 L 0 1 L -26 12 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
                         </G>
 
                         {/* Batter silhouette */}
                         {batterSide && (
-                            <G transform={`translate(${batterX}, 77) scale(${batterScaleX * 1.15}, 1.15) translate(-36, 0)`}>
+                            <G transform={`translate(${batterX}, 40) scale(${batterScaleX * 1.61}, 1.61) translate(-36, 0)`}>
                                 <BatterSilhouette />
                             </G>
                         )}

@@ -55,8 +55,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         const svgY = ((e.clientY - rect.top) / rect.height) * 300;
 
         // Convert to 0-1 coordinates within strike zone
-        const zoneX = (svgX - 100) / 100;
-        const zoneY = (svgY - 109) / 123;
+        const zoneX = (svgX - 113) / 75;
+        const zoneY = (svgY - 120) / 92;
 
         return { zoneX, zoneY };
     };
@@ -114,8 +114,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
     // Convert 0-1 coordinates to SVG coordinates for pitch markers
     const toSvgCoords = (x: number, y: number) => ({
-        x: 100 + x * 100,
-        y: 109 + y * 123,
+        x: 113 + x * 75,
+        y: 120 + y * 92,
     });
 
     // Target marker radius (ball-width, roughly 1/9 of zone width)
@@ -126,7 +126,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     // a left-handed batter stands on the RIGHT side.
     // Switch hitters bat opposite the pitcher's throwing hand.
     const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
-    const batterX = effectiveSide === 'R' ? 235 : 65;
+    const batterX = effectiveSide === 'R' ? 245 : 55;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
 
     return (
@@ -143,34 +143,34 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                     <rect x="0" y="0" width="300" height="300" fill="#f5f5f0" />
 
                     {/* Home plate - reversed (point facing pitcher/up) */}
-                    <g transform="translate(150, 248)">
-                        <ellipse cx="0" cy="20" rx="60" ry="15" fill="#e0e0d8" />
-                        <path d="M -50 30 L 50 30 L 50 14 L 0 -6 L -50 14 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
-                        <path d="M -42 26 L 42 26 L 42 15 L 0 -2 L -42 15 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
-                        <path d="M -35 23 L 35 23 L 35 16 L 0 2 L -35 16 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
+                    <g transform="translate(150, 225)">
+                        <ellipse cx="0" cy="15" rx="45" ry="11" fill="#e0e0d8" />
+                        <path d="M -38 22 L 38 22 L 38 10 L 0 -5 L -38 10 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
+                        <path d="M -32 20 L 32 20 L 32 11 L 0 -2 L -32 11 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
+                        <path d="M -26 17 L 26 17 L 26 12 L 0 1 L -26 12 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
                     </g>
 
                     {/* Batter silhouette */}
                     {batterSide && (
-                        <g transform={`translate(${batterX}, 77) scale(${batterScaleX * 1.15}, 1.15) translate(-36, 0)`}>
+                        <g transform={`translate(${batterX}, 40) scale(${batterScaleX * 1.61}, 1.61) translate(-36, 0)`}>
                             <BatterSilhouette />
                         </g>
                     )}
 
                     {/* Strike zone - 3x3 grid */}
-                    <g transform="translate(100, 109)">
+                    <g transform="translate(113, 120)">
                         {/* Zone background */}
-                        <rect x="0" y="0" width="100" height="123" fill="rgba(255,255,255,0.85)" />
+                        <rect x="0" y="0" width="75" height="92" fill="rgba(255,255,255,0.85)" />
 
                         {/* Grid cells */}
                         {[0, 1, 2].map((row) =>
                             [0, 1, 2].map((col) => (
                                 <rect
                                     key={`cell-${row}-${col}`}
-                                    x={col * (100 / 3)}
-                                    y={row * (123 / 3)}
-                                    width={100 / 3}
-                                    height={123 / 3}
+                                    x={col * (75 / 3)}
+                                    y={row * (92 / 3)}
+                                    width={75 / 3}
+                                    height={92 / 3}
                                     fill="rgba(230, 230, 225, 0.6)"
                                     stroke="#a0a0a0"
                                     strokeWidth="1"
@@ -179,7 +179,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         )}
 
                         {/* Outer border */}
-                        <rect x="0" y="0" width="100" height="123" fill="none" stroke="#808080" strokeWidth="2" />
+                        <rect x="0" y="0" width="75" height="92" fill="none" stroke="#808080" strokeWidth="2" />
                     </g>
 
                     {/* Heat zone overlay */}
