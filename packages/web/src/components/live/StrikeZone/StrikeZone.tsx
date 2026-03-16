@@ -119,7 +119,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     });
 
     // Target marker radius (ball-width, roughly 1/9 of zone width)
-    const TARGET_RADIUS = 15;
+    const TARGET_RADIUS = 12;
 
     // Determine batter position: from pitcher's perspective,
     // a right-handed batter stands on the LEFT side of the plate,
@@ -220,18 +220,18 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                             />
                             {/* Crosshair inside target */}
                             <line
-                                x1={toSvgCoords(targetLocation.x, targetLocation.y).x - 8}
+                                x1={toSvgCoords(targetLocation.x, targetLocation.y).x - 6}
                                 y1={toSvgCoords(targetLocation.x, targetLocation.y).y}
-                                x2={toSvgCoords(targetLocation.x, targetLocation.y).x + 8}
+                                x2={toSvgCoords(targetLocation.x, targetLocation.y).x + 6}
                                 y2={toSvgCoords(targetLocation.x, targetLocation.y).y}
                                 stroke={theme.colors.primary[500]}
                                 strokeWidth="2"
                             />
                             <line
                                 x1={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                y1={toSvgCoords(targetLocation.x, targetLocation.y).y - 8}
+                                y1={toSvgCoords(targetLocation.x, targetLocation.y).y - 6}
                                 x2={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                y2={toSvgCoords(targetLocation.x, targetLocation.y).y + 8}
+                                y2={toSvgCoords(targetLocation.x, targetLocation.y).y + 6}
                                 stroke={theme.colors.primary[500]}
                                 strokeWidth="2"
                             />

@@ -118,7 +118,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         y: ZONE_Y + y * ZONE_HEIGHT,
     });
 
-    const TARGET_RADIUS = 15;
+    const TARGET_RADIUS = 12;
     const PITCH_RADIUS = 11;
 
     // Determine batter position: from pitcher's perspective,
@@ -231,18 +231,18 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                     strokeDasharray="6,3"
                                 />
                                 <Line
-                                    x1={toSvgCoords(targetLocation.x, targetLocation.y).x - 8}
+                                    x1={toSvgCoords(targetLocation.x, targetLocation.y).x - 6}
                                     y1={toSvgCoords(targetLocation.x, targetLocation.y).y}
-                                    x2={toSvgCoords(targetLocation.x, targetLocation.y).x + 8}
+                                    x2={toSvgCoords(targetLocation.x, targetLocation.y).x + 6}
                                     y2={toSvgCoords(targetLocation.x, targetLocation.y).y}
                                     stroke={colors.primary[500]}
                                     strokeWidth="2"
                                 />
                                 <Line
                                     x1={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                    y1={toSvgCoords(targetLocation.x, targetLocation.y).y - 8}
+                                    y1={toSvgCoords(targetLocation.x, targetLocation.y).y - 6}
                                     x2={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                    y2={toSvgCoords(targetLocation.x, targetLocation.y).y + 8}
+                                    y2={toSvgCoords(targetLocation.x, targetLocation.y).y + 6}
                                     stroke={colors.primary[500]}
                                     strokeWidth="2"
                                 />
