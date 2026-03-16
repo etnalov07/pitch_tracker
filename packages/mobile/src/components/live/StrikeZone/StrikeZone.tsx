@@ -19,11 +19,11 @@ interface StrikeZoneProps {
 }
 
 const VIEWBOX_WIDTH = 300;
-const VIEWBOX_HEIGHT = 280;
-const ZONE_X = 85;
-const ZONE_Y = 30;
-const ZONE_WIDTH = 130;
-const ZONE_HEIGHT = 150;
+const VIEWBOX_HEIGHT = 300;
+const ZONE_X = 108;
+const ZONE_Y = 108;
+const ZONE_WIDTH = 85;
+const ZONE_HEIGHT = 95;
 
 const StrikeZone: React.FC<StrikeZoneProps> = ({
     onLocationSelect,
@@ -118,15 +118,15 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         y: ZONE_Y + y * ZONE_HEIGHT,
     });
 
-    const TARGET_RADIUS = 20;
-    const PITCH_RADIUS = 14;
+    const TARGET_RADIUS = 14;
+    const PITCH_RADIUS = 10;
 
     // Determine batter position: from pitcher's perspective,
     // a right-handed batter stands on the LEFT side of the plate,
     // a left-handed batter stands on the RIGHT side.
     // Switch hitters bat opposite the pitcher's throwing hand.
     const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
-    const batterX = effectiveSide === 'R' ? 255 : 45;
+    const batterX = effectiveSide === 'R' ? 225 : 75;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
 
     return (
@@ -144,16 +144,16 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         <Rect x="0" y="0" width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="#f5f5f0" />
 
                         {/* Home plate - reversed (point facing pitcher/up) */}
-                        <G transform="translate(150, 210)">
-                            <Ellipse cx="0" cy="30" rx="85" ry="20" fill="#e0e0d8" />
-                            <Path d="M -70 45 L 70 45 L 70 20 L 0 -10 L -70 20 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
-                            <Path d="M -60 40 L 60 40 L 60 22 L 0 -4 L -60 22 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
-                            <Path d="M -50 36 L 50 36 L 50 24 L 0 2 L -50 24 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
+                        <G transform="translate(150, 222)">
+                            <Ellipse cx="0" cy="20" rx="55" ry="14" fill="#e0e0d8" />
+                            <Path d="M -45 30 L 45 30 L 45 14 L 0 -6 L -45 14 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
+                            <Path d="M -38 26 L 38 26 L 38 15 L 0 -2 L -38 15 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
+                            <Path d="M -32 23 L 32 23 L 32 16 L 0 2 L -32 16 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
                         </G>
 
                         {/* Batter silhouette */}
                         {batterSide && (
-                            <G transform={`translate(${batterX}, 88) scale(${batterScaleX * 0.85}, 0.85) translate(-36, 0)`}>
+                            <G transform={`translate(${batterX}, 82) scale(${batterScaleX * 0.95}, 0.95) translate(-36, 0)`}>
                                 <BatterSilhouette />
                             </G>
                         )}
@@ -208,7 +208,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                         x={coords.x}
                                         y={coords.y + 4}
                                         textAnchor="middle"
-                                        fontSize="11"
+                                        fontSize="9"
                                         fill="white"
                                         fontWeight="bold"
                                     >
@@ -231,18 +231,18 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                     strokeDasharray="6,3"
                                 />
                                 <Line
-                                    x1={toSvgCoords(targetLocation.x, targetLocation.y).x - 10}
+                                    x1={toSvgCoords(targetLocation.x, targetLocation.y).x - 7}
                                     y1={toSvgCoords(targetLocation.x, targetLocation.y).y}
-                                    x2={toSvgCoords(targetLocation.x, targetLocation.y).x + 10}
+                                    x2={toSvgCoords(targetLocation.x, targetLocation.y).x + 7}
                                     y2={toSvgCoords(targetLocation.x, targetLocation.y).y}
                                     stroke={colors.primary[500]}
                                     strokeWidth="2"
                                 />
                                 <Line
                                     x1={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                    y1={toSvgCoords(targetLocation.x, targetLocation.y).y - 10}
+                                    y1={toSvgCoords(targetLocation.x, targetLocation.y).y - 7}
                                     x2={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                    y2={toSvgCoords(targetLocation.x, targetLocation.y).y + 10}
+                                    y2={toSvgCoords(targetLocation.x, targetLocation.y).y + 7}
                                     stroke={colors.primary[500]}
                                     strokeWidth="2"
                                 />
@@ -255,7 +255,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                 <Circle
                                     cx={toSvgCoords(selectedLocation.x, selectedLocation.y).x}
                                     cy={toSvgCoords(selectedLocation.x, selectedLocation.y).y}
-                                    r="18"
+                                    r="12"
                                     fill={colors.red[600]}
                                     stroke="white"
                                     strokeWidth="3"
@@ -264,7 +264,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                     x={toSvgCoords(selectedLocation.x, selectedLocation.y).x}
                                     y={toSvgCoords(selectedLocation.x, selectedLocation.y).y + 6}
                                     textAnchor="middle"
-                                    fontSize="18"
+                                    fontSize="12"
                                     fill="white"
                                     fontWeight="bold"
                                 >
@@ -338,7 +338,7 @@ const compactStyles = StyleSheet.create({
     zoneWrapper: {
         width: '100%',
         maxHeight: 260,
-        aspectRatio: 300 / 280,
+        aspectRatio: 300 / 300,
         alignSelf: 'center',
     },
 });
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     },
     zoneWrapper: {
         width: '100%',
-        aspectRatio: 300 / 280,
+        aspectRatio: 300 / 300,
     },
     svgContainer: {
         flex: 1,
