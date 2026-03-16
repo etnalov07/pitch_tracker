@@ -24,10 +24,6 @@ const ZONE_Y = 30;
 const ZONE_WIDTH = 130;
 const ZONE_HEIGHT = 150;
 
-// Batter silhouette path (facing left, i.e. right-handed batter stance from pitcher's view)
-const BATTER_PATH_RIGHT =
-    'M 0 -38 C 2 -42 8 -44 10 -40 L 18 -50 C 20 -52 24 -50 22 -48 L 12 -36 C 14 -34 14 -30 12 -28 C 10 -26 6 -26 4 -28 L 2 -24 L 8 -8 L 14 -4 L 16 8 L 10 28 L 14 42 C 14 44 12 46 10 44 L 4 28 L 0 12 L -6 28 L -10 44 C -12 46 -14 44 -14 42 L -8 28 L -10 8 L -6 -8 L -4 -20 L -2 -24 C -4 -26 -4 -30 -2 -34 C 0 -36 0 -38 0 -38 Z';
-
 const StrikeZone: React.FC<StrikeZoneProps> = ({
     onLocationSelect,
     onTargetSelect,
@@ -156,23 +152,39 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
                         {/* Batter silhouette */}
                         {batterSide && (
-                            <G transform={`translate(${batterX}, 140) scale(${batterScaleX}, 1) scale(1.6)`}>
-                                <Path d={BATTER_PATH_RIGHT} fill="#9e9e9e" opacity={0.6} />
-                                {/* Head */}
-                                <Circle cx="0" cy="-48" r="8" fill="#9e9e9e" opacity={0.6} />
-                                {/* Helmet */}
-                                <Path d="M -9 -52 C -9 -60 9 -60 9 -52 L 9 -48 L -9 -48 Z" fill="#757575" opacity={0.5} />
-                                {/* Bat */}
-                                <Line
-                                    x1="14"
-                                    y1="-36"
-                                    x2="30"
-                                    y2="-62"
-                                    stroke="#8d6e63"
-                                    strokeWidth="3"
-                                    strokeLinecap="round"
-                                    opacity={0.7}
-                                />
+                            <G transform={`translate(${batterX}, 144) scale(${batterScaleX}, 1)`} opacity={0.45}>
+                                <G fill="#808080">
+                                    {/* Head */}
+                                    <Ellipse cx="1" cy="-40" rx="7" ry="8" />
+                                    {/* Helmet dome */}
+                                    <Path d="M -7 -44 C -7 -53 11 -53 11 -44 L 11 -40 L -7 -40 Z" />
+                                    {/* Helmet bill */}
+                                    <Path d="M -7 -44 L -14 -43 L -14 -41 L -7 -41 Z" />
+                                    {/* Neck */}
+                                    <Rect x="-2" y="-33" width="6" height="5" rx="2" />
+                                    {/* Torso */}
+                                    <Path d="M -10 -28 C -12 -18 -10 -4 -7 4 L 10 4 C 13 -4 15 -18 13 -28 Z" />
+                                    {/* Belt */}
+                                    <Rect x="-8" y="2" width="19" height="4" rx="1" fill="#666666" />
+                                    {/* Back leg */}
+                                    <Path d="M -7 6 C -8 14 -10 20 -12 28 L -15 38 L -18 42 L -8 42 L -8 38 L -5 28 C -3 20 -2 14 -1 6 Z" />
+                                    {/* Front leg */}
+                                    <Path d="M 5 6 C 6 14 8 20 11 28 L 14 38 L 12 42 L 22 42 L 20 38 L 16 28 C 13 20 11 14 9 6 Z" />
+                                    {/* Back upper arm */}
+                                    <Path d="M -10 -26 C -14 -23 -17 -19 -17 -15 L -12 -13 C -11 -17 -9 -21 -7 -24 Z" />
+                                    {/* Back forearm */}
+                                    <Path d="M -15 -14 C -12 -19 -7 -25 -2 -29 L 2 -26 C -3 -22 -8 -17 -11 -12 Z" />
+                                    {/* Front upper arm */}
+                                    <Path d="M 13 -26 C 16 -23 17 -19 16 -15 L 11 -13 C 12 -17 12 -21 12 -24 Z" />
+                                    {/* Front forearm */}
+                                    <Path d="M 14 -14 C 11 -19 7 -25 3 -29 L -1 -26 C 4 -22 8 -17 11 -12 Z" />
+                                    {/* Hands */}
+                                    <Circle cx="0" cy="-28" r="5" />
+                                </G>
+                                {/* Bat handle */}
+                                <Line x1="0" y1="-28" x2="22" y2="-56" stroke="#5d4037" strokeWidth="3" strokeLinecap="round" />
+                                {/* Bat barrel */}
+                                <Line x1="18" y1="-52" x2="28" y2="-64" stroke="#795548" strokeWidth="6" strokeLinecap="round" />
                             </G>
                         )}
 
