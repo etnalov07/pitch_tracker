@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Alert, Keyboard } from 'react-native';
-import { Text, Button, Modal, TextInput, SegmentedButtons } from 'react-native-paper';
+import { Text, Button, Modal, TextInput, SegmentedButtons, IconButton } from 'react-native-paper';
 import { OpponentLineupPlayer } from '@pitch-tracker/shared';
 import api from '../../../services/api';
+
+type FormMode = 'add' | 'edit' | 'substitute';
 
 interface BatterSelectorModalProps {
     visible: boolean;
@@ -25,11 +27,13 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
     gameId,
     onBatterAdded,
 }) => {
-    const [showAddForm, setShowAddForm] = useState(false);
+    const [formMode, setFormMode] = useState<FormMode | null>(null);
+    const [editingBatter, setEditingBatter] = useState<OpponentLineupPlayer | null>(null);
     const [newName, setNewName] = useState('');
     const [newBattingOrder, setNewBattingOrder] = useState('1');
     const [newPosition, setNewPosition] = useState('');
     const [newBats, setNewBats] = useState<'R' | 'L' | 'S'>('R');
+    const [subInning, setSubInning] = useState('');
     const [saving, setSaving] = useState(false);
 
     const usedOrders = new Set(activeBatters.map((b) => b.batting_order));
@@ -40,17 +44,36 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
         return '1';
     };
 
-    const handleShowAddForm = () => {
-        setNewBattingOrder(getNextAvailableOrder());
-        setShowAddForm(true);
-    };
-
-    const handleCancelAdd = () => {
-        setShowAddForm(false);
+    const resetForm = () => {
+        setFormMode(null);
+        setEditingBatter(null);
         setNewName('');
         setNewBattingOrder('1');
         setNewPosition('');
         setNewBats('R');
+        setSubInning('');
+    };
+
+    const handleShowAddForm = () => {
+        setNewBattingOrder(getNextAvailableOrder());
+        setFormMode('add');
+    };
+
+    const handleShowEditForm = (batter: OpponentLineupPlayer) => {
+        setEditingBatter(batter);
+        setNewName(batter.player_name);
+        setNewPosition(batter.position || '');
+        setNewBats((batter.bats as 'R' | 'L' | 'S') || 'R');
+        setFormMode('edit');
+    };
+
+    const handleShowSubForm = (batter: OpponentLineupPlayer) => {
+        setEditingBatter(batter);
+        setNewName('');
+        setNewPosition(batter.position || '');
+        setNewBats((batter.bats as 'R' | 'L' | 'S') || 'R');
+        setSubInning('');
+        setFormMode('substitute');
     };
 
     const handleSaveNewBatter = async () => {
@@ -66,7 +89,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                 inning_entered: null,
             });
             onBatterAdded(response.data.player);
-            handleCancelAdd();
+            resetForm();
         } catch (error) {
             console.error('Failed to add batter:', error);
             Alert.alert('Error', 'Failed to add batter. Please try again.');
@@ -75,10 +98,58 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
         }
     };
 
+    const handleEditBatter = async () => {
+        if (!editingBatter || !newName.trim()) return;
+        setSaving(true);
+        try {
+            await api.put<{ player: OpponentLineupPlayer }>(`/opponent-lineup/player/${editingBatter.id}`, {
+                player_name: newName.trim(),
+                position: newPosition.trim() || null,
+                bats: newBats,
+            });
+            onBatterAdded(null as unknown as OpponentLineupPlayer); // triggers refetch
+            resetForm();
+        } catch (error) {
+            console.error('Failed to update batter:', error);
+            Alert.alert('Error', 'Failed to update batter. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSubstituteBatter = async () => {
+        if (!editingBatter || !newName.trim() || !subInning.trim()) return;
+        setSaving(true);
+        try {
+            await api.post<{ player: OpponentLineupPlayer }>(`/opponent-lineup/player/${editingBatter.id}/substitute`, {
+                new_player_name: newName.trim(),
+                inning_entered: parseInt(subInning, 10),
+                position: newPosition.trim() || null,
+                bats: newBats,
+            });
+            onBatterAdded(null as unknown as OpponentLineupPlayer); // triggers refetch
+            resetForm();
+        } catch (error) {
+            console.error('Failed to substitute batter:', error);
+            Alert.alert('Error', 'Failed to substitute batter. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSave = () => {
+        if (formMode === 'add') handleSaveNewBatter();
+        else if (formMode === 'edit') handleEditBatter();
+        else if (formMode === 'substitute') handleSubstituteBatter();
+    };
+
     const handleDismiss = () => {
-        handleCancelAdd();
+        resetForm();
         onDismiss();
     };
+
+    const formTitle = formMode === 'edit' ? 'Edit Batter' : formMode === 'substitute' ? 'Substitute Batter' : 'Add Batter';
+    const saveDisabled = saving || !newName.trim() || (formMode === 'substitute' && !subInning.trim());
 
     return (
         <Modal visible={visible} onDismiss={handleDismiss} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
@@ -87,7 +158,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                     Select Batter
                 </Text>
                 <ScrollView style={styles.playerList} keyboardShouldPersistTaps="handled">
-                    {activeBatters.length === 0 && !showAddForm ? (
+                    {activeBatters.length === 0 && !formMode ? (
                         <Text variant="bodyMedium" style={styles.emptyText}>
                             No opponent lineup found. Set up the opponent lineup before starting.
                         </Text>
@@ -109,14 +180,36 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                                             {batter.bats ? ` · Bats ${batter.bats}` : ''}
                                         </Text>
                                     </View>
+                                    <View style={styles.actionButtons}>
+                                        <IconButton
+                                            icon="pencil"
+                                            size={18}
+                                            onPress={() => handleShowEditForm(batter)}
+                                            style={styles.actionIcon}
+                                        />
+                                        <IconButton
+                                            icon="account-switch"
+                                            size={18}
+                                            onPress={() => handleShowSubForm(batter)}
+                                            style={styles.actionIcon}
+                                        />
+                                    </View>
                                 </View>
                             </Pressable>
                         ))
                     )}
                 </ScrollView>
 
-                {showAddForm ? (
+                {formMode ? (
                     <View style={styles.addForm}>
+                        <Text variant="titleSmall" style={styles.formTitle}>
+                            {formTitle}
+                        </Text>
+                        {formMode === 'substitute' && editingBatter && (
+                            <Text variant="bodySmall" style={styles.subLabel}>
+                                Replacing: {editingBatter.player_name} (#{editingBatter.batting_order})
+                            </Text>
+                        )}
                         <TextInput
                             label="Player Name"
                             mode="outlined"
@@ -127,18 +220,34 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                             style={styles.formInput}
                         />
                         <View style={styles.formRow}>
-                            <TextInput
-                                label="Order (1-9)"
-                                mode="outlined"
-                                value={newBattingOrder}
-                                onChangeText={(text) => {
-                                    const n = parseInt(text, 10);
-                                    if (!text || (n >= 1 && n <= 9)) setNewBattingOrder(text);
-                                }}
-                                keyboardType="number-pad"
-                                dense
-                                style={styles.formInputSmall}
-                            />
+                            {formMode === 'add' && (
+                                <TextInput
+                                    label="Order (1-9)"
+                                    mode="outlined"
+                                    value={newBattingOrder}
+                                    onChangeText={(text) => {
+                                        const n = parseInt(text, 10);
+                                        if (!text || (n >= 1 && n <= 9)) setNewBattingOrder(text);
+                                    }}
+                                    keyboardType="number-pad"
+                                    dense
+                                    style={styles.formInputSmall}
+                                />
+                            )}
+                            {formMode === 'substitute' && (
+                                <TextInput
+                                    label="Inning"
+                                    mode="outlined"
+                                    value={subInning}
+                                    onChangeText={(text) => {
+                                        const n = parseInt(text, 10);
+                                        if (!text || (n >= 1 && n <= 20)) setSubInning(text);
+                                    }}
+                                    keyboardType="number-pad"
+                                    dense
+                                    style={styles.formInputSmall}
+                                />
+                            )}
                             <TextInput
                                 label="Position"
                                 mode="outlined"
@@ -164,15 +273,10 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                             style={styles.segmented}
                         />
                         <View style={styles.formActions}>
-                            <Button mode="text" onPress={handleCancelAdd} disabled={saving}>
+                            <Button mode="text" onPress={resetForm} disabled={saving}>
                                 Cancel
                             </Button>
-                            <Button
-                                mode="contained"
-                                onPress={handleSaveNewBatter}
-                                disabled={saving || !newName.trim()}
-                                loading={saving}
-                            >
+                            <Button mode="contained" onPress={handleSave} disabled={saveDisabled} loading={saving}>
                                 Save
                             </Button>
                         </View>
@@ -197,16 +301,16 @@ const styles = StyleSheet.create({
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
     modalTitle: { marginBottom: 16 },
     modalClose: { marginTop: 8 },
-    playerList: { flexGrow: 1, flexShrink: 1 },
+    playerList: { flexGrow: 1, flexShrink: 1, minHeight: 300 },
     playerOption: {
-        paddingVertical: 12,
+        paddingVertical: 10,
         paddingHorizontal: 16,
         borderRadius: 8,
         borderBottomWidth: 1,
         borderBottomColor: '#f3f4f6',
     },
     playerOptionSelected: { backgroundColor: '#eff6ff' },
-    playerOptionInfo: { gap: 2 },
+    playerOptionInfo: { flex: 1, gap: 2 },
     playerOptionName: { fontSize: 16, fontWeight: '600', color: '#111827' },
     playerOptionDetail: { fontSize: 13, color: '#6b7280' },
     batterOptionRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -219,6 +323,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     batterOrderText: { fontSize: 14, fontWeight: 'bold', color: '#374151' },
+    actionButtons: { flexDirection: 'row', marginLeft: 'auto' },
+    actionIcon: { margin: 0 },
     emptyText: { textAlign: 'center', color: '#6b7280', padding: 24 },
     addForm: {
         marginTop: 12,
@@ -229,6 +335,8 @@ const styles = StyleSheet.create({
         borderColor: '#e5e7eb',
         gap: 8,
     },
+    formTitle: { color: '#111827' },
+    subLabel: { color: '#6b7280', fontStyle: 'italic' },
     formInput: { backgroundColor: '#ffffff' },
     formRow: { flexDirection: 'row', gap: 8 },
     formInputSmall: { flex: 1, backgroundColor: '#ffffff' },
