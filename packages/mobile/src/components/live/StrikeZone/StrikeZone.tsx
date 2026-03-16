@@ -23,7 +23,7 @@ const VIEWBOX_HEIGHT = 300;
 const ZONE_X = 113;
 const ZONE_Y = 120;
 const ZONE_WIDTH = 75;
-const ZONE_HEIGHT = 92;
+const ZONE_HEIGHT = 140;
 
 const StrikeZone: React.FC<StrikeZoneProps> = ({
     onLocationSelect,
@@ -144,7 +144,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         <Rect x="0" y="0" width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="#f5f5f0" />
 
                         {/* Home plate - reversed (point facing pitcher/up) */}
-                        <G transform="translate(150, 225)">
+                        <G transform="translate(150, 272)">
                             <Ellipse cx="0" cy="15" rx="45" ry="11" fill="#e0e0d8" />
                             <Path d="M -38 22 L 38 22 L 38 10 L 0 -5 L -38 10 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
                             <Path d="M -32 20 L 32 20 L 32 11 L 0 -2 L -32 11 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />

@@ -56,7 +56,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
         // Convert to 0-1 coordinates within strike zone
         const zoneX = (svgX - 113) / 75;
-        const zoneY = (svgY - 120) / 92;
+        const zoneY = (svgY - 120) / 140;
 
         return { zoneX, zoneY };
     };
@@ -115,7 +115,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     // Convert 0-1 coordinates to SVG coordinates for pitch markers
     const toSvgCoords = (x: number, y: number) => ({
         x: 113 + x * 75,
-        y: 120 + y * 92,
+        y: 120 + y * 140,
     });
 
     // Target marker radius (ball-width, roughly 1/9 of zone width)
@@ -143,7 +143,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                     <rect x="0" y="0" width="300" height="300" fill="#f5f5f0" />
 
                     {/* Home plate - reversed (point facing pitcher/up) */}
-                    <g transform="translate(150, 225)">
+                    <g transform="translate(150, 272)">
                         <ellipse cx="0" cy="15" rx="45" ry="11" fill="#e0e0d8" />
                         <path d="M -38 22 L 38 22 L 38 10 L 0 -5 L -38 10 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
                         <path d="M -32 20 L 32 20 L 32 11 L 0 -2 L -32 11 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
@@ -160,7 +160,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                     {/* Strike zone - 3x3 grid */}
                     <g transform="translate(113, 120)">
                         {/* Zone background */}
-                        <rect x="0" y="0" width="75" height="92" fill="rgba(255,255,255,0.85)" />
+                        <rect x="0" y="0" width="75" height="140" fill="rgba(255,255,255,0.85)" />
 
                         {/* Grid cells */}
                         {[0, 1, 2].map((row) =>
@@ -168,9 +168,9 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                 <rect
                                     key={`cell-${row}-${col}`}
                                     x={col * (75 / 3)}
-                                    y={row * (92 / 3)}
+                                    y={row * (140 / 3)}
                                     width={75 / 3}
-                                    height={92 / 3}
+                                    height={140 / 3}
                                     fill="rgba(230, 230, 225, 0.6)"
                                     stroke="#a0a0a0"
                                     strokeWidth="1"
@@ -179,7 +179,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         )}
 
                         {/* Outer border */}
-                        <rect x="0" y="0" width="75" height="92" fill="none" stroke="#808080" strokeWidth="2" />
+                        <rect x="0" y="0" width="75" height="140" fill="none" stroke="#808080" strokeWidth="2" />
                     </g>
 
                     {/* Heat zone overlay */}

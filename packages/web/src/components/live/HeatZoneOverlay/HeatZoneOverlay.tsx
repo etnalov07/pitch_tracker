@@ -41,7 +41,7 @@ const ZONE_RENDER_INFO: ZoneRenderInfo[] = [
 const ZONE_START_X = 113;
 const ZONE_START_Y = 120;
 const ZONE_WIDTH = 75;
-const ZONE_HEIGHT = 92;
+const ZONE_HEIGHT = 140;
 
 // Convert normalized coordinates to SVG coordinates
 function toSvgCoords(x: number, y: number): { x: number; y: number } {
