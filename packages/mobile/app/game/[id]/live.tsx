@@ -731,6 +731,8 @@ export default function LiveGameScreen() {
                             targetLocation={targetLocation}
                             previousPitches={pitches}
                             disabled={isLogging}
+                            batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
+                            pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                         />
                         <View style={styles.controlsRow}>
                             <View style={styles.controlsHalf}>
@@ -797,6 +799,7 @@ export default function LiveGameScreen() {
                     previousPitches={pitches}
                     disabled={isLogging}
                     compact
+                    batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                 />
                 <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
                 <Button
