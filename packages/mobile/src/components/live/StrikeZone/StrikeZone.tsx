@@ -23,7 +23,7 @@ const VIEWBOX_HEIGHT = 300;
 const ZONE_X = 113;
 const ZONE_Y = 120;
 const ZONE_WIDTH = 75;
-const ZONE_HEIGHT = 140;
+const ZONE_HEIGHT = 110;
 
 const StrikeZone: React.FC<StrikeZoneProps> = ({
     onLocationSelect,
