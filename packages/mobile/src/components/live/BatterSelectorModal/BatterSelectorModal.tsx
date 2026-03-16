@@ -296,12 +296,12 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-    modal: { backgroundColor: '#ffffff', margin: 20, borderRadius: 12, maxHeight: '90%' },
+    modal: { backgroundColor: '#ffffff', margin: 20, borderRadius: 12, maxHeight: '90%', minHeight: '50%' },
     modalInner: { padding: 20, flex: 1 },
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
     modalTitle: { marginBottom: 16 },
     modalClose: { marginTop: 8 },
-    playerList: { flexGrow: 1, flexShrink: 1, minHeight: 300 },
+    playerList: { flexGrow: 1, flexShrink: 1 },
     playerOption: {
         paddingVertical: 10,
         paddingHorizontal: 16,
