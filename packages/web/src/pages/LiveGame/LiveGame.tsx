@@ -93,7 +93,7 @@ const LiveGame: React.FC = () => {
         pitches,
         loading,
         pitchLocation,
-        targetLocation,
+        targetZone,
         pitchType,
         setPitchType,
         velocity,
@@ -301,13 +301,13 @@ const LiveGame: React.FC = () => {
                                 <StepLabel active={!pitchType}>Type</StepLabel>
                             </Step>
                             <StepConnector completed={!!pitchType} />
-                            <Step completed={!!targetLocation} active={!!pitchType && !targetLocation && !pitchLocation}>
-                                <StepNumber completed={!!targetLocation} active={!!pitchType && !targetLocation && !pitchLocation}>
-                                    {targetLocation ? '✓' : '2'}
+                            <Step completed={!!targetZone} active={!!pitchType && !targetZone && !pitchLocation}>
+                                <StepNumber completed={!!targetZone} active={!!pitchType && !targetZone && !pitchLocation}>
+                                    {targetZone ? '✓' : '2'}
                                 </StepNumber>
-                                <StepLabel active={!!pitchType && !targetLocation && !pitchLocation}>Target</StepLabel>
+                                <StepLabel active={!!pitchType && !targetZone && !pitchLocation}>Target</StepLabel>
                             </Step>
-                            <StepConnector completed={!!targetLocation || !!pitchLocation} />
+                            <StepConnector completed={!!targetZone || !!pitchLocation} />
                             <Step completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>
                                 <StepNumber completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>
                                     {pitchLocation ? '✓' : '3'}
@@ -356,9 +356,9 @@ const LiveGame: React.FC = () => {
                                 </HeatZoneToggleContainer>
                                 <StrikeZone
                                     onLocationSelect={actions.handleLocationSelect}
-                                    onTargetSelect={actions.handleTargetSelect}
+                                    onTargetZoneSelect={actions.handleTargetZoneSelect}
                                     onTargetClear={actions.handleTargetClear}
-                                    targetLocation={targetLocation}
+                                    targetZone={targetZone}
                                     previousPitches={pitches}
                                     heatZones={heatZones}
                                     showHeatZones={showHeatZones}

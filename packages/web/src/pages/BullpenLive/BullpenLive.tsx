@@ -3,9 +3,12 @@ import {
     BullpenPitch,
     BullpenPlanWithPitches,
     BullpenSessionWithDetails,
+    getNearestPitchCallZone,
     Pitch,
+    PitchCallZone,
     PitchResult,
     PitchType,
+    PITCH_CALL_ZONE_COORDS,
 } from '@pitch-tracker/shared';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -84,7 +87,7 @@ const BullpenLive: React.FC = () => {
 
     // Pitch form state
     const [pitchType, setPitchType] = useState<PitchType>('fastball');
-    const [targetLocation, setTargetLocation] = useState<{ x: number; y: number } | null>(null);
+    const [targetZone, setTargetZone] = useState<PitchCallZone | null>(null);
     const [pitchLocation, setPitchLocation] = useState<{ x: number; y: number } | null>(null);
     const [velocity, setVelocity] = useState<string>('');
     const [logging, setLogging] = useState(false);
@@ -150,9 +153,9 @@ const BullpenLive: React.FC = () => {
         if (currentPlanPitch) {
             setPitchType(currentPlanPitch.pitch_type);
             if (currentPlanPitch.target_x != null && currentPlanPitch.target_y != null) {
-                setTargetLocation({ x: Number(currentPlanPitch.target_x), y: Number(currentPlanPitch.target_y) });
+                setTargetZone(getNearestPitchCallZone(Number(currentPlanPitch.target_x), Number(currentPlanPitch.target_y)));
             } else {
-                setTargetLocation(null);
+                setTargetZone(null);
             }
         }
     }, [currentPlanPitch]);
@@ -184,25 +187,26 @@ const BullpenLive: React.FC = () => {
         setPitchLocation({ x, y });
     }, []);
 
-    const handleTargetSelect = useCallback((x: number, y: number) => {
-        setTargetLocation({ x, y });
+    const handleTargetZoneSelect = useCallback((zone: PitchCallZone) => {
+        setTargetZone(zone);
     }, []);
 
     const handleTargetClear = useCallback(() => {
-        setTargetLocation(null);
+        setTargetZone(null);
     }, []);
 
     const handleLogPitch = async () => {
         if (!session_id || !pitchLocation) return;
         try {
             setLogging(true);
+            const targetCoords = targetZone ? PITCH_CALL_ZONE_COORDS[targetZone] : null;
             const newPitch = await bullpenService.logPitch({
                 session_id,
                 pitch_type: pitchType,
                 actual_x: pitchLocation.x,
                 actual_y: pitchLocation.y,
-                target_x: targetLocation?.x,
-                target_y: targetLocation?.y,
+                target_x: targetCoords?.x,
+                target_y: targetCoords?.y,
                 velocity: velocity ? Number(velocity) : undefined,
             });
             setPitches((prev) => [...prev, newPitch]);
@@ -211,7 +215,7 @@ const BullpenLive: React.FC = () => {
             setVelocity('');
             // Plan auto-populate is handled by the useEffect on currentPlanPitch
             if (!hasSequencePlan) {
-                setTargetLocation(null);
+                setTargetZone(null);
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to log pitch');
@@ -290,13 +294,13 @@ const BullpenLive: React.FC = () => {
                         <StepLabel active={!pitchType}>Type</StepLabel>
                     </Step>
                     <StepConnector completed={!!pitchType} />
-                    <Step completed={!!targetLocation} active={!!pitchType && !targetLocation && !pitchLocation}>
-                        <StepNumber completed={!!targetLocation} active={!!pitchType && !targetLocation && !pitchLocation}>
-                            {targetLocation ? '\u2713' : '2'}
+                    <Step completed={!!targetZone} active={!!pitchType && !targetZone && !pitchLocation}>
+                        <StepNumber completed={!!targetZone} active={!!pitchType && !targetZone && !pitchLocation}>
+                            {targetZone ? '\u2713' : '2'}
                         </StepNumber>
-                        <StepLabel active={!!pitchType && !targetLocation && !pitchLocation}>Target</StepLabel>
+                        <StepLabel active={!!pitchType && !targetZone && !pitchLocation}>Target</StepLabel>
                     </Step>
-                    <StepConnector completed={!!targetLocation || !!pitchLocation} />
+                    <StepConnector completed={!!targetZone || !!pitchLocation} />
                     <Step completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>
                         <StepNumber completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>
                             {pitchLocation ? '\u2713' : '3'}
@@ -355,9 +359,9 @@ const BullpenLive: React.FC = () => {
                     <StrikeZoneContainer>
                         <StrikeZone
                             onLocationSelect={handleLocationSelect}
-                            onTargetSelect={handleTargetSelect}
+                            onTargetZoneSelect={handleTargetZoneSelect}
                             onTargetClear={handleTargetClear}
-                            targetLocation={targetLocation}
+                            targetZone={targetZone}
                             previousPitches={mappedPitches}
                         />
                     </StrikeZoneContainer>

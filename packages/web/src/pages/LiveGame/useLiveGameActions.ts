@@ -1,4 +1,12 @@
-import { BaseRunners, BaserunnerEventType, RunnerBase, getSuggestedAdvancement, clearBases } from '@pitch-tracker/shared';
+import {
+    BaseRunners,
+    BaserunnerEventType,
+    RunnerBase,
+    getSuggestedAdvancement,
+    clearBases,
+    PitchCallZone,
+    PITCH_CALL_ZONE_COORDS,
+} from '@pitch-tracker/shared';
 import {
     fetchGameById,
     startGame,
@@ -23,8 +31,8 @@ export function useLiveGameActions(state: LiveGameState) {
         pitches,
         pitchLocation,
         setPitchLocation,
-        targetLocation,
-        setTargetLocation,
+        targetZone,
+        setTargetZone,
         pitchType,
         velocity,
         pitchResult,
@@ -151,6 +159,8 @@ export function useLiveGameActions(state: LiveGameState) {
         }
 
         try {
+            const targetCoords = targetZone ? PITCH_CALL_ZONE_COORDS[targetZone] : null;
+
             await dispatch(
                 logPitch({
                     at_bat_id: currentAtBat.id,
@@ -162,8 +172,9 @@ export function useLiveGameActions(state: LiveGameState) {
                     velocity: velocity ? parseFloat(velocity) : undefined,
                     location_x: pitchLocation.x,
                     location_y: pitchLocation.y,
-                    target_location_x: targetLocation?.x,
-                    target_location_y: targetLocation?.y,
+                    target_location_x: targetCoords?.x,
+                    target_location_y: targetCoords?.y,
+                    target_zone: targetZone || undefined,
                     pitch_result: pitchResult,
                     balls_before: currentAtBat.balls,
                     strikes_before: currentAtBat.strikes,
@@ -192,7 +203,7 @@ export function useLiveGameActions(state: LiveGameState) {
             setStatsRefreshTrigger((prev: number) => prev + 1);
 
             setPitchLocation(null);
-            setTargetLocation(null);
+            setTargetZone(null);
             setVelocity('');
             setPitchResult('ball');
 
@@ -209,7 +220,7 @@ export function useLiveGameActions(state: LiveGameState) {
     const handleDiamondResult = async (result: string) => {
         setShowDiamondModal(false);
         setHitLocation(null);
-        setTargetLocation(null);
+        setTargetZone(null);
         setPitchLocation(null);
 
         // For hits with runners on base, show runner advancement modal
@@ -483,12 +494,12 @@ export function useLiveGameActions(state: LiveGameState) {
         setPitchLocation({ x, y });
     };
 
-    const handleTargetSelect = (x: number, y: number) => {
-        setTargetLocation({ x, y });
+    const handleTargetZoneSelect = (zone: PitchCallZone) => {
+        setTargetZone(zone);
     };
 
     const handleTargetClear = () => {
-        setTargetLocation(null);
+        setTargetZone(null);
     };
 
     const handleToggleHomeAway = async () => {
@@ -516,7 +527,7 @@ export function useLiveGameActions(state: LiveGameState) {
         handleEndGame,
         handleResumeGame,
         handleLocationSelect,
-        handleTargetSelect,
+        handleTargetZoneSelect,
         handleTargetClear,
         handleToggleHomeAway,
     };

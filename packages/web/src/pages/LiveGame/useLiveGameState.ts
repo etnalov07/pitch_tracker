@@ -4,6 +4,7 @@ import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
 import useHeatZones from '../../hooks/useHeatZones';
 import { useAppDispatch, useAppSelector, fetchGameById } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
+import { PitchCallZone } from '@pitch-tracker/shared';
 import {
     PitchType,
     PitchResult,
@@ -36,7 +37,7 @@ export function useLiveGameState() {
 
     // Pitch form state
     const [pitchLocation, setPitchLocation] = useState<{ x: number; y: number } | null>(null);
-    const [targetLocation, setTargetLocation] = useState<{ x: number; y: number } | null>(null);
+    const [targetZone, setTargetZone] = useState<PitchCallZone | null>(null);
     const [pitchType, setPitchType] = useState<PitchType>('fastball');
     const [velocity, setVelocity] = useState<string>('');
     const [pitchResult, setPitchResult] = useState<PitchResult>('ball');
@@ -157,8 +158,8 @@ export function useLiveGameState() {
         // Pitch form
         pitchLocation,
         setPitchLocation,
-        targetLocation,
-        setTargetLocation,
+        targetZone,
+        setTargetZone,
         pitchType,
         setPitchType,
         velocity,

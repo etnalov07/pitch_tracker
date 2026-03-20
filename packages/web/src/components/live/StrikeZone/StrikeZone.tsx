@@ -1,27 +1,55 @@
-import { HeatZoneData } from '@pitch-tracker/shared';
+import { HeatZoneData, PitchCallZone, PITCH_CALL_ZONE_COORDS } from '@pitch-tracker/shared';
 import React, { useState, useEffect } from 'react';
 import { theme } from '../../../styles/theme';
 import { Pitch } from '../../../types';
 import HeatZoneOverlay from '../HeatZoneOverlay';
 import BatterSilhouette from './BatterSilhouette';
-import {
-    Container,
-    Title,
-    ZoneWrapper,
-    MainSvg,
-    ClearTargetButton,
-    Legend,
-    LegendItem,
-    LegendDot,
-    TargetIcon,
-    Instructions,
-} from './styles';
+import { Container, Title, ZoneWrapper, MainSvg, ClearTargetButton, Legend, LegendItem, LegendDot, Instructions } from './styles';
+
+// Zone grid layout for strike zone cells (row, col → PitchCallZone)
+const STRIKE_ZONE_GRID: { zone: PitchCallZone; row: number; col: number }[] = [
+    { zone: '0-0', row: 0, col: 0 },
+    { zone: '0-1', row: 0, col: 1 },
+    { zone: '0-2', row: 0, col: 2 },
+    { zone: '1-0', row: 1, col: 0 },
+    { zone: '1-1', row: 1, col: 1 },
+    { zone: '1-2', row: 1, col: 2 },
+    { zone: '2-0', row: 2, col: 0 },
+    { zone: '2-1', row: 2, col: 1 },
+    { zone: '2-2', row: 2, col: 2 },
+];
+
+// Waste zone positions in SVG coordinates (outside the strike zone)
+// Strike zone is at (113, 120) with width 75, height 110
+const WASTE_ZONES: { zone: PitchCallZone; x: number; y: number; w: number; h: number; label: string }[] = [
+    { zone: 'W-high-in', x: 81, y: 85, w: 32, h: 35, label: 'HI' },
+    { zone: 'W-high', x: 126, y: 85, w: 50, h: 35, label: 'HIGH' },
+    { zone: 'W-high-out', x: 188, y: 85, w: 32, h: 35, label: 'HO' },
+    { zone: 'W-in', x: 81, y: 120, w: 32, h: 110, label: 'IN' },
+    { zone: 'W-out', x: 188, y: 120, w: 32, h: 110, label: 'OUT' },
+    { zone: 'W-low-in', x: 81, y: 230, w: 32, h: 35, label: 'LI' },
+    { zone: 'W-low', x: 126, y: 230, w: 50, h: 35, label: 'LOW' },
+    { zone: 'W-low-out', x: 188, y: 230, w: 32, h: 35, label: 'LO' },
+];
+
+// Short labels for 3x3 strike zone cells
+const ZONE_LABELS: Partial<Record<PitchCallZone, string>> = {
+    '0-0': 'UI',
+    '0-1': 'UM',
+    '0-2': 'UA',
+    '1-0': 'MI',
+    '1-1': 'MM',
+    '1-2': 'MA',
+    '2-0': 'DI',
+    '2-1': 'DM',
+    '2-2': 'DA',
+};
 
 interface StrikeZoneProps {
     onLocationSelect: (x: number, y: number) => void;
-    onTargetSelect?: (x: number, y: number) => void;
+    onTargetZoneSelect?: (zone: PitchCallZone) => void;
     onTargetClear?: () => void;
-    targetLocation?: { x: number; y: number } | null;
+    targetZone?: PitchCallZone | null;
     previousPitches?: Pitch[];
     heatZones?: HeatZoneData[];
     showHeatZones?: boolean;
@@ -31,9 +59,9 @@ interface StrikeZoneProps {
 
 const StrikeZone: React.FC<StrikeZoneProps> = ({
     onLocationSelect,
-    onTargetSelect,
+    onTargetZoneSelect,
     onTargetClear,
-    targetLocation,
+    targetZone,
     previousPitches = [],
     heatZones = [],
     showHeatZones = false,
@@ -50,7 +78,6 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     // Calculate coordinates from click event
     const getCoordinatesFromEvent = (e: React.MouseEvent<SVGSVGElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
-        // Map click to the strike zone area
         const svgX = ((e.clientX - rect.left) / rect.width) * 300;
         const svgY = ((e.clientY - rect.top) / rect.height) * 300;
 
@@ -61,18 +88,11 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         return { zoneX, zoneY };
     };
 
+    // Only handle clicks for pitch location (target is handled by zone clicks)
     const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
-        const { zoneX, zoneY } = getCoordinatesFromEvent(e);
-
-        // If we have target support and no target is set yet, set the target
-        // Targets can be anywhere (outside zone allowed for off-speed pitches)
-        if (onTargetSelect && !targetLocation && !selectedLocation) {
-            // Allow targets in expanded area (-0.3 to 1.3)
-            if (zoneX >= -0.3 && zoneX <= 1.3 && zoneY >= -0.3 && zoneY <= 1.3) {
-                onTargetSelect(zoneX, zoneY);
-            }
-        } else {
-            // For actual pitch location, use expanded area but clamp to reasonable bounds
+        // If target zone is already set (or no target support), handle as pitch location
+        if (!onTargetZoneSelect || targetZone) {
+            const { zoneX, zoneY } = getCoordinatesFromEvent(e);
             if (zoneX >= -0.3 && zoneX <= 1.3 && zoneY >= -0.3 && zoneY <= 1.3) {
                 setSelectedLocation({ x: zoneX, y: zoneY });
                 onLocationSelect(zoneX, zoneY);
@@ -80,18 +100,10 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         }
     };
 
-    // Right-click to clear target
-    const handleContextMenu = (e: React.MouseEvent<SVGSVGElement>) => {
-        e.preventDefault();
-        if (targetLocation && onTargetClear) {
-            onTargetClear();
-        }
-    };
-
-    // Double-click to clear target
-    const handleDoubleClick = (_e: React.MouseEvent<SVGSVGElement>) => {
-        if (targetLocation && onTargetClear) {
-            onTargetClear();
+    const handleZoneClick = (zone: PitchCallZone, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (onTargetZoneSelect) {
+            onTargetZoneSelect(zone);
         }
     };
 
@@ -118,27 +130,24 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         y: 120 + y * 110,
     });
 
-    // Target marker radius (ball-width, roughly 1/9 of zone width)
-    const TARGET_RADIUS = 12;
-
-    // Determine batter position: from pitcher's perspective,
-    // a right-handed batter stands on the LEFT side of the plate,
-    // a left-handed batter stands on the RIGHT side.
-    // Switch hitters bat opposite the pitcher's throwing hand.
+    // Determine batter position
     const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
     const batterX = effectiveSide === 'R' ? 245 : 55;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
+
+    // Zone cell dimensions
+    const cellW = 75 / 3;
+    const cellH = 110 / 3;
+
+    // Colors
+    const AMBER = '#F5A623';
+    const isTargetMode = onTargetZoneSelect && !targetZone;
 
     return (
         <Container>
             <Title>Strike Zone</Title>
             <ZoneWrapper>
-                <MainSvg
-                    viewBox="0 0 300 300"
-                    onClick={handleClick}
-                    onContextMenu={handleContextMenu}
-                    onDoubleClick={handleDoubleClick}
-                >
+                <MainSvg viewBox="0 0 300 300" onClick={handleClick}>
                     {/* Background */}
                     <rect x="0" y="0" width="300" height="300" fill="#f5f5f0" />
 
@@ -157,26 +166,81 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         </g>
                     )}
 
+                    {/* Waste zone areas (clickable in target mode) */}
+                    {onTargetZoneSelect &&
+                        WASTE_ZONES.map(({ zone, x, y, w, h, label }) => {
+                            const isSelected = targetZone === zone;
+                            return (
+                                <g
+                                    key={zone}
+                                    onClick={(e) => handleZoneClick(zone, e)}
+                                    style={{ cursor: isTargetMode || isSelected ? 'pointer' : 'default' }}
+                                >
+                                    <rect
+                                        x={x}
+                                        y={y}
+                                        width={w}
+                                        height={h}
+                                        fill={isSelected ? AMBER + '40' : isTargetMode ? 'rgba(200, 200, 195, 0.3)' : 'transparent'}
+                                        stroke={isSelected ? AMBER : isTargetMode ? '#b0b0a8' : 'none'}
+                                        strokeWidth={isSelected ? 2 : 1}
+                                        strokeDasharray={isSelected ? 'none' : '3,2'}
+                                        rx="3"
+                                    />
+                                    <text
+                                        x={x + w / 2}
+                                        y={y + h / 2 + 4}
+                                        textAnchor="middle"
+                                        fontSize="9"
+                                        fontWeight="600"
+                                        fill={isSelected ? AMBER : isTargetMode ? '#888' : 'transparent'}
+                                    >
+                                        {label}
+                                    </text>
+                                </g>
+                            );
+                        })}
+
                     {/* Strike zone - 3x3 grid */}
                     <g transform="translate(113, 120)">
                         {/* Zone background */}
                         <rect x="0" y="0" width="75" height="110" fill="rgba(255,255,255,0.85)" />
 
-                        {/* Grid cells */}
-                        {[0, 1, 2].map((row) =>
-                            [0, 1, 2].map((col) => (
-                                <rect
-                                    key={`cell-${row}-${col}`}
-                                    x={col * (75 / 3)}
-                                    y={row * (110 / 3)}
-                                    width={75 / 3}
-                                    height={110 / 3}
-                                    fill="rgba(230, 230, 225, 0.6)"
-                                    stroke="#a0a0a0"
-                                    strokeWidth="1"
-                                />
-                            ))
-                        )}
+                        {/* Grid cells (clickable for target zone) */}
+                        {STRIKE_ZONE_GRID.map(({ zone, row, col }) => {
+                            const isSelected = targetZone === zone;
+                            return (
+                                <g
+                                    key={zone}
+                                    onClick={(e) => onTargetZoneSelect && handleZoneClick(zone, e)}
+                                    style={{ cursor: onTargetZoneSelect && (isTargetMode || isSelected) ? 'pointer' : 'default' }}
+                                >
+                                    <rect
+                                        x={col * cellW}
+                                        y={row * cellH}
+                                        width={cellW}
+                                        height={cellH}
+                                        fill={isSelected ? AMBER + '35' : 'rgba(230, 230, 225, 0.6)'}
+                                        stroke={isSelected ? AMBER : '#a0a0a0'}
+                                        strokeWidth={isSelected ? 2 : 1}
+                                    />
+                                    {/* Zone label (show in target mode or when selected) */}
+                                    {(isTargetMode || isSelected) && ZONE_LABELS[zone] && (
+                                        <text
+                                            x={col * cellW + cellW / 2}
+                                            y={row * cellH + cellH / 2 + 4}
+                                            textAnchor="middle"
+                                            fontSize="10"
+                                            fontWeight="700"
+                                            fill={isSelected ? AMBER : '#999'}
+                                            pointerEvents="none"
+                                        >
+                                            {ZONE_LABELS[zone]}
+                                        </text>
+                                    )}
+                                </g>
+                            );
+                        })}
 
                         {/* Outer border */}
                         <rect x="0" y="0" width="75" height="110" fill="none" stroke="#808080" strokeWidth="2" />
@@ -206,35 +270,44 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         );
                     })}
 
-                    {/* Current target location (hollow circle - ball width) */}
-                    {targetLocation && (
+                    {/* Target zone indicator (highlight center of selected zone) */}
+                    {targetZone && PITCH_CALL_ZONE_COORDS[targetZone] && (
                         <g>
-                            <circle
-                                cx={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                cy={toSvgCoords(targetLocation.x, targetLocation.y).y}
-                                r={TARGET_RADIUS}
-                                fill="none"
-                                stroke={theme.colors.primary[500]}
-                                strokeWidth="3"
-                                strokeDasharray="6,3"
-                            />
-                            {/* Crosshair inside target */}
-                            <line
-                                x1={toSvgCoords(targetLocation.x, targetLocation.y).x - 6}
-                                y1={toSvgCoords(targetLocation.x, targetLocation.y).y}
-                                x2={toSvgCoords(targetLocation.x, targetLocation.y).x + 6}
-                                y2={toSvgCoords(targetLocation.x, targetLocation.y).y}
-                                stroke={theme.colors.primary[500]}
-                                strokeWidth="2"
-                            />
-                            <line
-                                x1={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                y1={toSvgCoords(targetLocation.x, targetLocation.y).y - 6}
-                                x2={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                y2={toSvgCoords(targetLocation.x, targetLocation.y).y + 6}
-                                stroke={theme.colors.primary[500]}
-                                strokeWidth="2"
-                            />
+                            {(() => {
+                                const coords = toSvgCoords(
+                                    PITCH_CALL_ZONE_COORDS[targetZone].x,
+                                    PITCH_CALL_ZONE_COORDS[targetZone].y
+                                );
+                                return (
+                                    <>
+                                        <circle
+                                            cx={coords.x}
+                                            cy={coords.y}
+                                            r="12"
+                                            fill="none"
+                                            stroke={AMBER}
+                                            strokeWidth="3"
+                                            strokeDasharray="6,3"
+                                        />
+                                        <line
+                                            x1={coords.x - 6}
+                                            y1={coords.y}
+                                            x2={coords.x + 6}
+                                            y2={coords.y}
+                                            stroke={AMBER}
+                                            strokeWidth="2"
+                                        />
+                                        <line
+                                            x1={coords.x}
+                                            y1={coords.y - 6}
+                                            x2={coords.x}
+                                            y2={coords.y + 6}
+                                            stroke={AMBER}
+                                            strokeWidth="2"
+                                        />
+                                    </>
+                                );
+                            })()}
                         </g>
                     )}
 
@@ -266,7 +339,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                 </MainSvg>
 
                 {/* Clear target button */}
-                {targetLocation && onTargetClear && <ClearTargetButton onClick={onTargetClear}>Clear Target</ClearTargetButton>}
+                {targetZone && onTargetClear && <ClearTargetButton onClick={onTargetClear}>Clear Target</ClearTargetButton>}
 
                 <Legend>
                     <LegendItem>
@@ -289,19 +362,13 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         <LegendDot color={theme.colors.primary[600]} />
                         <span>In Play</span>
                     </LegendItem>
-                    {onTargetSelect && (
-                        <LegendItem>
-                            <TargetIcon />
-                            <span>Target</span>
-                        </LegendItem>
-                    )}
                 </Legend>
             </ZoneWrapper>
             <Instructions>
-                {onTargetSelect
-                    ? targetLocation
-                        ? 'Click to set pitch location (right-click or double-click to clear target)'
-                        : 'Click to set target location (optional)'
+                {onTargetZoneSelect
+                    ? targetZone
+                        ? 'Click on the zone to set pitch location'
+                        : 'Click a zone to set target (Step 2)'
                     : 'Click on the zone to select pitch location'}
             </Instructions>
         </Container>

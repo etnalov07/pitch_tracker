@@ -1,4 +1,4 @@
-import { PitchType, Player } from '@pitch-tracker/shared';
+import { getNearestPitchCallZone, PitchCallZone, PitchType, Player, PITCH_CALL_ZONE_COORDS } from '@pitch-tracker/shared';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import StrikeZone from '../../components/live/StrikeZone';
@@ -139,10 +139,11 @@ const BullpenPlanEditor: React.FC = () => {
         setPitches((prev) => prev.map((p, i) => (i === index ? { ...p, ...updates } : p)));
     };
 
-    const handleLocationAsTarget = useCallback(
-        (x: number, y: number) => {
+    const handleZoneAsTarget = useCallback(
+        (zone: PitchCallZone) => {
             if (editingTargetIndex !== null) {
-                updatePitch(editingTargetIndex, { target_x: x, target_y: y });
+                const coords = PITCH_CALL_ZONE_COORDS[zone];
+                updatePitch(editingTargetIndex, { target_x: coords.x, target_y: coords.y });
                 setEditingTargetIndex(null);
             }
         },
@@ -314,12 +315,13 @@ const BullpenPlanEditor: React.FC = () => {
                             </PitchRow>
                             {editingTargetIndex === index && (
                                 <StrikeZoneWrapper>
-                                    <StrikeZoneLabel>Click to set target location for pitch #{index + 1}</StrikeZoneLabel>
+                                    <StrikeZoneLabel>Click a zone to set target for pitch #{index + 1}</StrikeZoneLabel>
                                     <StrikeZone
-                                        onLocationSelect={handleLocationAsTarget}
-                                        targetLocation={
+                                        onLocationSelect={() => {}}
+                                        onTargetZoneSelect={handleZoneAsTarget}
+                                        targetZone={
                                             pitch.target_x != null && pitch.target_y != null
-                                                ? { x: pitch.target_x, y: pitch.target_y }
+                                                ? getNearestPitchCallZone(pitch.target_x, pitch.target_y)
                                                 : null
                                         }
                                     />

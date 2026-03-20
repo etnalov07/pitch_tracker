@@ -364,6 +364,7 @@ export interface Pitch {
     location_y?: number;
     target_location_x?: number;
     target_location_y?: number;
+    target_zone?: PitchCallZone;
     zone?: string;
     balls_before: number;
     strikes_before: number;
@@ -706,6 +707,43 @@ export const PITCH_CALL_ZONE_LABELS: Record<PitchCallZone, string> = {
     'W-low-in': 'Waste Low-In',
     'W-low-out': 'Waste Low-Out',
 };
+
+// Center coordinates (0-1 normalized) for each zone, used for rendering targets on the strike zone
+export const PITCH_CALL_ZONE_COORDS: Record<PitchCallZone, { x: number; y: number }> = {
+    '0-0': { x: 0.167, y: 0.167 },
+    '0-1': { x: 0.5, y: 0.167 },
+    '0-2': { x: 0.833, y: 0.167 },
+    '1-0': { x: 0.167, y: 0.5 },
+    '1-1': { x: 0.5, y: 0.5 },
+    '1-2': { x: 0.833, y: 0.5 },
+    '2-0': { x: 0.167, y: 0.833 },
+    '2-1': { x: 0.5, y: 0.833 },
+    '2-2': { x: 0.833, y: 0.833 },
+    'W-high': { x: 0.5, y: -0.15 },
+    'W-low': { x: 0.5, y: 1.15 },
+    'W-in': { x: -0.15, y: 0.5 },
+    'W-out': { x: 1.15, y: 0.5 },
+    'W-high-in': { x: -0.15, y: -0.15 },
+    'W-high-out': { x: 1.15, y: -0.15 },
+    'W-low-in': { x: -0.15, y: 1.15 },
+    'W-low-out': { x: 1.15, y: 1.15 },
+};
+
+// Find the nearest PitchCallZone for a given coordinate pair
+export function getNearestPitchCallZone(x: number, y: number): PitchCallZone {
+    let best: PitchCallZone = '1-1';
+    let bestDist = Infinity;
+    for (const [zone, coords] of Object.entries(PITCH_CALL_ZONE_COORDS) as [PitchCallZone, { x: number; y: number }][]) {
+        const dx = x - coords.x;
+        const dy = y - coords.y;
+        const dist = dx * dx + dy * dy;
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = zone;
+        }
+    }
+    return best;
+}
 
 export interface PitchCall {
     id: string;
