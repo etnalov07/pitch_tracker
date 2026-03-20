@@ -7,74 +7,66 @@ import BatterSilhouette from './BatterSilhouette';
 import { Container, Title, ZoneWrapper, MainSvg, ClearTargetButton, Legend, LegendItem, LegendDot, Instructions } from './styles';
 
 // Zone grid layout for strike zone cells (row, col → PitchCallZone)
-const STRIKE_ZONE_GRID: { zone: PitchCallZone; row: number; col: number }[] = [
-    { zone: '0-0', row: 0, col: 0 },
-    { zone: '0-1', row: 0, col: 1 },
-    { zone: '0-2', row: 0, col: 2 },
-    { zone: '1-0', row: 1, col: 0 },
-    { zone: '1-1', row: 1, col: 1 },
-    { zone: '1-2', row: 1, col: 2 },
-    { zone: '2-0', row: 2, col: 0 },
-    { zone: '2-1', row: 2, col: 1 },
-    { zone: '2-2', row: 2, col: 2 },
-];
-
-// Waste zone positions in SVG coordinates (outside the strike zone)
-// Strike zone is at (113, 120) with width 75, height 110
-const WASTE_ZONES_BASE: { zone: PitchCallZone; x: number; y: number; w: number; h: number; label: string }[] = [
-    { zone: 'W-high-in', x: 81, y: 85, w: 32, h: 35, label: 'HI' },
-    { zone: 'W-high', x: 126, y: 85, w: 50, h: 35, label: 'HIGH' },
-    { zone: 'W-high-out', x: 188, y: 85, w: 32, h: 35, label: 'HO' },
-    { zone: 'W-in', x: 81, y: 120, w: 32, h: 110, label: 'IN' },
-    { zone: 'W-out', x: 188, y: 120, w: 32, h: 110, label: 'OUT' },
-    { zone: 'W-low-in', x: 81, y: 230, w: 32, h: 35, label: 'LI' },
-    { zone: 'W-low', x: 126, y: 230, w: 50, h: 35, label: 'LOW' },
-    { zone: 'W-low-out', x: 188, y: 230, w: 32, h: 35, label: 'LO' },
-];
-
-// Short labels for 3x3 strike zone cells — flips inside/outside based on batter handedness
-// From pitcher's view: col 0 = left, col 2 = right
-// RHH stands on left → col 0 = inside, col 2 = away
-// LHH stands on right → col 0 = away, col 2 = inside
-function getZoneLabels(effectiveSide: 'R' | 'L'): Partial<Record<PitchCallZone, string>> {
-    const isRHH = effectiveSide === 'R';
-    const i = isRHH ? 'I' : 'A'; // col 0 label
-    const a = isRHH ? 'A' : 'I'; // col 2 label
-    return {
-        '0-0': `U${i}`,
-        '0-1': 'UM',
-        '0-2': `U${a}`,
-        '1-0': `M${i}`,
-        '1-1': 'MM',
-        '1-2': `M${a}`,
-        '2-0': `D${i}`,
-        '2-1': 'DM',
-        '2-2': `D${a}`,
-    };
+// Zone IDs are semantic: '0-0' = "Up and In", '0-2' = "Up and Away"
+// For RHH: inside = left (col 0), outside = right (col 2)
+// For LHH: inside = right (col 2), outside = left (col 0) — columns mirror
+function getStrikeZoneGrid(effectiveSide: 'R' | 'L'): { zone: PitchCallZone; row: number; col: number }[] {
+    const flip = effectiveSide === 'L';
+    return [
+        { zone: '0-0', row: 0, col: flip ? 2 : 0 },
+        { zone: '0-1', row: 0, col: 1 },
+        { zone: '0-2', row: 0, col: flip ? 0 : 2 },
+        { zone: '1-0', row: 1, col: flip ? 2 : 0 },
+        { zone: '1-1', row: 1, col: 1 },
+        { zone: '1-2', row: 1, col: flip ? 0 : 2 },
+        { zone: '2-0', row: 2, col: flip ? 2 : 0 },
+        { zone: '2-1', row: 2, col: 1 },
+        { zone: '2-2', row: 2, col: flip ? 0 : 2 },
+    ];
 }
 
-// Waste zone labels — flip IN/OUT based on batter handedness
+// Waste zone SVG positions — swap left/right for LHH
+// Strike zone is at (113, 120) with width 75, height 110
+// "in" zones are on the batter's side, "out" zones are away
 function getWasteZones(effectiveSide: 'R' | 'L') {
-    const isRHH = effectiveSide === 'R';
-    const inLabel = isRHH ? 'IN' : 'OUT';
-    const outLabel = isRHH ? 'OUT' : 'IN';
-    const hiLabel = isRHH ? 'HI' : 'HO';
-    const hoLabel = isRHH ? 'HO' : 'HI';
-    const liLabel = isRHH ? 'LI' : 'LO';
-    const loLabel = isRHH ? 'LO' : 'LI';
-    return WASTE_ZONES_BASE.map((wz) => {
-        const labelMap: Record<string, string> = {
-            'W-high-in': hiLabel,
-            'W-high': 'HIGH',
-            'W-high-out': hoLabel,
-            'W-in': inLabel,
-            'W-out': outLabel,
-            'W-low-in': liLabel,
-            'W-low': 'LOW',
-            'W-low-out': loLabel,
-        };
-        return { ...wz, label: labelMap[wz.zone] || wz.label };
-    });
+    const flip = effectiveSide === 'L';
+    const L = { x: 81, w: 32 }; // left position
+    const R = { x: 188, w: 32 }; // right position
+    const inPos = flip ? R : L;
+    const outPos = flip ? L : R;
+    return [
+        { zone: 'W-high-in' as PitchCallZone, x: inPos.x, y: 85, w: inPos.w, h: 35, label: 'HI' },
+        { zone: 'W-high' as PitchCallZone, x: 126, y: 85, w: 50, h: 35, label: 'HIGH' },
+        { zone: 'W-high-out' as PitchCallZone, x: outPos.x, y: 85, w: outPos.w, h: 35, label: 'HO' },
+        { zone: 'W-in' as PitchCallZone, x: inPos.x, y: 120, w: inPos.w, h: 110, label: 'IN' },
+        { zone: 'W-out' as PitchCallZone, x: outPos.x, y: 120, w: outPos.w, h: 110, label: 'OUT' },
+        { zone: 'W-low-in' as PitchCallZone, x: inPos.x, y: 230, w: inPos.w, h: 35, label: 'LI' },
+        { zone: 'W-low' as PitchCallZone, x: 126, y: 230, w: 50, h: 35, label: 'LOW' },
+        { zone: 'W-low-out' as PitchCallZone, x: outPos.x, y: 230, w: outPos.w, h: 35, label: 'LO' },
+    ];
+}
+
+// Zone labels — always semantic (I=inside, A=away) since positions already flip
+const ZONE_LABELS: Partial<Record<PitchCallZone, string>> = {
+    '0-0': 'UI',
+    '0-1': 'UM',
+    '0-2': 'UA',
+    '1-0': 'MI',
+    '1-1': 'MM',
+    '1-2': 'MA',
+    '2-0': 'DI',
+    '2-1': 'DM',
+    '2-2': 'DA',
+};
+
+// Flip zone center x-coordinate for LHH so target crosshair renders on correct side
+function getZoneCoords(zone: PitchCallZone, effectiveSide: 'R' | 'L'): { x: number; y: number } {
+    const coords = PITCH_CALL_ZONE_COORDS[zone];
+    if (effectiveSide === 'L') {
+        // Mirror x around 0.5 (center of zone)
+        return { x: 1 - coords.x, y: coords.y };
+    }
+    return coords;
 }
 
 interface StrikeZoneProps {
@@ -167,8 +159,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     const batterX = effectiveSide === 'R' ? 245 : 55;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
 
-    // Get batter-relative labels
-    const zoneLabels = getZoneLabels(effectiveSide);
+    // Get batter-relative zone positions (physically mirrored for LHH)
+    const strikeZoneGrid = getStrikeZoneGrid(effectiveSide);
     const wasteZones = getWasteZones(effectiveSide);
 
     // Zone cell dimensions
@@ -243,7 +235,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         <rect x="0" y="0" width="75" height="110" fill="rgba(255,255,255,0.85)" />
 
                         {/* Grid cells (clickable for target zone) */}
-                        {STRIKE_ZONE_GRID.map(({ zone, row, col }) => {
+                        {strikeZoneGrid.map(({ zone, row, col }) => {
                             const isSelected = targetZone === zone;
                             return (
                                 <g
@@ -261,7 +253,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                         strokeWidth={isSelected ? 2 : 1}
                                     />
                                     {/* Zone label (show in target mode or when selected) */}
-                                    {(isTargetMode || isSelected) && zoneLabels[zone] && (
+                                    {(isTargetMode || isSelected) && ZONE_LABELS[zone] && (
                                         <text
                                             x={col * cellW + cellW / 2}
                                             y={row * cellH + cellH / 2 + 4}
@@ -271,7 +263,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                             fill={isSelected ? AMBER : '#999'}
                                             pointerEvents="none"
                                         >
-                                            {zoneLabels[zone]}
+                                            {ZONE_LABELS[zone]}
                                         </text>
                                     )}
                                 </g>
@@ -307,13 +299,11 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                     })}
 
                     {/* Target zone indicator (highlight center of selected zone) */}
-                    {targetZone && PITCH_CALL_ZONE_COORDS[targetZone] && (
+                    {targetZone && (
                         <g>
                             {(() => {
-                                const coords = toSvgCoords(
-                                    PITCH_CALL_ZONE_COORDS[targetZone].x,
-                                    PITCH_CALL_ZONE_COORDS[targetZone].y
-                                );
+                                const zc = getZoneCoords(targetZone, effectiveSide);
+                                const coords = toSvgCoords(zc.x, zc.y);
                                 return (
                                     <>
                                         <circle
