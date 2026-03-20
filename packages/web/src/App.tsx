@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import packageJson from '../package.json';
 import BullpenLive from './pages/BullpenLive';
 import BullpenNew from './pages/BullpenNew';
 import BullpenPlanEditor from './pages/BullpenPlanEditor';
@@ -168,6 +169,19 @@ function App() {
                     }
                 />
             </Routes>
+            <div
+                style={{
+                    position: 'fixed',
+                    bottom: 4,
+                    right: 8,
+                    fontSize: '11px',
+                    color: '#aaa',
+                    pointerEvents: 'none',
+                    zIndex: 9999,
+                }}
+            >
+                v{packageJson.version}
+            </div>
         </Router>
     );
 }

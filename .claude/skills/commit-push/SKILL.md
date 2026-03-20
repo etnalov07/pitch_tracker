@@ -47,6 +47,16 @@ If approved, run the following checks on changed files **in this order**:
 
 If any check fails, fix the issue and re-run all checks. Do not commit with failing checks.
 
+### Step 3b: Version Bump
+
+Before committing, bump the **minor** version in:
+
+1. `packages/web/package.json` — increment the middle number (e.g., `0.2.0` → `0.3.0`)
+2. `packages/mobile/package.json` — increment the middle number (e.g., `1.1.0` → `1.2.0`)
+3. `packages/mobile/app.json` — keep in sync with `packages/mobile/package.json` (the `expo.version` field)
+
+Include these version files in the staged changes.
+
 ### Step 4: Commit
 
 1. Run `git status` to see all changes (including any prettier formatting fixes).
