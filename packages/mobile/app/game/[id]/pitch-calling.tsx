@@ -31,7 +31,11 @@ export default function PitchCallingScreen() {
     const dispatch = useAppDispatch();
 
     const { calls, activeCall, sendingCall } = useAppSelector((state) => state.pitchCalling);
-    const { selectedGame } = useAppSelector((state) => state.games);
+    const { selectedGame, opponentLineup, gamePitchers } = useAppSelector((state) => state.games);
+
+    // Get current batter handedness and pitcher throws for zone label orientation
+    const currentBatter = opponentLineup.find((p) => !p.replaced_by_id);
+    const currentPitcher = gamePitchers.length > 0 ? gamePitchers[gamePitchers.length - 1] : null;
 
     // Local UI state
     const [selectedPitch, setSelectedPitch] = useState<PitchCallAbbrev | null>(null);
@@ -183,7 +187,13 @@ export default function PitchCallingScreen() {
                     <>
                         <CallPitchTypeGrid selectedType={selectedPitch} onSelect={setSelectedPitch} disabled={sendingCall} />
 
-                        <CallZoneGrid selectedZone={selectedZone} onSelect={setSelectedZone} disabled={sendingCall} />
+                        <CallZoneGrid
+                            selectedZone={selectedZone}
+                            onSelect={setSelectedZone}
+                            disabled={sendingCall}
+                            batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
+                            pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
+                        />
 
                         {/* Call preview */}
                         {previewText && (

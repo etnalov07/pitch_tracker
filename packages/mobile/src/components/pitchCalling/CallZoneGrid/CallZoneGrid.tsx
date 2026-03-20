@@ -8,6 +8,8 @@ interface CallZoneGridProps {
     selectedZone: PitchCallZone | null;
     onSelect: (zone: PitchCallZone) => void;
     disabled?: boolean;
+    batterSide?: 'R' | 'L' | 'S' | null;
+    pitcherThrows?: 'R' | 'L' | null;
 }
 
 // 3x3 strike zone grid
@@ -23,58 +25,84 @@ const STRIKE_ZONES: { zone: PitchCallZone; row: number; col: number }[] = [
     { zone: '2-2', row: 2, col: 2 },
 ];
 
-// Waste pitch zones surrounding the strike zone
-const WASTE_ZONES: {
+// Waste pitch zone positions (labels are computed based on batter handedness)
+const WASTE_ZONES_BASE: {
     zone: PitchCallZone;
-    label: string;
     position: 'top' | 'bottom' | 'left' | 'right' | 'corner';
     style: object;
 }[] = [
-    { zone: 'W-high-in', label: 'HI', position: 'corner', style: { top: 0, left: 0 } },
-    { zone: 'W-high', label: 'HIGH', position: 'top', style: { top: 0, left: '25%', right: '25%' } },
-    { zone: 'W-high-out', label: 'HO', position: 'corner', style: { top: 0, right: 0 } },
-    { zone: 'W-in', label: 'IN', position: 'left', style: { top: '25%', bottom: '25%', left: 0 } },
-    { zone: 'W-out', label: 'OUT', position: 'right', style: { top: '25%', bottom: '25%', right: 0 } },
-    { zone: 'W-low-in', label: 'LI', position: 'corner', style: { bottom: 0, left: 0 } },
-    { zone: 'W-low', label: 'LOW', position: 'bottom', style: { bottom: 0, left: '25%', right: '25%' } },
-    { zone: 'W-low-out', label: 'LO', position: 'corner', style: { bottom: 0, right: 0 } },
+    { zone: 'W-high-in', position: 'corner', style: { top: 0, left: 0 } },
+    { zone: 'W-high', position: 'top', style: { top: 0, left: '25%', right: '25%' } },
+    { zone: 'W-high-out', position: 'corner', style: { top: 0, right: 0 } },
+    { zone: 'W-in', position: 'left', style: { top: '25%', bottom: '25%', left: 0 } },
+    { zone: 'W-out', position: 'right', style: { top: '25%', bottom: '25%', right: 0 } },
+    { zone: 'W-low-in', position: 'corner', style: { bottom: 0, left: 0 } },
+    { zone: 'W-low', position: 'bottom', style: { bottom: 0, left: '25%', right: '25%' } },
+    { zone: 'W-low-out', position: 'corner', style: { bottom: 0, right: 0 } },
 ];
 
-const ZONE_SHORT_LABELS: Record<string, string> = {
-    '0-0': '',
-    '0-1': '',
-    '0-2': '',
-    '1-0': '',
-    '1-1': '',
-    '1-2': '',
-    '2-0': '',
-    '2-1': '',
-    '2-2': '',
-};
+// Labels flip inside/outside based on batter handedness
+// From pitcher's view: col 0 / "in" side = left; col 2 / "out" side = right
+// RHH stands on left → left = inside, right = outside
+// LHH stands on right → left = outside, right = inside
+function getWasteLabels(effectiveSide: 'R' | 'L'): Record<PitchCallZone, string> {
+    const isRHH = effectiveSide === 'R';
+    return {
+        'W-high-in': isRHH ? 'HI' : 'HO',
+        'W-high': 'HIGH',
+        'W-high-out': isRHH ? 'HO' : 'HI',
+        'W-in': isRHH ? 'IN' : 'OUT',
+        'W-out': isRHH ? 'OUT' : 'IN',
+        'W-low-in': isRHH ? 'LI' : 'LO',
+        'W-low': 'LOW',
+        'W-low-out': isRHH ? 'LO' : 'LI',
+    } as Record<PitchCallZone, string>;
+}
 
-const CallZoneGrid: React.FC<CallZoneGridProps> = ({ selectedZone, onSelect, disabled = false }) => {
+function getZoneLabels(effectiveSide: 'R' | 'L'): Record<string, string> {
+    const isRHH = effectiveSide === 'R';
+    const i = isRHH ? 'I' : 'A';
+    const a = isRHH ? 'A' : 'I';
+    return {
+        '0-0': `U${i}`,
+        '0-1': 'UM',
+        '0-2': `U${a}`,
+        '1-0': `M${i}`,
+        '1-1': 'MM',
+        '1-2': `M${a}`,
+        '2-0': `D${i}`,
+        '2-1': 'DM',
+        '2-2': `D${a}`,
+    };
+}
+
+const CallZoneGrid: React.FC<CallZoneGridProps> = ({ selectedZone, onSelect, disabled = false, batterSide, pitcherThrows }) => {
     const handleSelect = (zone: PitchCallZone) => {
         if (disabled) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         onSelect(zone);
     };
 
-    const isWaste = (zone: PitchCallZone) => zone.startsWith('W-');
     const isSelected = (zone: PitchCallZone) => selectedZone === zone;
+
+    // Compute batter-relative labels
+    const effectiveSide: 'R' | 'L' = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
+    const wasteLabels = getWasteLabels(effectiveSide);
+    const zoneLabels = getZoneLabels(effectiveSide);
 
     return (
         <View style={styles.container}>
             <Text style={styles.label}>TARGET ZONE</Text>
             <View style={styles.outerGrid}>
                 {/* Waste zones as border buttons */}
-                {WASTE_ZONES.map(({ zone, label }) => (
+                {WASTE_ZONES_BASE.map(({ zone }) => (
                     <Pressable
                         key={zone}
                         style={[styles.wasteButton, isSelected(zone) && styles.wasteButtonSelected, disabled && styles.disabled]}
                         onPress={() => handleSelect(zone)}
                         disabled={disabled}
                     >
-                        <Text style={[styles.wasteText, isSelected(zone) && styles.wasteTextSelected]}>{label}</Text>
+                        <Text style={[styles.wasteText, isSelected(zone) && styles.wasteTextSelected]}>{wasteLabels[zone]}</Text>
                     </Pressable>
                 ))}
 
@@ -87,7 +115,11 @@ const CallZoneGrid: React.FC<CallZoneGridProps> = ({ selectedZone, onSelect, dis
                             onPress={() => handleSelect(zone)}
                             disabled={disabled}
                         >
-                            {isSelected(zone) && <View style={styles.zoneDot} />}
+                            {isSelected(zone) ? (
+                                <View style={styles.zoneDot} />
+                            ) : (
+                                <Text style={styles.zoneLabelText}>{zoneLabels[zone]}</Text>
+                            )}
                         </Pressable>
                     ))}
                 </View>
@@ -95,14 +127,16 @@ const CallZoneGrid: React.FC<CallZoneGridProps> = ({ selectedZone, onSelect, dis
 
             {/* Waste zone row below */}
             <View style={styles.wasteRow}>
-                {WASTE_ZONES.map(({ zone, label }) => (
+                {WASTE_ZONES_BASE.map(({ zone }) => (
                     <Pressable
                         key={zone}
                         style={[styles.wasteChip, isSelected(zone) && styles.wasteChipSelected, disabled && styles.disabled]}
                         onPress={() => handleSelect(zone)}
                         disabled={disabled}
                     >
-                        <Text style={[styles.wasteChipText, isSelected(zone) && styles.wasteChipTextSelected]}>{label}</Text>
+                        <Text style={[styles.wasteChipText, isSelected(zone) && styles.wasteChipTextSelected]}>
+                            {wasteLabels[zone]}
+                        </Text>
                     </Pressable>
                 ))}
             </View>
@@ -160,6 +194,12 @@ const styles = StyleSheet.create({
         height: 12,
         borderRadius: 6,
         backgroundColor: AMBER,
+    },
+    zoneLabelText: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: colors.gray[500],
+        letterSpacing: 0.5,
     },
     disabled: {
         opacity: 0.5,

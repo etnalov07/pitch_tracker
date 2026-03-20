@@ -21,7 +21,7 @@ const STRIKE_ZONE_GRID: { zone: PitchCallZone; row: number; col: number }[] = [
 
 // Waste zone positions in SVG coordinates (outside the strike zone)
 // Strike zone is at (113, 120) with width 75, height 110
-const WASTE_ZONES: { zone: PitchCallZone; x: number; y: number; w: number; h: number; label: string }[] = [
+const WASTE_ZONES_BASE: { zone: PitchCallZone; x: number; y: number; w: number; h: number; label: string }[] = [
     { zone: 'W-high-in', x: 81, y: 85, w: 32, h: 35, label: 'HI' },
     { zone: 'W-high', x: 126, y: 85, w: 50, h: 35, label: 'HIGH' },
     { zone: 'W-high-out', x: 188, y: 85, w: 32, h: 35, label: 'HO' },
@@ -32,18 +32,50 @@ const WASTE_ZONES: { zone: PitchCallZone; x: number; y: number; w: number; h: nu
     { zone: 'W-low-out', x: 188, y: 230, w: 32, h: 35, label: 'LO' },
 ];
 
-// Short labels for 3x3 strike zone cells
-const ZONE_LABELS: Partial<Record<PitchCallZone, string>> = {
-    '0-0': 'UI',
-    '0-1': 'UM',
-    '0-2': 'UA',
-    '1-0': 'MI',
-    '1-1': 'MM',
-    '1-2': 'MA',
-    '2-0': 'DI',
-    '2-1': 'DM',
-    '2-2': 'DA',
-};
+// Short labels for 3x3 strike zone cells — flips inside/outside based on batter handedness
+// From pitcher's view: col 0 = left, col 2 = right
+// RHH stands on left → col 0 = inside, col 2 = away
+// LHH stands on right → col 0 = away, col 2 = inside
+function getZoneLabels(effectiveSide: 'R' | 'L'): Partial<Record<PitchCallZone, string>> {
+    const isRHH = effectiveSide === 'R';
+    const i = isRHH ? 'I' : 'A'; // col 0 label
+    const a = isRHH ? 'A' : 'I'; // col 2 label
+    return {
+        '0-0': `U${i}`,
+        '0-1': 'UM',
+        '0-2': `U${a}`,
+        '1-0': `M${i}`,
+        '1-1': 'MM',
+        '1-2': `M${a}`,
+        '2-0': `D${i}`,
+        '2-1': 'DM',
+        '2-2': `D${a}`,
+    };
+}
+
+// Waste zone labels — flip IN/OUT based on batter handedness
+function getWasteZones(effectiveSide: 'R' | 'L') {
+    const isRHH = effectiveSide === 'R';
+    const inLabel = isRHH ? 'IN' : 'OUT';
+    const outLabel = isRHH ? 'OUT' : 'IN';
+    const hiLabel = isRHH ? 'HI' : 'HO';
+    const hoLabel = isRHH ? 'HO' : 'HI';
+    const liLabel = isRHH ? 'LI' : 'LO';
+    const loLabel = isRHH ? 'LO' : 'LI';
+    return WASTE_ZONES_BASE.map((wz) => {
+        const labelMap: Record<string, string> = {
+            'W-high-in': hiLabel,
+            'W-high': 'HIGH',
+            'W-high-out': hoLabel,
+            'W-in': inLabel,
+            'W-out': outLabel,
+            'W-low-in': liLabel,
+            'W-low': 'LOW',
+            'W-low-out': loLabel,
+        };
+        return { ...wz, label: labelMap[wz.zone] || wz.label };
+    });
+}
 
 interface StrikeZoneProps {
     onLocationSelect: (x: number, y: number) => void;
@@ -135,6 +167,10 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     const batterX = effectiveSide === 'R' ? 245 : 55;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
 
+    // Get batter-relative labels
+    const zoneLabels = getZoneLabels(effectiveSide);
+    const wasteZones = getWasteZones(effectiveSide);
+
     // Zone cell dimensions
     const cellW = 75 / 3;
     const cellH = 110 / 3;
@@ -168,7 +204,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
                     {/* Waste zone areas (clickable in target mode) */}
                     {onTargetZoneSelect &&
-                        WASTE_ZONES.map(({ zone, x, y, w, h, label }) => {
+                        wasteZones.map(({ zone, x, y, w, h, label }) => {
                             const isSelected = targetZone === zone;
                             return (
                                 <g
@@ -225,7 +261,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                         strokeWidth={isSelected ? 2 : 1}
                                     />
                                     {/* Zone label (show in target mode or when selected) */}
-                                    {(isTargetMode || isSelected) && ZONE_LABELS[zone] && (
+                                    {(isTargetMode || isSelected) && zoneLabels[zone] && (
                                         <text
                                             x={col * cellW + cellW / 2}
                                             y={row * cellH + cellH / 2 + 4}
@@ -235,7 +271,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                             fill={isSelected ? AMBER : '#999'}
                                             pointerEvents="none"
                                         >
-                                            {ZONE_LABELS[zone]}
+                                            {zoneLabels[zone]}
                                         </text>
                                     )}
                                 </g>
