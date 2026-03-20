@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import Svg, { Rect, Circle, G, Text as SvgText, Line, Path, Ellipse } from 'react-native-svg';
 import * as Haptics from '../../../utils/haptics';
-import { Pitch } from '@pitch-tracker/shared';
+import { Pitch, PitchCallZone } from '@pitch-tracker/shared';
 import { colors } from '../../../styles/theme';
 import BatterSilhouette from './BatterSilhouette';
 
@@ -16,6 +16,33 @@ interface StrikeZoneProps {
     compact?: boolean;
     batterSide?: 'R' | 'L' | 'S' | null;
     pitcherThrows?: 'R' | 'L' | null;
+}
+
+// Zone labels — positions mirror for LHH so labels stay semantic
+const ZONE_LABELS: Partial<Record<PitchCallZone, string>> = {
+    '0-0': 'UI',
+    '0-1': 'UM',
+    '0-2': 'UA',
+    '1-0': 'MI',
+    '1-1': 'MM',
+    '1-2': 'MA',
+    '2-0': 'DI',
+    '2-1': 'DM',
+    '2-2': 'DA',
+};
+
+// Zone IDs are semantic: '0-0' = "Up and In"
+// For LHH, columns flip so inside renders on the batter's side
+function getZoneGrid(effectiveSide: 'R' | 'L') {
+    const flip = effectiveSide === 'L';
+    const grid: { zone: PitchCallZone; row: number; col: number }[] = [];
+    for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+            const zoneCol = col === 0 ? (flip ? 2 : 0) : col === 2 ? (flip ? 0 : 2) : 1;
+            grid.push({ zone: `${row}-${zoneCol}` as PitchCallZone, row, col });
+        }
+    }
+    return grid;
 }
 
 const VIEWBOX_WIDTH = 300;
@@ -128,6 +155,9 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
     const batterX = effectiveSide === 'R' ? 245 : 55;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
+    const zoneGrid = getZoneGrid(effectiveSide);
+    const cellW = ZONE_WIDTH / 3;
+    const cellH = ZONE_HEIGHT / 3;
 
     return (
         <View style={compact ? compactStyles.container : styles.container}>
@@ -162,21 +192,32 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         <G transform={`translate(${ZONE_X}, ${ZONE_Y})`}>
                             <Rect x="0" y="0" width={ZONE_WIDTH} height={ZONE_HEIGHT} fill="rgba(255,255,255,0.85)" />
 
-                            {/* Grid cells */}
-                            {[0, 1, 2].map((row) =>
-                                [0, 1, 2].map((col) => (
+                            {/* Grid cells with zone labels */}
+                            {zoneGrid.map(({ zone, row, col }) => (
+                                <G key={zone}>
                                     <Rect
-                                        key={`cell-${row}-${col}`}
-                                        x={col * (ZONE_WIDTH / 3)}
-                                        y={row * (ZONE_HEIGHT / 3)}
-                                        width={ZONE_WIDTH / 3}
-                                        height={ZONE_HEIGHT / 3}
+                                        x={col * cellW}
+                                        y={row * cellH}
+                                        width={cellW}
+                                        height={cellH}
                                         fill="rgba(230, 230, 225, 0.6)"
                                         stroke="#a0a0a0"
                                         strokeWidth="1"
                                     />
-                                ))
-                            )}
+                                    {ZONE_LABELS[zone] && (
+                                        <SvgText
+                                            x={col * cellW + cellW / 2}
+                                            y={row * cellH + cellH / 2 + 4}
+                                            textAnchor="middle"
+                                            fontSize="9"
+                                            fontWeight="600"
+                                            fill="#b0b0a8"
+                                        >
+                                            {ZONE_LABELS[zone]}
+                                        </SvgText>
+                                    )}
+                                </G>
+                            ))}
 
                             {/* Outer border */}
                             <Rect
