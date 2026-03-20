@@ -38,13 +38,14 @@ Use `AskUserQuestion` to ask the user to approve the changes:
 
 ### Step 3: Pre-Commit Checks
 
-If approved, run the following checks on changed files:
+If approved, run the following checks on changed files **in this order**:
 
-1. **Prettier**: `npx prettier --write` on all changed `.ts` / `.tsx` files
-2. **TypeScript**: `npx tsc --noEmit` in each affected package
-3. If `packages/shared` was modified, rebuild it first: `cd packages/shared && npm run build`
+1. If `packages/shared` was modified, rebuild it first: `cd packages/shared && npm run build`
+2. **Prettier**: `npx prettier --write` on all changed `.ts` / `.tsx` files
+3. **ESLint** (web package): If any files under `packages/web/src/` were changed, run `cd packages/web && npx eslint` on those files. Fix any errors (especially `import/order` — external/scoped imports like `@pitch-tracker/shared` must come before `react` and other libraries).
+4. **TypeScript**: `npx tsc --noEmit` in each affected package (`packages/api`, `packages/web`, `packages/mobile`)
 
-If any check fails, fix the issue and re-run. Do not commit with failing checks.
+If any check fails, fix the issue and re-run all checks. Do not commit with failing checks.
 
 ### Step 4: Commit
 
