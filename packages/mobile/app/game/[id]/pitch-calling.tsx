@@ -22,7 +22,7 @@ import {
     CallHistory,
     BluetoothStatus,
 } from '../../../src/components/pitchCalling';
-import { speakPitchCall } from '../../../src/utils/pitchCallAudio';
+import { speakPitchCall, activateHFPAudio, deactivateHFPAudio } from '../../../src/utils/pitchCallAudio';
 
 export default function PitchCallingScreen() {
     const { id: gameId } = useLocalSearchParams<{ id: string }>();
@@ -37,6 +37,14 @@ export default function PitchCallingScreen() {
     const [selectedZone, setSelectedZone] = useState<PitchCallZone | null>(null);
     const [btConnected, setBtConnected] = useState(true);
     const [isChanging, setIsChanging] = useState(false);
+
+    // Activate HFP audio routing on mount, deactivate on unmount
+    useEffect(() => {
+        activateHFPAudio();
+        return () => {
+            deactivateHFPAudio();
+        };
+    }, []);
 
     // Load existing calls when entering the screen
     useEffect(() => {
