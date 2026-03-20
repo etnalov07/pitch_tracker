@@ -652,6 +652,120 @@ export interface BullpenSessionSummary {
 }
 
 // ============================================================================
+// Pitch Calling Types
+// ============================================================================
+
+export type PitchCallResult = 'strike' | 'ball' | 'foul' | 'in_play';
+
+export type PitchCallZone =
+    | '0-0'
+    | '0-1'
+    | '0-2'
+    | '1-0'
+    | '1-1'
+    | '1-2'
+    | '2-0'
+    | '2-1'
+    | '2-2'
+    | 'W-high'
+    | 'W-low'
+    | 'W-in'
+    | 'W-out'
+    | 'W-high-in'
+    | 'W-high-out'
+    | 'W-low-in'
+    | 'W-low-out';
+
+export type PitchCallAbbrev = 'FB' | 'CB' | 'CH' | 'SL' | 'CT' | '2S';
+
+export const PITCH_CALL_LABELS: Record<PitchCallAbbrev, string> = {
+    FB: 'Fastball',
+    CB: 'Curveball',
+    CH: 'Changeup',
+    SL: 'Slider',
+    CT: 'Cutter',
+    '2S': 'Two-Seam',
+};
+
+export const PITCH_CALL_ZONE_LABELS: Record<PitchCallZone, string> = {
+    '0-0': 'Up and In',
+    '0-1': 'Up the Middle',
+    '0-2': 'Up and Away',
+    '1-0': 'Middle In',
+    '1-1': 'Middle Middle',
+    '1-2': 'Middle Away',
+    '2-0': 'Down and In',
+    '2-1': 'Down the Middle',
+    '2-2': 'Down and Away',
+    'W-high': 'Waste High',
+    'W-low': 'Waste Low',
+    'W-in': 'Waste Inside',
+    'W-out': 'Waste Outside',
+    'W-high-in': 'Waste High-In',
+    'W-high-out': 'Waste High-Out',
+    'W-low-in': 'Waste Low-In',
+    'W-low-out': 'Waste Low-Out',
+};
+
+export interface PitchCall {
+    id: string;
+    game_id: string;
+    at_bat_id?: string;
+    team_id: string;
+    pitcher_id?: string;
+    batter_id?: string;
+    opponent_batter_id?: string;
+    call_number: number;
+    pitch_type: PitchCallAbbrev;
+    zone: PitchCallZone;
+    is_change: boolean;
+    original_call_id?: string;
+    result?: PitchCallResult;
+    pitch_id?: string;
+    bt_transmitted: boolean;
+    called_by: string;
+    inning?: number;
+    balls_before: number;
+    strikes_before: number;
+    created_at: string;
+    result_logged_at?: string;
+}
+
+export interface PitchCallWithDetails extends PitchCall {
+    pitcher_first_name?: string;
+    pitcher_last_name?: string;
+    batter_name?: string;
+    caller_first_name?: string;
+    caller_last_name?: string;
+    original_pitch_type?: PitchCallAbbrev;
+    original_zone?: PitchCallZone;
+}
+
+export interface PitchCallGameSummary {
+    game_id: string;
+    total_calls: number;
+    changes: number;
+    results: {
+        strike: number;
+        ball: number;
+        foul: number;
+        in_play: number;
+    };
+    pitch_type_breakdown: {
+        pitch_type: PitchCallAbbrev;
+        count: number;
+        strikes: number;
+        balls: number;
+    }[];
+    zone_breakdown: {
+        zone: PitchCallZone;
+        count: number;
+        strikes: number;
+        balls: number;
+    }[];
+}
+
+// ============================================================================
 // API Response Wrappers
 // ============================================================================
 

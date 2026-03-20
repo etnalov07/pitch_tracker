@@ -6,6 +6,7 @@ import teamsReducer from './teams/teamsSlice';
 import offlineReducer from './offline/offlineSlice';
 import { invitesReducer } from './invites';
 import bullpenReducer from './bullpen/bullpenSlice';
+import pitchCallingReducer from './pitchCalling/pitchCallingSlice';
 
 export const store = configureStore({
     reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
         offline: offlineReducer,
         invites: invitesReducer,
         bullpen: bullpenReducer,
+        pitchCalling: pitchCallingReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({

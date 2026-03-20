@@ -89,6 +89,18 @@ export {
 } from './invites/invitesSlice';
 
 export {
+    createPitchCall,
+    changePitchCall,
+    markCallTransmitted,
+    logCallResult,
+    fetchGameCalls,
+    fetchActiveCall,
+    fetchCallGameSummary,
+    clearPitchCalling,
+    clearPitchCallingError,
+} from './pitchCalling/pitchCallingSlice';
+
+export {
     createBullpenSession,
     fetchBullpenSession,
     fetchBullpenSessions,
