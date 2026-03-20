@@ -1,3 +1,4 @@
+import { PITCH_CALL_ZONE_LABELS } from '@pitch-tracker/shared';
 import React from 'react';
 import BatterSelector from '../../components/game/BatterSelector';
 import PitcherSelector from '../../components/game/PitcherSelector';
@@ -132,6 +133,8 @@ const LiveGame: React.FC = () => {
         showTeamAtBat,
         teamAtBatRuns,
         setTeamAtBatRuns,
+        activeCall,
+        sendingCall,
     } = state;
 
     if (loading) {
@@ -301,27 +304,27 @@ const LiveGame: React.FC = () => {
                                 <StepLabel active={!pitchType}>Type</StepLabel>
                             </Step>
                             <StepConnector completed={!!pitchType} />
-                            <Step completed={!!targetZone} active={!!pitchType && !targetZone && !pitchLocation}>
-                                <StepNumber completed={!!targetZone} active={!!pitchType && !targetZone && !pitchLocation}>
+                            <Step completed={!!targetZone} active={!!pitchType && !targetZone}>
+                                <StepNumber completed={!!targetZone} active={!!pitchType && !targetZone}>
                                     {targetZone ? '✓' : '2'}
                                 </StepNumber>
-                                <StepLabel active={!!pitchType && !targetZone && !pitchLocation}>Target</StepLabel>
+                                <StepLabel active={!!pitchType && !targetZone}>Target</StepLabel>
                             </Step>
-                            <StepConnector completed={!!targetZone || !!pitchLocation} />
-                            <Step completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>
-                                <StepNumber completed={!!pitchLocation} active={!!pitchType && !pitchLocation}>
-                                    {pitchLocation ? '✓' : '3'}
+                            <StepConnector completed={!!targetZone} />
+                            <Step completed={!!activeCall} active={!!targetZone && !activeCall}>
+                                <StepNumber completed={!!activeCall} active={!!targetZone && !activeCall}>
+                                    {activeCall ? '✓' : '3'}
                                 </StepNumber>
-                                <StepLabel active={!!pitchType && !pitchLocation}>Location</StepLabel>
+                                <StepLabel active={!!targetZone && !activeCall}>Send</StepLabel>
+                            </Step>
+                            <StepConnector completed={!!activeCall} />
+                            <Step completed={!!pitchLocation} active={!!activeCall && !pitchLocation}>
+                                <StepNumber completed={!!pitchLocation} active={!!activeCall && !pitchLocation}>
+                                    {pitchLocation ? '✓' : '4'}
+                                </StepNumber>
+                                <StepLabel active={!!activeCall && !pitchLocation}>Location</StepLabel>
                             </Step>
                             <StepConnector completed={!!pitchLocation} />
-                            <Step completed={!!velocity} active={!!pitchLocation && !velocity}>
-                                <StepNumber completed={!!velocity} active={!!pitchLocation && !velocity}>
-                                    {velocity ? '✓' : '4'}
-                                </StepNumber>
-                                <StepLabel active={!!pitchLocation && !velocity}>Velocity</StepLabel>
-                            </Step>
-                            <StepConnector completed={!!velocity || !!pitchLocation} />
                             <Step completed={!!pitchResult} active={!!pitchLocation}>
                                 <StepNumber completed={!!pitchResult} active={!!pitchLocation}>
                                     {pitchResult ? '✓' : '5'}
@@ -340,6 +343,48 @@ const LiveGame: React.FC = () => {
                                 ))}
                             </PitchTypeGrid>
                         </PitchTypeSelector>
+
+                        {/* Send Call button - appears after type + zone selected */}
+                        {targetZone && !activeCall && (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '12px',
+                                    padding: '10px 16px',
+                                    background: '#F5A623',
+                                    borderRadius: '8px',
+                                    cursor: sendingCall ? 'wait' : 'pointer',
+                                    opacity: sendingCall ? 0.6 : 1,
+                                }}
+                                onClick={sendingCall ? undefined : actions.handleSendCall}
+                            >
+                                <span style={{ fontSize: '15px', fontWeight: 700, color: '#0A1628' }}>
+                                    {sendingCall ? 'SENDING...' : `SEND CALL: ${pitchType} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Active call badge */}
+                        {activeCall && (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    padding: '8px 16px',
+                                    background: theme.colors.green[50],
+                                    border: `1px solid ${theme.colors.green[300]}`,
+                                    borderRadius: '8px',
+                                }}
+                            >
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: theme.colors.green[700] }}>
+                                    Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
+                                </span>
+                            </div>
+                        )}
 
                         <StrikeZoneRow>
                             <StrikeZoneContainer>

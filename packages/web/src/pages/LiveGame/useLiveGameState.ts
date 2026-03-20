@@ -1,4 +1,4 @@
-import { PitchCallZone } from '@pitch-tracker/shared';
+import { PitchCall, PitchCallZone } from '@pitch-tracker/shared';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
@@ -87,6 +87,10 @@ export function useLiveGameState() {
     const [showBaserunnerOutModal, setShowBaserunnerOutModal] = useState(false);
     const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
     const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
+
+    // Pitch call state
+    const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
+    const [sendingCall, setSendingCall] = useState(false);
 
     // Team at bat modal (visitor games)
     const [showTeamAtBat, setShowTeamAtBat] = useState(false);
@@ -218,6 +222,11 @@ export function useLiveGameState() {
         setShowRunnerAdvancementModal,
         pendingHitResult,
         setPendingHitResult,
+        // Pitch call
+        activeCall,
+        setActiveCall,
+        sendingCall,
+        setSendingCall,
         // Team at bat (visitor games)
         showTeamAtBat,
         setShowTeamAtBat,

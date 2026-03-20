@@ -7,6 +7,7 @@ import {
     PitchCallZone,
     PITCH_CALL_ZONE_COORDS,
 } from '@pitch-tracker/shared';
+import { pitchCallService } from '../../services/pitchCallService';
 import {
     fetchGameById,
     startGame,
@@ -66,6 +67,9 @@ export function useLiveGameActions(state: LiveGameState) {
         setShowTeamAtBat,
         teamAtBatRuns,
         setTeamAtBatRuns,
+        activeCall,
+        setActiveCall,
+        setSendingCall,
     } = state;
 
     const startAtBatForBatter = async (batter: OpponentLineupPlayer, outs: number, inning: typeof currentInning) => {
@@ -147,6 +151,49 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
+    // Map PitchType to PitchCallAbbrev for the call record
+    const toPitchCallAbbrev = (pt: string): import('@pitch-tracker/shared').PitchCallAbbrev => {
+        const map: Record<string, import('@pitch-tracker/shared').PitchCallAbbrev> = {
+            fastball: 'FB',
+            '4-seam': 'FB',
+            '2-seam': '2S',
+            cutter: 'CT',
+            sinker: '2S',
+            slider: 'SL',
+            curveball: 'CB',
+            changeup: 'CH',
+            splitter: 'CH',
+            knuckleball: 'CB',
+            other: 'FB',
+        };
+        return map[pt] || 'FB';
+    };
+
+    const handleSendCall = async () => {
+        if (!targetZone || !gameId || !game) return;
+
+        setSendingCall(true);
+        try {
+            const call = await pitchCallService.createCall({
+                game_id: gameId,
+                team_id: game.home_team_id || '',
+                pitch_type: toPitchCallAbbrev(state.pitchType),
+                zone: targetZone,
+                at_bat_id: currentAtBat?.id,
+                pitcher_id: currentPitcher?.player_id,
+                opponent_batter_id: currentBatter?.id,
+                inning: game.current_inning,
+                balls_before: currentAtBat?.balls,
+                strikes_before: currentAtBat?.strikes,
+            });
+            setActiveCall(call);
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : 'Failed to send pitch call');
+        } finally {
+            setSendingCall(false);
+        }
+    };
+
     const handleLogPitch = async () => {
         if (!currentAtBat || !pitchLocation) {
             alert('Please select a pitch location');
@@ -201,6 +248,22 @@ export function useLiveGameActions(state: LiveGameState) {
             );
 
             setStatsRefreshTrigger((prev: number) => prev + 1);
+
+            // Log result on the active pitch call if one exists
+            if (activeCall) {
+                const callResult =
+                    pitchResult === 'called_strike' || pitchResult === 'swinging_strike'
+                        ? 'strike'
+                        : pitchResult === 'hit_by_pitch'
+                          ? 'ball'
+                          : (pitchResult as 'ball' | 'foul' | 'in_play');
+                try {
+                    await pitchCallService.logResult(activeCall.id, callResult);
+                } catch {
+                    // Non-critical — pitch was already logged
+                }
+                setActiveCall(null);
+            }
 
             setPitchLocation(null);
             setTargetZone(null);
@@ -513,6 +576,7 @@ export function useLiveGameActions(state: LiveGameState) {
     };
 
     return {
+        handleSendCall,
         handleLogPitch,
         handleEndAtBat,
         handleDiamondResult,

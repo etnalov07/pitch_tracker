@@ -6,6 +6,10 @@ import * as Haptics from '../../../src/utils/haptics';
 import {
     PitchType,
     PitchResult,
+    PitchCall,
+    PitchCallAbbrev,
+    PitchCallZone,
+    PITCH_CALL_ZONE_LABELS,
     Player,
     GamePitcherWithPlayer,
     OpponentLineupPlayer,
@@ -19,6 +23,8 @@ import {
     clearBases,
 } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
+import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
+import { speakPitchCall, activateHFPAudio, deactivateHFPAudio } from '../../../src/utils/pitchCallAudio';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
 import { useOfflineActions } from '../../../src/hooks/useOfflineActions';
 import {
@@ -56,6 +62,7 @@ import {
     BaserunnerOutModal,
     RunnerAdvancementModal,
 } from '../../../src/components/live';
+import { CallZoneGrid } from '../../../src/components/pitchCalling';
 import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/components/common';
 import { HitLocation } from '../../../src/components/live/InPlayModal';
 
@@ -117,7 +124,20 @@ export default function LiveGameScreen() {
     const [showTeamAtBat, setShowTeamAtBat] = useState(false);
     const [teamAtBatRuns, setTeamAtBatRuns] = useState('0');
 
+    // Pitch call state (integrated from pitch-calling screen)
+    const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
+    const [sendingCall, setSendingCall] = useState(false);
+    const [selectedCallZone, setSelectedCallZone] = useState<PitchCallZone | null>(null);
+
     const game = currentGameState?.game || selectedGame;
+
+    // Activate HFP Bluetooth audio for pitch calls
+    useEffect(() => {
+        activateHFPAudio();
+        return () => {
+            deactivateHFPAudio();
+        };
+    }, []);
 
     const activeBatters = opponentLineup.filter((b) => !b.replaced_by_id).sort((a, b) => a.batting_order - b.batting_order);
 
@@ -402,6 +422,53 @@ export default function LiveGameScreen() {
         }
     }, [currentPitcher, currentBatter, id, currentInning, currentOuts, dispatch]);
 
+    // Map PitchType to PitchCallAbbrev
+    const toPitchCallAbbrev = (pt: string): PitchCallAbbrev => {
+        const map: Record<string, PitchCallAbbrev> = {
+            fastball: 'FB',
+            '4-seam': 'FB',
+            '2-seam': '2S',
+            cutter: 'CT',
+            sinker: '2S',
+            slider: 'SL',
+            curveball: 'CB',
+            changeup: 'CH',
+            splitter: 'CH',
+            knuckleball: 'CB',
+            other: 'FB',
+        };
+        return map[pt] || 'FB';
+    };
+
+    const handleSendCall = async () => {
+        if (!selectedPitchType || !selectedCallZone || !id || !game) return;
+        setSendingCall(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        try {
+            const abbrev = toPitchCallAbbrev(selectedPitchType);
+            const call = await pitchCallingApi.createCall({
+                game_id: id,
+                team_id: game.home_team_id || '',
+                pitch_type: abbrev,
+                zone: selectedCallZone,
+                at_bat_id: currentAtBat?.id,
+                pitcher_id: currentPitcher?.player_id,
+                opponent_batter_id: currentBatter?.id,
+                inning: game.current_inning,
+                balls_before: currentAtBat ? currentAtBat.balls : 0,
+                strikes_before: currentAtBat ? currentAtBat.strikes : 0,
+            });
+            setActiveCall(call);
+            // Speak the call via Bluetooth
+            await speakPitchCall(abbrev, selectedCallZone, false);
+            await pitchCallingApi.markTransmitted(call.id);
+        } catch {
+            Alert.alert('Error', 'Failed to send pitch call');
+        } finally {
+            setSendingCall(false);
+        }
+    };
+
     const handleLogPitch = async () => {
         if (!selectedPitchType || !selectedResult || !pitchLocation) {
             Alert.alert('Missing Info', 'Please select pitch type, location, and result');
@@ -440,10 +507,26 @@ export default function LiveGameScreen() {
                     : selectedResult === 'foul' && effectiveStrikes < 2
                       ? 1
                       : 0);
+            // Log result on active pitch call
+            if (activeCall) {
+                const callResult =
+                    selectedResult === 'called_strike' || selectedResult === 'swinging_strike'
+                        ? 'strike'
+                        : selectedResult === 'hit_by_pitch'
+                          ? 'ball'
+                          : (selectedResult as 'ball' | 'foul' | 'in_play');
+                try {
+                    await pitchCallingApi.logResult(activeCall.id, callResult);
+                } catch {
+                    // Non-critical
+                }
+                setActiveCall(null);
+            }
             setSelectedPitchType(null);
             setSelectedResult(null);
             setPitchLocation(null);
             setTargetLocation(null);
+            setSelectedCallZone(null);
             if (result.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             if (newBalls >= 4) await handleEndAtBat('walk');
             else if (newStrikes >= 3) await handleEndAtBat('strikeout');
@@ -780,9 +863,7 @@ export default function LiveGameScreen() {
                     <SyncStatusBadge compact />
                 </View>
                 <View style={styles.headerRight}>
-                    {game.status === 'in_progress' && (
-                        <IconButton icon="bullhorn" onPress={() => router.push(`/game/${id}/pitch-calling` as any)} />
-                    )}
+                    {/* Pitch calling integrated into this screen */}
                     {game.status === 'in_progress' ? (
                         <IconButton icon="flag-checkered" onPress={handleEndGame} />
                     ) : (
@@ -801,6 +882,45 @@ export default function LiveGameScreen() {
                     disabled={isLogging}
                     compact
                 />
+                <CallZoneGrid
+                    selectedZone={selectedCallZone}
+                    onSelect={setSelectedCallZone}
+                    disabled={isLogging || sendingCall}
+                    batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
+                    pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
+                />
+                {/* Send Call button */}
+                {selectedPitchType && selectedCallZone && !activeCall && (
+                    <Button
+                        mode="contained"
+                        onPress={handleSendCall}
+                        loading={sendingCall}
+                        disabled={sendingCall}
+                        style={{ backgroundColor: '#F5A623' }}
+                        labelStyle={{ color: '#0A1628', fontWeight: '800', letterSpacing: 0.5 }}
+                    >
+                        {sendingCall
+                            ? 'SENDING...'
+                            : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[selectedCallZone]}`}
+                    </Button>
+                )}
+                {/* Active call badge */}
+                {activeCall && (
+                    <View
+                        style={{
+                            backgroundColor: '#f0fdf4',
+                            borderWidth: 1,
+                            borderColor: '#86efac',
+                            borderRadius: 8,
+                            padding: 8,
+                            alignItems: 'center',
+                        }}
+                    >
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#15803d' }}>
+                            Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
+                        </Text>
+                    </View>
+                )}
                 <StrikeZone
                     onLocationSelect={(x, y) => setPitchLocation({ x, y })}
                     onTargetSelect={(x, y) => setTargetLocation({ x, y })}
@@ -810,6 +930,7 @@ export default function LiveGameScreen() {
                     disabled={isLogging}
                     compact
                     batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
+                    pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                 />
                 <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
                 <Button
