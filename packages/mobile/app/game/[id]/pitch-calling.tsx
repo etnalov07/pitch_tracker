@@ -22,7 +22,8 @@ import {
     CallHistory,
     BluetoothStatus,
 } from '../../../src/components/pitchCalling';
-import { speakPitchCall, activateHFPAudio, deactivateHFPAudio } from '../../../src/utils/pitchCallAudio';
+import { speakPitchCall, activateHFPAudio, deactivateHFPAudio, isHFPActive } from '../../../src/utils/pitchCallAudio';
+import * as Speech from 'expo-speech';
 
 export default function PitchCallingScreen() {
     const { id: gameId } = useLocalSearchParams<{ id: string }>();
@@ -37,13 +38,28 @@ export default function PitchCallingScreen() {
     const [selectedZone, setSelectedZone] = useState<PitchCallZone | null>(null);
     const [btConnected, setBtConnected] = useState(true);
     const [isChanging, setIsChanging] = useState(false);
+    const [hfpActive, setHfpActive] = useState(false);
 
     // Activate HFP audio routing on mount, deactivate on unmount
     useEffect(() => {
-        activateHFPAudio();
+        activateHFPAudio().then(() => setHfpActive(isHFPActive()));
         return () => {
             deactivateHFPAudio();
         };
+    }, []);
+
+    const handleTestAudio = useCallback(async () => {
+        await activateHFPAudio();
+        setHfpActive(isHFPActive());
+        return new Promise<void>((resolve, reject) => {
+            Speech.speak('Test. Pitch calling audio check.', {
+                language: 'en-US',
+                rate: 0.9,
+                pitch: 1.0,
+                onDone: resolve,
+                onError: reject,
+            });
+        });
     }, []);
 
     // Load existing calls when entering the screen
@@ -155,7 +171,12 @@ export default function PitchCallingScreen() {
             </View>
 
             <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollInner}>
-                <BluetoothStatus connected={btConnected} onToggle={() => setBtConnected(!btConnected)} />
+                <BluetoothStatus
+                    connected={btConnected}
+                    hfpActive={hfpActive}
+                    onToggle={() => setBtConnected(!btConnected)}
+                    onTestAudio={handleTestAudio}
+                />
 
                 {/* Selection phase: pick pitch type + zone */}
                 {!hasPendingCall || isChanging ? (

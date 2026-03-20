@@ -703,11 +703,16 @@ export default function LiveGameScreen() {
                         <Text variant="titleLarge">Live Game</Text>
                         <SyncStatusBadge compact />
                     </View>
-                    {game.status === 'in_progress' ? (
-                        <IconButton icon="flag-checkered" onPress={handleEndGame} />
-                    ) : (
-                        <View style={{ width: 48 }} />
-                    )}
+                    <View style={styles.headerRight}>
+                        {game.status === 'in_progress' && (
+                            <IconButton icon="bullhorn" onPress={() => router.push(`/game/${id}/pitch-calling` as any)} />
+                        )}
+                        {game.status === 'in_progress' ? (
+                            <IconButton icon="flag-checkered" onPress={handleEndGame} />
+                        ) : (
+                            <View style={{ width: 48 }} />
+                        )}
+                    </View>
                 </View>
                 <View style={styles.tabletContent}>
                     <View style={styles.statsPanel}>
@@ -774,11 +779,16 @@ export default function LiveGameScreen() {
                     <Text variant="titleLarge">Live Game</Text>
                     <SyncStatusBadge compact />
                 </View>
-                {game.status === 'in_progress' ? (
-                    <IconButton icon="flag-checkered" onPress={handleEndGame} />
-                ) : (
-                    <View style={{ width: 48 }} />
-                )}
+                <View style={styles.headerRight}>
+                    {game.status === 'in_progress' && (
+                        <IconButton icon="bullhorn" onPress={() => router.push(`/game/${id}/pitch-calling` as any)} />
+                    )}
+                    {game.status === 'in_progress' ? (
+                        <IconButton icon="flag-checkered" onPress={handleEndGame} />
+                    ) : (
+                        <View style={{ width: 48 }} />
+                    )}
+                </View>
             </View>
             <ScrollView style={styles.phoneContent} contentContainerStyle={styles.phoneContentInner}>
                 {renderGameHeader()}
@@ -831,6 +841,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#e5e7eb',
     },
     headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    headerRight: { flexDirection: 'row', alignItems: 'center' },
     tabletContent: { flex: 1, flexDirection: 'row' },
     statsPanel: { width: 320, borderRightWidth: 1, borderRightColor: '#e5e7eb', padding: 16 },
     statsPlaceholder: { marginTop: 16 },
