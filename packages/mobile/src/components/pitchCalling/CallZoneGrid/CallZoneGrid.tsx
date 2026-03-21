@@ -42,27 +42,27 @@ const WASTE_ZONES_BASE: {
 ];
 
 // Labels flip inside/outside based on batter handedness
-// From pitcher's view: col 0 / "in" side = left; col 2 / "out" side = right
-// RHH stands on left → left = inside, right = outside
-// LHH stands on right → left = outside, right = inside
+// From pitcher's view: RHH stands on right, LHH stands on left
+// col 0 = left side: inside for LHH, outside for RHH
+// col 2 = right side: inside for RHH, outside for LHH
 function getWasteLabels(effectiveSide: 'R' | 'L'): Record<PitchCallZone, string> {
     const isRHH = effectiveSide === 'R';
     return {
-        'W-high-in': isRHH ? 'HI' : 'HO',
+        'W-high-in': isRHH ? 'HO' : 'HI',
         'W-high': 'HIGH',
-        'W-high-out': isRHH ? 'HO' : 'HI',
-        'W-in': isRHH ? 'IN' : 'OUT',
-        'W-out': isRHH ? 'OUT' : 'IN',
-        'W-low-in': isRHH ? 'LI' : 'LO',
+        'W-high-out': isRHH ? 'HI' : 'HO',
+        'W-in': isRHH ? 'OUT' : 'IN',
+        'W-out': isRHH ? 'IN' : 'OUT',
+        'W-low-in': isRHH ? 'LO' : 'LI',
         'W-low': 'LOW',
-        'W-low-out': isRHH ? 'LO' : 'LI',
+        'W-low-out': isRHH ? 'LI' : 'LO',
     } as Record<PitchCallZone, string>;
 }
 
 function getZoneLabels(effectiveSide: 'R' | 'L'): Record<string, string> {
     const isRHH = effectiveSide === 'R';
-    const i = isRHH ? 'I' : 'A';
-    const a = isRHH ? 'A' : 'I';
+    const i = isRHH ? 'A' : 'I';
+    const a = isRHH ? 'I' : 'A';
     return {
         '0-0': `U${i}`,
         '0-1': 'UM',

@@ -34,7 +34,7 @@ const ZONE_LABELS: Partial<Record<PitchCallZone, string>> = {
 // Zone IDs are semantic: '0-0' = "Up and In"
 // For LHH, columns flip so inside renders on the batter's side
 function getStrikeZoneGrid(effectiveSide: 'R' | 'L'): { zone: PitchCallZone; row: number; col: number }[] {
-    const flip = effectiveSide === 'L';
+    const flip = effectiveSide === 'R';
     return [
         { zone: '0-0', row: 0, col: flip ? 2 : 0 },
         { zone: '0-1', row: 0, col: 1 },
@@ -51,7 +51,7 @@ function getStrikeZoneGrid(effectiveSide: 'R' | 'L'): { zone: PitchCallZone; row
 // Waste zone positions — swap left/right for LHH
 // Strike zone is at (113, 120) with width 75, height 110
 function getWasteZones(effectiveSide: 'R' | 'L') {
-    const flip = effectiveSide === 'L';
+    const flip = effectiveSide === 'R';
     const L = { x: 81, w: 32 };
     const R = { x: 188, w: 32 };
     const inPos = flip ? R : L;
@@ -71,7 +71,7 @@ function getWasteZones(effectiveSide: 'R' | 'L') {
 // Flip zone center x-coordinate for LHH so target crosshair renders on correct side
 function getZoneCoords(zone: PitchCallZone, effectiveSide: 'R' | 'L'): { x: number; y: number } {
     const coords = PITCH_CALL_ZONE_COORDS[zone];
-    if (effectiveSide === 'L') {
+    if (effectiveSide === 'R') {
         return { x: 1 - coords.x, y: coords.y };
     }
     return coords;
@@ -121,7 +121,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     };
 
     const effectiveSide: 'R' | 'L' = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
-    const batterX = effectiveSide === 'R' ? 55 : 245;
+    const batterX = effectiveSide === 'R' ? 245 : 55;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
     const strikeZoneGrid = getStrikeZoneGrid(effectiveSide);
     const wasteZones = getWasteZones(effectiveSide);

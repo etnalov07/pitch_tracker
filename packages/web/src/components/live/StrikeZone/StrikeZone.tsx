@@ -11,7 +11,7 @@ import { Container, Title, ZoneWrapper, MainSvg, ClearTargetButton, Legend, Lege
 // For RHH: inside = left (col 0), outside = right (col 2)
 // For LHH: inside = right (col 2), outside = left (col 0) — columns mirror
 function getStrikeZoneGrid(effectiveSide: 'R' | 'L'): { zone: PitchCallZone; row: number; col: number }[] {
-    const flip = effectiveSide === 'L';
+    const flip = effectiveSide === 'R';
     return [
         { zone: '0-0', row: 0, col: flip ? 2 : 0 },
         { zone: '0-1', row: 0, col: 1 },
@@ -29,7 +29,7 @@ function getStrikeZoneGrid(effectiveSide: 'R' | 'L'): { zone: PitchCallZone; row
 // Strike zone is at (113, 120) with width 75, height 110
 // "in" zones are on the batter's side, "out" zones are away
 function getWasteZones(effectiveSide: 'R' | 'L') {
-    const flip = effectiveSide === 'L';
+    const flip = effectiveSide === 'R';
     const L = { x: 81, w: 32 }; // left position
     const R = { x: 188, w: 32 }; // right position
     const inPos = flip ? R : L;
@@ -62,7 +62,7 @@ const ZONE_LABELS: Partial<Record<PitchCallZone, string>> = {
 // Flip zone center x-coordinate for LHH so target crosshair renders on correct side
 function getZoneCoords(zone: PitchCallZone, effectiveSide: 'R' | 'L'): { x: number; y: number } {
     const coords = PITCH_CALL_ZONE_COORDS[zone];
-    if (effectiveSide === 'L') {
+    if (effectiveSide === 'R') {
         // Mirror x around 0.5 (center of zone)
         return { x: 1 - coords.x, y: coords.y };
     }
@@ -156,7 +156,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
     // Determine batter position
     const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
-    const batterX = effectiveSide === 'R' ? 55 : 245;
+    const batterX = effectiveSide === 'R' ? 245 : 55;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
 
     // Get batter-relative zone positions (physically mirrored for LHH)
