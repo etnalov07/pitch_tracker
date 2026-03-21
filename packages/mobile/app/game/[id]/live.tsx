@@ -860,7 +860,6 @@ export default function LiveGameScreen() {
                             targetZone={targetZone}
                             previousPitches={pitches}
                             disabled={isLogging}
-                            singleTapMode
                             batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                             pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                         />
@@ -976,7 +975,7 @@ export default function LiveGameScreen() {
                     disabled={isLogging}
                     compact
                 />
-                {/* 2. Strike Zone (single tap sets target + location) */}
+                {/* 2. Strike Zone (1st tap = target zone, 2nd tap = actual location) */}
                 <StrikeZone
                     onLocationSelect={(x, y) => setPitchLocation({ x, y })}
                     onTargetZoneSelect={setTargetZone}
@@ -988,7 +987,6 @@ export default function LiveGameScreen() {
                     previousPitches={pitches}
                     disabled={isLogging}
                     compact
-                    singleTapMode
                     batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                     pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                 />
