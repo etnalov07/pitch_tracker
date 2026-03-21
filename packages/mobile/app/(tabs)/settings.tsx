@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Text, List, Divider, Button, useTheme, Avatar, Switch, ActivityIndicator } from 'react-native-paper';
 import Constants from 'expo-constants';
 import * as Haptics from '../../src/utils/haptics';
-import { useAppSelector, useAppDispatch, logoutUser } from '../../src/state';
+import { useAppSelector, useAppDispatch, logoutUser, setPitchCallingEnabled, setVelocityEnabled } from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
 // Offline service disabled for iOS 26.2 beta testing
 // import { triggerSync } from '../../src/services/offlineService';
@@ -14,6 +14,7 @@ export default function SettingsScreen() {
     const theme = useTheme();
     const { user } = useAppSelector((state) => state.auth);
     const { isOnline, isSyncing, pendingCount, lastSyncTime } = useAppSelector((state) => state.offline);
+    const { pitchCallingEnabled, velocityEnabled } = useAppSelector((state) => state.settings);
     const { isTablet } = useDeviceType();
     const [syncing, setSyncing] = useState(false);
 
@@ -97,6 +98,38 @@ export default function SettingsScreen() {
                         onPress={() => {
                             /* TODO */
                         }}
+                    />
+                </List.Section>
+
+                <Divider style={styles.divider} />
+
+                <List.Section>
+                    <List.Subheader>Game Preferences</List.Subheader>
+                    <List.Item
+                        title="Pitch Calling"
+                        description="Send pitch calls via Bluetooth during games"
+                        left={(props) => <List.Icon {...props} icon="bullhorn" />}
+                        right={() => (
+                            <Switch
+                                value={pitchCallingEnabled}
+                                onValueChange={(v) => {
+                                    dispatch(setPitchCallingEnabled(v));
+                                }}
+                            />
+                        )}
+                    />
+                    <List.Item
+                        title="Velocity Input"
+                        description="Show velocity field when logging pitches"
+                        left={(props) => <List.Icon {...props} icon="speedometer" />}
+                        right={() => (
+                            <Switch
+                                value={velocityEnabled}
+                                onValueChange={(v) => {
+                                    dispatch(setVelocityEnabled(v));
+                                }}
+                            />
+                        )}
                     />
                 </List.Section>
 

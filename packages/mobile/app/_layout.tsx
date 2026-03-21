@@ -7,7 +7,7 @@ import { useColorScheme, InteractionManager, Alert, Platform } from 'react-nativ
 import { Provider as ReduxProvider } from 'react-redux';
 import { PaperProvider } from 'react-native-paper';
 
-import { store, useAppDispatch, useAppSelector, initializeAuth } from '../src/state';
+import { store, useAppDispatch, useAppSelector, initializeAuth, initializeSettings } from '../src/state';
 import { lightTheme, darkTheme } from '../src/styles/theme';
 
 export { ErrorBoundary } from 'expo-router';
@@ -62,6 +62,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
             const initialize = async () => {
                 try {
                     await dispatch(initializeAuth());
+                    dispatch(initializeSettings());
                 } catch (err) {
                     console.warn('Failed to initialize auth:', err);
                 }

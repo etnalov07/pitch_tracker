@@ -14,6 +14,7 @@ interface StrikeZoneProps {
     previousPitches?: Pitch[];
     disabled?: boolean;
     compact?: boolean;
+    singleTapMode?: boolean;
     batterSide?: 'R' | 'L' | 'S' | null;
     pitcherThrows?: 'R' | 'L' | null;
 }
@@ -93,6 +94,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     previousPitches = [],
     disabled = false,
     compact = false,
+    singleTapMode = false,
     batterSide,
     pitcherThrows,
 }) => {
@@ -159,6 +161,18 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         if (!coords) return;
 
         const { zoneX, zoneY, svgX, svgY } = coords;
+
+        if (singleTapMode && onTargetZoneSelect) {
+            // Single tap mode: zone tap sets both target and location
+            const tappedZone = findTappedZone(svgX, svgY);
+            if (tappedZone) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onTargetZoneSelect(tappedZone);
+                const zc = PITCH_CALL_ZONE_COORDS[tappedZone];
+                onLocationSelect(zc.x, zc.y);
+            }
+            return;
+        }
 
         // Target mode: tapping sets the target zone
         if (isTargetMode) {
@@ -373,8 +387,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                 );
                             })()}
 
-                        {/* Selected pitch location indicator */}
-                        {selectedLocation && (
+                        {/* Selected pitch location indicator (hidden in singleTapMode) */}
+                        {selectedLocation && !singleTapMode && (
                             <G>
                                 <Circle
                                     cx={toSvgCoords(selectedLocation.x, selectedLocation.y).x}

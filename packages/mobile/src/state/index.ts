@@ -100,6 +100,8 @@ export {
     clearPitchCallingError,
 } from './pitchCalling/pitchCallingSlice';
 
+export { initializeSettings, setPitchCallingEnabled, setVelocityEnabled } from './settings/settingsSlice';
+
 export {
     createBullpenSession,
     fetchBullpenSession,
