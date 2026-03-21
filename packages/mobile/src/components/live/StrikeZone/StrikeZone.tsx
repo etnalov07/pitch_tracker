@@ -121,7 +121,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     };
 
     const effectiveSide: 'R' | 'L' = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
-    const batterX = effectiveSide === 'R' ? 245 : 55;
+    const batterX = effectiveSide === 'R' ? 55 : 245;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
     const strikeZoneGrid = getStrikeZoneGrid(effectiveSide);
     const wasteZones = getWasteZones(effectiveSide);

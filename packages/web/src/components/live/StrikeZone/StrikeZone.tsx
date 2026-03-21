@@ -156,7 +156,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
     // Determine batter position
     const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
-    const batterX = effectiveSide === 'R' ? 245 : 55;
+    const batterX = effectiveSide === 'R' ? 55 : 245;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
 
     // Get batter-relative zone positions (physically mirrored for LHH)
