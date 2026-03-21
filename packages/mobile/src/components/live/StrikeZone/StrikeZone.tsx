@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import Svg, { Rect, Circle, G, Text as SvgText, Line, Path, Ellipse } from 'react-native-svg';
 import * as Haptics from '../../../utils/haptics';
-import { Pitch, PitchCallZone } from '@pitch-tracker/shared';
+import { Pitch, PitchCallZone, PITCH_CALL_ZONE_COORDS } from '@pitch-tracker/shared';
 import { colors } from '../../../styles/theme';
 import BatterSilhouette from './BatterSilhouette';
 
 interface StrikeZoneProps {
     onLocationSelect: (x: number, y: number) => void;
-    onTargetSelect?: (x: number, y: number) => void;
+    onTargetZoneSelect?: (zone: PitchCallZone) => void;
     onTargetClear?: () => void;
-    targetLocation?: { x: number; y: number } | null;
+    targetZone?: PitchCallZone | null;
     previousPitches?: Pitch[];
     disabled?: boolean;
     compact?: boolean;
@@ -18,7 +18,7 @@ interface StrikeZoneProps {
     pitcherThrows?: 'R' | 'L' | null;
 }
 
-// Zone labels — positions mirror for LHH so labels stay semantic
+// Zone labels — always semantic (I=inside, A=away) since positions already flip
 const ZONE_LABELS: Partial<Record<PitchCallZone, string>> = {
     '0-0': 'UI',
     '0-1': 'UM',
@@ -33,16 +33,48 @@ const ZONE_LABELS: Partial<Record<PitchCallZone, string>> = {
 
 // Zone IDs are semantic: '0-0' = "Up and In"
 // For LHH, columns flip so inside renders on the batter's side
-function getZoneGrid(effectiveSide: 'R' | 'L') {
+function getStrikeZoneGrid(effectiveSide: 'R' | 'L'): { zone: PitchCallZone; row: number; col: number }[] {
     const flip = effectiveSide === 'L';
-    const grid: { zone: PitchCallZone; row: number; col: number }[] = [];
-    for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 3; col++) {
-            const zoneCol = col === 0 ? (flip ? 2 : 0) : col === 2 ? (flip ? 0 : 2) : 1;
-            grid.push({ zone: `${row}-${zoneCol}` as PitchCallZone, row, col });
-        }
+    return [
+        { zone: '0-0', row: 0, col: flip ? 2 : 0 },
+        { zone: '0-1', row: 0, col: 1 },
+        { zone: '0-2', row: 0, col: flip ? 0 : 2 },
+        { zone: '1-0', row: 1, col: flip ? 2 : 0 },
+        { zone: '1-1', row: 1, col: 1 },
+        { zone: '1-2', row: 1, col: flip ? 0 : 2 },
+        { zone: '2-0', row: 2, col: flip ? 2 : 0 },
+        { zone: '2-1', row: 2, col: 1 },
+        { zone: '2-2', row: 2, col: flip ? 0 : 2 },
+    ];
+}
+
+// Waste zone positions — swap left/right for LHH
+// Strike zone is at (113, 120) with width 75, height 110
+function getWasteZones(effectiveSide: 'R' | 'L') {
+    const flip = effectiveSide === 'L';
+    const L = { x: 81, w: 32 };
+    const R = { x: 188, w: 32 };
+    const inPos = flip ? R : L;
+    const outPos = flip ? L : R;
+    return [
+        { zone: 'W-high-in' as PitchCallZone, x: inPos.x, y: 85, w: inPos.w, h: 35, label: 'HI' },
+        { zone: 'W-high' as PitchCallZone, x: 126, y: 85, w: 50, h: 35, label: 'HIGH' },
+        { zone: 'W-high-out' as PitchCallZone, x: outPos.x, y: 85, w: outPos.w, h: 35, label: 'HO' },
+        { zone: 'W-in' as PitchCallZone, x: inPos.x, y: 120, w: inPos.w, h: 110, label: 'IN' },
+        { zone: 'W-out' as PitchCallZone, x: outPos.x, y: 120, w: outPos.w, h: 110, label: 'OUT' },
+        { zone: 'W-low-in' as PitchCallZone, x: inPos.x, y: 230, w: inPos.w, h: 35, label: 'LI' },
+        { zone: 'W-low' as PitchCallZone, x: 126, y: 230, w: 50, h: 35, label: 'LOW' },
+        { zone: 'W-low-out' as PitchCallZone, x: outPos.x, y: 230, w: outPos.w, h: 35, label: 'LO' },
+    ];
+}
+
+// Flip zone center x-coordinate for LHH so target crosshair renders on correct side
+function getZoneCoords(zone: PitchCallZone, effectiveSide: 'R' | 'L'): { x: number; y: number } {
+    const coords = PITCH_CALL_ZONE_COORDS[zone];
+    if (effectiveSide === 'L') {
+        return { x: 1 - coords.x, y: coords.y };
     }
-    return grid;
+    return coords;
 }
 
 const VIEWBOX_WIDTH = 300;
@@ -51,12 +83,13 @@ const ZONE_X = 113;
 const ZONE_Y = 120;
 const ZONE_WIDTH = 75;
 const ZONE_HEIGHT = 110;
+const AMBER = '#F5A623';
 
 const StrikeZone: React.FC<StrikeZoneProps> = ({
     onLocationSelect,
-    onTargetSelect,
+    onTargetZoneSelect,
     onTargetClear,
-    targetLocation,
+    targetZone,
     previousPitches = [],
     disabled = false,
     compact = false,
@@ -78,45 +111,75 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
     const getCoordinatesFromTouch = (locationX: number, locationY: number) => {
         if (containerSize.width === 0) return null;
-
         const scaleX = containerSize.width / VIEWBOX_WIDTH;
         const scaleY = containerSize.height / VIEWBOX_HEIGHT;
-
         const svgX = locationX / scaleX;
         const svgY = locationY / scaleY;
-
-        // Convert to 0-1 coordinates within strike zone
         const zoneX = (svgX - ZONE_X) / ZONE_WIDTH;
         const zoneY = (svgY - ZONE_Y) / ZONE_HEIGHT;
-
-        return { zoneX, zoneY };
+        return { zoneX, zoneY, svgX, svgY };
     };
+
+    const effectiveSide: 'R' | 'L' = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
+    const batterX = effectiveSide === 'R' ? 245 : 55;
+    const batterScaleX = effectiveSide === 'R' ? 1 : -1;
+    const strikeZoneGrid = getStrikeZoneGrid(effectiveSide);
+    const wasteZones = getWasteZones(effectiveSide);
+    const cellW = ZONE_WIDTH / 3;
+    const cellH = ZONE_HEIGHT / 3;
+
+    const isTargetMode = onTargetZoneSelect && !targetZone;
+
+    // Find which zone or waste zone was tapped
+    const findTappedZone = useCallback(
+        (svgX: number, svgY: number): PitchCallZone | null => {
+            // Check strike zone cells
+            for (const { zone, row, col } of strikeZoneGrid) {
+                const cellX = ZONE_X + col * cellW;
+                const cellY = ZONE_Y + row * cellH;
+                if (svgX >= cellX && svgX <= cellX + cellW && svgY >= cellY && svgY <= cellY + cellH) {
+                    return zone;
+                }
+            }
+            // Check waste zones
+            for (const { zone, x, y, w, h } of wasteZones) {
+                if (svgX >= x && svgX <= x + w && svgY >= y && svgY <= y + h) {
+                    return zone;
+                }
+            }
+            return null;
+        },
+        [strikeZoneGrid, wasteZones, cellW, cellH]
+    );
 
     const handlePress = (event: any) => {
         if (disabled) return;
-
         const { locationX, locationY } = event.nativeEvent;
         const coords = getCoordinatesFromTouch(locationX, locationY);
         if (!coords) return;
 
-        const { zoneX, zoneY } = coords;
+        const { zoneX, zoneY, svgX, svgY } = coords;
 
-        // Allow touches in expanded area (-0.3 to 1.3)
+        // Target mode: tapping sets the target zone
+        if (isTargetMode) {
+            const tappedZone = findTappedZone(svgX, svgY);
+            if (tappedZone && onTargetZoneSelect) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onTargetZoneSelect(tappedZone);
+            }
+            return;
+        }
+
+        // Pitch location mode (target already set or no target support)
         if (zoneX >= -0.3 && zoneX <= 1.3 && zoneY >= -0.3 && zoneY <= 1.3) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-            // If we have target support and no target is set yet, set the target
-            if (onTargetSelect && !targetLocation && !selectedLocation) {
-                onTargetSelect(zoneX, zoneY);
-            } else {
-                setSelectedLocation({ x: zoneX, y: zoneY });
-                onLocationSelect(zoneX, zoneY);
-            }
+            setSelectedLocation({ x: zoneX, y: zoneY });
+            onLocationSelect(zoneX, zoneY);
         }
     };
 
     const handleLongPress = () => {
-        if (targetLocation && onTargetClear) {
+        if (targetZone && onTargetClear) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             onTargetClear();
         }
@@ -145,19 +208,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         y: ZONE_Y + y * ZONE_HEIGHT,
     });
 
-    const TARGET_RADIUS = 12;
     const PITCH_RADIUS = 11;
-
-    // Determine batter position: from pitcher's perspective,
-    // a right-handed batter stands on the LEFT side of the plate,
-    // a left-handed batter stands on the RIGHT side.
-    // Switch hitters bat opposite the pitcher's throwing hand.
-    const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
-    const batterX = effectiveSide === 'R' ? 245 : 55;
-    const batterScaleX = effectiveSide === 'R' ? 1 : -1;
-    const zoneGrid = getZoneGrid(effectiveSide);
-    const cellW = ZONE_WIDTH / 3;
-    const cellH = ZONE_HEIGHT / 3;
 
     return (
         <View style={compact ? compactStyles.container : styles.container}>
@@ -188,36 +239,77 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                             </G>
                         )}
 
+                        {/* Waste zone areas */}
+                        {onTargetZoneSelect &&
+                            wasteZones.map(({ zone, x, y, w, h, label }) => {
+                                const isSelected = targetZone === zone;
+                                return (
+                                    <G key={zone}>
+                                        <Rect
+                                            x={x}
+                                            y={y}
+                                            width={w}
+                                            height={h}
+                                            fill={
+                                                isSelected
+                                                    ? AMBER + '40'
+                                                    : isTargetMode
+                                                      ? 'rgba(200, 200, 195, 0.3)'
+                                                      : 'transparent'
+                                            }
+                                            stroke={isSelected ? AMBER : isTargetMode ? '#b0b0a8' : 'none'}
+                                            strokeWidth={isSelected ? 2 : 1}
+                                            strokeDasharray={isSelected ? '' : '3,2'}
+                                            rx="3"
+                                        />
+                                        <SvgText
+                                            x={x + w / 2}
+                                            y={y + h / 2 + 4}
+                                            textAnchor="middle"
+                                            fontSize="9"
+                                            fontWeight="600"
+                                            fill={isSelected ? AMBER : isTargetMode ? '#888' : 'transparent'}
+                                        >
+                                            {label}
+                                        </SvgText>
+                                    </G>
+                                );
+                            })}
+
                         {/* Strike zone - 3x3 grid */}
                         <G transform={`translate(${ZONE_X}, ${ZONE_Y})`}>
                             <Rect x="0" y="0" width={ZONE_WIDTH} height={ZONE_HEIGHT} fill="rgba(255,255,255,0.85)" />
 
-                            {/* Grid cells with zone labels */}
-                            {zoneGrid.map(({ zone, row, col }) => (
-                                <G key={zone}>
-                                    <Rect
-                                        x={col * cellW}
-                                        y={row * cellH}
-                                        width={cellW}
-                                        height={cellH}
-                                        fill="rgba(230, 230, 225, 0.6)"
-                                        stroke="#a0a0a0"
-                                        strokeWidth="1"
-                                    />
-                                    {ZONE_LABELS[zone] && (
-                                        <SvgText
-                                            x={col * cellW + cellW / 2}
-                                            y={row * cellH + cellH / 2 + 4}
-                                            textAnchor="middle"
-                                            fontSize="9"
-                                            fontWeight="600"
-                                            fill="#b0b0a8"
-                                        >
-                                            {ZONE_LABELS[zone]}
-                                        </SvgText>
-                                    )}
-                                </G>
-                            ))}
+                            {/* Grid cells */}
+                            {strikeZoneGrid.map(({ zone, row, col }) => {
+                                const isSelected = targetZone === zone;
+                                return (
+                                    <G key={zone}>
+                                        <Rect
+                                            x={col * cellW}
+                                            y={row * cellH}
+                                            width={cellW}
+                                            height={cellH}
+                                            fill={isSelected ? AMBER + '35' : 'rgba(230, 230, 225, 0.6)'}
+                                            stroke={isSelected ? AMBER : '#a0a0a0'}
+                                            strokeWidth={isSelected ? 2 : 1}
+                                        />
+                                        {/* Zone label (show in target mode or when selected) */}
+                                        {(isTargetMode || isSelected) && ZONE_LABELS[zone] && (
+                                            <SvgText
+                                                x={col * cellW + cellW / 2}
+                                                y={row * cellH + cellH / 2 + 4}
+                                                textAnchor="middle"
+                                                fontSize="10"
+                                                fontWeight="700"
+                                                fill={isSelected ? AMBER : '#999'}
+                                            >
+                                                {ZONE_LABELS[zone]}
+                                            </SvgText>
+                                        )}
+                                    </G>
+                                );
+                            })}
 
                             {/* Outer border */}
                             <Rect
@@ -259,38 +351,29 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                             );
                         })}
 
-                        {/* Current target location */}
-                        {targetLocation && (
-                            <G>
-                                <Circle
-                                    cx={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                    cy={toSvgCoords(targetLocation.x, targetLocation.y).y}
-                                    r={TARGET_RADIUS}
-                                    fill="none"
-                                    stroke={colors.primary[500]}
-                                    strokeWidth="3"
-                                    strokeDasharray="6,3"
-                                />
-                                <Line
-                                    x1={toSvgCoords(targetLocation.x, targetLocation.y).x - 6}
-                                    y1={toSvgCoords(targetLocation.x, targetLocation.y).y}
-                                    x2={toSvgCoords(targetLocation.x, targetLocation.y).x + 6}
-                                    y2={toSvgCoords(targetLocation.x, targetLocation.y).y}
-                                    stroke={colors.primary[500]}
-                                    strokeWidth="2"
-                                />
-                                <Line
-                                    x1={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                    y1={toSvgCoords(targetLocation.x, targetLocation.y).y - 6}
-                                    x2={toSvgCoords(targetLocation.x, targetLocation.y).x}
-                                    y2={toSvgCoords(targetLocation.x, targetLocation.y).y + 6}
-                                    stroke={colors.primary[500]}
-                                    strokeWidth="2"
-                                />
-                            </G>
-                        )}
+                        {/* Target zone indicator (amber dashed circle at zone center) */}
+                        {targetZone &&
+                            (() => {
+                                const zc = getZoneCoords(targetZone, effectiveSide);
+                                const tc = toSvgCoords(zc.x, zc.y);
+                                return (
+                                    <G>
+                                        <Circle
+                                            cx={tc.x}
+                                            cy={tc.y}
+                                            r="12"
+                                            fill="none"
+                                            stroke={AMBER}
+                                            strokeWidth="3"
+                                            strokeDasharray="6,3"
+                                        />
+                                        <Line x1={tc.x - 6} y1={tc.y} x2={tc.x + 6} y2={tc.y} stroke={AMBER} strokeWidth="2" />
+                                        <Line x1={tc.x} y1={tc.y - 6} x2={tc.x} y2={tc.y + 6} stroke={AMBER} strokeWidth="2" />
+                                    </G>
+                                );
+                            })()}
 
-                        {/* Selected location indicator */}
+                        {/* Selected pitch location indicator */}
                         {selectedLocation && (
                             <G>
                                 <Circle
@@ -318,7 +401,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
             </Pressable>
 
             {/* Clear target button */}
-            {targetLocation && onTargetClear && (
+            {targetZone && onTargetClear && (
                 <Pressable
                     style={styles.clearButton}
                     onPress={() => {
@@ -359,10 +442,10 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
             {/* Instructions - only in non-compact mode */}
             {!compact && (
                 <Text style={styles.instructions}>
-                    {onTargetSelect
-                        ? targetLocation
+                    {onTargetZoneSelect
+                        ? targetZone
                             ? 'Tap to set pitch location (long press to clear target)'
-                            : 'Tap to set target location (optional)'
+                            : 'Tap a zone to set target'
                         : 'Tap on the zone to select pitch location'}
                 </Text>
             )}

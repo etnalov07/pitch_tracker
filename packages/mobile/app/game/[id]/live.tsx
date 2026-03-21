@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput } from 'react-native';
 import { Text, Button, useTheme, IconButton, Portal } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
@@ -10,6 +10,7 @@ import {
     PitchCallAbbrev,
     PitchCallZone,
     PITCH_CALL_ZONE_LABELS,
+    PITCH_CALL_ZONE_COORDS,
     Player,
     GamePitcherWithPlayer,
     OpponentLineupPlayer,
@@ -62,7 +63,6 @@ import {
     BaserunnerOutModal,
     RunnerAdvancementModal,
 } from '../../../src/components/live';
-import { CallZoneGrid } from '../../../src/components/pitchCalling';
 import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/components/common';
 import { HitLocation } from '../../../src/components/live/InPlayModal';
 
@@ -93,7 +93,7 @@ export default function LiveGameScreen() {
     const [selectedPitchType, setSelectedPitchType] = useState<PitchType | null>(null);
     const [selectedResult, setSelectedResult] = useState<PitchResult | null>(null);
     const [pitchLocation, setPitchLocation] = useState<{ x: number; y: number } | null>(null);
-    const [targetLocation, setTargetLocation] = useState<{ x: number; y: number } | null>(null);
+    const [targetZone, setTargetZone] = useState<PitchCallZone | null>(null);
     const [isLogging, setIsLogging] = useState(false);
 
     // Pitcher/Batter selection state
@@ -127,7 +127,9 @@ export default function LiveGameScreen() {
     // Pitch call state (integrated from pitch-calling screen)
     const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
     const [sendingCall, setSendingCall] = useState(false);
-    const [selectedCallZone, setSelectedCallZone] = useState<PitchCallZone | null>(null);
+
+    // Velocity state (optional)
+    const [velocity, setVelocity] = useState<string>('');
 
     const game = currentGameState?.game || selectedGame;
 
@@ -441,7 +443,7 @@ export default function LiveGameScreen() {
     };
 
     const handleSendCall = async () => {
-        if (!selectedPitchType || !selectedCallZone || !id || !game) return;
+        if (!selectedPitchType || !targetZone || !id || !game) return;
         setSendingCall(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         try {
@@ -450,7 +452,7 @@ export default function LiveGameScreen() {
                 game_id: id,
                 team_id: game.home_team_id || '',
                 pitch_type: abbrev,
-                zone: selectedCallZone,
+                zone: targetZone,
                 at_bat_id: currentAtBat?.id,
                 pitcher_id: currentPitcher?.player_id,
                 opponent_batter_id: currentBatter?.id,
@@ -460,7 +462,7 @@ export default function LiveGameScreen() {
             });
             setActiveCall(call);
             // Speak the call via Bluetooth
-            await speakPitchCall(abbrev, selectedCallZone, false);
+            await speakPitchCall(abbrev, targetZone, false);
             await pitchCallingApi.markTransmitted(call.id);
         } catch {
             Alert.alert('Error', 'Failed to send pitch call');
@@ -481,6 +483,7 @@ export default function LiveGameScreen() {
         setIsLogging(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         try {
+            const veloNum = velocity ? parseFloat(velocity) : undefined;
             const result = await logPitchOffline({
                 at_bat_id: currentAtBat?.id || '',
                 game_id: id!,
@@ -489,8 +492,9 @@ export default function LiveGameScreen() {
                 pitch_result: selectedResult,
                 location_x: pitchLocation.x,
                 location_y: pitchLocation.y,
-                target_location_x: targetLocation?.x,
-                target_location_y: targetLocation?.y,
+                target_location_x: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].x : undefined,
+                target_location_y: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].y : undefined,
+                velocity: veloNum && !isNaN(veloNum) ? veloNum : undefined,
                 opponent_batter_id: currentBatter?.id,
                 balls_before: balls,
                 strikes_before: strikes,
@@ -525,8 +529,8 @@ export default function LiveGameScreen() {
             setSelectedPitchType(null);
             setSelectedResult(null);
             setPitchLocation(null);
-            setTargetLocation(null);
-            setSelectedCallZone(null);
+            setTargetZone(null);
+            setVelocity('');
             if (result.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             if (newBalls >= 4) await handleEndAtBat('walk');
             else if (newStrikes >= 3) await handleEndAtBat('strikeout');
@@ -814,14 +818,36 @@ export default function LiveGameScreen() {
                     <ScrollView style={styles.mainPanel} contentContainerStyle={styles.mainPanelContent}>
                         <StrikeZone
                             onLocationSelect={(x, y) => setPitchLocation({ x, y })}
-                            onTargetSelect={(x, y) => setTargetLocation({ x, y })}
-                            onTargetClear={() => setTargetLocation(null)}
-                            targetLocation={targetLocation}
+                            onTargetZoneSelect={setTargetZone}
+                            onTargetClear={() => setTargetZone(null)}
+                            targetZone={targetZone}
                             previousPitches={pitches}
                             disabled={isLogging}
                             batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                             pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                         />
+                        {/* Send Call (optional) */}
+                        {selectedPitchType && targetZone && !activeCall && (
+                            <Button
+                                mode="contained"
+                                onPress={handleSendCall}
+                                loading={sendingCall}
+                                disabled={sendingCall}
+                                style={{ backgroundColor: '#F5A623', marginTop: 8 }}
+                                labelStyle={{ color: '#0A1628', fontWeight: '800', letterSpacing: 0.5 }}
+                            >
+                                {sendingCall
+                                    ? 'SENDING...'
+                                    : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
+                            </Button>
+                        )}
+                        {activeCall && (
+                            <View style={styles.callBadge}>
+                                <Text style={styles.callBadgeText}>
+                                    Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
+                                </Text>
+                            </View>
+                        )}
                         <View style={styles.controlsRow}>
                             <View style={styles.controlsHalf}>
                                 <PitchTypeGrid
@@ -834,6 +860,19 @@ export default function LiveGameScreen() {
                             <View style={styles.controlsHalf}>
                                 <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} />
                             </View>
+                        </View>
+                        <View style={styles.veloRow}>
+                            <Text style={styles.veloLabel}>MPH</Text>
+                            <TextInput
+                                style={styles.veloInput}
+                                value={velocity}
+                                onChangeText={setVelocity}
+                                keyboardType="numeric"
+                                placeholder="—"
+                                placeholderTextColor="#9ca3af"
+                                maxLength={3}
+                                selectTextOnFocus
+                            />
                         </View>
                         <Button
                             mode="contained"
@@ -875,6 +914,7 @@ export default function LiveGameScreen() {
                 {renderGameHeader()}
                 {renderRunnerOutButton()}
                 {renderAtBatControls()}
+                {/* 1. Pitch Type */}
                 <PitchTypeGrid
                     selectedType={selectedPitchType}
                     onSelect={setSelectedPitchType}
@@ -882,15 +922,20 @@ export default function LiveGameScreen() {
                     disabled={isLogging}
                     compact
                 />
-                <CallZoneGrid
-                    selectedZone={selectedCallZone}
-                    onSelect={setSelectedCallZone}
-                    disabled={isLogging || sendingCall}
+                {/* 2. Strike Zone (target = first tap, result = second tap) */}
+                <StrikeZone
+                    onLocationSelect={(x, y) => setPitchLocation({ x, y })}
+                    onTargetZoneSelect={setTargetZone}
+                    onTargetClear={() => setTargetZone(null)}
+                    targetZone={targetZone}
+                    previousPitches={pitches}
+                    disabled={isLogging}
+                    compact
                     batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                     pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                 />
-                {/* Send Call button */}
-                {selectedPitchType && selectedCallZone && !activeCall && (
+                {/* 3. Send Call (optional, when target + pitch type set) */}
+                {selectedPitchType && targetZone && !activeCall && (
                     <Button
                         mode="contained"
                         onPress={handleSendCall}
@@ -901,38 +946,33 @@ export default function LiveGameScreen() {
                     >
                         {sendingCall
                             ? 'SENDING...'
-                            : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[selectedCallZone]}`}
+                            : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
                     </Button>
                 )}
-                {/* Active call badge */}
                 {activeCall && (
-                    <View
-                        style={{
-                            backgroundColor: '#f0fdf4',
-                            borderWidth: 1,
-                            borderColor: '#86efac',
-                            borderRadius: 8,
-                            padding: 8,
-                            alignItems: 'center',
-                        }}
-                    >
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#15803d' }}>
+                    <View style={styles.callBadge}>
+                        <Text style={styles.callBadgeText}>
                             Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
                         </Text>
                     </View>
                 )}
-                <StrikeZone
-                    onLocationSelect={(x, y) => setPitchLocation({ x, y })}
-                    onTargetSelect={(x, y) => setTargetLocation({ x, y })}
-                    onTargetClear={() => setTargetLocation(null)}
-                    targetLocation={targetLocation}
-                    previousPitches={pitches}
-                    disabled={isLogging}
-                    compact
-                    batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
-                    pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
-                />
+                {/* 4. Result */}
                 <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
+                {/* 5. Velocity (optional) */}
+                <View style={styles.veloRow}>
+                    <Text style={styles.veloLabel}>MPH</Text>
+                    <TextInput
+                        style={styles.veloInput}
+                        value={velocity}
+                        onChangeText={setVelocity}
+                        keyboardType="numeric"
+                        placeholder="—"
+                        placeholderTextColor="#9ca3af"
+                        maxLength={3}
+                        selectTextOnFocus
+                    />
+                </View>
+                {/* 6. Log Pitch */}
                 <Button
                     mode="contained"
                     onPress={handleLogPitch}
@@ -979,4 +1019,41 @@ const styles = StyleSheet.create({
     selectPrompt: { marginTop: 6, padding: 12, backgroundColor: '#fef3c7', borderRadius: 8, alignItems: 'center' },
     selectPromptText: { color: '#92400e', fontSize: 14, fontWeight: '500' },
     runnerOutButton: { marginTop: 6, alignSelf: 'flex-start' },
+    callBadge: {
+        backgroundColor: '#f0fdf4',
+        borderWidth: 1,
+        borderColor: '#86efac',
+        borderRadius: 8,
+        padding: 8,
+        alignItems: 'center' as const,
+    },
+    callBadgeText: {
+        fontSize: 13,
+        fontWeight: '600' as const,
+        color: '#15803d',
+    },
+    veloRow: {
+        flexDirection: 'row' as const,
+        alignItems: 'center' as const,
+        gap: 8,
+    },
+    veloLabel: {
+        fontSize: 13,
+        fontWeight: '600' as const,
+        color: '#6b7280',
+        letterSpacing: 0.5,
+    },
+    veloInput: {
+        flex: 1,
+        height: 40,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        fontSize: 16,
+        fontWeight: '600' as const,
+        color: '#1f2937',
+        backgroundColor: '#ffffff',
+        textAlign: 'center' as const,
+    },
 });

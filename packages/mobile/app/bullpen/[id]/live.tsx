@@ -3,7 +3,15 @@ import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput as RNTextI
 import { Text, Button, useTheme, IconButton, Modal, TextInput, Card } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
-import { PitchType, BullpenIntensity, BullpenPlanWithPitches, Pitch } from '@pitch-tracker/shared';
+import {
+    PitchType,
+    PitchCallZone,
+    PITCH_CALL_ZONE_COORDS,
+    getNearestPitchCallZone,
+    BullpenIntensity,
+    BullpenPlanWithPitches,
+    Pitch,
+} from '@pitch-tracker/shared';
 import { useAppDispatch, useAppSelector, fetchBullpenSession, fetchSessionPitches, fetchPlan } from '../../../src/state';
 import { logBullpenPitch, endBullpenSession } from '../../../src/state/bullpen/bullpenSlice';
 import { StrikeZone, PitchTypeGrid } from '../../../src/components/live';
@@ -43,7 +51,7 @@ export default function BullpenLiveScreen() {
     // Pitch entry state
     const [selectedPitchType, setSelectedPitchType] = useState<PitchType | null>(null);
     const [pitchLocation, setPitchLocation] = useState<{ x: number; y: number } | null>(null);
-    const [targetLocation, setTargetLocation] = useState<{ x: number; y: number } | null>(null);
+    const [targetZone, setTargetZone] = useState<PitchCallZone | null>(null);
     const [velocity, setVelocity] = useState('');
     const [isLogging, setIsLogging] = useState(false);
 
@@ -79,9 +87,9 @@ export default function BullpenLiveScreen() {
         if (currentPlanPitch) {
             setSelectedPitchType(currentPlanPitch.pitch_type);
             if (currentPlanPitch.target_x != null && currentPlanPitch.target_y != null) {
-                setTargetLocation({ x: Number(currentPlanPitch.target_x), y: Number(currentPlanPitch.target_y) });
+                setTargetZone(getNearestPitchCallZone(Number(currentPlanPitch.target_x), Number(currentPlanPitch.target_y)));
             } else {
-                setTargetLocation(null);
+                setTargetZone(null);
             }
         }
     }, [currentPlanPitch?.sequence]);
@@ -128,8 +136,8 @@ export default function BullpenLiveScreen() {
                 logBullpenPitch({
                     session_id: id,
                     pitch_type: selectedPitchType,
-                    target_x: targetLocation?.x,
-                    target_y: targetLocation?.y,
+                    target_x: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].x : undefined,
+                    target_y: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].y : undefined,
                     actual_x: pitchLocation.x,
                     actual_y: pitchLocation.y,
                     velocity: velocity ? parseFloat(velocity) : undefined,
@@ -141,14 +149,14 @@ export default function BullpenLiveScreen() {
             setVelocity('');
             if (!hasSequencePlan) {
                 setSelectedPitchType(null);
-                setTargetLocation(null);
+                setTargetZone(null);
             }
         } catch {
             Alert.alert('Error', 'Failed to log pitch');
         } finally {
             setIsLogging(false);
         }
-    }, [id, selectedPitchType, pitchLocation, targetLocation, velocity, dispatch]);
+    }, [id, selectedPitchType, pitchLocation, targetZone, velocity, dispatch]);
 
     const handleEndSession = useCallback(async () => {
         if (!id) return;
@@ -246,9 +254,9 @@ export default function BullpenLiveScreen() {
 
                 <StrikeZone
                     onLocationSelect={(x, y) => setPitchLocation({ x, y })}
-                    onTargetSelect={(x, y) => setTargetLocation({ x, y })}
-                    onTargetClear={() => setTargetLocation(null)}
-                    targetLocation={targetLocation}
+                    onTargetZoneSelect={setTargetZone}
+                    onTargetClear={() => setTargetZone(null)}
+                    targetZone={targetZone}
                     previousPitches={previousPitchesForZone}
                     disabled={isLogging}
                     compact
