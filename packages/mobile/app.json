@@ -1,55 +1,59 @@
 {
-  "expo": {
-    "name": "PitchChart",
-    "slug": "pitch-tracker",
-    "version": "1.9.0",
-    "orientation": "default",
-    "icon": "./assets/images/icon.png",
-    "scheme": "pitchtracker",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0B1F3A"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.bvolante.pitch-tracker",
-      "requireFullScreen": false,
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
-    },
-    "android": {
-      "package": "com.bvolante.pitch_tracker",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#0B1F3A"
-      },
-      "edgeToEdgeEnabled": true,
-      "permissions": [
-        "INTERNET",
-        "ACCESS_NETWORK_STATE"
-      ]
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      "expo-router"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "apiUrl": "https://bvolante.com/bt-api",
-      "router": {},
-      "eas": {
-        "projectId": "751e9c35-fdc0-40e0-b7d2-f5ad5d515f17"
-      }
+    "expo": {
+        "name": "PitchChart",
+        "slug": "pitch-tracker",
+        "version": "1.9.0",
+        "orientation": "default",
+        "icon": "./assets/images/icon.png",
+        "scheme": "pitchtracker",
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": false,
+        "splash": {
+            "image": "./assets/images/splash-icon.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#0B1F3A"
+        },
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.bvolante.pitch-tracker",
+            "requireFullScreen": false,
+            "infoPlist": {
+                "ITSAppUsesNonExemptEncryption": false,
+                "NSMicrophoneUsageDescription": "PitchChart uses the microphone for walkie-talkie communication with the catcher's earpiece."
+            }
+        },
+        "android": {
+            "package": "com.bvolante.pitch_tracker",
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/images/adaptive-icon.png",
+                "backgroundColor": "#0B1F3A"
+            },
+            "edgeToEdgeEnabled": true,
+            "permissions": ["INTERNET", "ACCESS_NETWORK_STATE", "RECORD_AUDIO", "BLUETOOTH_CONNECT"]
+        },
+        "web": {
+            "bundler": "metro",
+            "output": "static",
+            "favicon": "./assets/images/favicon.png"
+        },
+        "plugins": [
+            "expo-router",
+            [
+                "react-native-audio-api",
+                {
+                    "iosMicrophonePermission": "PitchChart uses the microphone for walkie-talkie communication with the catcher's earpiece."
+                }
+            ]
+        ],
+        "experiments": {
+            "typedRoutes": true
+        },
+        "extra": {
+            "apiUrl": "https://bvolante.com/bt-api",
+            "router": {},
+            "eas": {
+                "projectId": "751e9c35-fdc0-40e0-b7d2-f5ad5d515f17"
+            }
+        }
     }
-  }
 }

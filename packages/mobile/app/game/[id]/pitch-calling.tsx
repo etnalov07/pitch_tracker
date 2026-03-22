@@ -22,7 +22,9 @@ import {
     CallHistory,
     BluetoothStatus,
 } from '../../../src/components/pitchCalling';
-import { speakPitchCall, activateHFPAudio, deactivateHFPAudio, isHFPActive } from '../../../src/utils/pitchCallAudio';
+import { speakPitchCall, activateHFPAudio, deactivateHFPAudio } from '../../../src/utils/pitchCallAudio';
+import { useBluetoothAudio } from '../../../src/utils/bluetoothAudio';
+import { startPassthrough, stopPassthrough, isPassthroughActive } from '../../../src/utils/walkieTalkie';
 import * as Speech from 'expo-speech';
 
 export default function PitchCallingScreen() {
@@ -37,24 +39,28 @@ export default function PitchCallingScreen() {
     const currentBatter = opponentLineup.find((p) => !p.replaced_by_id);
     const currentPitcher = gamePitchers.length > 0 ? gamePitchers[gamePitchers.length - 1] : null;
 
+    // Bluetooth detection via react-native-headphone-detection
+    const { connected: btConnected, deviceName, isChecking: btChecking } = useBluetoothAudio();
+
     // Local UI state
     const [selectedPitch, setSelectedPitch] = useState<PitchCallAbbrev | null>(null);
     const [selectedZone, setSelectedZone] = useState<PitchCallZone | null>(null);
-    const [btConnected, setBtConnected] = useState(true);
     const [isChanging, setIsChanging] = useState(false);
-    const [hfpActive, setHfpActive] = useState(false);
+    const [walkieTalkieOn, setWalkieTalkieOn] = useState(false);
 
     // Activate HFP audio routing on mount, deactivate on unmount
     useEffect(() => {
-        activateHFPAudio().then(() => setHfpActive(isHFPActive()));
+        activateHFPAudio();
         return () => {
             deactivateHFPAudio();
+            if (isPassthroughActive()) {
+                stopPassthrough();
+            }
         };
     }, []);
 
     const handleTestAudio = useCallback(async () => {
         await activateHFPAudio();
-        setHfpActive(isHFPActive());
         return new Promise<void>((resolve, reject) => {
             Speech.speak('Test. Pitch calling audio check.', {
                 language: 'en-US',
@@ -64,6 +70,20 @@ export default function PitchCallingScreen() {
                 onError: reject,
             });
         });
+    }, []);
+
+    const handleWalkieTalkieToggle = useCallback(async () => {
+        if (isPassthroughActive()) {
+            await stopPassthrough();
+            setWalkieTalkieOn(false);
+        } else {
+            try {
+                await startPassthrough();
+                setWalkieTalkieOn(true);
+            } catch (err: any) {
+                Alert.alert('Walkie-Talkie Error', err?.message || 'Failed to start mic passthrough');
+            }
+        }
     }, []);
 
     // Load existing calls when entering the screen
@@ -177,8 +197,8 @@ export default function PitchCallingScreen() {
             <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollInner}>
                 <BluetoothStatus
                     connected={btConnected}
-                    hfpActive={hfpActive}
-                    onToggle={() => setBtConnected(!btConnected)}
+                    deviceName={deviceName}
+                    isChecking={btChecking}
                     onTestAudio={handleTestAudio}
                 />
 
@@ -203,16 +223,37 @@ export default function PitchCallingScreen() {
                             </View>
                         )}
 
-                        {/* Send button */}
-                        <Pressable
-                            style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
-                            onPress={handleSend}
-                            disabled={!canSend}
-                        >
-                            <Text style={styles.sendButtonText}>
-                                {sendingCall ? 'SENDING...' : isChanging ? 'SEND CHANGE' : 'SEND'}
-                            </Text>
-                        </Pressable>
+                        {/* Send + Walkie-Talkie row */}
+                        <View style={styles.sendRow}>
+                            <Pressable
+                                style={[
+                                    styles.walkieButton,
+                                    walkieTalkieOn && styles.walkieButtonActive,
+                                    !btConnected && styles.walkieButtonDisabled,
+                                ]}
+                                onPress={handleWalkieTalkieToggle}
+                                disabled={!btConnected}
+                            >
+                                <Text style={[styles.walkieIcon, walkieTalkieOn && styles.walkieIconActive]}>
+                                    {walkieTalkieOn ? '🔴' : '🎙'}
+                                </Text>
+                                <Text style={[styles.walkieLabel, walkieTalkieOn && styles.walkieLabelActive]}>
+                                    {walkieTalkieOn ? 'LIVE' : 'TALK'}
+                                </Text>
+                            </Pressable>
+
+                            <Pressable
+                                style={[styles.sendButton, (!canSend || !btConnected) && styles.sendButtonDisabled]}
+                                onPress={handleSend}
+                                disabled={!canSend || !btConnected}
+                            >
+                                <Text style={styles.sendButtonText}>
+                                    {sendingCall ? 'SENDING...' : isChanging ? 'SEND CHANGE' : 'SEND'}
+                                </Text>
+                            </Pressable>
+                        </View>
+
+                        {!btConnected && <Text style={styles.btWarning}>Connect Bluetooth earpiece to send calls</Text>}
                     </>
                 ) : (
                     <>
@@ -224,13 +265,30 @@ export default function PitchCallingScreen() {
                             {activeCall!.bt_transmitted && <Text style={styles.transmittedText}>Transmitted</Text>}
                         </View>
 
-                        {/* Resend / Change buttons */}
+                        {/* Resend / Change / Walkie-Talkie buttons */}
                         <View style={styles.actionRow}>
-                            <Pressable style={styles.resendButton} onPress={handleResend}>
-                                <Text style={styles.resendText}>RESEND</Text>
+                            <Pressable
+                                style={[styles.resendButton, !btConnected && styles.resendButtonDisabled]}
+                                onPress={handleResend}
+                                disabled={!btConnected}
+                            >
+                                <Text style={[styles.resendText, !btConnected && styles.disabledText]}>RESEND</Text>
                             </Pressable>
                             <Pressable style={styles.changeButton} onPress={handleChange}>
                                 <Text style={styles.changeText}>CHANGE</Text>
+                            </Pressable>
+                            <Pressable
+                                style={[
+                                    styles.walkieSmallButton,
+                                    walkieTalkieOn && styles.walkieButtonActive,
+                                    !btConnected && styles.walkieButtonDisabled,
+                                ]}
+                                onPress={handleWalkieTalkieToggle}
+                                disabled={!btConnected}
+                            >
+                                <Text style={[styles.walkieSmallLabel, walkieTalkieOn && styles.walkieLabelActive]}>
+                                    {walkieTalkieOn ? '🔴 LIVE' : '🎙 TALK'}
+                                </Text>
                             </Pressable>
                         </View>
 
@@ -301,8 +359,58 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: CHALK,
     },
+    // Send + walkie row
+    sendRow: {
+        flexDirection: 'row',
+        gap: 10,
+        alignItems: 'stretch',
+    },
+    walkieButton: {
+        width: 64,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: BORDER,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2,
+    },
+    walkieButtonActive: {
+        borderColor: '#EF4444',
+        backgroundColor: '#EF444420',
+    },
+    walkieButtonDisabled: {
+        opacity: 0.3,
+    },
+    walkieIcon: {
+        fontSize: 20,
+    },
+    walkieIconActive: {},
+    walkieLabel: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: CHALK_DIM,
+        letterSpacing: 0.5,
+    },
+    walkieLabelActive: {
+        color: '#EF4444',
+    },
+    walkieSmallButton: {
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        borderWidth: 2,
+        borderColor: BORDER,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    walkieSmallLabel: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: CHALK_DIM,
+    },
     // Send button
     sendButton: {
+        flex: 1,
         backgroundColor: AMBER,
         borderRadius: 10,
         paddingVertical: 16,
@@ -316,6 +424,12 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         color: NAVY,
         letterSpacing: 1,
+    },
+    btWarning: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: '#EF4444',
+        textAlign: 'center',
     },
     // Sent state
     sentCard: {
@@ -363,11 +477,17 @@ const styles = StyleSheet.create({
         borderColor: AMBER,
         alignItems: 'center',
     },
+    resendButtonDisabled: {
+        opacity: 0.4,
+    },
     resendText: {
         fontSize: 14,
         fontWeight: '700',
         color: AMBER,
         letterSpacing: 0.5,
+    },
+    disabledText: {
+        opacity: 0.5,
     },
     changeButton: {
         flex: 1,
