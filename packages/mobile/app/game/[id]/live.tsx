@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput, Pressable } from 'react-native';
 import { Text, Button, useTheme, IconButton, Portal } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
@@ -25,7 +25,8 @@ import {
 } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
-import { speakPitchCall, activateA2DPAudio, deactivateA2DPAudio } from '../../../src/utils/pitchCallAudio';
+import { speakPitchCall, activateBTAudio, deactivateBTAudio } from '../../../src/utils/pitchCallAudio';
+import { startPassthrough, stopPassthrough, isPassthroughActive } from '../../../src/utils/walkieTalkie';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
 import { useOfflineActions } from '../../../src/hooks/useOfflineActions';
 import {
@@ -137,12 +138,18 @@ export default function LiveGameScreen() {
 
     const game = currentGameState?.game || selectedGame;
 
-    // Activate HFP Bluetooth audio for pitch calls (only when enabled)
+    // Walkie-talkie state
+    const [walkieTalkieActive, setWalkieTalkieActive] = useState(false);
+
+    // Activate Bluetooth audio for pitch calls (only when enabled)
     useEffect(() => {
         if (!pitchCallingEnabled) return;
-        activateA2DPAudio();
+        activateBTAudio();
         return () => {
-            deactivateA2DPAudio();
+            deactivateBTAudio();
+            if (isPassthroughActive()) {
+                stopPassthrough();
+            }
         };
     }, [pitchCallingEnabled]);
 
@@ -504,6 +511,23 @@ export default function LiveGameScreen() {
         setPitchLocation(null);
     };
 
+    const handleTalkPressIn = async () => {
+        try {
+            await startPassthrough();
+            setWalkieTalkieActive(true);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        } catch (err: any) {
+            Alert.alert('Mic Error', err?.message || 'Failed to start walkie-talkie');
+        }
+    };
+
+    const handleTalkPressOut = async () => {
+        if (isPassthroughActive()) {
+            await stopPassthrough();
+            setWalkieTalkieActive(false);
+        }
+    };
+
     const handleLogPitch = async () => {
         if (!selectedPitchType || !selectedResult || !pitchLocation) {
             Alert.alert('Missing Info', 'Please select pitch type, location, and result');
@@ -825,9 +849,6 @@ export default function LiveGameScreen() {
                         <SyncStatusBadge compact />
                     </View>
                     <View style={styles.headerRight}>
-                        {game.status === 'in_progress' && (
-                            <IconButton icon="bullhorn" onPress={() => router.push(`/game/${id}/pitch-calling` as any)} />
-                        )}
                         {game.status === 'in_progress' ? (
                             <IconButton icon="flag-checkered" onPress={handleEndGame} />
                         ) : (
@@ -865,18 +886,30 @@ export default function LiveGameScreen() {
                         />
                         {/* Send Call (optional, setting-gated) */}
                         {pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
-                            <Button
-                                mode="contained"
-                                onPress={handleSendCall}
-                                loading={sendingCall}
-                                disabled={sendingCall}
-                                style={{ backgroundColor: '#F5A623', marginTop: 8 }}
-                                labelStyle={{ color: '#0A1628', fontWeight: '800', letterSpacing: 0.5 }}
-                            >
-                                {sendingCall
-                                    ? 'SENDING...'
-                                    : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
-                            </Button>
+                            <View style={[styles.callRow, { marginTop: 8 }]}>
+                                <Button
+                                    mode="contained"
+                                    onPress={handleSendCall}
+                                    loading={sendingCall}
+                                    disabled={sendingCall}
+                                    style={styles.sendCallButton}
+                                    labelStyle={{ color: '#0A1628', fontWeight: '800', letterSpacing: 0.5 }}
+                                >
+                                    {sendingCall
+                                        ? 'SENDING...'
+                                        : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
+                                </Button>
+                                <Pressable
+                                    style={[styles.talkHoldButton, walkieTalkieActive && styles.talkHoldButtonActive]}
+                                    onPressIn={handleTalkPressIn}
+                                    onPressOut={handleTalkPressOut}
+                                >
+                                    <Text style={[styles.talkHoldIcon, walkieTalkieActive && styles.talkHoldIconActive]}>🎙</Text>
+                                    <Text style={[styles.talkHoldLabel, walkieTalkieActive && styles.talkHoldLabelActive]}>
+                                        {walkieTalkieActive ? 'TALKING...' : 'Hold to Talk'}
+                                    </Text>
+                                </Pressable>
+                            </View>
                         )}
                         {pitchCallingEnabled && activeCall && (
                             <View style={styles.callBadge}>
@@ -896,6 +929,15 @@ export default function LiveGameScreen() {
                                     <Button mode="outlined" onPress={handleChangeCall} compact labelStyle={{ fontSize: 12 }}>
                                         Change
                                     </Button>
+                                    <Pressable
+                                        style={[styles.talkHoldSmall, walkieTalkieActive && styles.talkHoldButtonActive]}
+                                        onPressIn={handleTalkPressIn}
+                                        onPressOut={handleTalkPressOut}
+                                    >
+                                        <Text style={[styles.talkHoldSmallLabel, walkieTalkieActive && styles.talkHoldLabelActive]}>
+                                            {walkieTalkieActive ? '🎙 TALKING...' : '🎙 Hold to Talk'}
+                                        </Text>
+                                    </Pressable>
                                 </View>
                             </View>
                         )}
@@ -1004,16 +1046,16 @@ export default function LiveGameScreen() {
                                 ? 'SENDING...'
                                 : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
                         </Button>
-                        <Button
-                            mode="outlined"
-                            icon="microphone"
-                            onPress={() => router.push(`/game/${id}/pitch-calling` as any)}
-                            style={styles.talkButton}
-                            labelStyle={styles.talkButtonLabel}
-                            compact
+                        <Pressable
+                            style={[styles.talkHoldButton, walkieTalkieActive && styles.talkHoldButtonActive]}
+                            onPressIn={handleTalkPressIn}
+                            onPressOut={handleTalkPressOut}
                         >
-                            Talk to Catcher
-                        </Button>
+                            <Text style={[styles.talkHoldIcon, walkieTalkieActive && styles.talkHoldIconActive]}>🎙</Text>
+                            <Text style={[styles.talkHoldLabel, walkieTalkieActive && styles.talkHoldLabelActive]}>
+                                {walkieTalkieActive ? 'TALKING...' : 'Hold to Talk'}
+                            </Text>
+                        </Pressable>
                     </View>
                 )}
                 {pitchCallingEnabled && activeCall && (
@@ -1034,15 +1076,15 @@ export default function LiveGameScreen() {
                             <Button mode="outlined" onPress={handleChangeCall} compact labelStyle={{ fontSize: 12 }}>
                                 Change
                             </Button>
-                            <Button
-                                mode="outlined"
-                                icon="microphone"
-                                onPress={() => router.push(`/game/${id}/pitch-calling` as any)}
-                                compact
-                                labelStyle={{ fontSize: 12 }}
+                            <Pressable
+                                style={[styles.talkHoldSmall, walkieTalkieActive && styles.talkHoldButtonActive]}
+                                onPressIn={handleTalkPressIn}
+                                onPressOut={handleTalkPressOut}
                             >
-                                Talk to Catcher
-                            </Button>
+                                <Text style={[styles.talkHoldSmallLabel, walkieTalkieActive && styles.talkHoldLabelActive]}>
+                                    {walkieTalkieActive ? '🎙 TALKING...' : '🎙 Hold to Talk'}
+                                </Text>
+                            </Pressable>
                         </View>
                     </View>
                 )}
@@ -1120,11 +1162,44 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F5A623',
     },
-    talkButton: {
+    talkHoldButton: {
+        borderWidth: 2,
         borderColor: '#6366f1',
+        borderRadius: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 10,
+        alignItems: 'center' as const,
+        justifyContent: 'center' as const,
+        gap: 2,
     },
-    talkButtonLabel: {
+    talkHoldButtonActive: {
+        borderColor: '#EF4444',
+        backgroundColor: '#EF444420',
+    },
+    talkHoldIcon: {
+        fontSize: 16,
+    },
+    talkHoldIconActive: {},
+    talkHoldLabel: {
+        fontSize: 9,
+        fontWeight: '700' as const,
+        color: '#6366f1',
+    },
+    talkHoldLabelActive: {
+        color: '#EF4444',
+    },
+    talkHoldSmall: {
+        borderWidth: 1,
+        borderColor: '#6366f1',
+        borderRadius: 6,
+        paddingVertical: 6,
+        paddingHorizontal: 8,
+        alignItems: 'center' as const,
+        justifyContent: 'center' as const,
+    },
+    talkHoldSmallLabel: {
         fontSize: 11,
+        fontWeight: '600' as const,
         color: '#6366f1',
     },
     callBadge: {
