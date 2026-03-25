@@ -23,7 +23,7 @@ import {
     BluetoothStatus,
     WalkieTalkieButton,
 } from '../../../src/components/pitchCalling';
-import { speakPitchCall, activateA2DPAudio, deactivateA2DPAudio } from '../../../src/utils/pitchCallAudio';
+import { speakPitchCall, activateBTAudio, forceDeactivateBTAudio } from '../../../src/utils/pitchCallAudio';
 import { useBluetoothAudio } from '../../../src/utils/bluetoothAudio';
 import { startPassthrough, stopPassthrough, isPassthroughActive } from '../../../src/utils/walkieTalkie';
 import * as Speech from 'expo-speech';
@@ -49,19 +49,19 @@ export default function PitchCallingScreen() {
     const [isChanging, setIsChanging] = useState(false);
     const [walkieTalkieActive, setWalkieTalkieActive] = useState(false);
 
-    // Activate A2DP audio routing on mount, deactivate on unmount
+    // Activate BT audio routing on mount, deactivate on unmount
     useEffect(() => {
-        activateA2DPAudio();
+        activateBTAudio();
         return () => {
-            deactivateA2DPAudio();
             if (isPassthroughActive()) {
                 stopPassthrough();
             }
+            forceDeactivateBTAudio();
         };
     }, []);
 
     const handleTestAudio = useCallback(async () => {
-        await activateA2DPAudio();
+        await activateBTAudio();
         return new Promise<void>((resolve, reject) => {
             Speech.speak('Test. Pitch calling audio check.', {
                 language: 'en-US',

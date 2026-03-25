@@ -42,9 +42,32 @@ export async function activateBTAudio(): Promise<void> {
 }
 
 /**
- * Deactivate BT audio routing. Call when leaving the live game screen.
+ * Deactivate BT audio routing. Skips teardown if walkie-talkie passthrough
+ * is still active (it depends on the HFP session).
  */
 export async function deactivateBTAudio(): Promise<void> {
+    if (!_audioModeActive) return;
+    // Don't tear down the HFP session while walkie-talkie needs it
+    if (isPassthroughActive()) return;
+
+    await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: false,
+        staysActiveInBackground: false,
+        interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
+        shouldDuckAndroid: true,
+        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+        playThroughEarpieceAndroid: false,
+    });
+
+    _audioModeActive = false;
+}
+
+/**
+ * Force-deactivate BT audio routing regardless of walkie-talkie state.
+ * Use on screen unmount to ensure full cleanup.
+ */
+export async function forceDeactivateBTAudio(): Promise<void> {
     if (!_audioModeActive) return;
 
     await Audio.setAudioModeAsync({

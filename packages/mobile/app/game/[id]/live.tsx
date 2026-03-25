@@ -25,7 +25,7 @@ import {
 } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
-import { speakPitchCall, activateBTAudio, deactivateBTAudio } from '../../../src/utils/pitchCallAudio';
+import { speakPitchCall, activateBTAudio, forceDeactivateBTAudio } from '../../../src/utils/pitchCallAudio';
 import { startPassthrough, stopPassthrough, isPassthroughActive } from '../../../src/utils/walkieTalkie';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
 import { useOfflineActions } from '../../../src/hooks/useOfflineActions';
@@ -146,10 +146,10 @@ export default function LiveGameScreen() {
         if (!pitchCallingEnabled) return;
         activateBTAudio();
         return () => {
-            deactivateBTAudio();
             if (isPassthroughActive()) {
                 stopPassthrough();
             }
+            forceDeactivateBTAudio();
         };
     }, [pitchCallingEnabled]);
 

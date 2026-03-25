@@ -1,22 +1,26 @@
 import { AudioContext, AudioBuffer, AudioRecorder, AudioManager } from 'react-native-audio-api';
-import { Platform } from 'react-native';
 
 /**
- * Walkie-Talkie: real-time phone-mic-to-Bluetooth A2DP passthrough.
+ * Walkie-Talkie: real-time phone-mic-to-Bluetooth HFP passthrough.
  *
  * Uses react-native-audio-api (Web Audio API for RN) to connect the phone's
- * built-in microphone to the Bluetooth audio output via A2DP.
+ * built-in microphone to the Bluetooth audio output via HFP.
  *
- * Audio path:  Phone mic → AudioRecorder → RecorderAdapterNode → AudioContext.destination → BT earpiece (A2DP)
+ * Audio path:  Phone mic → AudioRecorder → RecorderAdapterNode → AudioContext.destination → BT earpiece (HFP)
  *
- * NFHS compliance: The catcher's earpiece is connected via A2DP, which is
- * physically one-way. The earpiece cannot transmit audio back. All mic input
- * comes from the phone's built-in microphone, never from the earpiece.
+ * NFHS compliance: The earpiece is receive-only. HFP routes audio TO the
+ * earpiece; all mic input comes from the phone's built-in microphone, never
+ * from the earpiece. The catcher cannot talk back.
  *
- * On iOS, we use `allowBluetoothA2DP` (NOT `allowBluetoothHFP`) to keep the
- * earpiece on A2DP even during playAndRecord mode. This ensures the earpiece's
- * microphone (if it has one) remains completely inoperative.
+ * Audio session strategy: expo-av owns the iOS AVAudioSession (configured for
+ * HFP via `allowsRecordingIOS: true`). We call `disableSessionManagement()`
+ * so react-native-audio-api does not touch the session, avoiding conflicts
+ * between the two audio systems.
  */
+
+// Prevent react-native-audio-api from managing its own AVAudioSession.
+// expo-av is the sole session owner (HFP routing via activateBTAudio).
+AudioManager.disableSessionManagement();
 
 let audioContext: AudioContext | null = null;
 let audioRecorder: AudioRecorder | null = null;
@@ -49,9 +53,9 @@ async function playChime(ctx: AudioContext, frequency: number, duration: number)
 /**
  * Start real-time mic → Bluetooth earpiece passthrough.
  *
- * The audio session is configured for playAndRecord + allowBluetoothA2DP.
- * This routes audio output through A2DP (media stream) while capturing
- * mic input from the phone's built-in microphone. The earpiece stays
+ * Relies on expo-av's HFP audio session (activated via `activateBTAudio`).
+ * The phone's built-in microphone is captured by AudioRecorder and routed
+ * through the Web Audio graph to the BT earpiece. The earpiece stays
  * receive-only — its mic is never activated.
  */
 export async function startPassthrough(): Promise<void> {
@@ -63,20 +67,10 @@ export async function startPassthrough(): Promise<void> {
         throw new Error('Microphone permission denied');
     }
 
-    // Configure audio session for A2DP output + phone mic input
-    if (Platform.OS === 'ios') {
-        AudioManager.setAudioSessionOptions({
-            iosCategory: 'playAndRecord',
-            iosMode: 'voiceChat',
-            // allowBluetoothA2DP: keeps earpiece on A2DP (receive-only)
-            // defaultToSpeaker: fallback if no BT connected
-            // NOTE: we deliberately do NOT include allowBluetoothHFP — this
-            // prevents iOS from negotiating HFP and activating the earpiece mic.
-            iosOptions: ['allowBluetoothA2DP', 'defaultToSpeaker'],
-        });
-    }
-
-    await AudioManager.setAudioSessionActivity(true);
+    // Ensure HFP audio session is active (expo-av owns the session).
+    // Lazy import to avoid circular dependency (pitchCallAudio imports from walkieTalkie).
+    const { activateBTAudio } = await import('./pitchCallAudio');
+    await activateBTAudio();
 
     // Create audio context and recorder
     audioContext = new AudioContext({ sampleRate: 44100 });
@@ -85,7 +79,7 @@ export async function startPassthrough(): Promise<void> {
     // Create adapter node to bridge recorder into the audio graph
     const adapter = audioContext.createRecorderAdapter();
 
-    // Connect: phone mic → adapter → destination (BT earpiece via A2DP)
+    // Connect: phone mic → adapter → destination (BT earpiece via HFP)
     audioRecorder.connect(adapter);
     adapter.connect(audioContext.destination);
 
