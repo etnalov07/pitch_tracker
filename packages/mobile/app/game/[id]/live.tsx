@@ -25,7 +25,7 @@ import {
 } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
-import { speakPitchCall, activateHFPAudio, deactivateHFPAudio } from '../../../src/utils/pitchCallAudio';
+import { speakPitchCall, activateA2DPAudio, deactivateA2DPAudio } from '../../../src/utils/pitchCallAudio';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
 import { useOfflineActions } from '../../../src/hooks/useOfflineActions';
 import {
@@ -140,9 +140,9 @@ export default function LiveGameScreen() {
     // Activate HFP Bluetooth audio for pitch calls (only when enabled)
     useEffect(() => {
         if (!pitchCallingEnabled) return;
-        activateHFPAudio();
+        activateA2DPAudio();
         return () => {
-            deactivateHFPAudio();
+            deactivateA2DPAudio();
         };
     }, [pitchCallingEnabled]);
 
@@ -955,7 +955,6 @@ export default function LiveGameScreen() {
                     <SyncStatusBadge compact />
                 </View>
                 <View style={styles.headerRight}>
-                    {/* Pitch calling integrated into this screen */}
                     {game.status === 'in_progress' ? (
                         <IconButton icon="flag-checkered" onPress={handleEndGame} />
                     ) : (
@@ -992,18 +991,30 @@ export default function LiveGameScreen() {
                 />
                 {/* 3. Pitch Calling (optional, setting-gated) */}
                 {pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
-                    <Button
-                        mode="contained"
-                        onPress={handleSendCall}
-                        loading={sendingCall}
-                        disabled={sendingCall}
-                        style={{ backgroundColor: '#F5A623' }}
-                        labelStyle={{ color: '#0A1628', fontWeight: '800', letterSpacing: 0.5 }}
-                    >
-                        {sendingCall
-                            ? 'SENDING...'
-                            : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
-                    </Button>
+                    <View style={styles.callRow}>
+                        <Button
+                            mode="contained"
+                            onPress={handleSendCall}
+                            loading={sendingCall}
+                            disabled={sendingCall}
+                            style={styles.sendCallButton}
+                            labelStyle={{ color: '#0A1628', fontWeight: '800', letterSpacing: 0.5 }}
+                        >
+                            {sendingCall
+                                ? 'SENDING...'
+                                : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
+                        </Button>
+                        <Button
+                            mode="outlined"
+                            icon="microphone"
+                            onPress={() => router.push(`/game/${id}/pitch-calling` as any)}
+                            style={styles.talkButton}
+                            labelStyle={styles.talkButtonLabel}
+                            compact
+                        >
+                            Talk to Catcher
+                        </Button>
+                    </View>
                 )}
                 {pitchCallingEnabled && activeCall && (
                     <View style={styles.callBadge}>
@@ -1022,6 +1033,15 @@ export default function LiveGameScreen() {
                             </Button>
                             <Button mode="outlined" onPress={handleChangeCall} compact labelStyle={{ fontSize: 12 }}>
                                 Change
+                            </Button>
+                            <Button
+                                mode="outlined"
+                                icon="microphone"
+                                onPress={() => router.push(`/game/${id}/pitch-calling` as any)}
+                                compact
+                                labelStyle={{ fontSize: 12 }}
+                            >
+                                Talk to Catcher
                             </Button>
                         </View>
                     </View>
@@ -1091,6 +1111,22 @@ const styles = StyleSheet.create({
     selectPrompt: { marginTop: 6, padding: 12, backgroundColor: '#fef3c7', borderRadius: 8, alignItems: 'center' },
     selectPromptText: { color: '#92400e', fontSize: 14, fontWeight: '500' },
     runnerOutButton: { marginTop: 6, alignSelf: 'flex-start' },
+    callRow: {
+        flexDirection: 'row' as const,
+        gap: 8,
+        alignItems: 'stretch' as const,
+    },
+    sendCallButton: {
+        flex: 1,
+        backgroundColor: '#F5A623',
+    },
+    talkButton: {
+        borderColor: '#6366f1',
+    },
+    talkButtonLabel: {
+        fontSize: 11,
+        color: '#6366f1',
+    },
     callBadge: {
         backgroundColor: '#f0fdf4',
         borderWidth: 1,
