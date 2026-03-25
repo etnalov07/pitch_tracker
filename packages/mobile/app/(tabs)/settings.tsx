@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
 import { Text, List, Divider, Button, useTheme, Avatar, Switch, ActivityIndicator } from 'react-native-paper';
 import Constants from 'expo-constants';
+import * as Speech from 'expo-speech';
 import * as Haptics from '../../src/utils/haptics';
 import { useAppSelector, useAppDispatch, logoutUser, setPitchCallingEnabled, setVelocityEnabled } from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
+import { useBluetoothAudio } from '../../src/utils/bluetoothAudio';
+import { activateBTAudio } from '../../src/utils/pitchCallAudio';
 // Offline service disabled for iOS 26.2 beta testing
 // import { triggerSync } from '../../src/services/offlineService';
 // import { clearAllActions } from '../../src/db/offlineQueue';
@@ -17,6 +20,29 @@ export default function SettingsScreen() {
     const { pitchCallingEnabled, velocityEnabled } = useAppSelector((state) => state.settings);
     const { isTablet } = useDeviceType();
     const [syncing, setSyncing] = useState(false);
+    const { connected: btConnected, deviceName: btDeviceName, isChecking: btChecking } = useBluetoothAudio();
+    const [testingAudio, setTestingAudio] = useState(false);
+
+    const handleTestBTAudio = useCallback(async () => {
+        if (testingAudio) return;
+        setTestingAudio(true);
+        try {
+            await activateBTAudio();
+            await new Promise<void>((resolve, reject) => {
+                Speech.speak('Test. Bluetooth audio check.', {
+                    language: 'en-US',
+                    rate: 0.9,
+                    pitch: 1.0,
+                    onDone: resolve,
+                    onError: reject,
+                });
+            });
+        } catch {
+            Alert.alert('Audio Error', 'Failed to play test audio');
+        } finally {
+            setTestingAudio(false);
+        }
+    }, [testingAudio]);
 
     const handleLogout = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -130,6 +156,60 @@ export default function SettingsScreen() {
                                 }}
                             />
                         )}
+                    />
+                </List.Section>
+
+                <Divider style={styles.divider} />
+
+                <List.Section>
+                    <List.Subheader>Bluetooth Earpiece</List.Subheader>
+                    <List.Item
+                        title="Connection Status"
+                        description={
+                            btChecking
+                                ? 'Checking...'
+                                : btConnected
+                                  ? `${btDeviceName || 'Earpiece'} — Connected`
+                                  : 'No earpiece connected'
+                        }
+                        left={(props) => (
+                            <List.Icon
+                                {...props}
+                                icon={btConnected ? 'bluetooth-audio' : 'bluetooth-off'}
+                                color={btConnected ? '#10b981' : '#ef4444'}
+                            />
+                        )}
+                    />
+                    {btConnected && (
+                        <List.Item
+                            title="Test Audio"
+                            description="Play a test message through the earpiece"
+                            left={(props) => <List.Icon {...props} icon="volume-high" />}
+                            right={() =>
+                                testingAudio ? (
+                                    <ActivityIndicator size={20} />
+                                ) : (
+                                    <Button compact mode="text" onPress={handleTestBTAudio}>
+                                        Test
+                                    </Button>
+                                )
+                            }
+                        />
+                    )}
+                    {!btConnected && !btChecking && (
+                        <List.Item
+                            title="Pair Earpiece"
+                            description="Open Bluetooth settings to pair a device"
+                            left={(props) => <List.Icon {...props} icon="cog-outline" />}
+                            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+                            onPress={() => Linking.openSettings()}
+                        />
+                    )}
+                    <List.Item
+                        title="NFHS Compliance"
+                        description="One-way communication only. The catcher's earpiece is receive-only — it cannot transmit audio back to the coach."
+                        left={(props) => <List.Icon {...props} icon="shield-check" color="#10b981" />}
+                        descriptionNumberOfLines={3}
                     />
                 </List.Section>
 
