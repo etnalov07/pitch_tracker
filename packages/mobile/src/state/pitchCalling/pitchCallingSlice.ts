@@ -1,11 +1,19 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { PitchCall, PitchCallWithDetails, PitchCallAbbrev, PitchCallZone, PitchCallGameSummary } from '@pitch-tracker/shared';
+import {
+    PitchCall,
+    PitchCallWithDetails,
+    PitchCallAbbrev,
+    PitchCallZone,
+    PitchCallGameSummary,
+    GameCallAnalytics,
+} from '@pitch-tracker/shared';
 import { pitchCallingApi } from './api/pitchCallingApi';
 
 interface PitchCallingState {
     calls: PitchCallWithDetails[];
     activeCall: PitchCallWithDetails | null;
     summary: PitchCallGameSummary | null;
+    gameAnalytics: GameCallAnalytics | null;
     loading: boolean;
     sendingCall: boolean;
     error: string | null;
@@ -15,6 +23,7 @@ const initialState: PitchCallingState = {
     calls: [],
     activeCall: null,
     summary: null,
+    gameAnalytics: null,
     loading: false,
     sendingCall: false,
     error: null,
@@ -73,6 +82,10 @@ export const fetchCallGameSummary = createAsyncThunk('pitchCalling/fetchGameSumm
     return await pitchCallingApi.getGameSummary(gameId);
 });
 
+export const fetchGameAnalytics = createAsyncThunk('pitchCalling/fetchGameAnalytics', async (gameId: string) => {
+    return await pitchCallingApi.getGameAnalytics(gameId);
+});
+
 const pitchCallingSlice = createSlice({
     name: 'pitchCalling',
     initialState,
@@ -81,6 +94,7 @@ const pitchCallingSlice = createSlice({
             state.calls = [];
             state.activeCall = null;
             state.summary = null;
+            state.gameAnalytics = null;
             state.error = null;
         },
         clearPitchCallingError: (state) => {
@@ -167,6 +181,11 @@ const pitchCallingSlice = createSlice({
         // Fetch game summary
         builder.addCase(fetchCallGameSummary.fulfilled, (state, action) => {
             state.summary = action.payload;
+        });
+
+        // Fetch game analytics
+        builder.addCase(fetchGameAnalytics.fulfilled, (state, action) => {
+            state.gameAnalytics = action.payload;
         });
     },
 });

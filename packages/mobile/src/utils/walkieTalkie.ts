@@ -2,17 +2,20 @@ import { AudioContext, AudioBuffer, AudioRecorder, AudioManager } from 'react-na
 import { Platform } from 'react-native';
 
 /**
- * Walkie-Talkie: real-time phone-mic-to-Bluetooth passthrough.
+ * Walkie-Talkie: real-time phone-mic-to-Bluetooth A2DP passthrough.
  *
  * Uses react-native-audio-api (Web Audio API for RN) to connect the phone's
- * built-in microphone to the Bluetooth audio output via HFP. The earpiece
- * receives the coach's live voice in real time.
+ * built-in microphone to the Bluetooth audio output via A2DP.
  *
- * Audio path:  Phone mic → AudioRecorder → RecorderAdapterNode → AudioContext.destination → BT earpiece
+ * Audio path:  Phone mic → AudioRecorder → RecorderAdapterNode → AudioContext.destination → BT earpiece (A2DP)
  *
- * The catcher's earpiece is connected via HFP (Hands-Free Profile), which is
- * one-way: the earpiece receives audio from the phone but cannot transmit back.
- * The phone mic is the phone's own microphone, not the earpiece's.
+ * NFHS compliance: The catcher's earpiece is connected via A2DP, which is
+ * physically one-way. The earpiece cannot transmit audio back. All mic input
+ * comes from the phone's built-in microphone, never from the earpiece.
+ *
+ * On iOS, we use `allowBluetoothA2DP` (NOT `allowBluetoothHFP`) to keep the
+ * earpiece on A2DP even during playAndRecord mode. This ensures the earpiece's
+ * microphone (if it has one) remains completely inoperative.
  */
 
 let audioContext: AudioContext | null = null;
@@ -21,9 +24,35 @@ let _isActive = false;
 let _inputLevel = 0;
 
 /**
+ * Play a short chime tone so the catcher knows voice is incoming (open)
+ * or has stopped (close). Uses OscillatorNode for zero-dependency tones.
+ */
+async function playChime(ctx: AudioContext, frequency: number, duration: number): Promise<void> {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = frequency;
+    gain.gain.value = 0.3;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    const now = ctx.currentTime;
+    osc.start(now);
+    // Quick fade out to avoid click
+    gain.gain.setValueAtTime(0.3, now + duration * 0.7);
+    gain.gain.linearRampToValueAtTime(0, now + duration);
+    osc.stop(now + duration);
+
+    return new Promise((resolve) => setTimeout(resolve, duration * 1000));
+}
+
+/**
  * Start real-time mic → Bluetooth earpiece passthrough.
- * The audio session is configured for playAndRecord + allowBluetoothHFP
- * so audio routes through the earpiece while mic input comes from the phone.
+ *
+ * The audio session is configured for playAndRecord + allowBluetoothA2DP.
+ * This routes audio output through A2DP (media stream) while capturing
+ * mic input from the phone's built-in microphone. The earpiece stays
+ * receive-only — its mic is never activated.
  */
 export async function startPassthrough(): Promise<void> {
     if (_isActive) return;
@@ -34,12 +63,16 @@ export async function startPassthrough(): Promise<void> {
         throw new Error('Microphone permission denied');
     }
 
-    // Configure audio session for HFP routing
+    // Configure audio session for A2DP output + phone mic input
     if (Platform.OS === 'ios') {
         AudioManager.setAudioSessionOptions({
             iosCategory: 'playAndRecord',
             iosMode: 'voiceChat',
-            iosOptions: ['allowBluetoothA2DP', 'allowBluetoothHFP', 'defaultToSpeaker'],
+            // allowBluetoothA2DP: keeps earpiece on A2DP (receive-only)
+            // defaultToSpeaker: fallback if no BT connected
+            // NOTE: we deliberately do NOT include allowBluetoothHFP — this
+            // prevents iOS from negotiating HFP and activating the earpiece mic.
+            iosOptions: ['allowBluetoothA2DP', 'defaultToSpeaker'],
         });
     }
 
@@ -52,7 +85,7 @@ export async function startPassthrough(): Promise<void> {
     // Create adapter node to bridge recorder into the audio graph
     const adapter = audioContext.createRecorderAdapter();
 
-    // Connect: recorder → adapter → destination (BT earpiece)
+    // Connect: phone mic → adapter → destination (BT earpiece via A2DP)
     audioRecorder.connect(adapter);
     adapter.connect(audioContext.destination);
 
@@ -69,6 +102,9 @@ export async function startPassthrough(): Promise<void> {
     // Start recording (passthrough)
     audioRecorder.start();
     _isActive = true;
+
+    // Play open chime so catcher knows voice is incoming (ascending tone)
+    await playChime(audioContext, 880, 0.12);
 }
 
 /**
@@ -78,6 +114,11 @@ export async function stopPassthrough(): Promise<void> {
     if (!_isActive) return;
 
     try {
+        // Play close chime before tearing down (descending tone)
+        if (audioContext) {
+            await playChime(audioContext, 440, 0.12);
+        }
+
         if (audioRecorder) {
             audioRecorder.stop();
             audioRecorder = null;
@@ -107,6 +148,7 @@ export function isPassthroughActive(): boolean {
 
 /**
  * Temporarily pause passthrough (e.g., when a TTS pitch call plays).
+ * Pitch calls take priority over live voice per spec.
  */
 export function pausePassthrough(): void {
     if (!_isActive || !audioRecorder) return;

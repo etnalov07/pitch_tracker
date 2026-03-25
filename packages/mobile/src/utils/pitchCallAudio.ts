@@ -1,55 +1,55 @@
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as Speech from 'expo-speech';
 import { PitchCallAbbrev, PitchCallZone, PITCH_CALL_LABELS, PITCH_CALL_ZONE_LABELS } from '@pitch-tracker/shared';
+import { pausePassthrough, resumePassthrough, isPassthroughActive } from './walkieTalkie';
 
 /**
- * Audio isolation strategy:
+ * Audio routing strategy — A2DP (media audio):
  *
- * We route pitch call audio through the HFP (Hands-Free Profile) Bluetooth
- * channel instead of A2DP (media). This means:
+ * PitchChart routes all pitch call audio through the standard A2DP
+ * (Advanced Audio Distribution Profile) Bluetooth channel. A2DP is
+ * physically one-way — the earpiece receives audio but cannot transmit
+ * back. This enforces NFHS Rule 1-6-2 at the protocol level.
  *
- *   - Pitch calls → HFP → earpiece hears them
- *   - Notifications, music, etc. → A2DP media channel → phone speaker
+ * Key rule: We NEVER request audio input from the Bluetooth device.
+ * Mic input always comes from the phone's built-in microphone (for
+ * walkie-talkie). This keeps the earpiece locked to A2DP receive-only.
  *
- * On iOS, setting `allowsRecordingIOS: true` activates the AVAudioSession
- * `.playAndRecord` category with `.allowBluetooth`, which routes to HFP.
- *
- * On Android, `playThroughEarpieceAndroid: true` routes through the call
- * audio path (BT SCO when a headset is connected).
- *
- * Audio quality is 8kHz mono (phone-call quality) — more than adequate for
- * short spoken commands like "Fastball, down and away".
+ * On iOS, we use `.playback` category (not `.playAndRecord`) for pitch
+ * calls alone. The walkie-talkie module separately configures
+ * `.playAndRecord` with `allowBluetoothA2DP` when the coach holds the
+ * talk button — even then, the earpiece stays on A2DP.
  */
 
 let _audioModeActive = false;
 
 /**
- * Activate HFP audio routing. Call before the first pitch call in a session.
- * Safe to call multiple times — skips if already active.
+ * Activate A2DP audio routing for pitch calls. Routes TTS output
+ * through the default Bluetooth audio output (A2DP).
  */
-export async function activateHFPAudio(): Promise<void> {
+export async function activateA2DPAudio(): Promise<void> {
     if (_audioModeActive) return;
 
     await Audio.setAudioModeAsync({
-        // iOS: activates .playAndRecord + .allowBluetooth → routes to HFP
-        allowsRecordingIOS: true,
+        // iOS: .playback category routes to A2DP by default.
+        // allowsRecordingIOS: false keeps us on A2DP (not HFP).
+        allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-        // Android: route through call/earpiece audio path (BT SCO)
+        // Android: media route goes to A2DP when BT connected
         shouldDuckAndroid: false,
         interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-        playThroughEarpieceAndroid: true,
+        playThroughEarpieceAndroid: false,
     });
 
     _audioModeActive = true;
 }
 
 /**
- * Deactivate HFP audio routing. Call when leaving the pitch calling screen
- * so normal audio behavior resumes.
+ * Deactivate audio routing. Call when leaving the pitch calling screen.
  */
-export async function deactivateHFPAudio(): Promise<void> {
+export async function deactivateA2DPAudio(): Promise<void> {
     if (!_audioModeActive) return;
 
     await Audio.setAudioModeAsync({
@@ -66,15 +66,22 @@ export async function deactivateHFPAudio(): Promise<void> {
 }
 
 /**
- * Speak a pitch call via TTS over the HFP Bluetooth channel.
- * Activates HFP routing if not already active.
+ * Speak a pitch call via TTS over the A2DP Bluetooth channel.
  *
  * Format: "[Pitch type], [zone location]... [Pitch type], [zone location]"
  * Change calls get a "Change..." prefix so catcher knows to discard previous.
+ *
+ * If walkie-talkie is active, pauses mic passthrough while TTS plays
+ * (pitch calls take priority over live voice per spec).
  */
 export async function speakPitchCall(pitchType: PitchCallAbbrev, zone: PitchCallZone, isChange = false): Promise<void> {
-    // Ensure HFP routing is active before speaking
-    await activateHFPAudio();
+    await activateA2DPAudio();
+
+    // Duck walkie-talkie if active
+    const walkieWasActive = isPassthroughActive();
+    if (walkieWasActive) {
+        pausePassthrough();
+    }
 
     const pitchLabel = PITCH_CALL_LABELS[pitchType] || pitchType;
     const zoneLabel = PITCH_CALL_ZONE_LABELS[zone] || zone;
@@ -84,15 +91,22 @@ export async function speakPitchCall(pitchType: PitchCallAbbrev, zone: PitchCall
     const prefix = isChange ? 'Change. ' : '';
     const message = `${prefix}${callPhrase}... ${callPhrase}`;
 
-    return new Promise<void>((resolve, reject) => {
-        Speech.speak(message, {
-            language: 'en-US',
-            rate: 0.9,
-            pitch: 1.0,
-            onDone: resolve,
-            onError: reject,
+    try {
+        await new Promise<void>((resolve, reject) => {
+            Speech.speak(message, {
+                language: 'en-US',
+                rate: 0.9,
+                pitch: 1.0,
+                onDone: resolve,
+                onError: reject,
+            });
         });
-    });
+    } finally {
+        // Resume walkie-talkie after pitch call completes
+        if (walkieWasActive) {
+            resumePassthrough();
+        }
+    }
 }
 
 /** Stop any currently playing speech */
@@ -105,7 +119,11 @@ export async function isSpeaking(): Promise<boolean> {
     return await Speech.isSpeakingAsync();
 }
 
-/** Whether HFP audio mode is currently active */
-export function isHFPActive(): boolean {
+/** Whether A2DP audio mode is currently active */
+export function isAudioActive(): boolean {
     return _audioModeActive;
 }
+
+// Legacy aliases for backward compatibility
+export const activateHFPAudio = activateA2DPAudio;
+export const deactivateHFPAudio = deactivateA2DPAudio;

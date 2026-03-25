@@ -804,6 +804,74 @@ export interface PitchCallGameSummary {
 }
 
 // ============================================================================
+// Pitch Call Analytics
+// ============================================================================
+
+export interface PitchCallAccuracy {
+    /** Pitcher who executed the calls */
+    pitcher_id: string;
+    pitcher_name?: string;
+    /** Total calls with linked pitches */
+    total_linked: number;
+    /** % of pitches where actual type matches called type */
+    type_accuracy: number;
+    /** % of pitches landing in the called zone */
+    zone_accuracy: number;
+    /** Breakdown by pitch type */
+    by_type: {
+        called_type: PitchCallAbbrev;
+        total: number;
+        type_match: number;
+        zone_match: number;
+    }[];
+    /** Breakdown by count */
+    by_count: {
+        balls: number;
+        strikes: number;
+        total: number;
+        type_accuracy: number;
+        zone_accuracy: number;
+    }[];
+}
+
+export interface GameCallAnalytics {
+    game_id: string;
+    total_calls: number;
+    total_linked: number;
+    type_accuracy: number;
+    zone_accuracy: number;
+    results: {
+        strike: number;
+        ball: number;
+        foul: number;
+        in_play: number;
+    };
+    /** Per-pitcher breakdown */
+    by_pitcher: {
+        pitcher_id: string;
+        pitcher_name: string;
+        total: number;
+        type_accuracy: number;
+        zone_accuracy: number;
+    }[];
+}
+
+export interface SeasonCallAnalytics {
+    team_id: string;
+    games_with_calls: number;
+    total_calls: number;
+    total_linked: number;
+    type_accuracy: number;
+    zone_accuracy: number;
+    results: {
+        strike: number;
+        ball: number;
+        foul: number;
+        in_play: number;
+    };
+}
+
+// ============================================================================
 // API Response Wrappers
 // ============================================================================
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, Alert, Pressable } from 'react-native';
-import { Text, Button, IconButton } from 'react-native-paper';
+import { Text, IconButton } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import { PitchCallAbbrev, PitchCallZone, PitchCallResult, PITCH_CALL_LABELS, PITCH_CALL_ZONE_LABELS } from '@pitch-tracker/shared';
@@ -21,8 +21,9 @@ import {
     CallResultButtons,
     CallHistory,
     BluetoothStatus,
+    WalkieTalkieButton,
 } from '../../../src/components/pitchCalling';
-import { speakPitchCall, activateHFPAudio, deactivateHFPAudio } from '../../../src/utils/pitchCallAudio';
+import { speakPitchCall, activateA2DPAudio, deactivateA2DPAudio } from '../../../src/utils/pitchCallAudio';
 import { useBluetoothAudio } from '../../../src/utils/bluetoothAudio';
 import { startPassthrough, stopPassthrough, isPassthroughActive } from '../../../src/utils/walkieTalkie';
 import * as Speech from 'expo-speech';
@@ -46,13 +47,13 @@ export default function PitchCallingScreen() {
     const [selectedPitch, setSelectedPitch] = useState<PitchCallAbbrev | null>(null);
     const [selectedZone, setSelectedZone] = useState<PitchCallZone | null>(null);
     const [isChanging, setIsChanging] = useState(false);
-    const [walkieTalkieOn, setWalkieTalkieOn] = useState(false);
+    const [walkieTalkieActive, setWalkieTalkieActive] = useState(false);
 
-    // Activate HFP audio routing on mount, deactivate on unmount
+    // Activate A2DP audio routing on mount, deactivate on unmount
     useEffect(() => {
-        activateHFPAudio();
+        activateA2DPAudio();
         return () => {
-            deactivateHFPAudio();
+            deactivateA2DPAudio();
             if (isPassthroughActive()) {
                 stopPassthrough();
             }
@@ -60,7 +61,7 @@ export default function PitchCallingScreen() {
     }, []);
 
     const handleTestAudio = useCallback(async () => {
-        await activateHFPAudio();
+        await activateA2DPAudio();
         return new Promise<void>((resolve, reject) => {
             Speech.speak('Test. Pitch calling audio check.', {
                 language: 'en-US',
@@ -72,17 +73,22 @@ export default function PitchCallingScreen() {
         });
     }, []);
 
-    const handleWalkieTalkieToggle = useCallback(async () => {
+    // Push-to-talk: press-and-hold handlers
+    const handleTalkPressIn = useCallback(async () => {
+        if (!btConnected) return;
+        try {
+            await startPassthrough();
+            setWalkieTalkieActive(true);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        } catch (err: any) {
+            Alert.alert('Walkie-Talkie Error', err?.message || 'Failed to start mic passthrough');
+        }
+    }, [btConnected]);
+
+    const handleTalkPressOut = useCallback(async () => {
         if (isPassthroughActive()) {
             await stopPassthrough();
-            setWalkieTalkieOn(false);
-        } else {
-            try {
-                await startPassthrough();
-                setWalkieTalkieOn(true);
-            } catch (err: any) {
-                Alert.alert('Walkie-Talkie Error', err?.message || 'Failed to start mic passthrough');
-            }
+            setWalkieTalkieActive(false);
         }
     }, []);
 
@@ -132,7 +138,7 @@ export default function PitchCallingScreen() {
                 ).unwrap();
             }
 
-            // Speak the call via Bluetooth audio
+            // Speak the call via Bluetooth audio (A2DP)
             if (btConnected) {
                 await speakPitchCall(selectedPitch, selectedZone, isChanging);
                 await dispatch(markCallTransmitted(call.id));
@@ -225,22 +231,12 @@ export default function PitchCallingScreen() {
 
                         {/* Send + Walkie-Talkie row */}
                         <View style={styles.sendRow}>
-                            <Pressable
-                                style={[
-                                    styles.walkieButton,
-                                    walkieTalkieOn && styles.walkieButtonActive,
-                                    !btConnected && styles.walkieButtonDisabled,
-                                ]}
-                                onPress={handleWalkieTalkieToggle}
+                            <WalkieTalkieButton
                                 disabled={!btConnected}
-                            >
-                                <Text style={[styles.walkieIcon, walkieTalkieOn && styles.walkieIconActive]}>
-                                    {walkieTalkieOn ? '🔴' : '🎙'}
-                                </Text>
-                                <Text style={[styles.walkieLabel, walkieTalkieOn && styles.walkieLabelActive]}>
-                                    {walkieTalkieOn ? 'LIVE' : 'TALK'}
-                                </Text>
-                            </Pressable>
+                                onPressIn={handleTalkPressIn}
+                                onPressOut={handleTalkPressOut}
+                                isActive={walkieTalkieActive}
+                            />
 
                             <Pressable
                                 style={[styles.sendButton, (!canSend || !btConnected) && styles.sendButtonDisabled]}
@@ -265,10 +261,10 @@ export default function PitchCallingScreen() {
                             {activeCall!.bt_transmitted && <Text style={styles.transmittedText}>Transmitted</Text>}
                         </View>
 
-                        {/* Resend / Change / Walkie-Talkie buttons */}
+                        {/* Resend / Change row + Walkie-Talkie */}
                         <View style={styles.actionRow}>
                             <Pressable
-                                style={[styles.resendButton, !btConnected && styles.resendButtonDisabled]}
+                                style={[styles.resendButton, !btConnected && styles.buttonDisabled]}
                                 onPress={handleResend}
                                 disabled={!btConnected}
                             >
@@ -277,23 +273,20 @@ export default function PitchCallingScreen() {
                             <Pressable style={styles.changeButton} onPress={handleChange}>
                                 <Text style={styles.changeText}>CHANGE</Text>
                             </Pressable>
-                            <Pressable
-                                style={[
-                                    styles.walkieSmallButton,
-                                    walkieTalkieOn && styles.walkieButtonActive,
-                                    !btConnected && styles.walkieButtonDisabled,
-                                ]}
-                                onPress={handleWalkieTalkieToggle}
-                                disabled={!btConnected}
-                            >
-                                <Text style={[styles.walkieSmallLabel, walkieTalkieOn && styles.walkieLabelActive]}>
-                                    {walkieTalkieOn ? '🔴 LIVE' : '🎙 TALK'}
-                                </Text>
-                            </Pressable>
                         </View>
 
-                        {/* Result buttons */}
-                        <CallResultButtons onResult={handleLogResult} />
+                        {/* Walkie-talkie + Result row */}
+                        <View style={styles.walkieResultRow}>
+                            <WalkieTalkieButton
+                                disabled={!btConnected}
+                                onPressIn={handleTalkPressIn}
+                                onPressOut={handleTalkPressOut}
+                                isActive={walkieTalkieActive}
+                            />
+                            <View style={styles.resultButtonsWrap}>
+                                <CallResultButtons onResult={handleLogResult} />
+                            </View>
+                        </View>
                     </>
                 )}
 
@@ -362,51 +355,8 @@ const styles = StyleSheet.create({
     // Send + walkie row
     sendRow: {
         flexDirection: 'row',
-        gap: 10,
-        alignItems: 'stretch',
-    },
-    walkieButton: {
-        width: 64,
-        borderRadius: 10,
-        borderWidth: 2,
-        borderColor: BORDER,
+        gap: 12,
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 2,
-    },
-    walkieButtonActive: {
-        borderColor: '#EF4444',
-        backgroundColor: '#EF444420',
-    },
-    walkieButtonDisabled: {
-        opacity: 0.3,
-    },
-    walkieIcon: {
-        fontSize: 20,
-    },
-    walkieIconActive: {},
-    walkieLabel: {
-        fontSize: 9,
-        fontWeight: '700',
-        color: CHALK_DIM,
-        letterSpacing: 0.5,
-    },
-    walkieLabelActive: {
-        color: '#EF4444',
-    },
-    walkieSmallButton: {
-        paddingVertical: 14,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        borderWidth: 2,
-        borderColor: BORDER,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    walkieSmallLabel: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: CHALK_DIM,
     },
     // Send button
     sendButton: {
@@ -477,7 +427,7 @@ const styles = StyleSheet.create({
         borderColor: AMBER,
         alignItems: 'center',
     },
-    resendButtonDisabled: {
+    buttonDisabled: {
         opacity: 0.4,
     },
     resendText: {
@@ -502,5 +452,14 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: CHALK_DIM,
         letterSpacing: 0.5,
+    },
+    // Walkie + result row (post-send phase)
+    walkieResultRow: {
+        flexDirection: 'row',
+        gap: 12,
+        alignItems: 'flex-start',
+    },
+    resultButtonsWrap: {
+        flex: 1,
     },
 });

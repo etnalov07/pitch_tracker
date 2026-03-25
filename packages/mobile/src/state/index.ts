@@ -96,6 +96,7 @@ export {
     fetchGameCalls,
     fetchActiveCall,
     fetchCallGameSummary,
+    fetchGameAnalytics,
     clearPitchCalling,
     clearPitchCallingError,
 } from './pitchCalling/pitchCallingSlice';
