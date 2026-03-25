@@ -698,14 +698,14 @@ export const PITCH_CALL_ZONE_LABELS: Record<PitchCallZone, string> = {
     '2-0': 'Down and In',
     '2-1': 'Down the Middle',
     '2-2': 'Down and Away',
-    'W-high': 'Waste High',
-    'W-low': 'Waste Low',
-    'W-in': 'Waste Inside',
-    'W-out': 'Waste Outside',
-    'W-high-in': 'Waste High-In',
-    'W-high-out': 'Waste High-Out',
-    'W-low-in': 'Waste Low-In',
-    'W-low-out': 'Waste Low-Out',
+    'W-high': 'High at the Shoulders',
+    'W-low': 'Low in the Dirt',
+    'W-in': 'Tight Inside',
+    'W-out': 'Extended Outside',
+    'W-high-in': 'High and Tight',
+    'W-high-out': 'High and Away',
+    'W-low-in': 'Low and Tight',
+    'W-low-out': 'Low and Away',
 };
 
 // Center coordinates (0-1 normalized) for each zone, used for rendering targets on the strike zone
