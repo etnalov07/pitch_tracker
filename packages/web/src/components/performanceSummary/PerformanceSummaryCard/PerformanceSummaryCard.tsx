@@ -1,5 +1,5 @@
-import React from 'react';
 import { PerformanceSummary } from '@pitch-tracker/shared';
+import React from 'react';
 import {
     Card,
     NarrativeBox,
