@@ -101,6 +101,14 @@ export {
     clearPitchCallingError,
 } from './pitchCalling/pitchCallingSlice';
 
+export {
+    fetchPerformanceSummary,
+    fetchPitcherSummaries,
+    regenerateNarrative,
+    clearPerformanceSummary,
+    clearPerformanceSummaryError,
+} from './performanceSummary/performanceSummarySlice';
+
 export { initializeSettings, setPitchCallingEnabled, setVelocityEnabled } from './settings/settingsSlice';
 
 export {

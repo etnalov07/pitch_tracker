@@ -22,6 +22,7 @@ import pitchRoutes from './routes/pitch.routes';
 import playRoutes from './routes/play.routes';
 import playerRoutes from './routes/player.routes';
 import teamMemberRoutes from './routes/teamMember.routes';
+import performanceSummaryRoutes from './routes/performanceSummary.routes';
 import teamRoutes from './routes/team.routes';
 
 const app: Application = express();
@@ -82,6 +83,7 @@ app.use('/bt-api/invites', inviteRoutes);
 app.use('/bt-api/join-requests', joinRequestRoutes);
 app.use('/bt-api/opponent-lineup', opponentLineupRoutes);
 app.use('/bt-api/organizations', organizationRoutes);
+app.use('/bt-api/performance-summaries', performanceSummaryRoutes);
 app.use('/bt-api/pitch-call-analytics', pitchCallAnalyticsRoutes);
 app.use('/bt-api/pitch-calls', pitchCallRoutes);
 app.use('/bt-api/pitches', pitchRoutes);

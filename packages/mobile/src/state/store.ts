@@ -7,6 +7,7 @@ import offlineReducer from './offline/offlineSlice';
 import { invitesReducer } from './invites';
 import bullpenReducer from './bullpen/bullpenSlice';
 import pitchCallingReducer from './pitchCalling/pitchCallingSlice';
+import performanceSummaryReducer from './performanceSummary/performanceSummarySlice';
 import settingsReducer from './settings/settingsSlice';
 
 export const store = configureStore({
@@ -17,6 +18,7 @@ export const store = configureStore({
         offline: offlineReducer,
         invites: invitesReducer,
         bullpen: bullpenReducer,
+        performanceSummary: performanceSummaryReducer,
         pitchCalling: pitchCallingReducer,
         settings: settingsReducer,
     },

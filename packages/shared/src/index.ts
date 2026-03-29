@@ -872,6 +872,61 @@ export interface SeasonCallAnalytics {
 }
 
 // ============================================================================
+// Performance Summary
+// ============================================================================
+
+export type SummarySourceType = 'game' | 'bullpen';
+export type MetricRating = 'highlight' | 'concern' | 'neutral';
+
+export interface PerformanceMetric {
+    metric_name: string;
+    value: number;
+    benchmark_value: number;
+    historical_avg: number | null;
+    rating: MetricRating;
+    delta_from_avg: number | null;
+}
+
+export interface PitchTypeSummary {
+    pitch_type: string;
+    count: number;
+    strikes: number;
+    balls: number;
+    strike_percentage: number;
+    avg_velocity: number | null;
+    top_velocity: number | null;
+    target_accuracy_percentage: number | null;
+    rating: MetricRating;
+}
+
+export interface PerformanceSummary {
+    id: string;
+    source_type: SummarySourceType;
+    source_id: string;
+    pitcher_id: string;
+    pitcher_name: string;
+    team_id: string;
+    created_at: string;
+    narrative: string | null;
+    narrative_generated_at: string | null;
+    total_pitches: number;
+    strikes: number;
+    balls: number;
+    strike_percentage: number;
+    target_accuracy_percentage: number | null;
+    batters_faced: number | null;
+    innings_pitched: number | null;
+    runs_allowed: number | null;
+    hits_allowed: number | null;
+    intensity: string | null;
+    plan_name: string | null;
+    metrics: PerformanceMetric[];
+    pitch_type_breakdown: PitchTypeSummary[];
+    highlights: string[];
+    concerns: string[];
+}
+
+// ============================================================================
 // API Response Wrappers
 // ============================================================================
 

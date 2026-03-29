@@ -1,4 +1,9 @@
-import { PitcherProfile as PitcherProfileType, PitcherGameLog, BullpenSessionSummary } from '@pitch-tracker/shared';
+import {
+    PitcherProfile as PitcherProfileType,
+    PitcherGameLog,
+    BullpenSessionSummary,
+    PerformanceSummary,
+} from '@pitch-tracker/shared';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import HeatZoneOverlay from '../../components/live/HeatZoneOverlay';
@@ -6,6 +11,8 @@ import { GameLogTable, GameLogDetail, BullpenLogTable, BullpenLogDetail } from '
 import useHeatZones from '../../hooks/useHeatZones';
 import api from '../../services/api';
 import { bullpenService } from '../../services/bullpenService';
+import { performanceSummaryService } from '../../services/performanceSummaryService';
+import { PerformanceSummaryCard } from '../../components/performanceSummary';
 import {
     Container,
     Header,
@@ -76,6 +83,8 @@ const PitcherProfile: React.FC = () => {
     const [heatZonePitchType, setHeatZonePitchType] = useState<string | undefined>(undefined);
     const [bullpenSessions, setBullpenSessions] = useState<BullpenSessionSummary[]>([]);
     const [selectedBullpen, setSelectedBullpen] = useState<BullpenSessionSummary | null>(null);
+    const [performanceSummaries, setPerformanceSummaries] = useState<PerformanceSummary[]>([]);
+    const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
     // Fetch heat zones for career stats (no gameId = all games, optional pitch type filter)
     const { zones: heatZones } = useHeatZones(pitcher_id, undefined, heatZonePitchType);
@@ -86,12 +95,14 @@ const PitcherProfile: React.FC = () => {
 
             try {
                 setLoading(true);
-                const [profileRes, bullpenRes] = await Promise.all([
+                const [profileRes, bullpenRes, summariesRes] = await Promise.all([
                     api.get<{ profile: PitcherProfileType }>(`/analytics/pitcher/${pitcher_id}/profile`),
                     bullpenService.getPitcherBullpenLogs(pitcher_id).catch(() => ({ sessions: [], total_count: 0 })),
+                    performanceSummaryService.getPitcherSummaries(pitcher_id, 5).catch(() => ({ summaries: [], total_count: 0 })),
                 ]);
                 setProfile(profileRes.data.profile);
                 setBullpenSessions(bullpenRes.sessions);
+                setPerformanceSummaries(summariesRes.summaries);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to load pitcher profile');
             } finally {
@@ -274,6 +285,34 @@ const PitcherProfile: React.FC = () => {
                     </SectionHeader>
                     <BullpenLogTable sessions={bullpenSessions} onSessionSelect={setSelectedBullpen} />
                 </GameLogsSection>
+
+                {performanceSummaries.length > 0 && (
+                    <GameLogsSection>
+                        <SectionHeader>
+                            <SectionTitle>Performance Summaries</SectionTitle>
+                        </SectionHeader>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {performanceSummaries.map((s) => (
+                                <PerformanceSummaryCard
+                                    key={s.id}
+                                    summary={s}
+                                    onRegenerate={async () => {
+                                        setRegeneratingId(s.id);
+                                        try {
+                                            const updated = await performanceSummaryService.regenerateNarrative(s.id);
+                                            setPerformanceSummaries((prev) =>
+                                                prev.map((ps) => (ps.id === updated.id ? updated : ps))
+                                            );
+                                        } finally {
+                                            setRegeneratingId(null);
+                                        }
+                                    }}
+                                    regenerating={regeneratingId === s.id}
+                                />
+                            ))}
+                        </div>
+                    </GameLogsSection>
+                )}
             </Content>
             {selectedGame && <GameLogDetail gameLog={selectedGame} onClose={handleCloseDetail} onViewGame={handleViewGame} />}
             {selectedBullpen && <BullpenLogDetail session={selectedBullpen} onClose={() => setSelectedBullpen(null)} />}

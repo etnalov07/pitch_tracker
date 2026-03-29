@@ -11,6 +11,7 @@
     },
     "type": "commonjs",
     "dependencies": {
+        "@anthropic-ai/sdk": "^0.80.0",
         "@pitch-tracker/shared": "1.0.0",
         "bcrypt": "^6.0.0",
         "cors": "^2.8.5",

@@ -163,6 +163,16 @@ export default function BullpenSummaryScreen() {
                 )}
 
                 <Button
+                    mode="contained-tonal"
+                    onPress={() => router.push(`/bullpen/${id}/performance-summary` as any)}
+                    style={styles.doneButton}
+                    contentStyle={styles.doneButtonContent}
+                    icon="chart-box-outline"
+                >
+                    View Performance Summary
+                </Button>
+
+                <Button
                     mode="contained"
                     onPress={() => router.dismissAll()}
                     style={styles.doneButton}
