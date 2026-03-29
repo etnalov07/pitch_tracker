@@ -1,64 +1,74 @@
+import { Platform } from 'react-native';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+import { AudioManager } from 'react-native-audio-api';
 import * as Speech from 'expo-speech';
 import { PitchCallAbbrev, PitchCallZone, PITCH_CALL_LABELS, PITCH_CALL_ZONE_LABELS } from '@pitch-tracker/shared';
 import { pausePassthrough, resumePassthrough, isPassthroughActive } from './walkieTalkie';
 
 /**
- * Audio routing strategy — HFP (Hands-Free Profile):
+ * Audio routing strategy — A2DP (Advanced Audio Distribution Profile):
  *
- * We route pitch call audio through the HFP Bluetooth channel. This
- * explicitly sends TTS audio to the paired earpiece rather than the
- * phone speaker. On iOS, `allowsRecordingIOS: true` activates the
- * AVAudioSession `.playAndRecord` category with `.allowBluetooth`,
- * which reliably routes to the BT earpiece.
+ * On iOS, react-native-audio-api's AudioManager is the sole AVAudioSession
+ * owner. We configure `.playAndRecord` with `.allowBluetoothA2DP` so iOS
+ * prefers A2DP output (media audio) over HFP (phone-call audio). This
+ * ensures audio reaches A2DP-only receivers like the YOCOWOCO BT adapter.
  *
- * The earpiece is still one-way — HFP routes audio TO the earpiece,
- * and any mic input comes from the phone's built-in microphone, NOT
- * the earpiece. The catcher cannot talk back.
+ * On Android, expo-av manages the audio session as before.
+ *
+ * The earpiece is one-way — A2DP is a unidirectional streaming protocol.
+ * The catcher's earpiece physically cannot transmit audio back. All mic
+ * input comes from the phone's built-in microphone.
  */
 
 let _audioModeActive = false;
 
 /**
  * Activate Bluetooth audio routing for pitch calls.
- * Routes TTS output through the BT earpiece via HFP.
+ * iOS: A2DP via AudioManager. Android: expo-av.
  */
 export async function activateBTAudio(): Promise<void> {
     if (_audioModeActive) return;
 
-    await Audio.setAudioModeAsync({
-        // iOS: .playAndRecord + .allowBluetooth → routes to BT earpiece
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-        // Android: route through earpiece/BT SCO audio path
-        shouldDuckAndroid: false,
-        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-        playThroughEarpieceAndroid: true,
-    });
+    if (Platform.OS === 'ios') {
+        // AudioManager is the sole AVAudioSession owner on iOS.
+        // .playAndRecord enables mic capture; .allowBluetoothA2DP routes
+        // output through A2DP instead of HFP; .defaultToSpeaker falls back
+        // to the phone speaker when no BT device is connected.
+        AudioManager.setAudioSessionOptions({
+            iosCategory: 'playAndRecord',
+            iosMode: 'default',
+            iosOptions: ['allowBluetoothA2DP', 'defaultToSpeaker'],
+        });
+        await AudioManager.setAudioSessionActivity(true);
+    } else {
+        await Audio.setAudioModeAsync({
+            shouldDuckAndroid: false,
+            interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+            playThroughEarpieceAndroid: true,
+        });
+    }
 
     _audioModeActive = true;
 }
 
 /**
  * Deactivate BT audio routing. Skips teardown if walkie-talkie passthrough
- * is still active (it depends on the HFP session).
+ * is still active (it depends on the audio session).
  */
 export async function deactivateBTAudio(): Promise<void> {
     if (!_audioModeActive) return;
-    // Don't tear down the HFP session while walkie-talkie needs it
+    // Don't tear down the session while walkie-talkie needs it
     if (isPassthroughActive()) return;
 
-    await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: false,
-        staysActiveInBackground: false,
-        interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
-        shouldDuckAndroid: true,
-        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-        playThroughEarpieceAndroid: false,
-    });
+    if (Platform.OS === 'ios') {
+        await AudioManager.setAudioSessionActivity(false);
+    } else {
+        await Audio.setAudioModeAsync({
+            shouldDuckAndroid: true,
+            interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+            playThroughEarpieceAndroid: false,
+        });
+    }
 
     _audioModeActive = false;
 }
@@ -70,15 +80,15 @@ export async function deactivateBTAudio(): Promise<void> {
 export async function forceDeactivateBTAudio(): Promise<void> {
     if (!_audioModeActive) return;
 
-    await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: false,
-        staysActiveInBackground: false,
-        interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
-        shouldDuckAndroid: true,
-        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-        playThroughEarpieceAndroid: false,
-    });
+    if (Platform.OS === 'ios') {
+        await AudioManager.setAudioSessionActivity(false);
+    } else {
+        await Audio.setAudioModeAsync({
+            shouldDuckAndroid: true,
+            interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+            playThroughEarpieceAndroid: false,
+        });
+    }
 
     _audioModeActive = false;
 }

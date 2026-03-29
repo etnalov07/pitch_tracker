@@ -1,26 +1,22 @@
 import { AudioContext, AudioBuffer, AudioRecorder, AudioManager } from 'react-native-audio-api';
 
 /**
- * Walkie-Talkie: real-time phone-mic-to-Bluetooth HFP passthrough.
+ * Walkie-Talkie: real-time phone-mic-to-Bluetooth A2DP passthrough.
  *
  * Uses react-native-audio-api (Web Audio API for RN) to connect the phone's
- * built-in microphone to the Bluetooth audio output via HFP.
+ * built-in microphone to the Bluetooth audio output via A2DP.
  *
- * Audio path:  Phone mic → AudioRecorder → RecorderAdapterNode → AudioContext.destination → BT earpiece (HFP)
+ * Audio path:  Phone mic → AudioRecorder → RecorderAdapterNode → AudioContext.destination → BT earpiece (A2DP)
  *
- * NFHS compliance: The earpiece is receive-only. HFP routes audio TO the
- * earpiece; all mic input comes from the phone's built-in microphone, never
- * from the earpiece. The catcher cannot talk back.
+ * NFHS compliance: The earpiece is receive-only. A2DP is a unidirectional
+ * streaming protocol — the earpiece physically cannot transmit audio back.
+ * All mic input comes from the phone's built-in microphone, never from the
+ * earpiece. The catcher cannot talk back.
  *
- * Audio session strategy: expo-av owns the iOS AVAudioSession (configured for
- * HFP via `allowsRecordingIOS: true`). We call `disableSessionManagement()`
- * so react-native-audio-api does not touch the session, avoiding conflicts
- * between the two audio systems.
+ * Audio session strategy: react-native-audio-api's AudioManager is the sole
+ * AVAudioSession owner on iOS. It configures `.playAndRecord` with
+ * `.allowBluetoothA2DP` via `activateBTAudio()` in pitchCallAudio.ts.
  */
-
-// Prevent react-native-audio-api from managing its own AVAudioSession.
-// expo-av is the sole session owner (HFP routing via activateBTAudio).
-AudioManager.disableSessionManagement();
 
 let audioContext: AudioContext | null = null;
 let audioRecorder: AudioRecorder | null = null;
@@ -53,10 +49,10 @@ async function playChime(ctx: AudioContext, frequency: number, duration: number)
 /**
  * Start real-time mic → Bluetooth earpiece passthrough.
  *
- * Relies on expo-av's HFP audio session (activated via `activateBTAudio`).
+ * Relies on the A2DP audio session (activated via `activateBTAudio`).
  * The phone's built-in microphone is captured by AudioRecorder and routed
  * through the Web Audio graph to the BT earpiece. The earpiece stays
- * receive-only — its mic is never activated.
+ * receive-only — A2DP is unidirectional.
  */
 export async function startPassthrough(): Promise<void> {
     if (_isActive) return;
@@ -67,7 +63,7 @@ export async function startPassthrough(): Promise<void> {
         throw new Error('Microphone permission denied');
     }
 
-    // Ensure HFP audio session is active (expo-av owns the session).
+    // Ensure A2DP audio session is active (AudioManager owns the session on iOS).
     // Lazy import to avoid circular dependency (pitchCallAudio imports from walkieTalkie).
     const { activateBTAudio } = await import('./pitchCallAudio');
     await activateBTAudio();
@@ -79,7 +75,7 @@ export async function startPassthrough(): Promise<void> {
     // Create adapter node to bridge recorder into the audio graph
     const adapter = audioContext.createRecorderAdapter();
 
-    // Connect: phone mic → adapter → destination (BT earpiece via HFP)
+    // Connect: phone mic → adapter → destination (BT earpiece via A2DP)
     audioRecorder.connect(adapter);
     adapter.connect(audioContext.destination);
 
