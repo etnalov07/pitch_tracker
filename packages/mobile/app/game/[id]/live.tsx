@@ -63,7 +63,9 @@ import {
     TeamAtBatModal,
     BaserunnerOutModal,
     RunnerAdvancementModal,
+    PreviousAtBatsModal,
 } from '../../../src/components/live';
+import type { CompletedAtBatEntry } from '../../../src/components/live';
 import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/components/common';
 import { HitLocation } from '../../../src/components/live/InPlayModal';
 
@@ -124,6 +126,10 @@ export default function LiveGameScreen() {
     // Team at bat modal state (visitor games)
     const [showTeamAtBat, setShowTeamAtBat] = useState(false);
     const [teamAtBatRuns, setTeamAtBatRuns] = useState('0');
+
+    // Previous at-bats tracking (keyed by opponent_batter_id)
+    const [completedAtBatsByBatter, setCompletedAtBatsByBatter] = useState<Record<string, CompletedAtBatEntry[]>>({});
+    const [showPreviousAtBats, setShowPreviousAtBats] = useState(false);
 
     // Pitch call state (integrated from pitch-calling screen)
     const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
@@ -250,11 +256,24 @@ export default function LiveGameScreen() {
         async (result: string) => {
             if (!currentAtBat) return;
             try {
+                // Capture before clearing
+                const endedAtBat = currentAtBat;
+                const endedPitches = [...pitches];
+                const endedBatterId = currentBatter?.id;
+
                 const outsFromPlay = getOutsForResult(result);
                 const newOutCount = currentOuts + outsFromPlay;
-                await dispatch(endAtBat({ id: currentAtBat.id, data: { result, outs_after: Math.min(newOutCount, 3) } })).unwrap();
+                await dispatch(endAtBat({ id: endedAtBat.id, data: { result, outs_after: Math.min(newOutCount, 3) } })).unwrap();
                 dispatch(setCurrentAtBat(null));
                 dispatch(clearPitches());
+
+                // Record completed at-bat for previous at-bats view
+                if (endedBatterId) {
+                    setCompletedAtBatsByBatter((prev) => ({
+                        ...prev,
+                        [endedBatterId]: [...(prev[endedBatterId] || []), { atBat: endedAtBat, result, pitches: endedPitches }],
+                    }));
+                }
 
                 if (outsFromPlay > 0 && newOutCount >= 3) {
                     setCurrentOuts(0);
@@ -278,7 +297,18 @@ export default function LiveGameScreen() {
                 Alert.alert('Error', 'Failed to end at-bat');
             }
         },
-        [currentAtBat, currentOuts, currentBattingOrder, activeBatters, currentInning, game, dispatch, startAtBatForBatter]
+        [
+            currentAtBat,
+            currentOuts,
+            currentBattingOrder,
+            activeBatters,
+            currentInning,
+            game,
+            pitches,
+            currentBatter,
+            dispatch,
+            startAtBatForBatter,
+        ]
     );
 
     const handleInningChangeConfirm = useCallback(async () => {
@@ -823,6 +853,9 @@ export default function LiveGameScreen() {
         </Portal>
     );
 
+    const previousAtBatsForCurrentBatter = currentBatter ? completedAtBatsByBatter[currentBatter.id] || [] : [];
+    const hasPreviousAtBats = previousAtBatsForCurrentBatter.length > 0;
+
     const renderRunnerOutButton = () => {
         if (game.status !== 'in_progress' || !hasRunnersOnBase) return null;
         return (
@@ -979,9 +1012,25 @@ export default function LiveGameScreen() {
                         >
                             Log Pitch
                         </Button>
+                        {hasPreviousAtBats && (
+                            <Button
+                                mode="outlined"
+                                onPress={() => setShowPreviousAtBats(true)}
+                                style={styles.previousAtBatsButton}
+                                icon="history"
+                            >
+                                Previous At-Bats ({previousAtBatsForCurrentBatter.length})
+                            </Button>
+                        )}
                     </ScrollView>
                 </View>
                 {renderModals()}
+                <PreviousAtBatsModal
+                    visible={showPreviousAtBats}
+                    onClose={() => setShowPreviousAtBats(false)}
+                    batterName={currentBatter?.player_name || ''}
+                    completedAtBats={previousAtBatsForCurrentBatter}
+                />
                 <InPlayModal visible={showInPlayModal} onDismiss={() => setShowInPlayModal(false)} onResult={handleInPlayResult} />
             </SafeAreaView>
         );
@@ -1117,8 +1166,25 @@ export default function LiveGameScreen() {
                 >
                     Log Pitch
                 </Button>
+                {/* 7. Previous At-Bats (hidden on first at-bat) */}
+                {hasPreviousAtBats && (
+                    <Button
+                        mode="outlined"
+                        onPress={() => setShowPreviousAtBats(true)}
+                        style={styles.previousAtBatsButton}
+                        icon="history"
+                    >
+                        Previous At-Bats ({previousAtBatsForCurrentBatter.length})
+                    </Button>
+                )}
             </ScrollView>
             {renderModals()}
+            <PreviousAtBatsModal
+                visible={showPreviousAtBats}
+                onClose={() => setShowPreviousAtBats(false)}
+                batterName={currentBatter?.player_name || ''}
+                completedAtBats={previousAtBatsForCurrentBatter}
+            />
             <InPlayModal visible={showInPlayModal} onDismiss={() => setShowInPlayModal(false)} onResult={handleInPlayResult} />
         </SafeAreaView>
     );
@@ -1149,6 +1215,7 @@ const styles = StyleSheet.create({
     placeholder: { color: '#6b7280', marginTop: 4 },
     logButton: { marginTop: 4 },
     logButtonContent: { paddingVertical: 6 },
+    previousAtBatsButton: { marginTop: 8 },
     startAtBatButton: { marginTop: 6 },
     selectPrompt: { marginTop: 6, padding: 12, backgroundColor: '#fef3c7', borderRadius: 8, alignItems: 'center' },
     selectPromptText: { color: '#92400e', fontSize: 14, fontWeight: '500' },
