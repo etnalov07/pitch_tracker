@@ -131,6 +131,9 @@ export default function LiveGameScreen() {
     const [completedAtBatsByBatter, setCompletedAtBatsByBatter] = useState<Record<string, CompletedAtBatEntry[]>>({});
     const [showPreviousAtBats, setShowPreviousAtBats] = useState(false);
 
+    // Running game pitch count (seeded from game data, incremented on each logged pitch)
+    const [totalPitchCount, setTotalPitchCount] = useState(0);
+
     // Pitch call state (integrated from pitch-calling screen)
     const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
     const [sendingCall, setSendingCall] = useState(false);
@@ -183,6 +186,13 @@ export default function LiveGameScreen() {
             dispatch(fetchTeamPitcherRoster(game.home_team_id));
         }
     }, [game?.home_team_id, dispatch]);
+
+    // Seed pitch count from game data on load (only once when game first loads)
+    useEffect(() => {
+        if (game?.total_pitches != null) {
+            setTotalPitchCount(game.total_pitches);
+        }
+    }, [game?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         if (gamePitchers.length > 0 && !currentPitcher) {
@@ -591,6 +601,7 @@ export default function LiveGameScreen() {
                 Alert.alert('Error', 'Failed to log pitch');
                 return;
             }
+            setTotalPitchCount((prev) => prev + 1);
             const newBalls = balls + (selectedResult === 'ball' ? 1 : 0);
             const newStrikes =
                 effectiveStrikes +
@@ -752,6 +763,7 @@ export default function LiveGameScreen() {
             strikes={strikes}
             outs={currentOuts}
             runners={baseRunners}
+            pitchCount={totalPitchCount}
             onPitcherPress={game.status === 'in_progress' ? () => setPitcherModalVisible(true) : undefined}
             onBatterPress={game.status === 'in_progress' ? () => setBatterModalVisible(true) : undefined}
             onRunnerPress={game.status === 'in_progress' ? handleRunnerPress : undefined}

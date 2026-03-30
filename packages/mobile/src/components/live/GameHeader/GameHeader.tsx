@@ -12,6 +12,7 @@ interface GameHeaderProps {
     strikes: number;
     outs: number;
     runners?: BaseRunners;
+    pitchCount?: number;
     onPitcherPress?: () => void;
     onBatterPress?: () => void;
     onRunnerPress?: (base: RunnerBase) => void;
@@ -26,6 +27,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
     strikes,
     outs,
     runners = { first: false, second: false, third: false },
+    pitchCount,
     onPitcherPress,
     onBatterPress,
     onRunnerPress,
@@ -98,7 +100,9 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                 >
                     <Text style={styles.playerLabel}>P</Text>
                     <Text style={styles.playerName} numberOfLines={1}>
-                        {currentPitcher ? `${currentPitcher.first_name[0]}. ${currentPitcher.last_name}` : 'Select'}
+                        {currentPitcher
+                            ? `${currentPitcher.first_name[0]}. ${currentPitcher.last_name}${pitchCount != null ? ` (${pitchCount})` : ''}`
+                            : 'Select'}
                     </Text>
                 </Pressable>
                 <Text style={styles.vs}>vs</Text>
