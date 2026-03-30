@@ -93,6 +93,48 @@ export const requireOrgRole = (...roles: OrgRole[]) => {
 };
 
 /**
+ * Middleware factory: require one of the given team roles for a player's owning team.
+ * Looks up players.team_id for req.params.id, then delegates to requireTeamRole.
+ */
+export const requirePlayerTeamRole = (...roles: TeamRole[]) => {
+    return async (req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> => {
+        const playerId = req.params.id;
+
+        if (!playerId || !req.user) {
+            res.status(403).json({ error: 'Forbidden' });
+            return;
+        }
+
+        try {
+            const result = await query('SELECT team_id FROM players WHERE id = $1', [playerId]);
+            if (result.rows.length === 0) {
+                res.status(404).json({ error: 'Player not found' });
+                return;
+            }
+
+            const teamId = result.rows[0].team_id as string;
+            const userRole = req.userRoles?.teamRoles.get(teamId);
+            if (userRole && roles.includes(userRole)) {
+                next();
+                return;
+            }
+
+            // Backwards compat: check legacy owner_id
+            const teamResult = await query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
+            if (teamResult.rows.length > 0 && teamResult.rows[0].owner_id === req.user.id) {
+                next();
+                return;
+            }
+        } catch (error) {
+            next(error);
+            return;
+        }
+
+        res.status(403).json({ error: 'Insufficient team permissions' });
+    };
+};
+
+/**
  * Middleware: require the user to be a member of the specified org (any role).
  */
 export const requireOrgMember = (req: RoleAwareRequest, res: Response, next: NextFunction): void => {

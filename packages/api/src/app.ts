@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import path from 'path';
 import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
@@ -26,6 +27,9 @@ import performanceSummaryRoutes from './routes/performanceSummary.routes';
 import teamRoutes from './routes/team.routes';
 
 const app: Application = express();
+
+// Security middleware
+app.use(helmet());
 
 // Middleware
 console.log('CORS origins configured:', config.cors.origin);

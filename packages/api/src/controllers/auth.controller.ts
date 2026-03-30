@@ -1,17 +1,18 @@
 import { Response, NextFunction } from 'express';
+import { validationResult } from 'express-validator';
 import { AuthRequest } from '../types';
 import authService from '../services/auth.service';
 
 export class AuthController {
     async register(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { email, password, first_name, last_name } = req.body;
-
-            // Validation
-            if (!email || !password || !first_name || !last_name) {
-                res.status(400).json({ error: 'All fields are required' });
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({ error: errors.array()[0].msg });
                 return;
             }
+
+            const { email, password, first_name, last_name } = req.body;
 
             const result = await authService.register({ email, password, first_name, last_name });
 
@@ -27,13 +28,13 @@ export class AuthController {
 
     async login(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { email, password } = req.body;
-
-            // Validation
-            if (!email || !password) {
-                res.status(400).json({ error: 'Email and password are required' });
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({ error: errors.array()[0].msg });
                 return;
             }
+
+            const { email, password } = req.body;
 
             const result = await authService.login({ email, password });
 
