@@ -224,6 +224,7 @@ export interface Game {
     opponent_name?: string;
     is_home_game?: boolean;
     lineup_size?: number;
+    total_innings?: number;
     game_date: string;
     game_time?: string;
     location?: string;

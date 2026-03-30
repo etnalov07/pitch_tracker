@@ -19,6 +19,7 @@ export default function NewGameScreen() {
     const [isHomeGame, setIsHomeGame] = useState(true);
     const [opponentName, setOpponentName] = useState('');
     const [lineupSize, setLineupSize] = useState('9');
+    const [totalInnings, setTotalInnings] = useState('7');
     const [gameDate, setGameDate] = useState(new Date().toISOString().split('T')[0]);
     const [gameTime, setGameTime] = useState('18:00');
     const [location, setLocation] = useState('');
@@ -36,6 +37,17 @@ export default function NewGameScreen() {
             setSelectedTeamId(userTeams[0].id);
         }
     }, [userTeams, selectedTeamId]);
+
+    // Auto-set innings default based on team type
+    useEffect(() => {
+        if (!selectedTeamId) return;
+        const team = userTeams.find((t) => t.id === selectedTeamId);
+        if (team?.team_type === 'college') {
+            setTotalInnings('9');
+        } else {
+            setTotalInnings('7');
+        }
+    }, [selectedTeamId, userTeams]);
 
     const handleCreate = async () => {
         if (!selectedTeamId) {
@@ -56,6 +68,7 @@ export default function NewGameScreen() {
                     opponent_name: opponentName.trim(),
                     is_home_game: isHomeGame,
                     lineup_size: parseInt(lineupSize, 10),
+                    total_innings: parseInt(totalInnings, 10),
                     game_date: gameDateTime.toISOString(),
                     location: location.trim() || undefined,
                 })
@@ -151,6 +164,25 @@ export default function NewGameScreen() {
                                 { value: '10', label: '10 (EH)' },
                                 { value: '11', label: '11' },
                                 { value: '12', label: '12' },
+                            ]}
+                            style={styles.segmented}
+                        />
+
+                        {/* Total Innings */}
+                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                            Innings
+                        </Text>
+                        <SegmentedButtons
+                            value={totalInnings}
+                            onValueChange={(value) => {
+                                Haptics.selectionAsync();
+                                setTotalInnings(value);
+                            }}
+                            buttons={[
+                                { value: '5', label: '5' },
+                                { value: '6', label: '6' },
+                                { value: '7', label: '7' },
+                                { value: '9', label: '9' },
                             ]}
                             style={styles.segmented}
                         />

@@ -44,6 +44,7 @@ import {
     createAtBat,
     updateAtBat,
     endAtBat,
+    endGame,
     setCurrentAtBat,
     clearPitches,
     setBaseRunners,
@@ -326,8 +327,34 @@ export default function LiveGameScreen() {
         if (!id || !game) return;
         try {
             const runsToAdd = parseInt(teamRunsScored, 10) || 0;
+            const newAwayScore = (game.away_score || 0) + runsToAdd;
+            const homeScore = game.home_score || 0;
+            const isHomeGame = game.is_home_game !== false;
+            const totalInnings = game.total_innings ?? 7;
+            const isLastInningOrLater = game.current_inning >= totalInnings;
+
             // Runs scored while our team is pitching go to opponent (away_score)
-            await gamesApi.updateScore(id, game.home_score || 0, (game.away_score || 0) + runsToAdd);
+            await gamesApi.updateScore(id, homeScore, newAwayScore);
+
+            // Check for auto-end conditions at end of regulation or extra innings
+            if (isLastInningOrLater) {
+                if (isHomeGame && homeScore > newAwayScore) {
+                    // Home team winning after top of last — no need to bat, game over
+                    await dispatch(endGame({ gameId: id, finalData: { home_score: homeScore, away_score: newAwayScore } }));
+                    setShowInningChange(false);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    router.replace(`/game/${id}` as any);
+                    return;
+                }
+                if (!isHomeGame && homeScore !== newAwayScore) {
+                    // Away game: after bottom of last, game is decided
+                    await dispatch(endGame({ gameId: id, finalData: { home_score: homeScore, away_score: newAwayScore } }));
+                    setShowInningChange(false);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    router.replace(`/game/${id}` as any);
+                    return;
+                }
+            }
 
             if (game.is_home_game === false) {
                 // Visitor game: advance 1 half (to user's batting half)
@@ -365,15 +392,34 @@ export default function LiveGameScreen() {
         } catch {
             Alert.alert('Error', 'Failed to advance inning');
         }
-    }, [id, game, teamRunsScored, currentBattingOrder, activeBatters, dispatch, startAtBatForBatter]);
+    }, [id, game, teamRunsScored, currentBattingOrder, activeBatters, lineupSize, dispatch, startAtBatForBatter, router]);
 
     const handleTeamAtBatConfirm = useCallback(async () => {
         if (!id || !game) return;
         try {
             const runsToAdd = parseInt(teamAtBatRuns, 10) || 0;
+            const newHomeScore = (game.home_score || 0) + runsToAdd;
+            const awayScore = game.away_score || 0;
+            const totalInnings = game.total_innings ?? 7;
+            const isLastInningOrLater = game.current_inning >= totalInnings;
+            const isHomeGame = game.is_home_game !== false;
 
             // User's runs go to home_score (user is always home_score)
-            await gamesApi.updateScore(id, (game.home_score || 0) + runsToAdd, game.away_score || 0);
+            await gamesApi.updateScore(id, newHomeScore, awayScore);
+
+            // Check for walk-off / game-over after home team bats in last inning
+            if (isLastInningOrLater && isHomeGame) {
+                if (newHomeScore !== awayScore) {
+                    // Game is decided (home wins walk-off or home lost)
+                    await dispatch(endGame({ gameId: id, finalData: { home_score: newHomeScore, away_score: awayScore } }));
+                    setShowTeamAtBat(false);
+                    setTeamAtBatRuns('0');
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    router.replace(`/game/${id}` as any);
+                    return;
+                }
+                // Tied → extra innings, fall through
+            }
 
             // Advance 1 half-inning (from user's batting half to opponent's batting half)
             await gamesApi.advanceInning(id);
@@ -402,7 +448,7 @@ export default function LiveGameScreen() {
         } catch {
             Alert.alert('Error', 'Failed to advance inning');
         }
-    }, [id, game, teamAtBatRuns, currentBattingOrder, activeBatters, dispatch, startAtBatForBatter]);
+    }, [id, game, teamAtBatRuns, currentBattingOrder, activeBatters, lineupSize, dispatch, startAtBatForBatter, router]);
 
     const handleSelectPitcher = async (player: Player) => {
         if (!id || !currentInning) return;

@@ -252,15 +252,26 @@ export default function GameDetailScreen() {
                 )}
 
                 {game.status === 'completed' && (
-                    <Button
-                        mode="outlined"
-                        icon="eye"
-                        onPress={handleLivePress}
-                        style={styles.actionButton}
-                        contentStyle={styles.actionButtonContent}
-                    >
-                        View Pitch Data
-                    </Button>
+                    <>
+                        <Button
+                            mode="contained"
+                            icon="chart-box-outline"
+                            onPress={() => router.push(`/game/${id}/performance-summary` as any)}
+                            style={styles.actionButton}
+                            contentStyle={styles.actionButtonContent}
+                        >
+                            View Performance Summary
+                        </Button>
+                        <Button
+                            mode="outlined"
+                            icon="eye"
+                            onPress={handleLivePress}
+                            style={styles.actionButton}
+                            contentStyle={styles.actionButtonContent}
+                        >
+                            View Pitch Data
+                        </Button>
+                    </>
                 )}
             </ScrollView>
         </SafeAreaView>

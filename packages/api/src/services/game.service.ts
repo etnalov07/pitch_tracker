@@ -4,7 +4,17 @@ import { v4 as uuidv4 } from 'uuid';
 
 export class GameService {
     async createGame(userId: string, gameData: Partial<Game>): Promise<Game> {
-        const { home_team_id, away_team_id, opponent_name, game_date, game_time, location, is_home_game, lineup_size } = gameData;
+        const {
+            home_team_id,
+            away_team_id,
+            opponent_name,
+            game_date,
+            game_time,
+            location,
+            is_home_game,
+            lineup_size,
+            total_innings,
+        } = gameData;
 
         if (!home_team_id) {
             throw new Error('home_team_id is required');
@@ -20,11 +30,12 @@ export class GameService {
         }
 
         const resolvedLineupSize = Math.min(Math.max(lineup_size ?? 9, 9), 15);
+        const resolvedTotalInnings = Math.min(Math.max(total_innings ?? 7, 1), 20);
 
         const gameId = uuidv4();
         const result = await query(
-            `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size, total_innings)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
             [
                 gameId,
@@ -37,6 +48,7 @@ export class GameService {
                 userId,
                 is_home_game !== false,
                 resolvedLineupSize,
+                resolvedTotalInnings,
             ]
         );
 
