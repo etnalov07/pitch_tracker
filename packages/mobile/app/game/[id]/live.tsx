@@ -4,6 +4,7 @@ import { Text, Button, useTheme, IconButton, Portal } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import {
+    Pitch,
     PitchType,
     PitchResult,
     PitchCall,
@@ -265,12 +266,13 @@ export default function LiveGameScreen() {
     );
 
     const handleEndAtBat = useCallback(
-        async (result: string) => {
+        async (result: string, finalPitch?: Partial<Pitch>) => {
             if (!currentAtBat) return;
             try {
-                // Capture before clearing
+                // Capture before clearing; append finalPitch if provided (covers stale-closure case
+                // where the last pitch was just dispatched but Redux state hasn't re-rendered yet)
                 const endedAtBat = currentAtBat;
-                const endedPitches = [...pitches];
+                const endedPitches = finalPitch ? [...pitches, finalPitch as Pitch] : [...pitches];
                 const endedBatterId = currentBatter?.id;
 
                 const outsFromPlay = getOutsForResult(result);
@@ -671,6 +673,20 @@ export default function LiveGameScreen() {
                 }
                 setActiveCall(null);
             }
+            // Capture pitch data before resetting local state — used to include the final pitch
+            // in at-bat history when the at-bat ends (walk/strikeout) in the same call, before
+            // the Redux pitches selector has a chance to reflect the new pitch.
+            const finalPitch: Partial<Pitch> = {
+                pitch_type: selectedPitchType!,
+                pitch_result: selectedResult!,
+                location_x: pitchLocation!.x,
+                location_y: pitchLocation!.y,
+                target_location_x: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].x : undefined,
+                target_location_y: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].y : undefined,
+                velocity: veloNum && !isNaN(veloNum) ? veloNum : undefined,
+                balls_before: balls,
+                strikes_before: strikes,
+            };
             setSelectedPitchType(null);
             setSelectedResult(null);
             setPitchLocation(null);
@@ -678,8 +694,8 @@ export default function LiveGameScreen() {
             setVelocity('');
             setChangingCallId(null);
             if (result.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            if (newBalls >= 4) await handleEndAtBat('walk');
-            else if (newStrikes >= 3) await handleEndAtBat('strikeout');
+            if (newBalls >= 4) await handleEndAtBat('walk', finalPitch);
+            else if (newStrikes >= 3) await handleEndAtBat('strikeout', finalPitch);
             else if (selectedResult === 'in_play') setShowInPlayModal(true);
         } catch {
             Alert.alert('Error', 'Failed to log pitch');
