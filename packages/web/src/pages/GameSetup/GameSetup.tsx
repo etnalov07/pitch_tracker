@@ -61,6 +61,7 @@ const GameSetup: React.FC = () => {
         home_team_id: '',
         opponent_name: '',
         is_home_game: true,
+        lineup_size: 9,
         game_date: new Date().toISOString().split('T')[0],
         game_time: '18:00',
         location: '',
@@ -109,6 +110,7 @@ const GameSetup: React.FC = () => {
                     home_team_id: formData.home_team_id,
                     opponent_name: formData.opponent_name.trim(),
                     is_home_game: formData.is_home_game,
+                    lineup_size: formData.lineup_size,
                     game_date: game_dateTime.toISOString(),
                     location: formData.location.trim() || undefined,
                 })
@@ -240,6 +242,23 @@ const GameSetup: React.FC = () => {
 
                             <GameDetailsSection>
                                 <SectionTitle>Game Details</SectionTitle>
+
+                                <FormGroup>
+                                    <Label htmlFor="lineup_size">Lineup Size</Label>
+                                    <TeamSelect
+                                        id="lineup_size"
+                                        name="lineup_size"
+                                        value={formData.lineup_size}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({ ...prev, lineup_size: parseInt(e.target.value, 10) }))
+                                        }
+                                    >
+                                        <option value={9}>9 — Standard</option>
+                                        <option value={10}>10 — Extra Hitter (EH)</option>
+                                        <option value={11}>11</option>
+                                        <option value={12}>12</option>
+                                    </TeamSelect>
+                                </FormGroup>
 
                                 <FormRow>
                                     <FormGroup>

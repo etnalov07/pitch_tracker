@@ -65,6 +65,15 @@ const OpponentLineup: React.FC = () => {
             try {
                 const game = await gamesApi.getGameById(gameId);
                 setGame(game);
+                const size = game.lineup_size ?? 9;
+                setLineup(
+                    Array.from({ length: size }, (_, i) => ({
+                        player_name: '',
+                        batting_order: i + 1,
+                        position: '',
+                        bats: 'R' as const,
+                    }))
+                );
             } catch (err) {
                 setError('Failed to load game');
             } finally {

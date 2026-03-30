@@ -223,6 +223,7 @@ export interface Game {
     away_team_id?: string | null;
     opponent_name?: string;
     is_home_game?: boolean;
+    lineup_size?: number;
     game_date: string;
     game_time?: string;
     location?: string;

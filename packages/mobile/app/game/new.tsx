@@ -18,6 +18,7 @@ export default function NewGameScreen() {
     const [selectedTeamId, setSelectedTeamId] = useState<string>('');
     const [isHomeGame, setIsHomeGame] = useState(true);
     const [opponentName, setOpponentName] = useState('');
+    const [lineupSize, setLineupSize] = useState('9');
     const [gameDate, setGameDate] = useState(new Date().toISOString().split('T')[0]);
     const [gameTime, setGameTime] = useState('18:00');
     const [location, setLocation] = useState('');
@@ -54,6 +55,7 @@ export default function NewGameScreen() {
                     home_team_id: selectedTeamId,
                     opponent_name: opponentName.trim(),
                     is_home_game: isHomeGame,
+                    lineup_size: parseInt(lineupSize, 10),
                     game_date: gameDateTime.toISOString(),
                     location: location.trim() || undefined,
                 })
@@ -130,6 +132,25 @@ export default function NewGameScreen() {
                             buttons={[
                                 { value: 'home', label: 'Home' },
                                 { value: 'away', label: 'Away' },
+                            ]}
+                            style={styles.segmented}
+                        />
+
+                        {/* Lineup Size */}
+                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                            Lineup Size
+                        </Text>
+                        <SegmentedButtons
+                            value={lineupSize}
+                            onValueChange={(value) => {
+                                Haptics.selectionAsync();
+                                setLineupSize(value);
+                            }}
+                            buttons={[
+                                { value: '9', label: '9' },
+                                { value: '10', label: '10 (EH)' },
+                                { value: '11', label: '11' },
+                                { value: '12', label: '12' },
                             ]}
                             style={styles.segmented}
                         />

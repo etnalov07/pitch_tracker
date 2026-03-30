@@ -71,9 +71,12 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({ gameId, currentBattingO
         lineupByOrder.set(player.batting_order, existing);
     });
 
+    // Derive lineup size from the max batting order present (minimum 9)
+    const lineupSize = Math.max(9, ...Array.from(lineupByOrder.keys()));
+
     // Get active player for each batting order (not subbed out)
     const activeLineup: OpponentLineupPlayer[] = [];
-    for (let i = 1; i <= 9; i++) {
+    for (let i = 1; i <= lineupSize; i++) {
         const players = lineupByOrder.get(i) || [];
         const activePlayer = players.find((p) => !p.replaced_by_id);
         if (activePlayer) {
@@ -82,12 +85,12 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({ gameId, currentBattingO
     }
 
     // Determine next batter based on batting order
-    const nextBatterOrder = ((currentBattingOrder - 1) % 9) + 1;
+    const nextBatterOrder = ((currentBattingOrder - 1) % lineupSize) + 1;
 
     // Find next available batting order slot
     const usedOrders = new Set(activeLineup.map((b) => b.batting_order));
     const getNextAvailableOrder = (): string => {
-        for (let i = 1; i <= 9; i++) {
+        for (let i = 1; i <= lineupSize; i++) {
             if (!usedOrders.has(i)) return String(i);
         }
         return '1';
@@ -179,7 +182,7 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({ gameId, currentBattingO
                         <FormRow>
                             <FormLabel>Order</FormLabel>
                             <FormSelect value={newBattingOrder} onChange={(e) => setNewBattingOrder(e.target.value)}>
-                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                                {Array.from({ length: lineupSize }, (_, i) => i + 1).map((n) => (
                                     <option key={n} value={n}>
                                         {n}
                                     </option>

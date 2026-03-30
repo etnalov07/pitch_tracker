@@ -14,6 +14,7 @@ interface BatterSelectorModalProps {
     onSelectBatter: (batter: OpponentLineupPlayer) => void;
     isTablet?: boolean;
     gameId: string;
+    lineupSize?: number;
     onBatterAdded: (batter: OpponentLineupPlayer) => void;
 }
 
@@ -25,6 +26,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
     onSelectBatter,
     isTablet,
     gameId,
+    lineupSize = 9,
     onBatterAdded,
 }) => {
     const [formMode, setFormMode] = useState<FormMode | null>(null);
@@ -38,7 +40,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
 
     const usedOrders = new Set(activeBatters.map((b) => b.batting_order));
     const getNextAvailableOrder = (): string => {
-        for (let i = 1; i <= 9; i++) {
+        for (let i = 1; i <= lineupSize; i++) {
             if (!usedOrders.has(i)) return String(i);
         }
         return '1';
@@ -222,12 +224,12 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                         <View style={styles.formRow}>
                             {formMode === 'add' && (
                                 <TextInput
-                                    label="Order (1-9)"
+                                    label={`Order (1-${lineupSize})`}
                                     mode="outlined"
                                     value={newBattingOrder}
                                     onChangeText={(text) => {
                                         const n = parseInt(text, 10);
-                                        if (!text || (n >= 1 && n <= 9)) setNewBattingOrder(text);
+                                        if (!text || (n >= 1 && n <= lineupSize)) setNewBattingOrder(text);
                                     }}
                                     keyboardType="number-pad"
                                     dense

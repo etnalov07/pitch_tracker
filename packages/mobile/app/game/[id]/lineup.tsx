@@ -39,7 +39,18 @@ export default function LineupScreen() {
         if (!id) return;
         dispatch(fetchGameById(id))
             .unwrap()
-            .then((g) => setGame(g))
+            .then((g) => {
+                setGame(g);
+                const size = g.lineup_size ?? 9;
+                setLineup(
+                    Array.from({ length: size }, (_, i) => ({
+                        player_name: '',
+                        batting_order: i + 1,
+                        position: '',
+                        bats: 'R' as const,
+                    }))
+                );
+            })
             .catch(() => {})
             .finally(() => setLoading(false));
     }, [dispatch, id]);

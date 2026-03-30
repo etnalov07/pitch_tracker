@@ -3,6 +3,11 @@ import { OpponentLineupPlayer } from '@pitch-tracker/shared';
 import { v4 as uuidv4 } from 'uuid';
 
 export class OpponentLineupService {
+    private async getGameLineupSize(gameId: string): Promise<number> {
+        const result = await query(`SELECT lineup_size FROM games WHERE id = $1`, [gameId]);
+        return result.rows[0]?.lineup_size ?? 9;
+    }
+
     async createPlayer(gameId: string, playerData: Partial<OpponentLineupPlayer>): Promise<OpponentLineupPlayer> {
         const { player_name, batting_order, position, bats = 'R', is_starter = true, inning_entered } = playerData;
 
@@ -10,8 +15,9 @@ export class OpponentLineupService {
             throw new Error('player_name and batting_order are required');
         }
 
-        if (batting_order < 1 || batting_order > 9) {
-            throw new Error('batting_order must be between 1 and 9');
+        const lineupSize = await this.getGameLineupSize(gameId);
+        if (batting_order < 1 || batting_order > lineupSize) {
+            throw new Error(`batting_order must be between 1 and ${lineupSize}`);
         }
 
         const id = uuidv4();

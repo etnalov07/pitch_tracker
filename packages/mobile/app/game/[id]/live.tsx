@@ -160,6 +160,7 @@ export default function LiveGameScreen() {
     }, [pitchCallingEnabled]);
 
     const activeBatters = opponentLineup.filter((b) => !b.replaced_by_id).sort((a, b) => a.batting_order - b.batting_order);
+    const lineupSize = game?.lineup_size ?? 9;
 
     // Load game state on mount
     useEffect(() => {
@@ -282,7 +283,7 @@ export default function LiveGameScreen() {
                     setShowInningChange(true);
                 } else {
                     if (outsFromPlay > 0) setCurrentOuts(newOutCount);
-                    const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+                    const nextOrder = currentBattingOrder >= lineupSize ? 1 : currentBattingOrder + 1;
                     setCurrentBattingOrder(nextOrder);
                     const nextBatter = activeBatters.find((p) => p.batting_order === nextOrder);
                     if (nextBatter) {
@@ -335,7 +336,7 @@ export default function LiveGameScreen() {
 
             if (game.is_home_game !== false) {
                 // Home game: set up next batter immediately
-                const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+                const nextOrder = currentBattingOrder >= lineupSize ? 1 : currentBattingOrder + 1;
                 setCurrentBattingOrder(nextOrder);
                 const firstBatter = activeBatters.find((p) => p.batting_order === nextOrder);
                 if (firstBatter && newInning) {
@@ -376,7 +377,7 @@ export default function LiveGameScreen() {
             setTeamAtBatRuns('0');
 
             // Set up next opponent batter
-            const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+            const nextOrder = currentBattingOrder >= lineupSize ? 1 : currentBattingOrder + 1;
             setCurrentBattingOrder(nextOrder);
             const firstBatter = activeBatters.find((p) => p.batting_order === nextOrder);
             if (firstBatter && newInning) {
@@ -814,6 +815,7 @@ export default function LiveGameScreen() {
                 onSelectBatter={handleSelectBatter}
                 isTablet={isTablet}
                 gameId={id!}
+                lineupSize={lineupSize}
                 onBatterAdded={() => dispatch(fetchOpponentLineup(id!))}
             />
             <InningChangeModal
