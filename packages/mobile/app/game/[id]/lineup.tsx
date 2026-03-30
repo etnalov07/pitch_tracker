@@ -180,9 +180,30 @@ export default function LineupScreen() {
                                             handlePlayerChange(index, 'bats', v);
                                         }}
                                         buttons={[
-                                            { value: 'R', label: 'R' },
-                                            { value: 'L', label: 'L' },
-                                            { value: 'S', label: 'S' },
+                                            {
+                                                value: 'R',
+                                                label: 'R',
+                                                checkedColor: '#ffffff',
+                                                style: entry.bats === 'R' ? styles.batsSelected : styles.batsUnselected,
+                                                labelStyle:
+                                                    entry.bats === 'R' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                            },
+                                            {
+                                                value: 'L',
+                                                label: 'L',
+                                                checkedColor: '#ffffff',
+                                                style: entry.bats === 'L' ? styles.batsSelected : styles.batsUnselected,
+                                                labelStyle:
+                                                    entry.bats === 'L' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                            },
+                                            {
+                                                value: 'S',
+                                                label: 'S',
+                                                checkedColor: '#ffffff',
+                                                style: entry.bats === 'S' ? styles.batsSelected : styles.batsUnselected,
+                                                labelStyle:
+                                                    entry.bats === 'S' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                            },
                                         ]}
                                         style={styles.batsToggle}
                                         density="small"
@@ -271,6 +292,20 @@ const styles = StyleSheet.create({
     },
     batsToggle: {
         flex: 1,
+    },
+    batsSelected: {
+        backgroundColor: '#1d4ed8',
+    },
+    batsUnselected: {
+        backgroundColor: '#ffffff',
+    },
+    batsLabelSelected: {
+        color: '#ffffff',
+        fontWeight: '700',
+    },
+    batsLabelUnselected: {
+        color: '#374151',
+        fontWeight: '500',
     },
     actions: {
         flexDirection: 'row',
