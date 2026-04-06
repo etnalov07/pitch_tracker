@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '../config/database';
 import {
-    BatterScoutingProfile,
-    BatterScoutingNote,
-    BatterTendencies,
     AutoDetectedTendency,
+    BatterScoutingNote,
+    BatterScoutingProfile,
     BatterScoutingReport,
+    BatterTendencies,
     TendencyConfidence,
-} from '@pitch-tracker/shared';
+} from '../types';
 import { HEAT_ZONES, getZoneForPitch } from '../utils/heatZones';
 
 export class ScoutingService {

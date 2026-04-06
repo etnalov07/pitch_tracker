@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import { GamePitcher, GamePitcherWithPlayer } from '@pitch-tracker/shared';
+import { GamePitcher, GamePitcherWithPlayer } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class GamePitcherService {

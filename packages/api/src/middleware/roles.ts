@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { RoleAwareRequest } from '../types';
 import { query } from '../config/database';
-import { TeamRole, OrgRole } from '@pitch-tracker/shared';
+import { OrgRole, TeamRole } from '../types';
 
 /**
  * Middleware: load user's team and org roles from DB, attach to request.

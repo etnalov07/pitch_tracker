@@ -1,16 +1,16 @@
+import { query } from '../config/database';
 import {
     HeatZoneData,
-    PitcherTendenciesLive,
-    PitcherPitchTypeStat,
-    PitcherZoneStat,
+    HitterPitchTypeStat,
     HitterTendenciesLive,
     HitterZoneStat,
-    HitterPitchTypeStat,
-    SuggestedPitch,
-    PitchCallZone,
     PITCH_CALL_ZONE_LABELS,
-} from '@pitch-tracker/shared';
-import { query } from '../config/database';
+    PitchCallZone,
+    PitcherPitchTypeStat,
+    PitcherTendenciesLive,
+    PitcherZoneStat,
+    SuggestedPitch,
+} from '../types';
 import { HEAT_ZONES } from '../utils/heatZones';
 
 export class AnalyticsService {

@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import { OpponentLineupPlayer } from '@pitch-tracker/shared';
+import { OpponentLineupPlayer } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class OpponentLineupService {
