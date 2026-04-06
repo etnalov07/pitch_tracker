@@ -116,6 +116,33 @@ export class AnalyticsController {
             next(error);
         }
     }
+
+    async getPitcherLiveTendencies(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { pitcherId } = req.params;
+            const { batter_hand } = req.query;
+            if (batter_hand !== 'L' && batter_hand !== 'R') {
+                res.status(400).json({ error: 'batter_hand must be L or R' });
+                return;
+            }
+            const tendencies = await analyticsService.getPitcherLiveTendencies(pitcherId as string, batter_hand as 'L' | 'R');
+            res.status(200).json({ tendencies });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getHitterLiveTendencies(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { batterId } = req.params;
+            const { batter_type } = req.query;
+            const batterType = batter_type === 'team' ? 'team' : 'opponent';
+            const tendencies = await analyticsService.getHitterLiveTendencies(batterId as string, batterType);
+            res.status(200).json({ tendencies });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new AnalyticsController();

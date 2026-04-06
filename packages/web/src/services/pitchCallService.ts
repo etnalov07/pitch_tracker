@@ -1,12 +1,22 @@
-import { PitchCall, PitchCallAbbrev, PitchCallResult, PitchCallZone } from '@pitch-tracker/shared';
+import {
+    PitchCall,
+    PitchCallAbbrev,
+    PitchCallCategory,
+    PitchCallResult,
+    PitchCallZone,
+    SituationalCallType,
+} from '@pitch-tracker/shared';
 import api from './api';
 
 export const pitchCallService = {
     createCall: async (data: {
         game_id: string;
         team_id: string;
-        pitch_type: PitchCallAbbrev;
-        zone: PitchCallZone;
+        pitch_type?: PitchCallAbbrev;
+        zone?: PitchCallZone;
+        category?: PitchCallCategory;
+        situational_type?: SituationalCallType;
+        pickoff_base?: '1B' | '2B' | '3B';
         at_bat_id?: string;
         pitcher_id?: string;
         opponent_batter_id?: string;
@@ -15,6 +25,21 @@ export const pitchCallService = {
         strikes_before?: number;
     }): Promise<PitchCall> => {
         const response = await api.post<{ call: PitchCall }>('/pitch-calls', data);
+        return response.data.call;
+    },
+
+    createSituationalCall: async (data: {
+        game_id: string;
+        team_id: string;
+        situational_type: SituationalCallType;
+        pitcher_id?: string;
+        at_bat_id?: string;
+        inning?: number;
+    }): Promise<PitchCall> => {
+        const response = await api.post<{ call: PitchCall }>('/pitch-calls', {
+            ...data,
+            category: 'situational',
+        });
         return response.data.call;
     },
 

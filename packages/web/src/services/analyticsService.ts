@@ -1,4 +1,12 @@
-import { BatterHistory, PitchLocationHeatMap, SprayChart, BatterScoutingReport, BatterScoutingNote } from '../types';
+import {
+    BatterHistory,
+    PitchLocationHeatMap,
+    SprayChart,
+    BatterScoutingReport,
+    BatterScoutingNote,
+    PitcherTendenciesLive,
+    HitterTendenciesLive,
+} from '../types';
 import api from './api';
 
 // Analytics service
@@ -36,6 +44,22 @@ export const analyticsService = {
     getMatchupStats: async (batterId: string, pitcherId: string) => {
         const response = await api.get(`/analytics/matchup/${batterId}/${pitcherId}`);
         return response.data;
+    },
+
+    // Get live pitcher tendencies for the current at-bat
+    getPitcherLiveTendencies: async (pitcherId: string, batterHand: 'L' | 'R'): Promise<PitcherTendenciesLive> => {
+        const response = await api.get<{ tendencies: PitcherTendenciesLive }>(
+            `/analytics/pitcher/${pitcherId}/tendencies-live?batter_hand=${batterHand}`
+        );
+        return response.data.tendencies;
+    },
+
+    // Get live hitter tendencies for the current at-bat
+    getHitterLiveTendencies: async (batterId: string, batterType: 'team' | 'opponent'): Promise<HitterTendenciesLive> => {
+        const response = await api.get<{ tendencies: HitterTendenciesLive }>(
+            `/analytics/hitter/${batterId}/tendencies-live?batter_type=${batterType}`
+        );
+        return response.data.tendencies;
     },
 };
 

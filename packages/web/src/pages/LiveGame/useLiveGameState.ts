@@ -92,6 +92,13 @@ export function useLiveGameState() {
     const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
     const [sendingCall, setSendingCall] = useState(false);
 
+    // Tendencies panels
+    const [showPitcherTendencies, setShowPitcherTendencies] = useState(false);
+    const [showHitterTendencies, setShowHitterTendencies] = useState(false);
+
+    // Local shake count (mirrors game.shake_count, incremented optimistically)
+    const [localShakeCount, setLocalShakeCount] = useState(0);
+
     // Team at bat modal (visitor games)
     const [showTeamAtBat, setShowTeamAtBat] = useState(false);
     const [teamAtBatRuns, setTeamAtBatRuns] = useState<string>('0');
@@ -227,6 +234,14 @@ export function useLiveGameState() {
         setActiveCall,
         sendingCall,
         setSendingCall,
+        // Tendencies panels
+        showPitcherTendencies,
+        setShowPitcherTendencies,
+        showHitterTendencies,
+        setShowHitterTendencies,
+        // Shake count
+        localShakeCount,
+        setLocalShakeCount,
         // Team at bat (visitor games)
         showTeamAtBat,
         setShowTeamAtBat,

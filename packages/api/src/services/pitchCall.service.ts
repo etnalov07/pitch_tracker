@@ -1,5 +1,13 @@
 import { query, transaction } from '../config/database';
-import { PitchCall, PitchCallWithDetails, PitchCallGameSummary, PitchCallAbbrev, PitchCallZone } from '../types';
+import {
+    PitchCall,
+    PitchCallWithDetails,
+    PitchCallGameSummary,
+    PitchCallAbbrev,
+    PitchCallZone,
+    PitchCallCategory,
+    SituationalCallType,
+} from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class PitchCallService {
@@ -10,9 +18,12 @@ export class PitchCallService {
     async createCall(data: {
         game_id: string;
         team_id: string;
-        pitch_type: PitchCallAbbrev;
-        zone: PitchCallZone;
+        pitch_type?: PitchCallAbbrev;
+        zone?: PitchCallZone;
         called_by: string;
+        category?: PitchCallCategory;
+        situational_type?: SituationalCallType;
+        pickoff_base?: '1B' | '2B' | '3B';
         at_bat_id?: string;
         pitcher_id?: string;
         batter_id?: string;
@@ -27,6 +38,9 @@ export class PitchCallService {
             pitch_type,
             zone,
             called_by,
+            category = 'pitch',
+            situational_type,
+            pickoff_base,
             at_bat_id,
             pitcher_id,
             batter_id,
@@ -36,8 +50,14 @@ export class PitchCallService {
             strikes_before = 0,
         } = data;
 
-        if (!game_id || !team_id || !pitch_type || !zone) {
-            throw new Error('game_id, team_id, pitch_type, and zone are required');
+        if (!game_id || !team_id) {
+            throw new Error('game_id and team_id are required');
+        }
+        if (category === 'pitch' && (!pitch_type || !zone)) {
+            throw new Error('pitch_type and zone are required for pitch calls');
+        }
+        if (category === 'situational' && !situational_type) {
+            throw new Error('situational_type is required for situational calls');
         }
 
         const call = await transaction(async (client) => {
@@ -52,9 +72,10 @@ export class PitchCallService {
             const result = await client.query(
                 `INSERT INTO pitch_calls (
                     id, game_id, at_bat_id, team_id, pitcher_id, batter_id,
-                    opponent_batter_id, call_number, pitch_type, zone, called_by,
+                    opponent_batter_id, call_number, category, pitch_type, zone,
+                    situational_type, pickoff_base, called_by,
                     inning, balls_before, strikes_before
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                 RETURNING *`,
                 [
                     id,
@@ -65,14 +86,22 @@ export class PitchCallService {
                     batter_id || null,
                     opponent_batter_id || null,
                     callNumber,
-                    pitch_type,
-                    zone,
+                    category,
+                    pitch_type || null,
+                    zone || null,
+                    situational_type || null,
+                    pickoff_base || null,
                     called_by,
                     inning || null,
                     balls_before,
                     strikes_before,
                 ]
             );
+
+            // If this is a shake call, increment the game's shake_count
+            if (situational_type === 'shake') {
+                await client.query('UPDATE games SET shake_count = shake_count + 1 WHERE id = $1', [game_id]);
+            }
 
             return result.rows[0];
         });

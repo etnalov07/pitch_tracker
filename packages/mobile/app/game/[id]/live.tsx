@@ -10,6 +10,7 @@ import {
     PitchCall,
     PitchCallAbbrev,
     PitchCallZone,
+    SituationalCallType,
     PITCH_CALL_ZONE_LABELS,
     PITCH_CALL_ZONE_COORDS,
     Player,
@@ -66,6 +67,9 @@ import {
     BaserunnerOutModal,
     RunnerAdvancementModal,
     PreviousAtBatsModal,
+    PitcherTendenciesModal,
+    HitterTendenciesModal,
+    SituationalCallsRow,
 } from '../../../src/components/live';
 import type { CompletedAtBatEntry } from '../../../src/components/live';
 import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/components/common';
@@ -140,6 +144,13 @@ export default function LiveGameScreen() {
     const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
     const [sendingCall, setSendingCall] = useState(false);
     const [changingCallId, setChangingCallId] = useState<string | null>(null);
+
+    // Tendencies modal state
+    const [showPitcherTendencies, setShowPitcherTendencies] = useState(false);
+    const [showHitterTendencies, setShowHitterTendencies] = useState(false);
+
+    // Shake count (local optimistic counter on top of game.shake_count)
+    const [localShakeCount, setLocalShakeCount] = useState(0);
 
     // Velocity state (optional)
     const [velocity, setVelocity] = useState<string>('');
@@ -600,6 +611,30 @@ export default function LiveGameScreen() {
         setPitchLocation(null);
     };
 
+    const handleSituationalCall = async (type: SituationalCallType) => {
+        if (!id || !game) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        try {
+            await pitchCallingApi.createCall({
+                game_id: id,
+                team_id: game.home_team_id || '',
+                category: 'situational',
+                situational_type: type,
+                pitcher_id: currentPitcher?.player_id,
+                at_bat_id: currentAtBat?.id,
+                inning: game.current_inning,
+                balls_before: currentAtBat?.balls ?? 0,
+                strikes_before: currentAtBat?.strikes ?? 0,
+            } as any);
+            if (type === 'shake') {
+                setLocalShakeCount((prev) => prev + 1);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            }
+        } catch {
+            Alert.alert('Error', 'Failed to record situational call');
+        }
+    };
+
     const handleTalkPressIn = async () => {
         try {
             await startPassthrough();
@@ -926,6 +961,26 @@ export default function LiveGameScreen() {
                 hitResult={pendingHitResult || 'single'}
                 onConfirm={handleRunnerAdvancementConfirm}
             />
+            {currentPitcher && (
+                <PitcherTendenciesModal
+                    visible={showPitcherTendencies}
+                    onDismiss={() => setShowPitcherTendencies(false)}
+                    pitcherId={currentPitcher.player_id}
+                    pitcherName={
+                        currentPitcher.player ? `${currentPitcher.player.first_name} ${currentPitcher.player.last_name}` : 'Pitcher'
+                    }
+                    initialBatterHand={(currentBatter?.bats as 'L' | 'R') || 'R'}
+                />
+            )}
+            {currentBatter && (
+                <HitterTendenciesModal
+                    visible={showHitterTendencies}
+                    onDismiss={() => setShowHitterTendencies(false)}
+                    batterId={currentBatter.id}
+                    batterName={currentBatter.player_name}
+                    batterType="opponent"
+                />
+            )}
         </Portal>
     );
 
@@ -970,6 +1025,34 @@ export default function LiveGameScreen() {
                         {renderGameHeader()}
                         {renderRunnerOutButton()}
                         {renderAtBatControls()}
+                        {game.status === 'in_progress' && (currentPitcher || currentBatter) && (
+                            <View style={styles.tendenciesRow}>
+                                {currentPitcher && (
+                                    <Button
+                                        mode="outlined"
+                                        compact
+                                        onPress={() => setShowPitcherTendencies(true)}
+                                        style={styles.tendencyBtn}
+                                        labelStyle={styles.tendencyBtnLabel}
+                                        icon="chart-bar"
+                                    >
+                                        Pitcher
+                                    </Button>
+                                )}
+                                {currentBatter && (
+                                    <Button
+                                        mode="outlined"
+                                        compact
+                                        onPress={() => setShowHitterTendencies(true)}
+                                        style={[styles.tendencyBtn, styles.tendencyBtnHitter]}
+                                        labelStyle={[styles.tendencyBtnLabel, styles.tendencyBtnLabelHitter]}
+                                        icon="account-details"
+                                    >
+                                        Hitter
+                                    </Button>
+                                )}
+                            </View>
+                        )}
                         <View style={styles.statsPlaceholder}>
                             <Text variant="titleSmall" style={{ marginTop: 16 }}>
                                 Pitcher Stats
@@ -1063,6 +1146,13 @@ export default function LiveGameScreen() {
                                 <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} />
                             </View>
                         </View>
+                        {pitchCallingEnabled && game.status === 'in_progress' && (
+                            <SituationalCallsRow
+                                shakeCount={(game.shake_count ?? 0) + localShakeCount}
+                                disabled={game.status !== 'in_progress'}
+                                onCallSent={handleSituationalCall}
+                            />
+                        )}
                         {velocityEnabled && (
                             <View style={styles.veloRow}>
                                 <Text style={styles.veloLabel}>MPH</Text>
@@ -1133,6 +1223,35 @@ export default function LiveGameScreen() {
                 {renderGameHeader()}
                 {renderRunnerOutButton()}
                 {renderAtBatControls()}
+                {/* Tendencies buttons */}
+                {game.status === 'in_progress' && (currentPitcher || currentBatter) && (
+                    <View style={styles.tendenciesRow}>
+                        {currentPitcher && (
+                            <Button
+                                mode="outlined"
+                                compact
+                                onPress={() => setShowPitcherTendencies(true)}
+                                style={styles.tendencyBtn}
+                                labelStyle={styles.tendencyBtnLabel}
+                                icon="chart-bar"
+                            >
+                                Pitcher Tendencies
+                            </Button>
+                        )}
+                        {currentBatter && (
+                            <Button
+                                mode="outlined"
+                                compact
+                                onPress={() => setShowHitterTendencies(true)}
+                                style={[styles.tendencyBtn, styles.tendencyBtnHitter]}
+                                labelStyle={[styles.tendencyBtnLabel, styles.tendencyBtnLabelHitter]}
+                                icon="account-details"
+                            >
+                                Hitter Tendencies
+                            </Button>
+                        )}
+                    </View>
+                )}
                 {/* 1. Pitch Type */}
                 <PitchTypeGrid
                     selectedType={selectedPitchType}
@@ -1212,6 +1331,14 @@ export default function LiveGameScreen() {
                             </Pressable>
                         </View>
                     </View>
+                )}
+                {/* 3b. Situational calls */}
+                {pitchCallingEnabled && game.status === 'in_progress' && (
+                    <SituationalCallsRow
+                        shakeCount={(game.shake_count ?? 0) + localShakeCount}
+                        disabled={game.status !== 'in_progress'}
+                        onCallSent={handleSituationalCall}
+                    />
                 )}
                 {/* 4. Result */}
                 <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
@@ -1296,6 +1423,11 @@ const styles = StyleSheet.create({
     selectPrompt: { marginTop: 6, padding: 12, backgroundColor: '#fef3c7', borderRadius: 8, alignItems: 'center' },
     selectPromptText: { color: '#92400e', fontSize: 14, fontWeight: '500' },
     runnerOutButton: { marginTop: 6, alignSelf: 'flex-start' },
+    tendenciesRow: { flexDirection: 'row' as const, gap: 8, marginTop: 6 },
+    tendencyBtn: { flex: 1 },
+    tendencyBtnHitter: { borderColor: '#16a34a' },
+    tendencyBtnLabel: { fontSize: 11 },
+    tendencyBtnLabelHitter: { color: '#16a34a' },
     callRow: {
         flexDirection: 'row' as const,
         gap: 8,

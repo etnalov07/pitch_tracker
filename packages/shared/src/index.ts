@@ -236,6 +236,7 @@ export interface Game {
     home_team_name?: string;
     base_runners?: BaseRunners;
     total_pitches?: number;
+    shake_count?: number;
     created_by: string;
     created_at: string;
     updated_at?: string;
@@ -660,6 +661,10 @@ export interface BullpenSessionSummary {
 
 export type PitchCallResult = 'strike' | 'ball' | 'foul' | 'in_play';
 
+export type PitchCallCategory = 'pitch' | 'situational';
+
+export type SituationalCallType = 'pickoff' | 'bunt_coverage' | '1st_3rd_coverage' | 'shake';
+
 export type PitchCallZone =
     | '0-0'
     | '0-1'
@@ -756,8 +761,11 @@ export interface PitchCall {
     batter_id?: string;
     opponent_batter_id?: string;
     call_number: number;
+    category: PitchCallCategory;
     pitch_type: PitchCallAbbrev;
     zone: PitchCallZone;
+    situational_type?: SituationalCallType;
+    pickoff_base?: '1B' | '2B' | '3B';
     is_change: boolean;
     original_call_id?: string;
     result?: PitchCallResult;
@@ -1091,4 +1099,70 @@ export interface JoinRequest {
 export interface UserWithRoles extends User {
     team_memberships: TeamMember[];
     org_memberships: OrganizationMember[];
+}
+
+// ============================================================================
+// Live Tendencies Types
+// ============================================================================
+
+export interface SuggestedPitch {
+    pitch_type: string;
+    zone: PitchCallZone | null;
+    zone_label: string;
+    rationale: string;
+}
+
+export interface PitcherPitchTypeStat {
+    pitch_type: string;
+    count: number;
+    usage_pct: number;
+    strike_pct: number;
+    whiff_pct: number;
+    avg_velocity: number | null;
+}
+
+export interface PitcherZoneStat {
+    zone: string;
+    count: number;
+    usage_pct: number;
+    strike_pct: number;
+}
+
+export interface PitcherTendenciesLive {
+    pitcher_id: string;
+    pitcher_name: string;
+    batter_hand: 'L' | 'R';
+    total_pitches: number;
+    has_data: boolean;
+    pitch_mix: PitcherPitchTypeStat[];
+    zone_grid: PitcherZoneStat[];
+    suggested_sequence: SuggestedPitch[];
+}
+
+export interface HitterZoneStat {
+    zone: string;
+    swing_rate: number;
+    contact_rate: number;
+    count: number;
+}
+
+export interface HitterPitchTypeStat {
+    pitch_type: string;
+    times_seen: number;
+    swing_pct: number;
+    whiff_pct: number;
+}
+
+export interface HitterTendenciesLive {
+    batter_id: string;
+    batter_name: string;
+    batter_hand: string;
+    total_pitches: number;
+    has_data: boolean;
+    zone_weakness_map: HitterZoneStat[];
+    pitch_type_vulnerability: HitterPitchTypeStat[];
+    early_count_swing_rate: number | null;
+    two_strike_chase_rate: number | null;
+    first_pitch_take_rate: number | null;
+    suggested_sequence: SuggestedPitch[];
 }

@@ -1,4 +1,15 @@
-import { HeatZoneData } from '@pitch-tracker/shared';
+import {
+    HeatZoneData,
+    PitcherTendenciesLive,
+    PitcherPitchTypeStat,
+    PitcherZoneStat,
+    HitterTendenciesLive,
+    HitterZoneStat,
+    HitterPitchTypeStat,
+    SuggestedPitch,
+    PitchCallZone,
+    PITCH_CALL_ZONE_LABELS,
+} from '@pitch-tracker/shared';
 import { query } from '../config/database';
 import { HEAT_ZONES } from '../utils/heatZones';
 
@@ -544,6 +555,380 @@ export class AnalyticsService {
         });
 
         return heatZones;
+    }
+
+    // Live pitcher tendencies — pitch mix, zone grid, and sequence suggestion vs a given batter handedness
+    async getPitcherLiveTendencies(pitcherId: string, batterHand: 'L' | 'R'): Promise<PitcherTendenciesLive> {
+        // Fetch pitcher info
+        const playerResult = await query(`SELECT first_name, last_name FROM players WHERE id = $1`, [pitcherId]);
+        const pitcher = playerResult.rows[0];
+        const pitcherName = pitcher ? `${pitcher.first_name} ${pitcher.last_name}` : 'Unknown';
+
+        // Fetch all pitches thrown by this pitcher to batters of the requested handedness
+        // Opponent batters have a handedness via opponent_lineup; team batters via players.bats
+        const pitchResult = await query(
+            `SELECT
+                p.pitch_type,
+                p.pitch_result,
+                p.velocity,
+                p.zone
+             FROM pitches p
+             LEFT JOIN opponent_lineup ol ON p.opponent_batter_id = ol.id
+             LEFT JOIN players b ON p.batter_id = b.id
+             WHERE p.pitcher_id = $1
+               AND (
+                 (p.opponent_batter_id IS NOT NULL AND ol.bats = $2)
+                 OR
+                 (p.batter_id IS NOT NULL AND b.bats = $2)
+               )`,
+            [pitcherId, batterHand]
+        );
+
+        const pitches = pitchResult.rows;
+        const total = pitches.length;
+
+        if (total < 10) {
+            return {
+                pitcher_id: pitcherId,
+                pitcher_name: pitcherName,
+                batter_hand: batterHand,
+                total_pitches: total,
+                has_data: false,
+                pitch_mix: [],
+                zone_grid: [],
+                suggested_sequence: [],
+            };
+        }
+
+        // --- Pitch mix ---
+        const typeMap: Record<string, { count: number; strikes: number; swings: number; velocities: number[] }> = {};
+        for (const p of pitches) {
+            if (!p.pitch_type) continue;
+            if (!typeMap[p.pitch_type]) typeMap[p.pitch_type] = { count: 0, strikes: 0, swings: 0, velocities: [] };
+            typeMap[p.pitch_type].count++;
+            if (p.pitch_result !== 'ball') typeMap[p.pitch_type].strikes++;
+            if (p.pitch_result === 'swinging_strike' || p.pitch_result === 'foul' || p.pitch_result === 'in_play') {
+                typeMap[p.pitch_type].swings++;
+            }
+            if (p.velocity) typeMap[p.pitch_type].velocities.push(parseFloat(p.velocity));
+        }
+
+        const pitch_mix: PitcherPitchTypeStat[] = Object.entries(typeMap)
+            .map(([pitch_type, d]) => ({
+                pitch_type,
+                count: d.count,
+                usage_pct: Math.round((d.count / total) * 100),
+                strike_pct: d.count > 0 ? Math.round((d.strikes / d.count) * 100) : 0,
+                whiff_pct: d.count > 0 ? Math.round((d.swings / d.count) * 100) : 0,
+                avg_velocity:
+                    d.velocities.length > 0
+                        ? parseFloat((d.velocities.reduce((a, b) => a + b, 0) / d.velocities.length).toFixed(1))
+                        : null,
+            }))
+            .sort((a, b) => b.count - a.count);
+
+        // --- Zone grid (3x3 strike zone only) ---
+        const strikeZones = ['0-0', '0-1', '0-2', '1-0', '1-1', '1-2', '2-0', '2-1', '2-2'];
+        const zoneMap: Record<string, { count: number; strikes: number }> = {};
+        for (const z of strikeZones) zoneMap[z] = { count: 0, strikes: 0 };
+
+        for (const p of pitches) {
+            if (p.zone && zoneMap[p.zone]) {
+                zoneMap[p.zone].count++;
+                if (p.pitch_result !== 'ball') zoneMap[p.zone].strikes++;
+            }
+        }
+
+        const zone_grid: PitcherZoneStat[] = strikeZones.map((zone) => ({
+            zone,
+            count: zoneMap[zone].count,
+            usage_pct: total > 0 ? Math.round((zoneMap[zone].count / total) * 100) : 0,
+            strike_pct: zoneMap[zone].count > 0 ? Math.round((zoneMap[zone].strikes / zoneMap[zone].count) * 100) : 0,
+        }));
+
+        // --- Suggested sequence (heuristic) ---
+        const suggested_sequence = this.buildPitcherSuggestedSequence(pitch_mix);
+
+        return {
+            pitcher_id: pitcherId,
+            pitcher_name: pitcherName,
+            batter_hand: batterHand,
+            total_pitches: total,
+            has_data: true,
+            pitch_mix,
+            zone_grid,
+            suggested_sequence,
+        };
+    }
+
+    private buildPitcherSuggestedSequence(pitchMix: PitcherPitchTypeStat[]): SuggestedPitch[] {
+        if (pitchMix.length === 0) return [];
+
+        const ZONE_MAP: Record<string, PitchCallZone> = {
+            fastball: '0-1',
+            '4-seam': '0-1',
+            '2-seam': '2-1',
+            sinker: '2-1',
+            cutter: '1-2',
+            slider: '2-2',
+            curveball: '2-1',
+            changeup: '2-2',
+            splitter: '2-2',
+            knuckleball: '1-1',
+            screwball: '2-0',
+            other: '1-1',
+        };
+
+        const fastballs = pitchMix.filter((p) => ['fastball', '4-seam', '2-seam', 'sinker'].includes(p.pitch_type));
+        const offSpeed = pitchMix.filter((p) => ['changeup', 'splitter'].includes(p.pitch_type));
+        const breaking = pitchMix.filter((p) => ['slider', 'curveball', 'cutter'].includes(p.pitch_type));
+
+        const best = (arr: PitcherPitchTypeStat[]) => arr.sort((a, b) => b.strike_pct - a.strike_pct)[0];
+
+        const setupPitch = best(fastballs) || pitchMix[0];
+        const chasePitch = best(offSpeed) || best(breaking) || pitchMix[1];
+        const putAwayPitch = best(breaking) || best(offSpeed) || pitchMix[pitchMix.length - 1];
+
+        const toSuggested = (stat: PitcherPitchTypeStat, rationale: string): SuggestedPitch => {
+            const zone = (ZONE_MAP[stat.pitch_type] as PitchCallZone) || '1-1';
+            return {
+                pitch_type: stat.pitch_type,
+                zone,
+                zone_label: PITCH_CALL_ZONE_LABELS[zone],
+                rationale,
+            };
+        };
+
+        const result: SuggestedPitch[] = [];
+        if (setupPitch) {
+            result.push(toSuggested(setupPitch, `Setup: ${setupPitch.strike_pct}% strike rate vs. this hand`));
+        }
+        if (chasePitch && chasePitch !== setupPitch) {
+            result.push(
+                toSuggested(chasePitch, `Chase off ${setupPitch?.pitch_type || 'fastball'}: ${chasePitch.whiff_pct}% whiff`)
+            );
+        }
+        if (putAwayPitch && putAwayPitch !== chasePitch && putAwayPitch !== setupPitch) {
+            result.push(toSuggested(putAwayPitch, `Put-away: ${putAwayPitch.whiff_pct}% whiff on 2-strike counts`));
+        }
+        return result;
+    }
+
+    // Live hitter tendencies — zone weakness map, pitch vulnerability, and suggested attack sequence
+    async getHitterLiveTendencies(batterId: string, batterType: 'team' | 'opponent'): Promise<HitterTendenciesLive> {
+        // Fetch batter name
+        let batterName = 'Unknown';
+        let batterHand = 'R';
+
+        if (batterType === 'opponent') {
+            const scoutResult = await query(`SELECT player_name, bats FROM opponent_lineup WHERE id = $1 LIMIT 1`, [batterId]);
+            if (scoutResult.rows[0]) {
+                batterName = scoutResult.rows[0].player_name;
+                batterHand = scoutResult.rows[0].bats || 'R';
+            }
+        } else {
+            const playerResult = await query(`SELECT first_name, last_name, bats FROM players WHERE id = $1`, [batterId]);
+            if (playerResult.rows[0]) {
+                const p = playerResult.rows[0];
+                batterName = `${p.first_name} ${p.last_name}`;
+                batterHand = p.bats || 'R';
+            }
+        }
+
+        // Fetch all pitches to this batter
+        const pitchCol = batterType === 'opponent' ? 'opponent_batter_id' : 'batter_id';
+        const pitchResult = await query(`SELECT pitch_type, pitch_result, zone FROM pitches WHERE ${pitchCol} = $1`, [batterId]);
+
+        const pitches = pitchResult.rows;
+        const total = pitches.length;
+
+        if (total < 5) {
+            // Try to fall back to scouting profile for opponent batters
+            if (batterType === 'opponent') {
+                return this.buildHitterTendenciesFromScoutingProfile(batterId, batterName, batterHand);
+            }
+            return {
+                batter_id: batterId,
+                batter_name: batterName,
+                batter_hand: batterHand,
+                total_pitches: 0,
+                has_data: false,
+                zone_weakness_map: [],
+                pitch_type_vulnerability: [],
+                early_count_swing_rate: null,
+                two_strike_chase_rate: null,
+                first_pitch_take_rate: null,
+                suggested_sequence: [],
+            };
+        }
+
+        // --- Zone weakness map (3x3 strike zone) ---
+        const strikeZones = ['0-0', '0-1', '0-2', '1-0', '1-1', '1-2', '2-0', '2-1', '2-2'];
+        const zoneMap: Record<string, { total: number; swings: number; contacts: number }> = {};
+        for (const z of strikeZones) zoneMap[z] = { total: 0, swings: 0, contacts: 0 };
+
+        const SWING_RESULTS = new Set(['swinging_strike', 'foul', 'in_play']);
+        const CONTACT_RESULTS = new Set(['foul', 'in_play']);
+
+        for (const p of pitches) {
+            if (p.zone && zoneMap[p.zone]) {
+                zoneMap[p.zone].total++;
+                if (SWING_RESULTS.has(p.pitch_result)) zoneMap[p.zone].swings++;
+                if (CONTACT_RESULTS.has(p.pitch_result)) zoneMap[p.zone].contacts++;
+            }
+        }
+
+        const zone_weakness_map: HitterZoneStat[] = strikeZones.map((zone) => {
+            const d = zoneMap[zone];
+            return {
+                zone,
+                count: d.total,
+                swing_rate: d.total > 0 ? Math.round((d.swings / d.total) * 100) / 100 : 0,
+                contact_rate: d.swings > 0 ? Math.round((d.contacts / d.swings) * 100) / 100 : 0,
+            };
+        });
+
+        // --- Pitch type vulnerability ---
+        const ptMap: Record<string, { total: number; swings: number; whiffs: number }> = {};
+        for (const p of pitches) {
+            if (!p.pitch_type) continue;
+            if (!ptMap[p.pitch_type]) ptMap[p.pitch_type] = { total: 0, swings: 0, whiffs: 0 };
+            ptMap[p.pitch_type].total++;
+            if (SWING_RESULTS.has(p.pitch_result)) ptMap[p.pitch_type].swings++;
+            if (p.pitch_result === 'swinging_strike') ptMap[p.pitch_type].whiffs++;
+        }
+
+        const pitch_type_vulnerability: HitterPitchTypeStat[] = Object.entries(ptMap)
+            .map(([pitch_type, d]) => ({
+                pitch_type,
+                times_seen: d.total,
+                swing_pct: d.total > 0 ? Math.round((d.swings / d.total) * 100) : 0,
+                whiff_pct: d.swings > 0 ? Math.round((d.whiffs / d.swings) * 100) : 0,
+            }))
+            .sort((a, b) => b.whiff_pct - a.whiff_pct);
+
+        // --- Suggested attack sequence: target weakest zones ---
+        const suggested_sequence = this.buildHitterSuggestedSequence(zone_weakness_map, pitch_type_vulnerability);
+
+        return {
+            batter_id: batterId,
+            batter_name: batterName,
+            batter_hand: batterHand,
+            total_pitches: total,
+            has_data: true,
+            zone_weakness_map,
+            pitch_type_vulnerability,
+            early_count_swing_rate: null,
+            two_strike_chase_rate: null,
+            first_pitch_take_rate: null,
+            suggested_sequence,
+        };
+    }
+
+    private async buildHitterTendenciesFromScoutingProfile(
+        batterId: string,
+        batterName: string,
+        batterHand: string
+    ): Promise<HitterTendenciesLive> {
+        // Look up scouting profile and tendencies for this opponent batter
+        const profileResult = await query(
+            `SELECT bt.zone_tendencies, bt.total_pitches_seen, bt.first_pitch_take_rate,
+                    bt.breaking_chase_rate, bt.chase_rate
+             FROM batter_tendencies bt
+             JOIN batter_scouting_profiles bsp ON bt.profile_id = bsp.id
+             JOIN opponent_lineup ol ON ol.profile_id = bsp.id
+             WHERE ol.id = $1
+             ORDER BY bt.last_calculated_at DESC NULLS LAST
+             LIMIT 1`,
+            [batterId]
+        );
+
+        if (profileResult.rows.length === 0) {
+            return {
+                batter_id: batterId,
+                batter_name: batterName,
+                batter_hand: batterHand,
+                total_pitches: 0,
+                has_data: false,
+                zone_weakness_map: [],
+                pitch_type_vulnerability: [],
+                early_count_swing_rate: null,
+                two_strike_chase_rate: null,
+                first_pitch_take_rate: null,
+                suggested_sequence: [],
+            };
+        }
+
+        const t = profileResult.rows[0];
+        const zoneTendencies: Record<string, { swing_rate: number; count: number }> = t.zone_tendencies || {};
+        const strikeZones = ['0-0', '0-1', '0-2', '1-0', '1-1', '1-2', '2-0', '2-1', '2-2'];
+
+        const zone_weakness_map: HitterZoneStat[] = strikeZones.map((zone) => {
+            const zd = zoneTendencies[zone];
+            return {
+                zone,
+                count: zd?.count || 0,
+                swing_rate: zd?.swing_rate || 0,
+                contact_rate: 0,
+            };
+        });
+
+        const suggested_sequence = this.buildHitterSuggestedSequence(zone_weakness_map, []);
+
+        return {
+            batter_id: batterId,
+            batter_name: batterName,
+            batter_hand: batterHand,
+            total_pitches: parseInt(t.total_pitches_seen) || 0,
+            has_data: (parseInt(t.total_pitches_seen) || 0) > 0,
+            zone_weakness_map,
+            pitch_type_vulnerability: [],
+            early_count_swing_rate: null,
+            two_strike_chase_rate: t.breaking_chase_rate ? parseFloat(t.breaking_chase_rate) : null,
+            first_pitch_take_rate: t.first_pitch_take_rate ? parseFloat(t.first_pitch_take_rate) : null,
+            suggested_sequence,
+        };
+    }
+
+    private buildHitterSuggestedSequence(zoneMap: HitterZoneStat[], pitchVuln: HitterPitchTypeStat[]): SuggestedPitch[] {
+        // Find the zones where swing_rate is high but contact_rate is low (prone to whiffs)
+        const weakZones = [...zoneMap]
+            .filter((z) => z.count >= 2)
+            .sort((a, b) => b.swing_rate - a.swing_rate || a.contact_rate - b.contact_rate);
+
+        const bestVuln = pitchVuln[0]; // highest whiff% pitch type
+        const sequence: SuggestedPitch[] = [];
+
+        if (weakZones[0]) {
+            const zone = weakZones[0].zone as PitchCallZone;
+            sequence.push({
+                pitch_type: bestVuln?.pitch_type || 'fastball',
+                zone,
+                zone_label: PITCH_CALL_ZONE_LABELS[zone] || zone,
+                rationale: `Attack weak zone: ${Math.round(weakZones[0].swing_rate * 100)}% swing rate, ${Math.round(weakZones[0].contact_rate * 100)}% contact`,
+            });
+        }
+
+        if (weakZones[1]) {
+            const zone = weakZones[1].zone as PitchCallZone;
+            sequence.push({
+                pitch_type: pitchVuln[1]?.pitch_type || bestVuln?.pitch_type || 'slider',
+                zone,
+                zone_label: PITCH_CALL_ZONE_LABELS[zone] || zone,
+                rationale: `Secondary weak zone: ${Math.round(weakZones[1].swing_rate * 100)}% swing, expand then attack`,
+            });
+        }
+
+        if (pitchVuln[0] && sequence.length < 3) {
+            sequence.push({
+                pitch_type: pitchVuln[0].pitch_type,
+                zone: '2-2',
+                zone_label: PITCH_CALL_ZONE_LABELS['2-2'],
+                rationale: `Put-away: ${pitchVuln[0].whiff_pct}% whiff rate on ${pitchVuln[0].pitch_type}`,
+            });
+        }
+
+        return sequence.slice(0, 3);
     }
 }
 

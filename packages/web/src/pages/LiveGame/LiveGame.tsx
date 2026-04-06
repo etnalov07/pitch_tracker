@@ -4,7 +4,10 @@ import BatterSelector from '../../components/game/BatterSelector';
 import PitcherSelector from '../../components/game/PitcherSelector';
 import BaseRunnerDisplay from '../../components/live/BaseRunnerDisplay';
 import BatterHistory from '../../components/live/BatterHistory';
+import HitterTendenciesPanel from '../../components/live/HitterTendenciesPanel';
 import PitcherStats from '../../components/live/PitcherStats';
+import PitcherTendenciesPanel from '../../components/live/PitcherTendenciesPanel';
+import SituationalCallsRow from '../../components/live/SituationalCallsRow';
 import StrikeZone from '../../components/live/StrikeZone';
 import { theme } from '../../styles/theme';
 import BaserunnerOutModal from './BaserunnerOutModal';
@@ -135,6 +138,11 @@ const LiveGame: React.FC = () => {
         setTeamAtBatRuns,
         activeCall,
         sendingCall,
+        showPitcherTendencies,
+        setShowPitcherTendencies,
+        showHitterTendencies,
+        setShowHitterTendencies,
+        localShakeCount,
     } = state;
 
     if (loading) {
@@ -252,9 +260,29 @@ const LiveGame: React.FC = () => {
                                 <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
                             )}
                         </PlayerInfo>
-                        <ChangeButton onClick={() => setShowPitcherSelector(true)} disabled={game.status === 'completed'}>
-                            {currentPitcher ? 'Change' : 'Select'}
-                        </ChangeButton>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                            <ChangeButton onClick={() => setShowPitcherSelector(true)} disabled={game.status === 'completed'}>
+                                {currentPitcher ? 'Change' : 'Select'}
+                            </ChangeButton>
+                            {currentPitcher && (
+                                <button
+                                    onClick={() => setShowPitcherTendencies(true)}
+                                    style={{
+                                        padding: '3px 8px',
+                                        fontSize: '11px',
+                                        fontWeight: 600,
+                                        background: theme.colors.primary[600],
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: theme.borderRadius.sm,
+                                        cursor: 'pointer',
+                                        whiteSpace: 'nowrap' as const,
+                                    }}
+                                >
+                                    Tendencies
+                                </button>
+                            )}
+                        </div>
                     </PlayerDisplay>
 
                     <PlayerDisplay>
@@ -266,9 +294,29 @@ const LiveGame: React.FC = () => {
                                 <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
                             )}
                         </PlayerInfo>
-                        <ChangeButton onClick={() => setShowBatterSelector(true)} disabled={game.status === 'completed'}>
-                            {currentBatter ? 'Change' : 'Select'}
-                        </ChangeButton>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                            <ChangeButton onClick={() => setShowBatterSelector(true)} disabled={game.status === 'completed'}>
+                                {currentBatter ? 'Change' : 'Select'}
+                            </ChangeButton>
+                            {currentBatter && (
+                                <button
+                                    onClick={() => setShowHitterTendencies(true)}
+                                    style={{
+                                        padding: '3px 8px',
+                                        fontSize: '11px',
+                                        fontWeight: 600,
+                                        background: theme.colors.green[600],
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: theme.borderRadius.sm,
+                                        cursor: 'pointer',
+                                        whiteSpace: 'nowrap' as const,
+                                    }}
+                                >
+                                    Tendencies
+                                </button>
+                            )}
+                        </div>
                     </PlayerDisplay>
                 </PlayersRow>
 
@@ -381,10 +429,23 @@ const LiveGame: React.FC = () => {
                                 }}
                             >
                                 <span style={{ fontSize: '13px', fontWeight: 600, color: theme.colors.green[700] }}>
-                                    Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
+                                    Call Sent: {activeCall.pitch_type} →{' '}
+                                    {activeCall.zone ? PITCH_CALL_ZONE_LABELS[activeCall.zone] : ''}
                                 </span>
                             </div>
                         )}
+
+                        {/* Situational calls row */}
+                        <SituationalCallsRow
+                            gameId={game.id}
+                            teamId={game.home_team_id || ''}
+                            pitcherId={currentPitcher?.player_id}
+                            opponentBatterId={currentBatter?.id}
+                            inning={game.current_inning}
+                            shakeCount={(game.shake_count ?? 0) + localShakeCount}
+                            disabled={game.status !== 'in_progress'}
+                            onCallSent={actions.handleSituationalCall}
+                        />
 
                         <StrikeZoneRow>
                             <StrikeZoneContainer>
@@ -559,6 +620,24 @@ const LiveGame: React.FC = () => {
                     currentRunners={baseRunners}
                     hitResult={pendingHitResult}
                     onConfirm={actions.handleRunnerAdvancementConfirm}
+                />
+            )}
+
+            {showPitcherTendencies && currentPitcher && (
+                <PitcherTendenciesPanel
+                    pitcherId={currentPitcher.player_id}
+                    pitcherName={pitcherName || 'Pitcher'}
+                    initialBatterHand={(currentBatter?.bats as 'L' | 'R') || 'R'}
+                    onClose={() => setShowPitcherTendencies(false)}
+                />
+            )}
+
+            {showHitterTendencies && currentBatter && (
+                <HitterTendenciesPanel
+                    batterId={currentBatter.id}
+                    batterName={currentBatter.player_name}
+                    batterType="opponent"
+                    onClose={() => setShowHitterTendencies(false)}
                 />
             )}
         </Container>

@@ -14,3 +14,4 @@ export { default as InningChangeModal } from './InningChangeModal';
 export { default as TeamAtBatModal } from './TeamAtBatModal';
 export { default as PreviousAtBatsModal } from './PreviousAtBatsModal';
 export type { CompletedAtBatEntry } from './PreviousAtBatsModal';
+export { PitcherTendenciesModal, HitterTendenciesModal, SituationalCallsRow } from './TendenciesModals';

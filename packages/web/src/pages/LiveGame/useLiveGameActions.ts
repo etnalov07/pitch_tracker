@@ -6,6 +6,7 @@ import {
     clearBases,
     PitchCallZone,
     PITCH_CALL_ZONE_COORDS,
+    SituationalCallType,
 } from '@pitch-tracker/shared';
 import { pitchCallService } from '../../services/pitchCallService';
 import {
@@ -70,6 +71,7 @@ export function useLiveGameActions(state: LiveGameState) {
         activeCall,
         setActiveCall,
         setSendingCall,
+        setLocalShakeCount,
     } = state;
 
     const startAtBatForBatter = async (batter: OpponentLineupPlayer, outs: number, inning: typeof currentInning) => {
@@ -575,8 +577,28 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
+    const handleSituationalCall = async (type: SituationalCallType) => {
+        if (!gameId || !game) return;
+        try {
+            await pitchCallService.createSituationalCall({
+                game_id: gameId,
+                team_id: game.home_team_id || '',
+                situational_type: type,
+                pitcher_id: state.currentPitcher?.player_id,
+                at_bat_id: currentAtBat?.id,
+                inning: game.current_inning,
+            });
+            if (type === 'shake') {
+                setLocalShakeCount((prev) => prev + 1);
+            }
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : 'Failed to record situational call');
+        }
+    };
+
     return {
         handleSendCall,
+        handleSituationalCall,
         handleLogPitch,
         handleEndAtBat,
         handleDiamondResult,
