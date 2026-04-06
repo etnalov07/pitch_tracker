@@ -1,8 +1,8 @@
 import { Request } from 'express';
-import { TeamRole, OrgRole } from '@pitch-tracker/shared';
+import type { OrgRole, TeamRole } from '@pitch-tracker/shared';
 
-// Re-export shared types
-export * from '@pitch-tracker/shared';
+// Re-export shared types only (type-only export — no runtime require of @pitch-tracker/shared)
+export type * from '@pitch-tracker/shared';
 
 // API-specific types that extend or differ from shared types
 

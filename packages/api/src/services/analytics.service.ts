@@ -1,10 +1,9 @@
 import { query } from '../config/database';
-import {
+import type {
     HeatZoneData,
     HitterPitchTypeStat,
     HitterTendenciesLive,
     HitterZoneStat,
-    PITCH_CALL_ZONE_LABELS,
     PitchCallZone,
     PitcherPitchTypeStat,
     PitcherTendenciesLive,
@@ -12,6 +11,27 @@ import {
     SuggestedPitch,
 } from '../types';
 import { HEAT_ZONES } from '../utils/heatZones';
+
+// Defined locally to avoid a runtime dependency on @pitch-tracker/shared
+const PITCH_CALL_ZONE_LABELS: Record<string, string> = {
+    '0-0': 'Up and In',
+    '0-1': 'Up the Middle',
+    '0-2': 'Up and Away',
+    '1-0': 'Middle In',
+    '1-1': 'Middle Middle',
+    '1-2': 'Middle Away',
+    '2-0': 'Down and In',
+    '2-1': 'Down the Middle',
+    '2-2': 'Down and Away',
+    'W-high': 'High at the Shoulders',
+    'W-low': 'Low in the Dirt',
+    'W-in': 'Tight Inside',
+    'W-out': 'Extended Outside',
+    'W-high-in': 'High and Tight',
+    'W-high-out': 'High and Away',
+    'W-low-in': 'Low and Tight',
+    'W-low-out': 'Low and Away',
+};
 
 export class AnalyticsService {
     // CRITICAL: Batter history for live game strategy
