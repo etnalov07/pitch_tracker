@@ -195,7 +195,7 @@
 - ~~Player can belong to multiple teams (e.g., school team + travel team)~~
 - ~~Join requests: players can search teams and request to join~~
 
-### 15) Bullpen Mode (Practice Sessions)
+### ~~15) Bullpen Mode (Practice Sessions)~~ ✅ DONE
 - Practice pitch tracking without a batter or game context
 - **Simplified workflow** (no at-bat, no lineup, no innings):
   1. Select pitch type
@@ -236,7 +236,7 @@
   - Player: from own dashboard (self-record)
 - **Future consideration**: Catcher feedback per pitch (not in initial release)
 
-### 16) Mobile Splash Screen
+### ~~16) Mobile Splash Screen~~ ✅ DONE
 - Design and implement a branded splash screen for the mobile app
 - Match app branding (logo, colors)
 - Configured via Expo splash screen plugin in app.json
@@ -313,7 +313,44 @@
   - ~~Coaches can be assigned to one or more teams~~
 - ~~Useful for travel ball organizations managing multiple age groups or squads~~
 
-### 22) Pitch Velocity Detection (Video + Audio)
+### 22) Opponent Scouting Report
+- Allow coaches to create a scouting report for an upcoming opponent team before a game
+- **Scouting report contents**:
+  - Opponent team name and game date
+  - Batter-by-batter tendencies:
+    - Bats hand (L/R/S)
+    - Jersey number and name
+    - Known pitch vulnerabilities (e.g., "Chases sliders away", "Can't handle high fastball")
+    - Zone weakness — pre-fill the zone weakness map manually if video scouting was done
+    - Free-text notes per batter
+  - Pitcher scouting (if opponent pitches against your team's hitters):
+    - Primary pitches and typical sequencing
+    - Control tendencies (e.g., "Falls behind, often grooves first-pitch fastball")
+    - Free-text notes per pitcher
+  - Team-level tendencies:
+    - Steal attempt frequency
+    - Bunt tendencies
+    - Hit-and-run frequency
+    - Notes
+- **Workflow**:
+  1. Coach creates a scouting report and links it to an upcoming game (or standalone)
+  2. Enters opponent batters manually (name, number, hand) or imports from a previous game's opponent lineup
+  3. Fills in tendencies per batter
+  4. During the live game, scouting notes surface automatically when that opponent batter steps up
+  5. If pitch history exists for a batter (from previous matchups), it merges with the scouting report
+- **Data model**:
+  - `scouting_reports`: id, team_id, opponent_name, game_date?, created_by, notes
+  - `scouting_report_batters`: id, report_id, name, jersey_number, bats, notes, zone_weakness (JSON)
+  - `scouting_report_pitchers`: id, report_id, name, jersey_number, throws, pitch_mix (JSON), notes
+- **Integration with live game**:
+  - When opponent lineup is entered, auto-match by jersey number or name to scouting report
+  - HitterTendenciesPanel shows scouting notes as a tab alongside computed tendencies
+  - Badge on batter row if a scouting note exists
+- **Access**:
+  - Coach: create/edit from Team Detail or Game Setup
+  - Players: read-only view of relevant notes
+
+### 23) Pitch Velocity Detection (Video + Audio)
 - Estimate pitch velocity from standard 30fps smartphone video recorded behind home plate
 - Uses audio glove-pop detection as the primary timing signal, with optional radar calibration for accuracy
 - **Modes**:
