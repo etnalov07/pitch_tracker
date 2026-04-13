@@ -102,7 +102,12 @@ export async function forceDeactivateBTAudio(): Promise<void> {
  * If walkie-talkie is active, pauses mic passthrough while TTS plays
  * (pitch calls take priority over live voice).
  */
-export async function speakPitchCall(pitchType: PitchCallAbbrev, zone: PitchCallZone, isChange = false): Promise<void> {
+export async function speakPitchCall(
+    pitchType: PitchCallAbbrev,
+    zone: PitchCallZone,
+    isChange = false,
+    shakeCount = 0
+): Promise<void> {
     await activateBTAudio();
 
     // Duck walkie-talkie if active
@@ -117,7 +122,8 @@ export async function speakPitchCall(pitchType: PitchCallAbbrev, zone: PitchCall
 
     // Double-speak pattern so catcher catches it even in crowd noise
     const prefix = isChange ? 'Change. ' : '';
-    const message = `${prefix}${callPhrase}... ${callPhrase}`;
+    const shakePrefix = shakeCount > 0 ? Array(shakeCount).fill('Shake').join(', ') + '. ' : '';
+    const message = `${prefix}${shakePrefix}${callPhrase}... ${callPhrase}`;
 
     try {
         await new Promise<void>((resolve, reject) => {

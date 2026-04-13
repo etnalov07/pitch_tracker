@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput, Pressable } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput, Pressable, TouchableOpacity } from 'react-native';
 import { Text, Button, useTheme, IconButton, Portal } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
@@ -10,7 +10,6 @@ import {
     PitchCall,
     PitchCallAbbrev,
     PitchCallZone,
-    SituationalCallType,
     PITCH_CALL_ZONE_LABELS,
     PITCH_CALL_ZONE_COORDS,
     Player,
@@ -69,7 +68,6 @@ import {
     PreviousAtBatsModal,
     PitcherTendenciesModal,
     HitterTendenciesModal,
-    SituationalCallsRow,
 } from '../../../src/components/live';
 import type { CompletedAtBatEntry } from '../../../src/components/live';
 import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/components/common';
@@ -149,8 +147,8 @@ export default function LiveGameScreen() {
     const [showPitcherTendencies, setShowPitcherTendencies] = useState(false);
     const [showHitterTendencies, setShowHitterTendencies] = useState(false);
 
-    // Shake count (local optimistic counter on top of game.shake_count)
-    const [localShakeCount, setLocalShakeCount] = useState(0);
+    // Shake count — number of times SHAKE pressed since last pitch logged
+    const [pendingShakeCount, setPendingShakeCount] = useState(0);
 
     // Velocity state (optional)
     const [velocity, setVelocity] = useState<string>('');
@@ -582,7 +580,7 @@ export default function LiveGameScreen() {
                 });
             }
             setActiveCall(call);
-            await speakPitchCall(abbrev, targetZone, false);
+            await speakPitchCall(abbrev, targetZone, false, pendingShakeCount);
             await pitchCallingApi.markTransmitted(call.id);
         } catch {
             Alert.alert('Error', 'Failed to send pitch call');
@@ -595,7 +593,7 @@ export default function LiveGameScreen() {
         if (!activeCall) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         try {
-            await speakPitchCall(activeCall.pitch_type, activeCall.zone, false);
+            await speakPitchCall(activeCall.pitch_type, activeCall.zone, false, pendingShakeCount);
             await pitchCallingApi.markTransmitted(activeCall.id);
         } catch {
             Alert.alert('Error', 'Failed to re-send call');
@@ -611,28 +609,9 @@ export default function LiveGameScreen() {
         setPitchLocation(null);
     };
 
-    const handleSituationalCall = async (type: SituationalCallType) => {
-        if (!id || !game) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        try {
-            await pitchCallingApi.createCall({
-                game_id: id,
-                team_id: game.home_team_id || '',
-                category: 'situational',
-                situational_type: type,
-                pitcher_id: currentPitcher?.player_id,
-                at_bat_id: currentAtBat?.id,
-                inning: game.current_inning,
-                balls_before: currentAtBat?.balls ?? 0,
-                strikes_before: currentAtBat?.strikes ?? 0,
-            } as any);
-            if (type === 'shake') {
-                setLocalShakeCount((prev) => prev + 1);
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            }
-        } catch {
-            Alert.alert('Error', 'Failed to record situational call');
-        }
+    const handleShake = () => {
+        setPendingShakeCount((prev) => prev + 1);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     };
 
     const handleTalkPressIn = async () => {
@@ -728,6 +707,7 @@ export default function LiveGameScreen() {
             setTargetZone(null);
             setVelocity('');
             setChangingCallId(null);
+            setPendingShakeCount(0);
             if (result.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             if (newBalls >= 4) await handleEndAtBat('walk', finalPitch);
             else if (newStrikes >= 3) await handleEndAtBat('strikeout', finalPitch);
@@ -1147,11 +1127,16 @@ export default function LiveGameScreen() {
                             </View>
                         </View>
                         {pitchCallingEnabled && game.status === 'in_progress' && (
-                            <SituationalCallsRow
-                                shakeCount={(game.shake_count ?? 0) + localShakeCount}
-                                disabled={game.status !== 'in_progress'}
-                                onCallSent={handleSituationalCall}
-                            />
+                            <View style={styles.shakeRow}>
+                                <TouchableOpacity onPress={handleShake} style={styles.shakeBtn} activeOpacity={0.7}>
+                                    <Text style={styles.shakeBtnText}>SHAKE</Text>
+                                    {pendingShakeCount > 0 && (
+                                        <View style={styles.shakeBadge}>
+                                            <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
                         )}
                         {velocityEnabled && (
                             <View style={styles.veloRow}>
@@ -1332,13 +1317,18 @@ export default function LiveGameScreen() {
                         </View>
                     </View>
                 )}
-                {/* 3b. Situational calls */}
+                {/* 3b. Shake button */}
                 {pitchCallingEnabled && game.status === 'in_progress' && (
-                    <SituationalCallsRow
-                        shakeCount={(game.shake_count ?? 0) + localShakeCount}
-                        disabled={game.status !== 'in_progress'}
-                        onCallSent={handleSituationalCall}
-                    />
+                    <View style={styles.shakeRow}>
+                        <TouchableOpacity onPress={handleShake} style={styles.shakeBtn} activeOpacity={0.7}>
+                            <Text style={styles.shakeBtnText}>SHAKE</Text>
+                            {pendingShakeCount > 0 && (
+                                <View style={styles.shakeBadge}>
+                                    <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 )}
                 {/* 4. Result */}
                 <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
@@ -1494,6 +1484,43 @@ const styles = StyleSheet.create({
         flexDirection: 'row' as const,
         gap: 8,
         marginTop: 6,
+    },
+    shakeRow: {
+        flexDirection: 'row' as const,
+        alignItems: 'center' as const,
+        paddingVertical: 4,
+        borderTopWidth: 1,
+        borderTopColor: '#e5e7eb',
+        marginTop: 4,
+    },
+    shakeBtn: {
+        flexDirection: 'row' as const,
+        alignItems: 'center' as const,
+        gap: 5,
+        paddingVertical: 5,
+        paddingHorizontal: 12,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#d97706',
+        backgroundColor: 'white',
+    },
+    shakeBtnText: {
+        fontSize: 11,
+        fontWeight: '700' as const,
+        color: '#d97706',
+    },
+    shakeBadge: {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: '#d97706',
+        alignItems: 'center' as const,
+        justifyContent: 'center' as const,
+    },
+    shakeBadgeText: {
+        color: 'white',
+        fontSize: 9,
+        fontWeight: '700' as const,
     },
     veloRow: {
         flexDirection: 'row' as const,
