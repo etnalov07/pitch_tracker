@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Keyboard, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { Portal } from 'react-native-paper';
 
 /**
  * Floating "Done" bar that appears above the keyboard whenever it is visible.
@@ -29,9 +30,15 @@ const KeyboardDismissBar: React.FC = () => {
     if (keyboardHeight === 0) return null;
 
     return (
-        <TouchableOpacity style={[styles.bar, { bottom: keyboardHeight }]} onPress={() => Keyboard.dismiss()} activeOpacity={0.8}>
-            <Text style={styles.label}>Done</Text>
-        </TouchableOpacity>
+        <Portal>
+            <TouchableOpacity
+                style={[styles.bar, { bottom: keyboardHeight }]}
+                onPress={() => Keyboard.dismiss()}
+                activeOpacity={0.8}
+            >
+                <Text style={styles.label}>Done</Text>
+            </TouchableOpacity>
+        </Portal>
     );
 };
 

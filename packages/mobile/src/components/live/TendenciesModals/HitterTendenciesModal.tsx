@@ -17,14 +17,22 @@ interface HitterTendenciesModalProps {
 const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({ visible, onDismiss, batterId, batterName, batterType }) => {
     const [data, setData] = useState<HitterTendenciesLive | null>(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         if (!visible || !batterId) return;
         setLoading(true);
+        setError(false);
         analyticsApi
             .getHitterLiveTendencies(batterId, batterType)
-            .then(setData)
-            .catch(() => setData(null))
+            .then((d) => {
+                setData(d);
+                setError(false);
+            })
+            .catch(() => {
+                setData(null);
+                setError(true);
+            })
             .finally(() => setLoading(false));
     }, [visible, batterId, batterType]);
 
@@ -55,13 +63,19 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({ visible, 
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
                 {loading && <ActivityIndicator style={{ marginVertical: 24 }} />}
 
-                {!loading && data && !data.has_data && (
+                {!loading && error && (
+                    <View style={styles.noData}>
+                        <Text style={styles.noDataText}>Unable to load tendencies. Check connection and try again.</Text>
+                    </View>
+                )}
+
+                {!loading && !error && data && !data.has_data && (
                     <View style={styles.noData}>
                         <Text style={styles.noDataText}>No pitch history available for this batter.</Text>
                     </View>
                 )}
 
-                {!loading && data && data.has_data && (
+                {!loading && !error && data && data.has_data && (
                     <>
                         {/* Quick stats */}
                         <View style={styles.statsRow}>

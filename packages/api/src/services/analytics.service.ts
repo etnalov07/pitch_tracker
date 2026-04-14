@@ -856,8 +856,8 @@ export class AnalyticsService {
                     bt.breaking_chase_rate, bt.chase_rate
              FROM batter_tendencies bt
              JOIN batter_scouting_profiles bsp ON bt.profile_id = bsp.id
-             JOIN opponent_lineup ol ON ol.profile_id = bsp.id
-             WHERE ol.id = $1
+             JOIN opponent_lineup_profiles olp ON olp.profile_id = bsp.id
+             WHERE olp.opponent_lineup_id = $1
              ORDER BY bt.last_calculated_at DESC NULLS LAST
              LIMIT 1`,
             [batterId]

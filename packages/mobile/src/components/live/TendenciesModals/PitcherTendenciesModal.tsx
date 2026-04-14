@@ -24,14 +24,22 @@ const PitcherTendenciesModal: React.FC<PitcherTendenciesModalProps> = ({
     const [batterHand, setBatterHand] = useState<'L' | 'R'>(initialBatterHand);
     const [data, setData] = useState<PitcherTendenciesLive | null>(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         if (!visible || !pitcherId) return;
         setLoading(true);
+        setError(false);
         analyticsApi
             .getPitcherLiveTendencies(pitcherId, batterHand)
-            .then(setData)
-            .catch(() => setData(null))
+            .then((d) => {
+                setData(d);
+                setError(false);
+            })
+            .catch(() => {
+                setData(null);
+                setError(true);
+            })
             .finally(() => setLoading(false));
     }, [visible, pitcherId, batterHand]);
 
@@ -71,7 +79,13 @@ const PitcherTendenciesModal: React.FC<PitcherTendenciesModalProps> = ({
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
                 {loading && <ActivityIndicator style={{ marginVertical: 24 }} />}
 
-                {!loading && data && !data.has_data && (
+                {!loading && error && (
+                    <View style={styles.noData}>
+                        <Text style={styles.noDataText}>Unable to load tendencies. Check connection and try again.</Text>
+                    </View>
+                )}
+
+                {!loading && !error && data && !data.has_data && (
                     <View style={styles.noData}>
                         <Text style={styles.noDataText}>
                             Insufficient data — fewer than 10 pitches recorded vs. {batterHand}HH batters.
@@ -79,7 +93,7 @@ const PitcherTendenciesModal: React.FC<PitcherTendenciesModalProps> = ({
                     </View>
                 )}
 
-                {!loading && data && data.has_data && (
+                {!loading && !error && data && data.has_data && (
                     <>
                         <Text style={styles.sectionTitle}>
                             PITCH MIX vs. {batterHand}HH ({data.total_pitches} pitches)

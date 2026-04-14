@@ -949,7 +949,7 @@ export default function LiveGameScreen() {
                     pitcherName={
                         currentPitcher.player ? `${currentPitcher.player.first_name} ${currentPitcher.player.last_name}` : 'Pitcher'
                     }
-                    initialBatterHand={(currentBatter?.bats as 'L' | 'R') || 'R'}
+                    initialBatterHand={currentBatter?.bats === 'L' ? 'L' : 'R'}
                 />
             )}
             {currentBatter && (
