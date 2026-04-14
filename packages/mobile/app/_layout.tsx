@@ -8,6 +8,7 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { PaperProvider } from 'react-native-paper';
 
 import { store, useAppDispatch, useAppSelector, initializeAuth, initializeSettings } from '../src/state';
+import { KeyboardDismissBar } from '../src/components/common';
 import { lightTheme, darkTheme } from '../src/styles/theme';
 
 export { ErrorBoundary } from 'expo-router';
@@ -103,6 +104,7 @@ function RootLayoutContent() {
 
     return (
         <PaperProvider theme={theme}>
+            <KeyboardDismissBar />
             <AuthGuard>
                 <Stack>
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
