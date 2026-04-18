@@ -197,7 +197,7 @@ export class AnalyticsService {
               at.name as away_team_name
        FROM games g
        JOIN teams ht ON g.home_team_id = ht.id
-       JOIN teams at ON g.away_team_id = at.id
+       LEFT JOIN teams at ON g.away_team_id = at.id
        WHERE g.id = $1`,
             [gameId]
         );
