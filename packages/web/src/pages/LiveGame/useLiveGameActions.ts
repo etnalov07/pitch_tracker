@@ -96,7 +96,7 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
-    const handleEndAtBat = async (result: string) => {
+    const handleEndAtBat = async (result: string, extra?: { rbi?: number; runs_scored?: number }) => {
         if (!currentAtBat) return;
 
         try {
@@ -109,6 +109,8 @@ export function useLiveGameActions(state: LiveGameState) {
                     data: {
                         result,
                         outs_after: Math.min(newOutCount, 3),
+                        rbi: extra?.rbi,
+                        runs_scored: extra?.runs_scored,
                     },
                 })
             ).unwrap();
@@ -275,7 +277,15 @@ export function useLiveGameActions(state: LiveGameState) {
             if (newBalls >= 4) {
                 handleEndAtBat('walk');
             } else if (newStrikes >= 3) {
-                handleEndAtBat('strikeout');
+                // MLB rule: batter can reach on an uncaught third strike only when 1st base
+                // is unoccupied, OR when there are 2 outs. Prompt the scorer to distinguish.
+                const canDropThird = !baseRunners.first || currentOuts >= 2;
+                if (canDropThird && window.confirm('Was the third strike dropped?')) {
+                    setPendingHitResult('strikeout_dropped');
+                    setShowRunnerAdvancementModal(true);
+                } else {
+                    handleEndAtBat('strikeout');
+                }
             }
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : 'Failed to log pitch');
@@ -317,7 +327,7 @@ export function useLiveGameActions(state: LiveGameState) {
                     dispatch(fetchGameById(gameId));
                 }
             }
-            await handleEndAtBat(result);
+            await handleEndAtBat(result, { rbi: suggestedRuns, runs_scored: suggestedRuns });
         } else {
             await handleEndAtBat(result);
         }
@@ -431,11 +441,12 @@ export function useLiveGameActions(state: LiveGameState) {
 
             setShowRunnerAdvancementModal(false);
 
-            // Now end the at-bat with the pending result
+            // Now end the at-bat with the pending result.
+            // Credit the batter with an RBI for each run scored (sac fly, hit, forced walk/HBP).
             const result = state.pendingHitResult;
             setPendingHitResult(null);
             if (result) {
-                await handleEndAtBat(result);
+                await handleEndAtBat(result, { rbi: runsScored, runs_scored: runsScored });
             }
         } catch (error) {
             console.error('Failed to update runner advancement:', error);

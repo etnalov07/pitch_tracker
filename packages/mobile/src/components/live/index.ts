@@ -6,6 +6,7 @@ export { default as PitcherStats } from './PitcherStats';
 export { default as BaseballDiamond } from './BaseballDiamond';
 export { default as BaseRunnerDiamond } from './BaseRunnerDiamond';
 export { default as BaserunnerOutModal } from './BaserunnerOutModal';
+export { default as PickoffModal } from './PickoffModal';
 export { default as RunnerAdvancementModal } from './RunnerAdvancementModal';
 export { default as InPlayModal } from './InPlayModal';
 export { default as PitcherSelectorModal } from './PitcherSelectorModal';

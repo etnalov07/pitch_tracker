@@ -88,10 +88,12 @@ export const getSuggestedAdvancement = (currentRunners: BaseRunners, result: str
 
         case 'walk':
         case 'hit_by_pitch':
-            // Force advance only
+        case 'strikeout_dropped':
+            // Force advance only. For a dropped third strike, the batter reaches first —
+            // only runners forced off their base by the batter advance (not on their own).
             if (currentRunners.first) {
                 if (currentRunners.second) {
-                    if (currentRunners.third) runs++; // Bases loaded walk scores a run
+                    if (currentRunners.third) runs++; // Bases loaded walk/HBP scores a run
                     newRunners.third = true;
                 } else {
                     // Second base was empty, but now occupied by force
