@@ -64,6 +64,7 @@ import {
     InningChangeModal,
     TeamAtBatModal,
     BaserunnerOutModal,
+    PickoffModal,
     RunnerAdvancementModal,
     PreviousAtBatsModal,
     PitcherTendenciesModal,
@@ -124,6 +125,7 @@ export default function LiveGameScreen() {
 
     // Base runner modals state
     const [showBaserunnerOutModal, setShowBaserunnerOutModal] = useState(false);
+    const [showPickoffModal, setShowPickoffModal] = useState(false);
     const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
     const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
 
@@ -275,7 +277,7 @@ export default function LiveGameScreen() {
     );
 
     const handleEndAtBat = useCallback(
-        async (result: string, finalPitch?: Partial<Pitch>) => {
+        async (result: string, finalPitch?: Partial<Pitch>, extra?: { rbi?: number; runs_scored?: number }) => {
             if (!currentAtBat) return;
             try {
                 // Capture before clearing; append finalPitch if provided (covers stale-closure case
@@ -286,7 +288,17 @@ export default function LiveGameScreen() {
 
                 const outsFromPlay = getOutsForResult(result);
                 const newOutCount = currentOuts + outsFromPlay;
-                await dispatch(endAtBat({ id: endedAtBat.id, data: { result, outs_after: Math.min(newOutCount, 3) } })).unwrap();
+                await dispatch(
+                    endAtBat({
+                        id: endedAtBat.id,
+                        data: {
+                            result,
+                            outs_after: Math.min(newOutCount, 3),
+                            rbi: extra?.rbi,
+                            runs_scored: extra?.runs_scored,
+                        },
+                    })
+                ).unwrap();
                 dispatch(setCurrentAtBat(null));
                 dispatch(clearPitches());
 
@@ -710,8 +722,27 @@ export default function LiveGameScreen() {
             setPendingShakeCount(0);
             if (result.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             if (newBalls >= 4) await handleEndAtBat('walk', finalPitch);
-            else if (newStrikes >= 3) await handleEndAtBat('strikeout', finalPitch);
-            else if (selectedResult === 'in_play') setShowInPlayModal(true);
+            else if (newStrikes >= 3) {
+                // MLB rule: batter can reach on an uncaught third strike only when 1st base
+                // is unoccupied, OR when there are 2 outs. Prompt the user to distinguish.
+                const canDropThird = !baseRunners.first || currentOuts >= 2;
+                if (canDropThird) {
+                    Alert.alert('Third strike', 'Was the third strike dropped?', [
+                        { text: 'No', style: 'cancel', onPress: () => handleEndAtBat('strikeout', finalPitch) },
+                        {
+                            text: 'Yes',
+                            onPress: () => {
+                                // Show runner advancement for the dropped K3. The suggested
+                                // advancement places the batter on 1st and force-advances runners.
+                                setPendingHitResult('strikeout_dropped');
+                                setShowRunnerAdvancementModal(true);
+                            },
+                        },
+                    ]);
+                } else {
+                    await handleEndAtBat('strikeout', finalPitch);
+                }
+            } else if (selectedResult === 'in_play') setShowInPlayModal(true);
         } catch {
             Alert.alert('Error', 'Failed to log pitch');
         } finally {
@@ -723,7 +754,7 @@ export default function LiveGameScreen() {
         async (result: string, hitLocation?: HitLocation) => {
             setShowInPlayModal(false);
             // For hits, show runner advancement modal
-            const hitResults = ['single', 'double', 'triple', 'home_run', 'walk', 'hit_by_pitch'];
+            const hitResults = ['single', 'double', 'triple', 'home_run', 'walk', 'hit_by_pitch', 'sacrifice_fly'];
             const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
             if (hitResults.includes(result) && hasRunnersOnBase) {
                 setPendingHitResult(result);
@@ -733,7 +764,7 @@ export default function LiveGameScreen() {
                 const { suggestedRunners, suggestedRuns } = getSuggestedAdvancement(baseRunners, result);
                 dispatch(setBaseRunners(suggestedRunners));
                 if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: suggestedRunners }));
-                await handleEndAtBat(result);
+                await handleEndAtBat(result, undefined, { rbi: suggestedRuns, runs_scored: suggestedRuns });
             } else {
                 // Out result - just end at-bat
                 await handleEndAtBat(result);
@@ -753,7 +784,9 @@ export default function LiveGameScreen() {
                 dispatch(fetchGameById(id));
             }
             setShowRunnerAdvancementModal(false);
-            await handleEndAtBat(pendingHitResult);
+            // Credit the batter with an RBI for each run scored on the play (sac fly, hit, etc.).
+            // Walks/HBPs also legitimately credit forced runs.
+            await handleEndAtBat(pendingHitResult, undefined, { rbi: runsScored, runs_scored: runsScored });
             setPendingHitResult(null);
         },
         [pendingHitResult, id, game, dispatch, handleEndAtBat]
@@ -773,6 +806,11 @@ export default function LiveGameScreen() {
                         outs_before: currentOuts,
                     })
                 ).unwrap();
+                // Remove the runner from local + server base-runner state (the event table
+                // does not cascade into games.base_runners; parity with web behavior).
+                const newRunners: BaseRunners = { ...baseRunners, [runnerBase]: false };
+                dispatch(setBaseRunners(newRunners));
+                dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
                 const newOuts = currentOuts + 1;
                 setCurrentOuts(newOuts);
                 if (newOuts >= 3) {
@@ -785,7 +823,7 @@ export default function LiveGameScreen() {
                 Alert.alert('Error', 'Failed to record baserunner out');
             }
         },
-        [id, currentInning, currentAtBat, currentOuts, game, dispatch]
+        [id, currentInning, currentAtBat, currentOuts, game, dispatch, baseRunners]
     );
 
     const handleRunnerPress = useCallback(
@@ -931,6 +969,13 @@ export default function LiveGameScreen() {
                 currentOuts={currentOuts}
                 onRecordOut={handleRecordBaserunnerOut}
             />
+            <PickoffModal
+                visible={showPickoffModal}
+                onDismiss={() => setShowPickoffModal(false)}
+                runners={baseRunners}
+                currentOuts={currentOuts}
+                onRecordPickoff={(runnerBase) => handleRecordBaserunnerOut('pickoff', runnerBase)}
+            />
             <RunnerAdvancementModal
                 visible={showRunnerAdvancementModal}
                 onDismiss={() => {
@@ -970,15 +1015,26 @@ export default function LiveGameScreen() {
     const renderRunnerOutButton = () => {
         if (game.status !== 'in_progress' || !hasRunnersOnBase) return null;
         return (
-            <Button
-                mode="outlined"
-                onPress={() => setShowBaserunnerOutModal(true)}
-                style={styles.runnerOutButton}
-                icon="account-remove"
-                compact
-            >
-                Runner Out
-            </Button>
+            <View style={styles.runnerActionRow}>
+                <Button
+                    mode="outlined"
+                    onPress={() => setShowBaserunnerOutModal(true)}
+                    style={styles.runnerOutButton}
+                    icon="account-remove"
+                    compact
+                >
+                    Runner Out
+                </Button>
+                <Button
+                    mode="outlined"
+                    onPress={() => setShowPickoffModal(true)}
+                    style={styles.runnerOutButton}
+                    icon="arrow-u-left-top"
+                    compact
+                >
+                    Pickoff
+                </Button>
+            </View>
         );
     };
 
@@ -1412,7 +1468,8 @@ const styles = StyleSheet.create({
     startAtBatButton: { marginTop: 6 },
     selectPrompt: { marginTop: 6, padding: 12, backgroundColor: '#fef3c7', borderRadius: 8, alignItems: 'center' },
     selectPromptText: { color: '#92400e', fontSize: 14, fontWeight: '500' },
-    runnerOutButton: { marginTop: 6, alignSelf: 'flex-start' },
+    runnerActionRow: { flexDirection: 'row' as const, gap: 8, marginTop: 6, flexWrap: 'wrap' as const },
+    runnerOutButton: { alignSelf: 'flex-start' },
     tendenciesRow: { flexDirection: 'row' as const, gap: 8, marginTop: 6 },
     tendencyBtn: { flex: 1 },
     tendencyBtnHitter: { borderColor: '#16a34a' },

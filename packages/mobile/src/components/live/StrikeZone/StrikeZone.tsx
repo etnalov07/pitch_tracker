@@ -475,7 +475,8 @@ const compactStyles = StyleSheet.create({
     },
     zoneWrapper: {
         width: '100%',
-        maxHeight: 260,
+        // Bumped 20% from 260 to give the strike zone, hitter, and plate more room on mobile.
+        maxHeight: 312,
         aspectRatio: 300 / 300,
         alignSelf: 'center',
     },

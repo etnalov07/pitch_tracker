@@ -157,12 +157,18 @@ export default function GameDetailScreen() {
                         </View>
 
                         <View style={styles.scoreRow}>
+                            {/* Scoreboard convention: visitor on the left, home on the right.
+                                Note: home_team_id / home_score in the DB always refer to the USER's
+                                team, regardless of is_home_game. The is_home_game flag only controls
+                                who bats top vs bottom — it does NOT swap the column meanings. */}
                             <View style={styles.teamScore}>
                                 <Text variant="titleMedium" style={styles.teamName}>
-                                    {game.is_home_game === false ? game.home_team_name || 'Your Team' : 'Home'}
+                                    {game.is_home_game === false
+                                        ? game.home_team_name || 'Your Team'
+                                        : game.opponent_name || 'Away'}
                                 </Text>
                                 <Text variant="displaySmall" style={[styles.score, { color: theme.colors.primary }]}>
-                                    {game.is_home_game === false ? game.away_score : game.home_score}
+                                    {game.is_home_game === false ? game.home_score : game.away_score}
                                 </Text>
                             </View>
 
@@ -172,10 +178,12 @@ export default function GameDetailScreen() {
 
                             <View style={styles.teamScore}>
                                 <Text variant="titleMedium" style={styles.teamName}>
-                                    {game.is_home_game === false ? 'Your Team' : game.opponent_name || 'Away'}
+                                    {game.is_home_game === false
+                                        ? game.opponent_name || 'Away'
+                                        : game.home_team_name || 'Your Team'}
                                 </Text>
                                 <Text variant="displaySmall" style={[styles.score, { color: theme.colors.primary }]}>
-                                    {game.is_home_game === false ? game.home_score : game.away_score}
+                                    {game.is_home_game === false ? game.away_score : game.home_score}
                                 </Text>
                             </View>
                         </View>
