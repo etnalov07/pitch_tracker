@@ -1,3 +1,4 @@
+import { BALL_RADIUS, isTargetHit } from '@pitch-tracker/shared';
 import { query, transaction } from '../config/database';
 import {
     BullpenSession,
@@ -9,8 +10,6 @@ import {
     BullpenPlanAssignment,
 } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-
-const TARGET_ACCURACY_THRESHOLD = 0.15;
 
 export class BullpenService {
     // ============================================================================
@@ -203,9 +202,8 @@ export class BullpenService {
 
         // Auto-determine ball/strike from pitch location if no explicit result provided.
         // Strike zone is normalized 0-1 on both axes. A baseball is ~2.9" diameter vs ~17" zone width,
-        // so the ball radius in normalized coords is ~0.085. A strike means any part of the ball
-        // touches the zone: ball center must be within (-radius, 1+radius) on both axes.
-        const BALL_RADIUS = 0.085;
+        // so the ball radius in normalized coords is BALL_RADIUS (~0.085). A strike means any part of
+        // the ball touches the zone: ball center must be within (-radius, 1+radius) on both axes.
         let pitchResult = explicitResult || null;
         if (!pitchResult && actual_x != null && actual_y != null) {
             const touchesZone =
@@ -286,10 +284,7 @@ export class BullpenService {
         const pitchesWithTarget = pitches.filter(
             (p: any) => p.target_x != null && p.target_y != null && p.actual_x != null && p.actual_y != null
         );
-        const accuratePitches = pitchesWithTarget.filter((p: any) => {
-            const distance = Math.sqrt(Math.pow(p.actual_x - p.target_x, 2) + Math.pow(p.actual_y - p.target_y, 2));
-            return distance <= TARGET_ACCURACY_THRESHOLD;
-        });
+        const accuratePitches = pitchesWithTarget.filter((p: any) => isTargetHit(p.target_x, p.target_y, p.actual_x, p.actual_y));
         const targetAccuracy =
             pitchesWithTarget.length > 0 ? Math.round((accuratePitches.length / pitchesWithTarget.length) * 100) : null;
 

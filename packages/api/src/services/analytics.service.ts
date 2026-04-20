@@ -1,3 +1,4 @@
+import { TARGET_ACCURACY_THRESHOLD } from '@pitch-tracker/shared';
 import { query } from '../config/database';
 import type {
     HeatZoneData,
@@ -267,9 +268,6 @@ export class AnalyticsService {
         return result.rows[0];
     }
 
-    // Threshold for target accuracy (within 0.15 units ~ half ball width)
-    private readonly TARGET_ACCURACY_THRESHOLD = 0.15;
-
     // Get pitcher game logs with per-game statistics
     async getPitcherGameLogs(pitcherId: string, limit: number = 10, offset: number = 0): Promise<any> {
         // Get games where this pitcher pitched
@@ -321,7 +319,7 @@ export class AnalyticsService {
         LEFT JOIN at_bats ab ON p.at_bat_id = ab.id
         WHERE p.pitcher_id = $1 AND p.game_id = $2
       `,
-                [pitcherId, game.game_id, this.TARGET_ACCURACY_THRESHOLD]
+                [pitcherId, game.game_id, TARGET_ACCURACY_THRESHOLD]
             );
 
             const stats = statsResult.rows[0];
@@ -363,7 +361,7 @@ export class AnalyticsService {
         GROUP BY p.pitch_type
         ORDER BY count DESC
       `,
-                [pitcherId, game.game_id, this.TARGET_ACCURACY_THRESHOLD]
+                [pitcherId, game.game_id, TARGET_ACCURACY_THRESHOLD]
             );
 
             const pitch_type_breakdown = pitchTypeResult.rows.map((row) => {
@@ -480,7 +478,7 @@ export class AnalyticsService {
       LEFT JOIN at_bats ab ON p.at_bat_id = ab.id
       WHERE p.pitcher_id = $1
     `,
-            [pitcherId, this.TARGET_ACCURACY_THRESHOLD]
+            [pitcherId, TARGET_ACCURACY_THRESHOLD]
         );
 
         const career = careerResult.rows[0];

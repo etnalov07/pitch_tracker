@@ -1,7 +1,6 @@
+import { TARGET_ACCURACY_THRESHOLD, isTargetHit } from '@pitch-tracker/shared';
 import { query, transaction } from '../config/database';
 import { PerformanceSummary, PerformanceMetric, PitchTypeSummary, MetricRating, SummarySourceType } from '../types';
-
-const TARGET_ACCURACY_THRESHOLD = 0.15;
 
 // Fixed coaching benchmarks
 const BENCHMARKS = {
@@ -341,10 +340,7 @@ export class PerformanceSummaryService {
         const withTarget = pitches.filter(
             (p: any) => p.target_x != null && p.target_y != null && p.actual_x != null && p.actual_y != null
         );
-        const accurateCount = withTarget.filter((p: any) => {
-            const dist = Math.sqrt(Math.pow(p.actual_x - p.target_x, 2) + Math.pow(p.actual_y - p.target_y, 2));
-            return dist <= TARGET_ACCURACY_THRESHOLD;
-        }).length;
+        const accurateCount = withTarget.filter((p: any) => isTargetHit(p.target_x, p.target_y, p.actual_x, p.actual_y)).length;
 
         // Pitch type breakdown
         const typeMap = new Map<
@@ -367,8 +363,7 @@ export class PerformanceSummaryService {
             if (p.target_x != null && p.target_y != null) {
                 entry.targeted++;
                 if (p.actual_x != null && p.actual_y != null) {
-                    const dist = Math.sqrt(Math.pow(p.actual_x - p.target_x, 2) + Math.pow(p.actual_y - p.target_y, 2));
-                    if (dist <= TARGET_ACCURACY_THRESHOLD) entry.accurate++;
+                    if (isTargetHit(p.target_x, p.target_y, p.actual_x, p.actual_y)) entry.accurate++;
                 }
             }
             typeMap.set(p.pitch_type, entry);
