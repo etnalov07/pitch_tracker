@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput, Pressable, TouchableOpacity } from 'react-native';
-import { Text, Button, useTheme, IconButton, Portal } from 'react-native-paper';
+import { Text, Button, useTheme, IconButton, Portal, Chip } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import {
@@ -102,6 +102,7 @@ export default function LiveGameScreen() {
 
     // Historical pitches for completed-game read-only view
     const [allGamePitches, setAllGamePitches] = useState<Pitch[]>([]);
+    const [pitchTypeFilter, setPitchTypeFilter] = useState<string>('all');
 
     // Local state for pitch entry
     const [selectedPitchType, setSelectedPitchType] = useState<PitchType | null>(null);
@@ -881,6 +882,42 @@ export default function LiveGameScreen() {
 
     const isReadOnly = game.status !== 'in_progress';
 
+    const filteredGamePitches =
+        pitchTypeFilter === 'all' ? allGamePitches : allGamePitches.filter((p) => (p.pitch_type || 'other') === pitchTypeFilter);
+
+    const renderPitchTypeFilterBar = () => {
+        if (!isReadOnly || allGamePitches.length === 0) return null;
+        const types = Array.from(new Set(allGamePitches.map((p) => p.pitch_type || 'other')));
+        return (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pitchFilterBar}>
+                <Chip
+                    selected={pitchTypeFilter === 'all'}
+                    onPress={() => setPitchTypeFilter('all')}
+                    style={[styles.pitchFilterChip, pitchTypeFilter === 'all' && styles.pitchFilterChipActive]}
+                    textStyle={pitchTypeFilter === 'all' ? styles.pitchFilterChipTextActive : styles.pitchFilterChipText}
+                    compact
+                >
+                    All
+                </Chip>
+                {types.map((type) => (
+                    <Chip
+                        key={type}
+                        selected={pitchTypeFilter === type}
+                        onPress={() => setPitchTypeFilter(type)}
+                        style={[
+                            styles.pitchFilterChip,
+                            pitchTypeFilter === type && { backgroundColor: PITCH_TYPE_COLORS[type] ?? '#6b7280' },
+                        ]}
+                        textStyle={pitchTypeFilter === type ? styles.pitchFilterChipTextActive : styles.pitchFilterChipText}
+                        compact
+                    >
+                        {PITCH_TYPE_LABELS[type] ?? type}
+                    </Chip>
+                ))}
+            </ScrollView>
+        );
+    };
+
     const renderPitchBreakdown = () => {
         if (!isReadOnly || allGamePitches.length === 0) return null;
         const byType: Record<string, { count: number; strikes: number; balls: number }> = {};
@@ -891,7 +928,8 @@ export default function LiveGameScreen() {
             if (
                 pitch.pitch_result === 'called_strike' ||
                 pitch.pitch_result === 'swinging_strike' ||
-                pitch.pitch_result === 'foul'
+                pitch.pitch_result === 'foul' ||
+                pitch.pitch_result === 'in_play'
             ) {
                 byType[t].strikes++;
             } else if (pitch.pitch_result === 'ball' || pitch.pitch_result === 'hit_by_pitch') {
@@ -1183,6 +1221,7 @@ export default function LiveGameScreen() {
                         </View>
                     </View>
                     <ScrollView style={styles.mainPanel} contentContainerStyle={styles.mainPanelContent}>
+                        {renderPitchTypeFilterBar()}
                         <StrikeZone
                             onLocationSelect={(x, y) => setPitchLocation({ x, y })}
                             onTargetZoneSelect={setTargetZone}
@@ -1191,7 +1230,7 @@ export default function LiveGameScreen() {
                                 setPitchLocation(null);
                             }}
                             targetZone={targetZone}
-                            previousPitches={isReadOnly ? allGamePitches : pitches}
+                            previousPitches={isReadOnly ? filteredGamePitches : pitches}
                             disabled={isReadOnly || isLogging}
                             colorBy={isReadOnly ? 'pitchType' : 'result'}
                             batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
@@ -1415,6 +1454,7 @@ export default function LiveGameScreen() {
                     />
                 )}
                 {/* 2. Strike Zone (1st tap = target zone, 2nd tap = actual location) */}
+                {renderPitchTypeFilterBar()}
                 <StrikeZone
                     onLocationSelect={(x, y) => setPitchLocation({ x, y })}
                     onTargetZoneSelect={setTargetZone}
@@ -1423,7 +1463,7 @@ export default function LiveGameScreen() {
                         setPitchLocation(null);
                     }}
                     targetZone={targetZone}
-                    previousPitches={isReadOnly ? allGamePitches : pitches}
+                    previousPitches={isReadOnly ? filteredGamePitches : pitches}
                     disabled={isReadOnly || isLogging}
                     compact
                     colorBy={isReadOnly ? 'pitchType' : 'result'}
@@ -1721,6 +1761,26 @@ const styles = StyleSheet.create({
         color: '#1f2937',
         backgroundColor: '#ffffff',
         textAlign: 'center' as const,
+    },
+    pitchFilterBar: {
+        flexDirection: 'row' as const,
+        gap: 6,
+        paddingHorizontal: 4,
+        paddingVertical: 6,
+    },
+    pitchFilterChip: {
+        backgroundColor: '#f3f4f6',
+    },
+    pitchFilterChipActive: {
+        backgroundColor: '#1f2937',
+    },
+    pitchFilterChipText: {
+        fontSize: 12,
+        color: '#374151',
+    },
+    pitchFilterChipTextActive: {
+        fontSize: 12,
+        color: '#ffffff',
     },
     breakdownTable: {
         backgroundColor: '#ffffff',
