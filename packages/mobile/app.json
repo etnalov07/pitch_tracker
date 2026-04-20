@@ -2,7 +2,7 @@
     "expo": {
         "name": "PitchChart",
         "slug": "pitch-tracker",
-        "version": "1.35.0",
+        "version": "1.36.0",
         "orientation": "default",
         "icon": "./assets/images/icon.png",
         "scheme": "pitchtracker",

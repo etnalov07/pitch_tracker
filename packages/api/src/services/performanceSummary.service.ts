@@ -1,21 +1,5 @@
-import fs from 'fs';
-import path from 'path';
 import { query, transaction } from '../config/database';
 import { PerformanceSummary, PerformanceMetric, PitchTypeSummary, MetricRating, SummarySourceType } from '../types';
-
-const COACH_SUM_LOG = path.join(process.cwd(), 'CoachSum.log');
-
-function logCoachSum(label: string, data: unknown): void {
-    const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(data, null, 2)}\n${'─'.repeat(80)}\n`;
-    try {
-        fs.appendFileSync(COACH_SUM_LOG, line);
-    } catch (err) {
-        process.stderr.write(`[CoachSum write error] ${err}\n`);
-    }
-}
-
-// Startup probe — confirms the log path is writable when the module loads
-logCoachSum('MODULE_LOADED', { cwd: process.cwd(), logPath: COACH_SUM_LOG });
 
 const TARGET_ACCURACY_THRESHOLD = 0.15;
 
@@ -100,12 +84,6 @@ export class PerformanceSummaryService {
         // Check for existing summary
         const existing = await this.getSummary(sourceType, sourceId);
         if (existing) {
-            logCoachSum('EXISTING_SUMMARY_RETURNED', {
-                sourceType,
-                sourceId,
-                summaryId: existing.id,
-                hasNarrative: !!existing.narrative,
-            });
             return existing;
         }
 
@@ -661,16 +639,7 @@ export class PerformanceSummaryService {
         concerns: string[]
     ): Promise<void> {
         const apiKey = process.env.ANTHROPIC_API_KEY;
-        logCoachSum('GENERATE_NARRATIVE_CALLED', {
-            summaryId,
-            pitcherName,
-            sourceType,
-            hasApiKey: !!apiKey,
-        });
-        if (!apiKey) {
-            logCoachSum('SKIPPED_NO_API_KEY', { summaryId });
-            return;
-        }
+        if (!apiKey) return;
 
         try {
             const Anthropic = (await import('@anthropic-ai/sdk')).default;
@@ -694,27 +663,11 @@ ${JSON.stringify(metrics, null, 2)}
 
 Write a 2-4 sentence coaching summary paragraph.`;
 
-            logCoachSum('REQUEST', {
-                summaryId,
-                pitcherName,
-                sourceType,
-                model: 'claude-haiku-4-5-20251001',
-                system: 'You are an experienced pitching coach writing a brief post-session summary for a baseball pitcher. Be encouraging but honest. Reference specific numbers. Keep it to 2-4 sentences. Do not use bullet points or headers — write a natural paragraph.',
-                userPrompt,
-            });
-
             const response = await client.messages.create({
                 model: 'claude-haiku-4-5-20251001',
                 max_tokens: 300,
                 system: 'You are an experienced pitching coach writing a brief post-session summary for a baseball pitcher. Be encouraging but honest. Reference specific numbers. Keep it to 2-4 sentences. Do not use bullet points or headers — write a natural paragraph.',
                 messages: [{ role: 'user', content: userPrompt }],
-            });
-
-            logCoachSum('RESPONSE', {
-                summaryId,
-                stop_reason: response.stop_reason,
-                usage: response.usage,
-                content: response.content,
             });
 
             const narrative = response.content[0].type === 'text' ? response.content[0].text : null;
@@ -726,7 +679,6 @@ Write a 2-4 sentence coaching summary paragraph.`;
                 );
             }
         } catch (err) {
-            logCoachSum('ERROR', { summaryId, error: String(err) });
             console.error('AI narrative generation failed:', err);
         }
     }
