@@ -1,4 +1,4 @@
-import { BALL_RADIUS, isTargetHit } from '@pitch-tracker/shared';
+import { BALL_RADIUS, isTargetHit } from '../utils/pitchLocation';
 import { query, transaction } from '../config/database';
 import {
     BullpenSession,

@@ -1,4 +1,4 @@
-import { TARGET_ACCURACY_THRESHOLD, isTargetHit } from '@pitch-tracker/shared';
+import { TARGET_ACCURACY_THRESHOLD, isTargetHit } from '../utils/pitchLocation';
 import { query, transaction } from '../config/database';
 import { PerformanceSummary, PerformanceMetric, PitchTypeSummary, MetricRating, SummarySourceType } from '../types';
 

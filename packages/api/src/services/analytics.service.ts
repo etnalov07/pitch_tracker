@@ -1,4 +1,4 @@
-import { TARGET_ACCURACY_THRESHOLD } from '@pitch-tracker/shared';
+import { TARGET_ACCURACY_THRESHOLD } from '../utils/pitchLocation';
 import { query } from '../config/database';
 import type {
     HeatZoneData,
