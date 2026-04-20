@@ -33,8 +33,8 @@ test.describe('Auth / Login page', () => {
         // Switch to register
         await page.getByText('Sign up').click();
         await expect(page.getByRole('heading', { name: 'Create Account' })).toBeVisible();
-        await expect(page.getByPlaceholder('John')).toBeVisible();
-        await expect(page.getByPlaceholder('Doe')).toBeVisible();
+        await expect(page.getByRole('textbox', { name: 'First Name' })).toBeVisible();
+        await expect(page.getByRole('textbox', { name: 'Last Name' })).toBeVisible();
 
         // Switch back to login
         await page.getByText('Sign in', { exact: false }).click();
@@ -53,9 +53,9 @@ test.describe('Auth / Login page', () => {
 
         await page.getByText('Sign up').click();
 
-        await expect(page.getByPlaceholder('John')).toBeVisible();
-        await expect(page.getByPlaceholder('Doe')).toBeVisible();
-        await expect(page.getByPlaceholder('john@example.com')).toBeVisible();
+        await expect(page.getByRole('textbox', { name: 'First Name' })).toBeVisible();
+        await expect(page.getByRole('textbox', { name: 'Last Name' })).toBeVisible();
+        await expect(page.getByRole('textbox', { name: 'Email' })).toBeVisible();
         await expect(page.getByPlaceholder('••••••••')).toBeVisible();
         await expect(page.getByText('Coach')).toBeVisible();
         await expect(page.getByText('Player')).toBeVisible();

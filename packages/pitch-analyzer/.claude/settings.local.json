@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(analyze-video)",
+      "Bash(grep -c \"\\\\.MOV$\")",
+      "Bash(node dist/cli.js analyze-session --video-dir 'C:/Projects/pitch_tracker/videos/North Shore' --training-data ./temp/video_pitch_analysis.json --temp-dir ./temp)",
+      "Bash(node dist/cli.js generate-khs-excel --input ./temp/session_analysis.json --output C:/Projects/pitch_tracker/videos/North_Shore_Analysis.xlsx --calibration ./calibration.json)",
+      "Bash(node dist/cli.js calibrate-velocity --input ./temp/session_analysis.json --calibration ./calibration.json)",
+      "Bash(ls \"C:/Projects/pitch_tracker/videos/\"*.xlsx)",
+      "Bash(ls \"C:/Projects/pitch_tracker/videos/\"*.xls)",
+      "Bash(node -e ':*)",
+      "Bash(node dist/cli.js video-analyze --comparison ./temp/north_shore_comparison.json --video-dir 'C:/Projects/pitch_tracker/videos/North Shore' --temp-dir ./temp)",
+      "Bash(node dist/cli.js calibrate-add --input ./temp/session_analysis.json --game North_Shore --date 2026-04-07 --calibration ./calibration.json)",
+      "Bash(node dist/cli.js calibrate-status --calibration ./calibration.json)",
+      "Bash(\"C:/Projects/pitch_tracker/node_modules/ffmpeg-static/ffmpeg.exe\" -i \"C:/Projects/pitch_tracker/videos/North Shore/IMG_7630.MOV\")"
+    ]
+  }
+}

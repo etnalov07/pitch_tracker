@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(analyze-video)",
+      "Read(//c/Projects/pitch_tracker/packages/pitch-analyzer/**)",
+      "Bash(npm run:*)",
+      "Bash(node dist/cli.js analyze-session --video-dir \"C:/Projects/pitch_tracker/videos/Summer creek\" --training-data ./temp/video_pitch_analysis.json --temp-dir ./temp)",
+      "Bash(node dist/cli.js calibrate-velocity --input ./temp/session_analysis.json --calibration ./calibration.json)",
+      "Bash(node dist/cli.js generate-khs-excel --input ./temp/session_analysis.json --output \"C:/Projects/pitch_tracker/videos/Summer creek/SummerCreek_Analysis.xlsx\" --calibration ./calibration.json)"
+    ]
+  }
+}

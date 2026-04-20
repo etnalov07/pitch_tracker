@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Read(//c/Projects/pitch_tracker/**)",
+      "Bash(npx prettier *)",
+      "Skill(commit-push)",
+      "Bash(npm run *)",
+      "Bash(sed -i 's/\"version\": \"1.27.0\"/\"version\": \"1.28.0\"/' packages/mobile/package.json packages/mobile/app.json)",
+      "Bash(sed -i 's/\"version\": \"0.27.0\"/\"version\": \"0.28.0\"/' packages/web/package.json)",
+      "Skill(preflight)",
+      "Bash(xargs grep *)",
+      "Bash(npx expo *)",
+      "Bash(npm install *)"
+    ]
+  }
+}

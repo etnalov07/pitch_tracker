@@ -1,0 +1,17 @@
+{
+  "IMG_7630.MOV": {"pitch_type": "Fastball", "result": "Strike"},
+  "IMG_7631.MOV": {"pitch_type": "Fastball", "result": "Strike"},
+  "IMG_7632.MOV": {"pitch_type": "Fastball", "result": "Strike"},
+  "IMG_7633.MOV": {"pitch_type": "Fastball", "result": "Ball"},
+  "IMG_7634.MOV": {"pitch_type": "Changeup", "result": "Strike"},
+  "IMG_7635.MOV": {"pitch_type": "Changeup", "result": "Strike"},
+  "IMG_7636.MOV": {"pitch_type": "Curveball", "result": "Ball"},
+  "IMG_7637.MOV": {"pitch_type": "Fastball", "result": "Strike"},
+  "IMG_7638.MOV": {"pitch_type": "Changeup", "result": "Strike"},
+  "IMG_7639.MOV": {"pitch_type": "Changeup", "result": "Ball"},
+  "IMG_7640.MOV": {"pitch_type": "Fastball", "result": "Strike"},
+  "IMG_7641.MOV": {"pitch_type": "Changeup", "result": "Strike"},
+  "IMG_7642.MOV": {"pitch_type": "Curveball", "result": "Ball"},
+  "IMG_7643.MOV": {"pitch_type": "Fastball", "result": "Ball"},
+  "IMG_7645.MOV": {"pitch_type": "Fastball", "result": "Strike"}
+}

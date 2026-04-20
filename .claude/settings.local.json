@@ -55,7 +55,38 @@
       "Bash(mkdir:*)",
       "Bash(ffprobe:*)",
       "Bash(npx ffprobe:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(find /c/Projects/pitch_tracker/packages/mobile -name \"*.config.*\" 2>/dev/null | grep -v node_modules)",
+      "Bash(npm run:*)",
+      "Bash(find /c/Projects/pitch_tracker/packages/web/src/state -name \"*.ts\" -type f -exec wc -l {} + | sort -n)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/nodejs:/c/Users/brian/AppData/Roaming/npm\" && cd /c/Projects/pitch_tracker/packages/web && npm install -D @playwright/test 2>&1 | tail -10)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:/c/Users/brian/AppData/Roaming/npm:$PATH\" && cd /c/Projects/pitch_tracker/packages/web && npm install -D @playwright/test 2>&1)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:/c/Users/brian/AppData/Roaming/npm:$PATH\" && cd /c/Projects/pitch_tracker/packages/web && npx playwright install chromium 2>&1)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:/c/Users/brian/AppData/Roaming/npm:$PATH\" && npx prettier --write packages/web/playwright.config.ts packages/web/e2e/helpers.ts packages/web/e2e/auth.spec.ts packages/web/e2e/dashboard.spec.ts packages/web/e2e/teams.spec.ts packages/web/e2e/games.spec.ts packages/web/e2e/live-game.spec.ts packages/web/e2e/bullpen.spec.ts packages/web/e2e/pitcher-profile.spec.ts packages/web/e2e/join-team.spec.ts packages/web/e2e/navigation.spec.ts packages/web/package.json 2>&1)",
+      "Bash(node_modules/.bin/prettier --write \"packages/mobile/app/game/[id]/lineup.tsx\")",
+      "Bash(which node:*)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\" && npx prettier --write \"packages/mobile/app/game/[id]/lineup.tsx\")",
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\" && git add packages/mobile/app/game/\\\\[id\\\\]/lineup.tsx packages/mobile/.maestro/ packages/web/e2e/ packages/web/playwright.config.ts packages/web/package.json packages/web/package-lock.json 2>/dev/null; git add package-lock.json)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\" && git commit -m \"$\\(cat <<'EOF'\nfeat: add e2e test suites \\(Playwright web, Maestro mobile\\) and fix lineup hooks error\n\n- Set up Playwright for web with 9 test specs covering all screens\n- Set up Maestro for mobile with 13 YAML flows covering all screens\n- Fix \"Rendered fewer hooks than expected\" crash on mobile lineup screen\n  by replacing early return with inline conditional rendering\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\" && git push)",
+      "Skill(commit-push)",
+      "Bash(find /c/Projects/pitch_tracker -name *pitchchart* -o -name *calling*ui*)",
+      "Bash(find /c/Projects/pitch_tracker/packages/mobile/app -type f -name *.tsx)",
+      "Skill(save-plan)",
+      "Bash(npm view:*)",
+      "WebFetch(domain:docs.swmansion.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:docs.expo.dev)",
+      "Bash(find /c/Projects/pitch_tracker/packages/mobile/app -type f -name *settings* -o -name *setting*)",
+      "Bash(find /c/Projects/pitch_tracker/node_modules/react-native-audio-api -name *.d.ts -maxdepth 5)",
+      "Bash(find C:Projectspitch_trackerpackagesmobilenode_modulesexpo-av -name *.d.ts)",
+      "Bash(find C:/Projects/pitch_tracker/packages/mobile/node_modules/expo-av -name *.d.ts)",
+      "Bash(find C:/Projects/pitch_tracker/packages/mobile/node_modules/react-native-audio-api -type f -name *.ts -o -name *.d.ts)",
+      "Bash(find C:/Projects/pitch_tracker -name *.md -type f)",
+      "Bash(find /c/Projects/pitch_tracker -name .env* -type f)",
+      "Bash(npm list:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Skill(bug-fix)"
     ]
   },
   "hooks": {
@@ -73,6 +104,6 @@
     ]
   },
   "remote": {
-    "defaultEnvironmentId": "env_015rH6oFwDW9g198RUXhK8gP"
+    "defaultEnvironmentId": "env_017eK1kUX9FeZvWancvwW16s"
   }
 }
