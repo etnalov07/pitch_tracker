@@ -1,5 +1,14 @@
+import fs from 'fs';
+import path from 'path';
 import { query, transaction } from '../config/database';
 import { PerformanceSummary, PerformanceMetric, PitchTypeSummary, MetricRating, SummarySourceType } from '../types';
+
+const COACH_SUM_LOG = path.join(__dirname, '../../CoachSum.log');
+
+function logCoachSum(label: string, data: unknown): void {
+    const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(data, null, 2)}\n${'─'.repeat(80)}\n`;
+    fs.appendFileSync(COACH_SUM_LOG, line);
+}
 
 const TARGET_ACCURACY_THRESHOLD = 0.15;
 
@@ -661,11 +670,27 @@ ${JSON.stringify(metrics, null, 2)}
 
 Write a 2-4 sentence coaching summary paragraph.`;
 
+            logCoachSum('REQUEST', {
+                summaryId,
+                pitcherName,
+                sourceType,
+                model: 'claude-haiku-4-5-20251001',
+                system: 'You are an experienced pitching coach writing a brief post-session summary for a baseball pitcher. Be encouraging but honest. Reference specific numbers. Keep it to 2-4 sentences. Do not use bullet points or headers — write a natural paragraph.',
+                userPrompt,
+            });
+
             const response = await client.messages.create({
                 model: 'claude-haiku-4-5-20251001',
                 max_tokens: 300,
                 system: 'You are an experienced pitching coach writing a brief post-session summary for a baseball pitcher. Be encouraging but honest. Reference specific numbers. Keep it to 2-4 sentences. Do not use bullet points or headers — write a natural paragraph.',
                 messages: [{ role: 'user', content: userPrompt }],
+            });
+
+            logCoachSum('RESPONSE', {
+                summaryId,
+                stop_reason: response.stop_reason,
+                usage: response.usage,
+                content: response.content,
             });
 
             const narrative = response.content[0].type === 'text' ? response.content[0].text : null;
@@ -677,6 +702,7 @@ Write a 2-4 sentence coaching summary paragraph.`;
                 );
             }
         } catch (err) {
+            logCoachSum('ERROR', { summaryId, error: String(err) });
             console.error('AI narrative generation failed:', err);
         }
     }
