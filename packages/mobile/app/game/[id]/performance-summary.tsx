@@ -18,7 +18,7 @@ export default function GamePerformanceSummaryScreen() {
     const dispatch = useAppDispatch();
     const [regenerating, setRegenerating] = useState(false);
 
-    const { currentSummary, loading } = useAppSelector((state) => state.performanceSummary);
+    const { currentSummary, loading, error } = useAppSelector((state) => state.performanceSummary);
 
     useEffect(() => {
         if (id) dispatch(fetchPerformanceSummary({ sourceType: 'game', sourceId: id }));
@@ -35,7 +35,7 @@ export default function GamePerformanceSummaryScreen() {
         setRegenerating(false);
     };
 
-    if (loading || !currentSummary) {
+    if (loading) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 <View style={styles.header}>
@@ -45,6 +45,32 @@ export default function GamePerformanceSummaryScreen() {
                 </View>
                 <View style={styles.centered}>
                     <ActivityIndicator size="large" />
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (!currentSummary) {
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+                <View style={styles.header}>
+                    <IconButton icon="arrow-left" onPress={() => router.back()} />
+                    <Text variant="titleLarge">Performance Summary</Text>
+                    <View style={{ width: 48 }} />
+                </View>
+                <View style={styles.centered}>
+                    <Text variant="bodyLarge" style={{ color: '#6b7280', textAlign: 'center', marginBottom: 8 }}>
+                        {error ? 'Failed to load summary' : 'No performance summary available for this game.'}
+                    </Text>
+                    {error && (
+                        <Text variant="bodySmall" style={{ color: '#ef4444', textAlign: 'center', marginBottom: 16 }}>
+                            {error}
+                        </Text>
+                    )}
+                    <IconButton
+                        icon="refresh"
+                        onPress={() => id && dispatch(fetchPerformanceSummary({ sourceType: 'game', sourceId: id }))}
+                    />
                 </View>
             </SafeAreaView>
         );

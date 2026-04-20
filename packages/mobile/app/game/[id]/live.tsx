@@ -98,6 +98,9 @@ export default function LiveGameScreen() {
     } = useAppSelector((state) => state.games);
     const teamPlayers = useAppSelector((state) => state.teams.players) || [];
 
+    // Historical pitches for completed-game read-only view
+    const [allGamePitches, setAllGamePitches] = useState<Pitch[]>([]);
+
     // Local state for pitch entry
     const [selectedPitchType, setSelectedPitchType] = useState<PitchType | null>(null);
     const [selectedResult, setSelectedResult] = useState<PitchResult | null>(null);
@@ -191,6 +194,10 @@ export default function LiveGameScreen() {
             dispatch(fetchGamePitchers(id));
             dispatch(fetchOpponentLineup(id));
             dispatch(fetchBaseRunners(id));
+            gamesApi
+                .getGamePitches(id)
+                .then(setAllGamePitches)
+                .catch(() => setAllGamePitches([]));
         }
     }, [id, dispatch]);
 
@@ -870,6 +877,8 @@ export default function LiveGameScreen() {
         );
     }
 
+    const isReadOnly = game.status !== 'in_progress';
+
     const renderGameHeader = () => (
         <GameHeader
             game={game}
@@ -1126,13 +1135,13 @@ export default function LiveGameScreen() {
                                 setPitchLocation(null);
                             }}
                             targetZone={targetZone}
-                            previousPitches={pitches}
-                            disabled={isLogging}
+                            previousPitches={isReadOnly ? allGamePitches : pitches}
+                            disabled={isReadOnly || isLogging}
                             batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                             pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                         />
                         {/* Send Call (optional, setting-gated) */}
-                        {pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
+                        {!isReadOnly && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
                             <View style={[styles.callRow, { marginTop: 8 }]}>
                                 <Button
                                     mode="contained"
@@ -1158,7 +1167,7 @@ export default function LiveGameScreen() {
                                 </Pressable>
                             </View>
                         )}
-                        {pitchCallingEnabled && activeCall && (
+                        {!isReadOnly && pitchCallingEnabled && activeCall && (
                             <View style={styles.callBadge}>
                                 <Text style={styles.callBadgeText}>
                                     Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
@@ -1188,20 +1197,26 @@ export default function LiveGameScreen() {
                                 </View>
                             </View>
                         )}
-                        <View style={styles.controlsRow}>
-                            <View style={styles.controlsHalf}>
-                                <PitchTypeGrid
-                                    selectedType={selectedPitchType}
-                                    onSelect={setSelectedPitchType}
-                                    availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
-                                    disabled={isLogging}
-                                />
+                        {!isReadOnly && (
+                            <View style={styles.controlsRow}>
+                                <View style={styles.controlsHalf}>
+                                    <PitchTypeGrid
+                                        selectedType={selectedPitchType}
+                                        onSelect={setSelectedPitchType}
+                                        availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
+                                        disabled={isLogging}
+                                    />
+                                </View>
+                                <View style={styles.controlsHalf}>
+                                    <ResultButtons
+                                        selectedResult={selectedResult}
+                                        onSelect={setSelectedResult}
+                                        disabled={isLogging}
+                                    />
+                                </View>
                             </View>
-                            <View style={styles.controlsHalf}>
-                                <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} />
-                            </View>
-                        </View>
-                        {pitchCallingEnabled && game.status === 'in_progress' && (
+                        )}
+                        {!isReadOnly && pitchCallingEnabled && (
                             <View style={styles.shakeRow}>
                                 <TouchableOpacity onPress={handleShake} style={styles.shakeBtn} activeOpacity={0.7}>
                                     <Text style={styles.shakeBtnText}>SHAKE</Text>
@@ -1213,7 +1228,7 @@ export default function LiveGameScreen() {
                                 </TouchableOpacity>
                             </View>
                         )}
-                        {velocityEnabled && (
+                        {!isReadOnly && velocityEnabled && (
                             <View style={styles.veloRow}>
                                 <Text style={styles.veloLabel}>MPH</Text>
                                 <TextInput
@@ -1228,17 +1243,19 @@ export default function LiveGameScreen() {
                                 />
                             </View>
                         )}
-                        <Button
-                            mode="contained"
-                            onPress={handleLogPitch}
-                            disabled={!canLogPitch}
-                            loading={isLogging}
-                            style={styles.logButton}
-                            contentStyle={styles.logButtonContent}
-                        >
-                            Log Pitch
-                        </Button>
-                        {hasPreviousAtBats && (
+                        {!isReadOnly && (
+                            <Button
+                                mode="contained"
+                                onPress={handleLogPitch}
+                                disabled={!canLogPitch}
+                                loading={isLogging}
+                                style={styles.logButton}
+                                contentStyle={styles.logButtonContent}
+                            >
+                                Log Pitch
+                            </Button>
+                        )}
+                        {!isReadOnly && hasPreviousAtBats && (
                             <Button
                                 mode="outlined"
                                 onPress={() => setShowPreviousAtBats(true)}
@@ -1330,13 +1347,15 @@ export default function LiveGameScreen() {
                     </View>
                 )}
                 {/* 1. Pitch Type */}
-                <PitchTypeGrid
-                    selectedType={selectedPitchType}
-                    onSelect={setSelectedPitchType}
-                    availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
-                    disabled={isLogging}
-                    compact
-                />
+                {!isReadOnly && (
+                    <PitchTypeGrid
+                        selectedType={selectedPitchType}
+                        onSelect={setSelectedPitchType}
+                        availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
+                        disabled={isLogging}
+                        compact
+                    />
+                )}
                 {/* 2. Strike Zone (1st tap = target zone, 2nd tap = actual location) */}
                 <StrikeZone
                     onLocationSelect={(x, y) => setPitchLocation({ x, y })}
@@ -1346,14 +1365,14 @@ export default function LiveGameScreen() {
                         setPitchLocation(null);
                     }}
                     targetZone={targetZone}
-                    previousPitches={pitches}
-                    disabled={isLogging}
+                    previousPitches={isReadOnly ? allGamePitches : pitches}
+                    disabled={isReadOnly || isLogging}
                     compact
                     batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                     pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                 />
                 {/* 3. Pitch Calling (optional, setting-gated) */}
-                {pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
+                {!isReadOnly && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
                     <View style={styles.callRow}>
                         <Button
                             mode="contained"
@@ -1379,7 +1398,7 @@ export default function LiveGameScreen() {
                         </Pressable>
                     </View>
                 )}
-                {pitchCallingEnabled && activeCall && (
+                {!isReadOnly && pitchCallingEnabled && activeCall && (
                     <View style={styles.callBadge}>
                         <Text style={styles.callBadgeText}>
                             Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
@@ -1410,7 +1429,7 @@ export default function LiveGameScreen() {
                     </View>
                 )}
                 {/* 3b. Shake button */}
-                {pitchCallingEnabled && game.status === 'in_progress' && (
+                {!isReadOnly && pitchCallingEnabled && (
                     <View style={styles.shakeRow}>
                         <TouchableOpacity onPress={handleShake} style={styles.shakeBtn} activeOpacity={0.7}>
                             <Text style={styles.shakeBtnText}>SHAKE</Text>
@@ -1423,9 +1442,11 @@ export default function LiveGameScreen() {
                     </View>
                 )}
                 {/* 4. Result */}
-                <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
+                {!isReadOnly && (
+                    <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
+                )}
                 {/* 5. Velocity (optional, setting-gated) */}
-                {velocityEnabled && (
+                {!isReadOnly && velocityEnabled && (
                     <View style={styles.veloRow}>
                         <Text style={styles.veloLabel}>MPH</Text>
                         <TextInput
@@ -1441,18 +1462,20 @@ export default function LiveGameScreen() {
                     </View>
                 )}
                 {/* 6. Log Pitch */}
-                <Button
-                    mode="contained"
-                    onPress={handleLogPitch}
-                    disabled={!canLogPitch}
-                    loading={isLogging}
-                    style={styles.logButton}
-                    contentStyle={styles.logButtonContent}
-                >
-                    Log Pitch
-                </Button>
+                {!isReadOnly && (
+                    <Button
+                        mode="contained"
+                        onPress={handleLogPitch}
+                        disabled={!canLogPitch}
+                        loading={isLogging}
+                        style={styles.logButton}
+                        contentStyle={styles.logButtonContent}
+                    >
+                        Log Pitch
+                    </Button>
+                )}
                 {/* 7. Previous At-Bats (hidden on first at-bat) */}
-                {hasPreviousAtBats && (
+                {!isReadOnly && hasPreviousAtBats && (
                     <Button
                         mode="outlined"
                         onPress={() => setShowPreviousAtBats(true)}
