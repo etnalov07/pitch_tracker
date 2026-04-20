@@ -35,20 +35,16 @@ jobs:
 
             - name: Create deployment package
               run: |
-                  mkdir -p deploy
+                  mkdir -p deploy/vendor
                   cp -r packages/api/dist/* deploy/
                   cp packages/api/package.json deploy/
-                  # Copy shared package to a vendor directory (not node_modules)
-                  mkdir -p deploy/vendor/@pitch-tracker/shared
-                  cp -r packages/shared/dist deploy/vendor/@pitch-tracker/shared/
-                  cp packages/shared/package.json deploy/vendor/@pitch-tracker/shared/
-                  # Update package.json to reference vendor path instead of workspace
-                  sed -i 's|"@pitch-tracker/shared": "1.0.0"|"@pitch-tracker/shared": "file:./vendor/@pitch-tracker/shared"|' deploy/package.json
-
-            - name: Install production dependencies in deploy folder
-              run: |
-                  cd deploy
-                  npm install --omit=dev
+                  # Pack shared as a self-contained tarball so FTP can ship it and the server can install from it
+                  cd packages/shared && npm pack --pack-destination ../../deploy/vendor/
+                  TARBALL=$(ls ../../deploy/vendor/pitch-tracker-shared-*.tgz | head -1 | xargs basename)
+                  cd ../..
+                  sed -i "s|\"@pitch-tracker/shared\": \"1.0.0\"|\"@pitch-tracker/shared\": \"file:./vendor/$TARBALL\"|" deploy/package.json
+                  # Generate a lock file so the server install is deterministic
+                  cd deploy && npm install --omit=dev --package-lock-only
 
             - name: Deploy via FTP to Namecheap
               uses: SamKirkland/FTP-Deploy-Action@v4.3.5
