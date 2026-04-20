@@ -56,6 +56,8 @@ import {
 } from '../../../src/state';
 import {
     StrikeZone,
+    PITCH_TYPE_COLORS,
+    PITCH_TYPE_LABELS,
     PitchTypeGrid,
     ResultButtons,
     GameHeader,
@@ -879,6 +881,60 @@ export default function LiveGameScreen() {
 
     const isReadOnly = game.status !== 'in_progress';
 
+    const renderPitchBreakdown = () => {
+        if (!isReadOnly || allGamePitches.length === 0) return null;
+        const byType: Record<string, { count: number; strikes: number; balls: number }> = {};
+        for (const pitch of allGamePitches) {
+            const t = pitch.pitch_type || 'other';
+            if (!byType[t]) byType[t] = { count: 0, strikes: 0, balls: 0 };
+            byType[t].count++;
+            if (
+                pitch.pitch_result === 'called_strike' ||
+                pitch.pitch_result === 'swinging_strike' ||
+                pitch.pitch_result === 'foul'
+            ) {
+                byType[t].strikes++;
+            } else if (pitch.pitch_result === 'ball' || pitch.pitch_result === 'hit_by_pitch') {
+                byType[t].balls++;
+            }
+        }
+        const total = allGamePitches.length;
+        const totalStrikes = Object.values(byType).reduce((s, v) => s + v.strikes, 0);
+        const totalBalls = Object.values(byType).reduce((s, v) => s + v.balls, 0);
+        const entries = Object.entries(byType).sort((a, b) => b[1].count - a[1].count);
+        return (
+            <View style={styles.breakdownTable}>
+                <Text style={styles.breakdownTitle}>Pitch Breakdown</Text>
+                <View style={[styles.breakdownRow, styles.breakdownHeader]}>
+                    <Text style={[styles.breakdownTypeCell, styles.breakdownHeaderText]}>Type</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownHeaderText]}>#</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownHeaderText]}>K</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownHeaderText]}>B</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownHeaderText]}>%</Text>
+                </View>
+                {entries.map(([type, stats]) => (
+                    <View key={type} style={styles.breakdownRow}>
+                        <View style={[styles.breakdownTypeCell, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+                            <View style={[styles.typeColorDot, { backgroundColor: PITCH_TYPE_COLORS[type] ?? '#9ca3af' }]} />
+                            <Text style={styles.breakdownText}>{PITCH_TYPE_LABELS[type] ?? type}</Text>
+                        </View>
+                        <Text style={styles.breakdownNumCell}>{stats.count}</Text>
+                        <Text style={styles.breakdownNumCell}>{stats.strikes}</Text>
+                        <Text style={styles.breakdownNumCell}>{stats.balls}</Text>
+                        <Text style={styles.breakdownNumCell}>{Math.round((stats.count / total) * 100)}%</Text>
+                    </View>
+                ))}
+                <View style={[styles.breakdownRow, styles.breakdownTotalRow]}>
+                    <Text style={[styles.breakdownTypeCell, styles.breakdownTotalText]}>Total</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownTotalText]}>{total}</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownTotalText]}>{totalStrikes}</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownTotalText]}>{totalBalls}</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownTotalText]}>100%</Text>
+                </View>
+            </View>
+        );
+    };
+
     const renderGameHeader = () => (
         <GameHeader
             game={game}
@@ -1137,9 +1193,11 @@ export default function LiveGameScreen() {
                             targetZone={targetZone}
                             previousPitches={isReadOnly ? allGamePitches : pitches}
                             disabled={isReadOnly || isLogging}
+                            colorBy={isReadOnly ? 'pitchType' : 'result'}
                             batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                             pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                         />
+                        {renderPitchBreakdown()}
                         {/* Send Call (optional, setting-gated) */}
                         {!isReadOnly && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
                             <View style={[styles.callRow, { marginTop: 8 }]}>
@@ -1368,9 +1426,11 @@ export default function LiveGameScreen() {
                     previousPitches={isReadOnly ? allGamePitches : pitches}
                     disabled={isReadOnly || isLogging}
                     compact
+                    colorBy={isReadOnly ? 'pitchType' : 'result'}
                     batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                     pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                 />
+                {renderPitchBreakdown()}
                 {/* 3. Pitch Calling (optional, setting-gated) */}
                 {!isReadOnly && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
                     <View style={styles.callRow}>
@@ -1661,5 +1721,68 @@ const styles = StyleSheet.create({
         color: '#1f2937',
         backgroundColor: '#ffffff',
         textAlign: 'center' as const,
+    },
+    breakdownTable: {
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        overflow: 'hidden' as const,
+    },
+    breakdownTitle: {
+        fontSize: 14,
+        fontWeight: '700' as const,
+        color: '#1f2937',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+    },
+    breakdownRow: {
+        flexDirection: 'row' as const,
+        alignItems: 'center' as const,
+        paddingVertical: 7,
+        paddingHorizontal: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6',
+    },
+    breakdownHeader: {
+        backgroundColor: '#f9fafb',
+    },
+    breakdownHeaderText: {
+        fontSize: 11,
+        fontWeight: '700' as const,
+        color: '#6b7280',
+        textTransform: 'uppercase' as const,
+        letterSpacing: 0.5,
+    },
+    breakdownTypeCell: {
+        flex: 2,
+        fontSize: 13,
+        color: '#374151',
+    },
+    breakdownNumCell: {
+        flex: 1,
+        fontSize: 13,
+        color: '#374151',
+        textAlign: 'center' as const,
+    },
+    breakdownText: {
+        fontSize: 13,
+        color: '#374151',
+    },
+    typeColorDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    breakdownTotalRow: {
+        backgroundColor: '#f9fafb',
+        borderBottomWidth: 0,
+    },
+    breakdownTotalText: {
+        fontSize: 13,
+        fontWeight: '700' as const,
+        color: '#1f2937',
     },
 });

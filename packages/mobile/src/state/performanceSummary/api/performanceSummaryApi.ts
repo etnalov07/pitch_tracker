@@ -2,9 +2,14 @@ import api from '../../../services/api';
 import { PerformanceSummary, SummarySourceType } from '@pitch-tracker/shared';
 
 export const performanceSummaryApi = {
-    getSummary: async (sourceType: SummarySourceType, sourceId: string): Promise<PerformanceSummary> => {
-        const response = await api.get<{ summary: PerformanceSummary }>(`/performance-summaries/${sourceType}/${sourceId}`);
-        return response.data.summary;
+    getSummary: async (sourceType: SummarySourceType, sourceId: string): Promise<PerformanceSummary | null> => {
+        try {
+            const response = await api.get<{ summary: PerformanceSummary }>(`/performance-summaries/${sourceType}/${sourceId}`);
+            return response.data.summary;
+        } catch (err: any) {
+            if (err?.response?.status === 404) return null;
+            throw err;
+        }
     },
 
     getPitcherSummaries: async (
