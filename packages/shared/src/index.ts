@@ -3,6 +3,7 @@
 // ============================================================================
 
 export { isOutResult, getOutsForResult, getSuggestedAdvancement, removeRunner, clearBases } from './utils/atBatHelpers';
+export { BALL_RADIUS, BALL_DIAMETER, TARGET_ACCURACY_THRESHOLD, targetDistance, isTargetHit } from './utils/pitchLocation';
 
 // ============================================================================
 // User & Authentication Types
