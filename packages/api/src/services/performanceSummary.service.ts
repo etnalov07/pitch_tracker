@@ -3,7 +3,7 @@ import path from 'path';
 import { query, transaction } from '../config/database';
 import { PerformanceSummary, PerformanceMetric, PitchTypeSummary, MetricRating, SummarySourceType } from '../types';
 
-const COACH_SUM_LOG = path.join(__dirname, '../../CoachSum.log');
+const COACH_SUM_LOG = path.join(process.cwd(), 'CoachSum.log');
 
 function logCoachSum(label: string, data: unknown): void {
     const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(data, null, 2)}\n${'─'.repeat(80)}\n`;
