@@ -157,6 +157,19 @@ export default function TeamDetailScreen() {
                         Start Bullpen Session
                     </Button>
 
+                    <Button
+                        mode="outlined"
+                        icon="clipboard-text"
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push(`/team/${id}/scouting` as any);
+                        }}
+                        style={styles.bullpenButton}
+                        contentStyle={styles.bullpenButtonContent}
+                    >
+                        Scouting Reports
+                    </Button>
+
                     {renderRosterTable('Pitchers', pitchers)}
                     {renderRosterTable('Position Players', fieldPlayers)}
 

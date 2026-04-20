@@ -22,6 +22,7 @@ import pitchCallRoutes from './routes/pitchCall.routes';
 import pitchRoutes from './routes/pitch.routes';
 import playRoutes from './routes/play.routes';
 import playerRoutes from './routes/player.routes';
+import scoutingReportRoutes from './routes/scoutingReport.routes';
 import teamMemberRoutes from './routes/teamMember.routes';
 import performanceSummaryRoutes from './routes/performanceSummary.routes';
 import teamRoutes from './routes/team.routes';
@@ -93,6 +94,7 @@ app.use('/bt-api/pitch-calls', pitchCallRoutes);
 app.use('/bt-api/pitches', pitchRoutes);
 app.use('/bt-api/players', playerRoutes);
 app.use('/bt-api/plays', playRoutes);
+app.use('/bt-api/scouting-reports', scoutingReportRoutes);
 app.use('/bt-api/teams', teamRoutes);
 app.use('/bt-api/teams', teamMemberRoutes);
 

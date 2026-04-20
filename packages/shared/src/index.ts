@@ -1166,3 +1166,66 @@ export interface HitterTendenciesLive {
     first_pitch_take_rate: number | null;
     suggested_sequence: SuggestedPitch[];
 }
+
+// ============================================================================
+// Opponent Scouting Reports (Pre-game scouting)
+// ============================================================================
+
+export type TeamTendencyFrequency = 'low' | 'medium' | 'high';
+export type ScoutingZoneCell = 'hot' | 'cold' | 'neutral';
+
+export interface ScoutingReport {
+    id: string;
+    team_id: string;
+    opponent_name: string;
+    game_id?: string | null;
+    game_date?: string | null;
+    notes?: string | null;
+    steal_frequency?: TeamTendencyFrequency | null;
+    bunt_frequency?: TeamTendencyFrequency | null;
+    hit_and_run_frequency?: TeamTendencyFrequency | null;
+    created_by?: string | null;
+    created_by_name?: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ScoutingReportBatter {
+    id: string;
+    report_id: string;
+    player_name: string;
+    jersey_number?: number | null;
+    batting_order?: number | null;
+    bats: HandednessType;
+    notes?: string | null;
+    // 9-zone map keyed by zone id (e.g. "1".."9") describing pre-filled weakness
+    zone_weakness?: Record<string, ScoutingZoneCell> | null;
+    // Free-form tags like ["fastball_high","slider_low"]
+    pitch_vulnerabilities?: string[] | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ScoutingReportWithBatters extends ScoutingReport {
+    batters: ScoutingReportBatter[];
+}
+
+export interface ScoutingReportBatterInput {
+    player_name: string;
+    jersey_number?: number | null;
+    batting_order?: number | null;
+    bats?: HandednessType;
+    notes?: string | null;
+    zone_weakness?: Record<string, ScoutingZoneCell> | null;
+    pitch_vulnerabilities?: string[] | null;
+}
+
+export interface ScoutingReportInput {
+    opponent_name: string;
+    game_id?: string | null;
+    game_date?: string | null;
+    notes?: string | null;
+    steal_frequency?: TeamTendencyFrequency | null;
+    bunt_frequency?: TeamTendencyFrequency | null;
+    hit_and_run_frequency?: TeamTendencyFrequency | null;
+}

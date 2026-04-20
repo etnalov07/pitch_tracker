@@ -333,6 +333,14 @@ const GameSetup: React.FC = () => {
                                 <CancelButton type="button" onClick={() => navigate('/')}>
                                     Cancel
                                 </CancelButton>
+                                {formData.home_team_id && (
+                                    <CancelButton
+                                        type="button"
+                                        onClick={() => navigate(`/teams/${formData.home_team_id}/scouting`)}
+                                    >
+                                        Manage Scouting Reports
+                                    </CancelButton>
+                                )}
                                 <SubmitButton
                                     type="submit"
                                     disabled={submitting || !formData.home_team_id || !formData.opponent_name.trim()}
