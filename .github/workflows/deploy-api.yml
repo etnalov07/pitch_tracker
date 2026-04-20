@@ -113,9 +113,9 @@ jobs:
                         exit 1
                       fi
 
-                      # Install production dependencies
+                      # Clean install from lock file — more reliable than npm install
                       echo "Installing production dependencies..."
-                      npm install --production --verbose
+                      npm ci --omit=dev
 
                       # Run database migrations if you have them
                       # npm run migrate
