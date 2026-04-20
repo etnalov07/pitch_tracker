@@ -92,7 +92,15 @@ export class PerformanceSummaryService {
     ): Promise<PerformanceSummary> {
         // Check for existing summary
         const existing = await this.getSummary(sourceType, sourceId);
-        if (existing) return existing;
+        if (existing) {
+            logCoachSum('EXISTING_SUMMARY_RETURNED', {
+                sourceType,
+                sourceId,
+                summaryId: existing.id,
+                hasNarrative: !!existing.narrative,
+            });
+            return existing;
+        }
 
         // Get pitcher name
         const playerResult = await query("SELECT first_name || ' ' || last_name AS name FROM players WHERE id = $1", [pitcherId]);
@@ -646,7 +654,16 @@ export class PerformanceSummaryService {
         concerns: string[]
     ): Promise<void> {
         const apiKey = process.env.ANTHROPIC_API_KEY;
-        if (!apiKey) return;
+        logCoachSum('GENERATE_NARRATIVE_CALLED', {
+            summaryId,
+            pitcherName,
+            sourceType,
+            hasApiKey: !!apiKey,
+        });
+        if (!apiKey) {
+            logCoachSum('SKIPPED_NO_API_KEY', { summaryId });
+            return;
+        }
 
         try {
             const Anthropic = (await import('@anthropic-ai/sdk')).default;
