@@ -7,8 +7,15 @@ const COACH_SUM_LOG = path.join(process.cwd(), 'CoachSum.log');
 
 function logCoachSum(label: string, data: unknown): void {
     const line = `[${new Date().toISOString()}] ${label}\n${JSON.stringify(data, null, 2)}\n${'─'.repeat(80)}\n`;
-    fs.appendFileSync(COACH_SUM_LOG, line);
+    try {
+        fs.appendFileSync(COACH_SUM_LOG, line);
+    } catch (err) {
+        process.stderr.write(`[CoachSum write error] ${err}\n`);
+    }
 }
+
+// Startup probe — confirms the log path is writable when the module loads
+logCoachSum('MODULE_LOADED', { cwd: process.cwd(), logPath: COACH_SUM_LOG });
 
 const TARGET_ACCURACY_THRESHOLD = 0.15;
 

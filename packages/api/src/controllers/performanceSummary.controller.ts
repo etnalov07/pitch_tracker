@@ -17,6 +17,12 @@ export class PerformanceSummaryController {
             // Try to fetch existing summary
             let summary = await performanceSummaryService.getSummary(sourceType, sourceId);
             if (summary) {
+                // If narrative is missing, regenerate it non-blocking then return current state
+                if (!summary.narrative) {
+                    performanceSummaryService.regenerateNarrative(summary.id).catch((err) => {
+                        console.error('Background narrative regeneration failed:', err);
+                    });
+                }
                 res.status(200).json({ summary });
                 return;
             }
