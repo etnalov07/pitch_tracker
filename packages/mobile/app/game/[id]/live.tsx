@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput, Pressable, TouchableOpacity } from 'react-native';
-import { Text, Button, useTheme, IconButton, Portal } from 'react-native-paper';
+import { Text, Button, useTheme, IconButton, Portal, Chip } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import {
@@ -56,6 +56,8 @@ import {
 } from '../../../src/state';
 import {
     StrikeZone,
+    PITCH_TYPE_COLORS,
+    PITCH_TYPE_LABELS,
     PitchTypeGrid,
     ResultButtons,
     GameHeader,
@@ -97,6 +99,10 @@ export default function LiveGameScreen() {
         error,
     } = useAppSelector((state) => state.games);
     const teamPlayers = useAppSelector((state) => state.teams.players) || [];
+
+    // Historical pitches for completed-game read-only view
+    const [allGamePitches, setAllGamePitches] = useState<Pitch[]>([]);
+    const [pitchTypeFilter, setPitchTypeFilter] = useState<string>('all');
 
     // Local state for pitch entry
     const [selectedPitchType, setSelectedPitchType] = useState<PitchType | null>(null);
@@ -191,6 +197,10 @@ export default function LiveGameScreen() {
             dispatch(fetchGamePitchers(id));
             dispatch(fetchOpponentLineup(id));
             dispatch(fetchBaseRunners(id));
+            gamesApi
+                .getGamePitches(id)
+                .then(setAllGamePitches)
+                .catch(() => setAllGamePitches([]));
         }
     }, [id, dispatch]);
 
@@ -870,6 +880,99 @@ export default function LiveGameScreen() {
         );
     }
 
+    const isReadOnly = game.status !== 'in_progress';
+
+    const filteredGamePitches =
+        pitchTypeFilter === 'all' ? allGamePitches : allGamePitches.filter((p) => (p.pitch_type || 'other') === pitchTypeFilter);
+
+    const renderPitchTypeFilterBar = () => {
+        if (!isReadOnly || allGamePitches.length === 0) return null;
+        const types = Array.from(new Set(allGamePitches.map((p) => p.pitch_type || 'other')));
+        return (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pitchFilterBar}>
+                <Chip
+                    selected={pitchTypeFilter === 'all'}
+                    onPress={() => setPitchTypeFilter('all')}
+                    style={[styles.pitchFilterChip, pitchTypeFilter === 'all' && styles.pitchFilterChipActive]}
+                    textStyle={pitchTypeFilter === 'all' ? styles.pitchFilterChipTextActive : styles.pitchFilterChipText}
+                    compact
+                >
+                    All
+                </Chip>
+                {types.map((type) => (
+                    <Chip
+                        key={type}
+                        selected={pitchTypeFilter === type}
+                        onPress={() => setPitchTypeFilter(type)}
+                        style={[
+                            styles.pitchFilterChip,
+                            pitchTypeFilter === type && { backgroundColor: PITCH_TYPE_COLORS[type] ?? '#6b7280' },
+                        ]}
+                        textStyle={pitchTypeFilter === type ? styles.pitchFilterChipTextActive : styles.pitchFilterChipText}
+                        compact
+                    >
+                        {PITCH_TYPE_LABELS[type] ?? type}
+                    </Chip>
+                ))}
+            </ScrollView>
+        );
+    };
+
+    const renderPitchBreakdown = () => {
+        if (!isReadOnly || allGamePitches.length === 0) return null;
+        const byType: Record<string, { count: number; strikes: number; balls: number }> = {};
+        for (const pitch of allGamePitches) {
+            const t = pitch.pitch_type || 'other';
+            if (!byType[t]) byType[t] = { count: 0, strikes: 0, balls: 0 };
+            byType[t].count++;
+            if (
+                pitch.pitch_result === 'called_strike' ||
+                pitch.pitch_result === 'swinging_strike' ||
+                pitch.pitch_result === 'foul' ||
+                pitch.pitch_result === 'in_play'
+            ) {
+                byType[t].strikes++;
+            } else if (pitch.pitch_result === 'ball' || pitch.pitch_result === 'hit_by_pitch') {
+                byType[t].balls++;
+            }
+        }
+        const total = allGamePitches.length;
+        const totalStrikes = Object.values(byType).reduce((s, v) => s + v.strikes, 0);
+        const totalBalls = Object.values(byType).reduce((s, v) => s + v.balls, 0);
+        const entries = Object.entries(byType).sort((a, b) => b[1].count - a[1].count);
+        return (
+            <View style={styles.breakdownTable}>
+                <Text style={styles.breakdownTitle}>Pitch Breakdown</Text>
+                <View style={[styles.breakdownRow, styles.breakdownHeader]}>
+                    <Text style={[styles.breakdownTypeCell, styles.breakdownHeaderText]}>Type</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownHeaderText]}>#</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownHeaderText]}>K</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownHeaderText]}>B</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownHeaderText]}>%</Text>
+                </View>
+                {entries.map(([type, stats]) => (
+                    <View key={type} style={styles.breakdownRow}>
+                        <View style={[styles.breakdownTypeCell, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
+                            <View style={[styles.typeColorDot, { backgroundColor: PITCH_TYPE_COLORS[type] ?? '#9ca3af' }]} />
+                            <Text style={styles.breakdownText}>{PITCH_TYPE_LABELS[type] ?? type}</Text>
+                        </View>
+                        <Text style={styles.breakdownNumCell}>{stats.count}</Text>
+                        <Text style={styles.breakdownNumCell}>{stats.strikes}</Text>
+                        <Text style={styles.breakdownNumCell}>{stats.balls}</Text>
+                        <Text style={styles.breakdownNumCell}>{Math.round((stats.count / total) * 100)}%</Text>
+                    </View>
+                ))}
+                <View style={[styles.breakdownRow, styles.breakdownTotalRow]}>
+                    <Text style={[styles.breakdownTypeCell, styles.breakdownTotalText]}>Total</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownTotalText]}>{total}</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownTotalText]}>{totalStrikes}</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownTotalText]}>{totalBalls}</Text>
+                    <Text style={[styles.breakdownNumCell, styles.breakdownTotalText]}>100%</Text>
+                </View>
+            </View>
+        );
+    };
+
     const renderGameHeader = () => (
         <GameHeader
             game={game}
@@ -1118,6 +1221,7 @@ export default function LiveGameScreen() {
                         </View>
                     </View>
                     <ScrollView style={styles.mainPanel} contentContainerStyle={styles.mainPanelContent}>
+                        {renderPitchTypeFilterBar()}
                         <StrikeZone
                             onLocationSelect={(x, y) => setPitchLocation({ x, y })}
                             onTargetZoneSelect={setTargetZone}
@@ -1126,13 +1230,15 @@ export default function LiveGameScreen() {
                                 setPitchLocation(null);
                             }}
                             targetZone={targetZone}
-                            previousPitches={pitches}
-                            disabled={isLogging}
+                            previousPitches={isReadOnly ? filteredGamePitches : pitches}
+                            disabled={isReadOnly || isLogging}
+                            colorBy={isReadOnly ? 'pitchType' : 'result'}
                             batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                             pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                         />
+                        {renderPitchBreakdown()}
                         {/* Send Call (optional, setting-gated) */}
-                        {pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
+                        {!isReadOnly && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
                             <View style={[styles.callRow, { marginTop: 8 }]}>
                                 <Button
                                     mode="contained"
@@ -1158,7 +1264,7 @@ export default function LiveGameScreen() {
                                 </Pressable>
                             </View>
                         )}
-                        {pitchCallingEnabled && activeCall && (
+                        {!isReadOnly && pitchCallingEnabled && activeCall && (
                             <View style={styles.callBadge}>
                                 <Text style={styles.callBadgeText}>
                                     Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
@@ -1188,20 +1294,26 @@ export default function LiveGameScreen() {
                                 </View>
                             </View>
                         )}
-                        <View style={styles.controlsRow}>
-                            <View style={styles.controlsHalf}>
-                                <PitchTypeGrid
-                                    selectedType={selectedPitchType}
-                                    onSelect={setSelectedPitchType}
-                                    availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
-                                    disabled={isLogging}
-                                />
+                        {!isReadOnly && (
+                            <View style={styles.controlsRow}>
+                                <View style={styles.controlsHalf}>
+                                    <PitchTypeGrid
+                                        selectedType={selectedPitchType}
+                                        onSelect={setSelectedPitchType}
+                                        availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
+                                        disabled={isLogging}
+                                    />
+                                </View>
+                                <View style={styles.controlsHalf}>
+                                    <ResultButtons
+                                        selectedResult={selectedResult}
+                                        onSelect={setSelectedResult}
+                                        disabled={isLogging}
+                                    />
+                                </View>
                             </View>
-                            <View style={styles.controlsHalf}>
-                                <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} />
-                            </View>
-                        </View>
-                        {pitchCallingEnabled && game.status === 'in_progress' && (
+                        )}
+                        {!isReadOnly && pitchCallingEnabled && (
                             <View style={styles.shakeRow}>
                                 <TouchableOpacity onPress={handleShake} style={styles.shakeBtn} activeOpacity={0.7}>
                                     <Text style={styles.shakeBtnText}>SHAKE</Text>
@@ -1213,7 +1325,7 @@ export default function LiveGameScreen() {
                                 </TouchableOpacity>
                             </View>
                         )}
-                        {velocityEnabled && (
+                        {!isReadOnly && velocityEnabled && (
                             <View style={styles.veloRow}>
                                 <Text style={styles.veloLabel}>MPH</Text>
                                 <TextInput
@@ -1228,17 +1340,19 @@ export default function LiveGameScreen() {
                                 />
                             </View>
                         )}
-                        <Button
-                            mode="contained"
-                            onPress={handleLogPitch}
-                            disabled={!canLogPitch}
-                            loading={isLogging}
-                            style={styles.logButton}
-                            contentStyle={styles.logButtonContent}
-                        >
-                            Log Pitch
-                        </Button>
-                        {hasPreviousAtBats && (
+                        {!isReadOnly && (
+                            <Button
+                                mode="contained"
+                                onPress={handleLogPitch}
+                                disabled={!canLogPitch}
+                                loading={isLogging}
+                                style={styles.logButton}
+                                contentStyle={styles.logButtonContent}
+                            >
+                                Log Pitch
+                            </Button>
+                        )}
+                        {!isReadOnly && hasPreviousAtBats && (
                             <Button
                                 mode="outlined"
                                 onPress={() => setShowPreviousAtBats(true)}
@@ -1330,14 +1444,17 @@ export default function LiveGameScreen() {
                     </View>
                 )}
                 {/* 1. Pitch Type */}
-                <PitchTypeGrid
-                    selectedType={selectedPitchType}
-                    onSelect={setSelectedPitchType}
-                    availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
-                    disabled={isLogging}
-                    compact
-                />
+                {!isReadOnly && (
+                    <PitchTypeGrid
+                        selectedType={selectedPitchType}
+                        onSelect={setSelectedPitchType}
+                        availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
+                        disabled={isLogging}
+                        compact
+                    />
+                )}
                 {/* 2. Strike Zone (1st tap = target zone, 2nd tap = actual location) */}
+                {renderPitchTypeFilterBar()}
                 <StrikeZone
                     onLocationSelect={(x, y) => setPitchLocation({ x, y })}
                     onTargetZoneSelect={setTargetZone}
@@ -1346,14 +1463,16 @@ export default function LiveGameScreen() {
                         setPitchLocation(null);
                     }}
                     targetZone={targetZone}
-                    previousPitches={pitches}
-                    disabled={isLogging}
+                    previousPitches={isReadOnly ? filteredGamePitches : pitches}
+                    disabled={isReadOnly || isLogging}
                     compact
+                    colorBy={isReadOnly ? 'pitchType' : 'result'}
                     batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                     pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
                 />
+                {renderPitchBreakdown()}
                 {/* 3. Pitch Calling (optional, setting-gated) */}
-                {pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
+                {!isReadOnly && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
                     <View style={styles.callRow}>
                         <Button
                             mode="contained"
@@ -1379,7 +1498,7 @@ export default function LiveGameScreen() {
                         </Pressable>
                     </View>
                 )}
-                {pitchCallingEnabled && activeCall && (
+                {!isReadOnly && pitchCallingEnabled && activeCall && (
                     <View style={styles.callBadge}>
                         <Text style={styles.callBadgeText}>
                             Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
@@ -1410,7 +1529,7 @@ export default function LiveGameScreen() {
                     </View>
                 )}
                 {/* 3b. Shake button */}
-                {pitchCallingEnabled && game.status === 'in_progress' && (
+                {!isReadOnly && pitchCallingEnabled && (
                     <View style={styles.shakeRow}>
                         <TouchableOpacity onPress={handleShake} style={styles.shakeBtn} activeOpacity={0.7}>
                             <Text style={styles.shakeBtnText}>SHAKE</Text>
@@ -1423,9 +1542,11 @@ export default function LiveGameScreen() {
                     </View>
                 )}
                 {/* 4. Result */}
-                <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
+                {!isReadOnly && (
+                    <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
+                )}
                 {/* 5. Velocity (optional, setting-gated) */}
-                {velocityEnabled && (
+                {!isReadOnly && velocityEnabled && (
                     <View style={styles.veloRow}>
                         <Text style={styles.veloLabel}>MPH</Text>
                         <TextInput
@@ -1441,18 +1562,20 @@ export default function LiveGameScreen() {
                     </View>
                 )}
                 {/* 6. Log Pitch */}
-                <Button
-                    mode="contained"
-                    onPress={handleLogPitch}
-                    disabled={!canLogPitch}
-                    loading={isLogging}
-                    style={styles.logButton}
-                    contentStyle={styles.logButtonContent}
-                >
-                    Log Pitch
-                </Button>
+                {!isReadOnly && (
+                    <Button
+                        mode="contained"
+                        onPress={handleLogPitch}
+                        disabled={!canLogPitch}
+                        loading={isLogging}
+                        style={styles.logButton}
+                        contentStyle={styles.logButtonContent}
+                    >
+                        Log Pitch
+                    </Button>
+                )}
                 {/* 7. Previous At-Bats (hidden on first at-bat) */}
-                {hasPreviousAtBats && (
+                {!isReadOnly && hasPreviousAtBats && (
                     <Button
                         mode="outlined"
                         onPress={() => setShowPreviousAtBats(true)}
@@ -1638,5 +1761,88 @@ const styles = StyleSheet.create({
         color: '#1f2937',
         backgroundColor: '#ffffff',
         textAlign: 'center' as const,
+    },
+    pitchFilterBar: {
+        flexDirection: 'row' as const,
+        gap: 6,
+        paddingHorizontal: 4,
+        paddingVertical: 6,
+    },
+    pitchFilterChip: {
+        backgroundColor: '#f3f4f6',
+    },
+    pitchFilterChipActive: {
+        backgroundColor: '#1f2937',
+    },
+    pitchFilterChipText: {
+        fontSize: 12,
+        color: '#374151',
+    },
+    pitchFilterChipTextActive: {
+        fontSize: 12,
+        color: '#ffffff',
+    },
+    breakdownTable: {
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        overflow: 'hidden' as const,
+    },
+    breakdownTitle: {
+        fontSize: 14,
+        fontWeight: '700' as const,
+        color: '#1f2937',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+    },
+    breakdownRow: {
+        flexDirection: 'row' as const,
+        alignItems: 'center' as const,
+        paddingVertical: 7,
+        paddingHorizontal: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6',
+    },
+    breakdownHeader: {
+        backgroundColor: '#f9fafb',
+    },
+    breakdownHeaderText: {
+        fontSize: 11,
+        fontWeight: '700' as const,
+        color: '#6b7280',
+        textTransform: 'uppercase' as const,
+        letterSpacing: 0.5,
+    },
+    breakdownTypeCell: {
+        flex: 2,
+        fontSize: 13,
+        color: '#374151',
+    },
+    breakdownNumCell: {
+        flex: 1,
+        fontSize: 13,
+        color: '#374151',
+        textAlign: 'center' as const,
+    },
+    breakdownText: {
+        fontSize: 13,
+        color: '#374151',
+    },
+    typeColorDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+    },
+    breakdownTotalRow: {
+        backgroundColor: '#f9fafb',
+        borderBottomWidth: 0,
+    },
+    breakdownTotalText: {
+        fontSize: 13,
+        fontWeight: '700' as const,
+        color: '#1f2937',
     },
 });

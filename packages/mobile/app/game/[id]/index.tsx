@@ -12,6 +12,8 @@ export default function GameDetailScreen() {
     const dispatch = useAppDispatch();
 
     const { selectedGame, loading, error } = useAppSelector((state) => state.games);
+    // All hooks must be declared before any conditional early-return below.
+    const [starting, setStarting] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -104,8 +106,6 @@ export default function GameDetailScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         router.push(`/game/${id}/live`);
     };
-
-    const [starting, setStarting] = useState(false);
 
     const handleStartGame = async () => {
         if (!id) return;

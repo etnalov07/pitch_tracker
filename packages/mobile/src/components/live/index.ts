@@ -1,4 +1,4 @@
-export { default as StrikeZone } from './StrikeZone';
+export { default as StrikeZone, PITCH_TYPE_COLORS, PITCH_TYPE_ABBREV, PITCH_TYPE_LABELS } from './StrikeZone';
 export { default as PitchTypeGrid } from './PitchTypeGrid';
 export { default as ResultButtons } from './ResultButtons';
 export { default as GameHeader } from './GameHeader';

@@ -105,6 +105,11 @@ export const gamesApi = {
         return response.data.pitch;
     },
 
+    getGamePitches: async (gameId: string): Promise<Pitch[]> => {
+        const response = await api.get<{ pitches: Pitch[] }>(`/pitches/game/${gameId}`);
+        return response.data.pitches;
+    },
+
     // Play operations
     recordPlay: async (playData: Partial<Play>): Promise<Play> => {
         const response = await api.post<{ play: Play }>('/plays', playData);

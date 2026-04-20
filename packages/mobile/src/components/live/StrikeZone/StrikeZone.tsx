@@ -6,6 +6,48 @@ import { Pitch, PitchCallZone, PITCH_CALL_ZONE_COORDS } from '@pitch-tracker/sha
 import { colors } from '../../../styles/theme';
 import BatterSilhouette from './BatterSilhouette';
 
+export const PITCH_TYPE_COLORS: Record<string, string> = {
+    fastball: '#ef4444',
+    '4-seam': '#ef4444',
+    '2-seam': '#f97316',
+    cutter: '#f59e0b',
+    sinker: '#eab308',
+    slider: '#3b82f6',
+    curveball: '#8b5cf6',
+    changeup: '#22c55e',
+    splitter: '#14b8a6',
+    knuckleball: '#6b7280',
+    other: '#9ca3af',
+};
+
+export const PITCH_TYPE_ABBREV: Record<string, string> = {
+    fastball: 'FB',
+    '4-seam': 'FB',
+    '2-seam': '2S',
+    cutter: 'CT',
+    sinker: 'SK',
+    slider: 'SL',
+    curveball: 'CB',
+    changeup: 'CH',
+    splitter: 'SP',
+    knuckleball: 'KN',
+    other: 'OT',
+};
+
+export const PITCH_TYPE_LABELS: Record<string, string> = {
+    fastball: 'Fastball',
+    '4-seam': 'Fastball',
+    '2-seam': '2-Seam',
+    cutter: 'Cutter',
+    sinker: 'Sinker',
+    slider: 'Slider',
+    curveball: 'Curveball',
+    changeup: 'Changeup',
+    splitter: 'Splitter',
+    knuckleball: 'Knuckleball',
+    other: 'Other',
+};
+
 interface StrikeZoneProps {
     onLocationSelect: (x: number, y: number) => void;
     onTargetZoneSelect?: (zone: PitchCallZone) => void;
@@ -17,6 +59,7 @@ interface StrikeZoneProps {
     singleTapMode?: boolean;
     batterSide?: 'R' | 'L' | 'S' | null;
     pitcherThrows?: 'R' | 'L' | null;
+    colorBy?: 'result' | 'pitchType';
 }
 
 // Zone labels — always semantic (I=inside, A=away) since positions already flip
@@ -97,6 +140,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     singleTapMode = false,
     batterSide,
     pitcherThrows,
+    colorBy = 'result',
 }) => {
     const [selectedLocation, setSelectedLocation] = useState<{ x: number; y: number } | null>(null);
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -341,13 +385,21 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         {previousPitches.map((pitch, idx) => {
                             if (pitch.location_x === undefined || pitch.location_y === undefined) return null;
                             const coords = toSvgCoords(pitch.location_x, pitch.location_y);
+                            const dotColor =
+                                colorBy === 'pitchType'
+                                    ? (PITCH_TYPE_COLORS[pitch.pitch_type || 'other'] ?? '#9ca3af')
+                                    : getPitchColor(pitch.pitch_result);
+                            const label =
+                                colorBy === 'pitchType'
+                                    ? (PITCH_TYPE_ABBREV[pitch.pitch_type || 'other'] ?? 'OT')
+                                    : String(idx + 1);
                             return (
                                 <G key={pitch.id || idx}>
                                     <Circle
                                         cx={coords.x}
                                         cy={coords.y}
                                         r={PITCH_RADIUS}
-                                        fill={getPitchColor(pitch.pitch_result)}
+                                        fill={dotColor}
                                         stroke="white"
                                         strokeWidth="2"
                                     />
@@ -355,11 +407,11 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                         x={coords.x}
                                         y={coords.y + 4}
                                         textAnchor="middle"
-                                        fontSize="9"
+                                        fontSize={colorBy === 'pitchType' ? '7' : '9'}
                                         fill="white"
                                         fontWeight="bold"
                                     >
-                                        {idx + 1}
+                                        {label}
                                     </SvgText>
                                 </G>
                             );

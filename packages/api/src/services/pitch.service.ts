@@ -136,7 +136,7 @@ export class PitchService {
               pit.first_name as pitcher_first_name,
               pit.last_name as pitcher_last_name
        FROM pitches p
-       JOIN players b ON p.batter_id = b.id
+       LEFT JOIN players b ON p.batter_id = b.id
        JOIN players pit ON p.pitcher_id = pit.id
        WHERE p.game_id = $1
        ORDER BY p.created_at ASC`,
