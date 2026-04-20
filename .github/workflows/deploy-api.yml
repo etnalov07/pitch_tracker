@@ -38,21 +38,12 @@ jobs:
                   mkdir -p deploy
                   cp -r packages/api/dist/* deploy/
                   cp packages/api/package.json deploy/
-
-                  # Embed @pitch-tracker/shared directly into node_modules so it is
-                  # shipped via FTP and never needs to be resolved by npm on the server
-                  mkdir -p deploy/node_modules/@pitch-tracker/shared
-                  cp -r packages/shared/dist/. deploy/node_modules/@pitch-tracker/shared/dist/
-                  cp packages/shared/package.json deploy/node_modules/@pitch-tracker/shared/
-
-                  # Remove @pitch-tracker/shared from package.json so server-side
-                  # npm install does not attempt to reinstall or resolve it
-                  node -e "
-                    const fs = require('fs');
-                    const pkg = JSON.parse(fs.readFileSync('deploy/package.json', 'utf8'));
-                    delete pkg.dependencies['@pitch-tracker/shared'];
-                    fs.writeFileSync('deploy/package.json', JSON.stringify(pkg, null, 4));
-                  "
+                  # Copy shared package to a vendor directory (not node_modules)
+                  mkdir -p deploy/vendor/@pitch-tracker/shared
+                  cp -r packages/shared/dist deploy/vendor/@pitch-tracker/shared/
+                  cp packages/shared/package.json deploy/vendor/@pitch-tracker/shared/
+                  # Update package.json to reference vendor path instead of workspace
+                  sed -i 's|"@pitch-tracker/shared": "1.0.0"|"@pitch-tracker/shared": "file:./vendor/@pitch-tracker/shared"|' deploy/package.json
 
             - name: Install production dependencies in deploy folder
               run: |
@@ -75,7 +66,6 @@ jobs:
                       **/.git*
                       **/.git*/**
                       **/node_modules/**
-                      !**/node_modules/@pitch-tracker/**
                       **/.env*
 
             - name: Setup application on Namecheap
@@ -87,36 +77,49 @@ jobs:
                   port: 21098
                   debug: true
                   script: |
-                      set -x
+                      set -x  # Enable bash verbose mode
                       echo "===== Starting deployment setup ====="
+                      echo "Current directory: $(pwd)"
+                      echo "Home directory: $HOME"
 
-                      if [ -f ~/.bashrc ]; then source ~/.bashrc; fi
+                      # Source Node.js environment (Namecheap cPanel creates this)
+                      if [ -f ~/.bashrc ]; then
+                        source ~/.bashrc
+                      fi
+
+                      # Load nvm if available
                       export NVM_DIR="$HOME/.nvm"
                       [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
+                      # Check Node.js and npm availability
                       echo "Node.js version: $(node --version 2>&1 || echo 'not found')"
                       echo "npm version: $(npm --version 2>&1 || echo 'not found')"
+                      echo "npm location: $(which npm 2>&1 || echo 'not found')"
 
+                      # Navigate to application directory
+                      echo "Navigating to application directory..."
                       cd ~/${{ secrets.API_DIRECTORY || 'bt_api' }}
+                      echo "Current directory: $(pwd)"
 
+                      # List files to verify deployment
                       echo "Files in deployment directory:"
                       ls -la
 
-                      if [ ! -f "package.json" ]; then
+                      # Check if package.json exists
+                      if [ -f "package.json" ]; then
+                        echo "package.json found"
+                      else
                         echo "ERROR: package.json not found!"
                         exit 1
                       fi
 
-                      # Verify @pitch-tracker/shared arrived via FTP
-                      if [ -f "node_modules/@pitch-tracker/shared/dist/index.js" ]; then
-                        echo "@pitch-tracker/shared present in node_modules"
-                      else
-                        echo "ERROR: @pitch-tracker/shared missing from node_modules!"
-                        exit 1
-                      fi
-
-                      # Install remaining production dependencies (shared is already in node_modules)
+                      # Install production dependencies
                       echo "Installing production dependencies..."
                       npm install --production --verbose
 
+                      # Run database migrations if you have them
+                      # npm run migrate
+
+                      # Namecheap automatically restarts Node.js apps when files change
                       echo "===== Deployment completed successfully ====="
+                      echo "Note: Namecheap will automatically restart your Node.js application"
