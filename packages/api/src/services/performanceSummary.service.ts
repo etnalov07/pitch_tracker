@@ -250,8 +250,7 @@ export class PerformanceSummaryService {
         // Innings pitched (count distinct innings where pitcher was active)
         const inningsResult = await query(
             `SELECT COUNT(DISTINCT i.id) as innings_count,
-                    COALESCE(SUM(i.runs_scored), 0) as runs_allowed,
-                    COALESCE(SUM(i.hits), 0) as hits_allowed
+                    COALESCE(SUM(i.runs_scored), 0) as runs_allowed
              FROM innings i
              JOIN pitches p ON p.game_id = i.game_id
              WHERE p.pitcher_id = $1 AND p.game_id = $2
@@ -259,6 +258,13 @@ export class PerformanceSummaryService {
             [pitcherId, gameId]
         );
         const inn = inningsResult.rows[0];
+
+        const hitsResult = await query(
+            `SELECT COUNT(CASE WHEN ab.result IN ('single', 'double', 'triple', 'home_run') THEN 1 END) as hits_allowed
+             FROM at_bats ab
+             WHERE ab.pitcher_id = $1 AND ab.game_id = $2`,
+            [pitcherId, gameId]
+        );
 
         // Pitch type breakdown
         const ptResult = await query(
@@ -292,7 +298,7 @@ export class PerformanceSummaryService {
             batters_faced: parseInt(battersResult.rows[0]?.batters_faced) || 0,
             innings_pitched: parseInt(inn?.innings_count) || null,
             runs_allowed: parseInt(inn?.runs_allowed) || null,
-            hits_allowed: parseInt(inn?.hits_allowed) || null,
+            hits_allowed: parseInt(hitsResult.rows[0]?.hits_allowed) || null,
             intensity: null,
             plan_name: null,
             pitch_type_breakdown: ptResult.rows.map((r: any) => ({
