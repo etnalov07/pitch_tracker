@@ -26,6 +26,7 @@ import {
 } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
+import scoutingReportsApi from '../../../src/state/scouting/api/scoutingReportsApi';
 import { speakPitchCall, activateBTAudio, forceDeactivateBTAudio } from '../../../src/utils/pitchCallAudio';
 import { startPassthrough, stopPassthrough, isPassthroughActive } from '../../../src/utils/walkieTalkie';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
@@ -1004,6 +1005,7 @@ export default function LiveGameScreen() {
                     batterId={currentBatter.id}
                     batterName={currentBatter.player_name}
                     batterType="opponent"
+                    gameId={id}
                 />
             )}
         </Portal>
@@ -1049,6 +1051,23 @@ export default function LiveGameScreen() {
                         <SyncStatusBadge compact />
                     </View>
                     <View style={styles.headerRight}>
+                        {game.home_team_id && (
+                            <IconButton
+                                icon="clipboard-text"
+                                onPress={async () => {
+                                    try {
+                                        const existing = await scoutingReportsApi.getByGameId(id!);
+                                        if (existing) {
+                                            router.push(`/team/${game.home_team_id}/scouting/${existing.id}` as any);
+                                        } else {
+                                            router.push(`/team/${game.home_team_id}/scouting` as any);
+                                        }
+                                    } catch {
+                                        router.push(`/team/${game.home_team_id}/scouting` as any);
+                                    }
+                                }}
+                            />
+                        )}
                         {game.status === 'in_progress' ? (
                             <IconButton icon="flag-checkered" onPress={handleEndGame} />
                         ) : (
@@ -1253,6 +1272,23 @@ export default function LiveGameScreen() {
                     <SyncStatusBadge compact />
                 </View>
                 <View style={styles.headerRight}>
+                    {game.home_team_id && (
+                        <IconButton
+                            icon="clipboard-text"
+                            onPress={async () => {
+                                try {
+                                    const existing = await scoutingReportsApi.getByGameId(id!);
+                                    if (existing) {
+                                        router.push(`/team/${game.home_team_id}/scouting/${existing.id}` as any);
+                                    } else {
+                                        router.push(`/team/${game.home_team_id}/scouting` as any);
+                                    }
+                                } catch {
+                                    router.push(`/team/${game.home_team_id}/scouting` as any);
+                                }
+                            }}
+                        />
+                    )}
                     {game.status === 'in_progress' ? (
                         <IconButton icon="flag-checkered" onPress={handleEndGame} />
                     ) : (

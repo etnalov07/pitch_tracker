@@ -187,6 +187,26 @@ const LiveGame: React.FC = () => {
                                 ⇄ Home/Away
                             </SwapButton>
                         )}
+                        {game.home_team_id && gameId && (
+                            <SwapButton
+                                onClick={async () => {
+                                    try {
+                                        const { default: svc } = await import('../../services/scoutingReportService');
+                                        const existing = await svc.getByGameId(gameId);
+                                        if (existing) {
+                                            navigate(`/teams/${game.home_team_id}/scouting/${existing.id}`);
+                                        } else {
+                                            navigate(`/teams/${game.home_team_id}/scouting`);
+                                        }
+                                    } catch {
+                                        navigate(`/teams/${game.home_team_id}/scouting`);
+                                    }
+                                }}
+                                title="Open scouting report for this game"
+                            >
+                                📋 Scouting
+                            </SwapButton>
+                        )}
                         {game.status === 'in_progress' && <EndGameButton onClick={actions.handleEndGame}>End Game</EndGameButton>}
                         {game.status === 'completed' && (
                             <ResumeGameButton onClick={actions.handleResumeGame}>Resume Game</ResumeGameButton>
@@ -638,6 +658,7 @@ const LiveGame: React.FC = () => {
                     batterName={currentBatter.player_name}
                     batterType="opponent"
                     onClose={() => setShowHitterTendencies(false)}
+                    gameId={gameId || undefined}
                 />
             )}
         </Container>

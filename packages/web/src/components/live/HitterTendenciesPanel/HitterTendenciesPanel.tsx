@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { analyticsService } from '../../../services/analyticsService';
+import scoutingReportService, { LiveScoutingMatch } from '../../../services/scoutingReportService';
 import { theme } from '../../../styles/theme';
 import { HitterTendenciesLive } from '../../../types';
 import SuggestedSequence from '../SuggestedSequence';
@@ -10,12 +11,22 @@ interface HitterTendenciesPanelProps {
     batterName: string;
     batterType: 'team' | 'opponent';
     onClose: () => void;
+    gameId?: string;
+    jerseyNumber?: number | null;
 }
 
-const HitterTendenciesPanel: React.FC<HitterTendenciesPanelProps> = ({ batterId, batterName, batterType, onClose }) => {
+const HitterTendenciesPanel: React.FC<HitterTendenciesPanelProps> = ({
+    batterId,
+    batterName,
+    batterType,
+    onClose,
+    gameId,
+    jerseyNumber,
+}) => {
     const [data, setData] = useState<HitterTendenciesLive | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [scouting, setScouting] = useState<LiveScoutingMatch | null>(null);
 
     useEffect(() => {
         if (!batterId) return;
@@ -27,6 +38,17 @@ const HitterTendenciesPanel: React.FC<HitterTendenciesPanelProps> = ({ batterId,
             .catch(() => setError('Failed to load tendencies'))
             .finally(() => setLoading(false));
     }, [batterId, batterType]);
+
+    useEffect(() => {
+        if (!gameId || batterType !== 'opponent' || !batterName) {
+            setScouting(null);
+            return;
+        }
+        scoutingReportService
+            .getLiveMatch(gameId, batterName, jerseyNumber ?? null)
+            .then(setScouting)
+            .catch(() => setScouting(null));
+    }, [gameId, batterName, jerseyNumber, batterType]);
 
     // Weakness map: high swing_rate + low contact_rate = high "danger" to pitcher
     // We invert it for the hitter panel: color by swing rate (how vulnerable they are)
@@ -119,6 +141,73 @@ const HitterTendenciesPanel: React.FC<HitterTendenciesPanelProps> = ({ batterId,
                         }}
                     >
                         Insufficient data — no pitch history available for this batter.
+                    </div>
+                )}
+
+                {scouting && (
+                    <div
+                        style={{
+                            padding: 12,
+                            background: theme.colors.primary[50],
+                            borderRadius: theme.borderRadius.md,
+                            marginBottom: 16,
+                            border: `1px solid ${theme.colors.primary[200]}`,
+                        }}
+                    >
+                        <div
+                            style={{
+                                fontSize: theme.fontSize.xs,
+                                fontWeight: theme.fontWeight.semibold,
+                                color: theme.colors.primary[700],
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                marginBottom: 6,
+                            }}
+                        >
+                            📋 Scouting Report
+                        </div>
+                        {scouting.batter.notes && (
+                            <div
+                                style={{
+                                    fontSize: theme.fontSize.sm,
+                                    color: theme.colors.gray[800],
+                                    marginBottom: 8,
+                                    whiteSpace: 'pre-wrap',
+                                }}
+                            >
+                                {scouting.batter.notes}
+                            </div>
+                        )}
+                        {scouting.batter.pitch_vulnerabilities && scouting.batter.pitch_vulnerabilities.length > 0 && (
+                            <div style={{ marginBottom: 6 }}>
+                                {scouting.batter.pitch_vulnerabilities.map((v) => (
+                                    <span
+                                        key={v}
+                                        style={{
+                                            display: 'inline-block',
+                                            background: theme.colors.primary[100],
+                                            color: theme.colors.primary[800],
+                                            padding: '2px 8px',
+                                            borderRadius: 999,
+                                            fontSize: theme.fontSize.xs,
+                                            marginRight: 4,
+                                            marginBottom: 4,
+                                        }}
+                                    >
+                                        {v.replace(/_/g, ' ')}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                        {scouting.batter.zone_weakness && Object.keys(scouting.batter.zone_weakness).length > 0 && (
+                            <div style={{ fontSize: theme.fontSize.xs, color: theme.colors.gray[600] }}>
+                                Pre-filled zone map:{' '}
+                                {Object.entries(scouting.batter.zone_weakness)
+                                    .filter(([, v]) => v !== 'neutral')
+                                    .map(([id, v]) => `${id}=${v}`)
+                                    .join(' · ') || 'none set'}
+                            </div>
+                        )}
                     </div>
                 )}
 

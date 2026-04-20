@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Modal } from 'react-native-paper';
+import { Modal, Chip } from 'react-native-paper';
 import { HitterTendenciesLive } from '@pitch-tracker/shared';
 import { analyticsApi } from '../../../state/analytics/api/analyticsApi';
+import scoutingReportsApi, { LiveScoutingMatch } from '../../../state/scouting/api/scoutingReportsApi';
 import TendencyZoneGrid from './TendencyZoneGrid';
 import SuggestedSequence from './SuggestedSequence';
 
@@ -12,12 +13,23 @@ interface HitterTendenciesModalProps {
     batterId: string;
     batterName: string;
     batterType: 'team' | 'opponent';
+    gameId?: string;
+    jerseyNumber?: number | null;
 }
 
-const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({ visible, onDismiss, batterId, batterName, batterType }) => {
+const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
+    visible,
+    onDismiss,
+    batterId,
+    batterName,
+    batterType,
+    gameId,
+    jerseyNumber,
+}) => {
     const [data, setData] = useState<HitterTendenciesLive | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
+    const [scouting, setScouting] = useState<LiveScoutingMatch | null>(null);
 
     useEffect(() => {
         if (!visible || !batterId) return;
@@ -35,6 +47,17 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({ visible, 
             })
             .finally(() => setLoading(false));
     }, [visible, batterId, batterType]);
+
+    useEffect(() => {
+        if (!visible || !gameId || batterType !== 'opponent' || !batterName) {
+            setScouting(null);
+            return;
+        }
+        scoutingReportsApi
+            .getLiveMatch(gameId, batterName, jerseyNumber ?? null)
+            .then(setScouting)
+            .catch(() => setScouting(null));
+    }, [visible, gameId, batterName, jerseyNumber, batterType]);
 
     const zoneGridCells =
         data?.zone_weakness_map
@@ -61,6 +84,22 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({ visible, 
             </View>
 
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+                {scouting && (
+                    <View style={styles.scoutingBox}>
+                        <Text style={styles.scoutingHeading}>📋 SCOUTING REPORT</Text>
+                        {scouting.batter.notes ? <Text style={styles.scoutingNotes}>{scouting.batter.notes}</Text> : null}
+                        {scouting.batter.pitch_vulnerabilities && scouting.batter.pitch_vulnerabilities.length > 0 && (
+                            <View style={styles.scoutingChips}>
+                                {scouting.batter.pitch_vulnerabilities.map((v) => (
+                                    <Chip key={v} compact style={styles.scoutingChip}>
+                                        {v.replace(/_/g, ' ')}
+                                    </Chip>
+                                ))}
+                            </View>
+                        )}
+                    </View>
+                )}
+
                 {loading && <ActivityIndicator style={{ marginVertical: 24 }} />}
 
                 {!loading && error && (
@@ -196,6 +235,24 @@ const styles = StyleSheet.create({
     vulnBar: { height: '100%', backgroundColor: '#f87171', borderRadius: 6 },
     vulnPct: { width: 28, fontSize: 11, color: '#6b7280', textAlign: 'right' },
     vulnN: { width: 36, fontSize: 10, color: '#9ca3af' },
+    scoutingBox: {
+        padding: 12,
+        backgroundColor: '#eff6ff',
+        borderRadius: 8,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#bfdbfe',
+    },
+    scoutingHeading: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#1d4ed8',
+        letterSpacing: 0.8,
+        marginBottom: 6,
+    },
+    scoutingNotes: { fontSize: 13, color: '#1f2937', marginBottom: 6 },
+    scoutingChips: { flexDirection: 'row', flexWrap: 'wrap' },
+    scoutingChip: { marginRight: 4, marginBottom: 4 },
 });
 
 export default HitterTendenciesModal;

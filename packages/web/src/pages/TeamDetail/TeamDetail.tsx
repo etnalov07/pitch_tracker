@@ -78,6 +78,7 @@ const TeamDetail: React.FC = () => {
                 </HeaderLeft>
                 <HeaderRight>
                     <SettingsButton onClick={() => navigate(`/teams/${team_id}/bullpen`)}>Bullpen</SettingsButton>
+                    <SettingsButton onClick={() => navigate(`/teams/${team_id}/scouting`)}>Scouting</SettingsButton>
                     <SettingsButton onClick={() => navigate(`/teams/${team_id}/settings`)}>Settings</SettingsButton>
                     <AddButton onClick={() => setShowInviteModal(true)}>Invite</AddButton>
                     {!showAddPlayer && <AddButton onClick={() => setShowAddPlayer(true)}>+ Add Player</AddButton>}
