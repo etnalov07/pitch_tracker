@@ -13,12 +13,98 @@ import {
     clearPerformanceSummary,
 } from '../../../src/state';
 import { PerformanceSummaryView } from '../../../src/components/performanceSummary';
-import { PerformanceSummary } from '@pitch-tracker/shared';
+import { PerformanceSummary, BatterBreakdown, PitchType, PitchResult } from '@pitch-tracker/shared';
 
 const NARRATIVE_POLL_INTERVAL_MS = 3000;
 const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
 
-function buildSummaryHtml(summary: PerformanceSummary): string {
+const PITCH_ABBREV: Record<PitchType, string> = {
+    fastball: 'FB',
+    '2-seam': '2S',
+    '4-seam': '4S',
+    cutter: 'CT',
+    sinker: 'SK',
+    slider: 'SL',
+    curveball: 'CB',
+    changeup: 'CH',
+    splitter: 'SP',
+    knuckleball: 'KN',
+    screwball: 'SC',
+    other: 'OT',
+};
+
+const RESULT_STYLE: Record<PitchResult, { bg: string; color: string; label: string }> = {
+    ball: { bg: '#dbeafe', color: '#1d4ed8', label: 'B' },
+    called_strike: { bg: '#fee2e2', color: '#dc2626', label: 'K' },
+    swinging_strike: { bg: '#dc2626', color: '#ffffff', label: 'SW' },
+    foul: { bg: '#fef3c7', color: '#92400e', label: 'F' },
+    in_play: { bg: '#dcfce7', color: '#166534', label: 'IP' },
+    hit_by_pitch: { bg: '#f3e8ff', color: '#6d28d9', label: 'HBP' },
+};
+
+function buildBatterBreakdownHtml(breakdown: BatterBreakdown[]): string {
+    if (!breakdown.length) return '';
+
+    const batterSections = [...breakdown]
+        .sort((a, b) => a.batting_order - b.batting_order)
+        .map((batter) => {
+            const totalPitches = batter.at_bats.reduce((s, ab) => s + ab.pitches.length, 0);
+            const atBatRows = batter.at_bats
+                .map((ab) => {
+                    const inningLabel = `${ab.inning_half === 'top' ? '▲' : '▼'} ${ab.inning_number}`;
+                    const result = ab.result ? ab.result.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '—';
+                    const pitchCells = ab.pitches
+                        .map((pitch) => {
+                            const s = RESULT_STYLE[pitch.pitch_result] ?? { bg: '#f3f4f6', color: '#374151', label: '?' };
+                            const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
+                            const border = pitch.is_ab_ending
+                                ? 'border: 2px solid #eab308;'
+                                : 'border: 1px solid rgba(0,0,0,0.08);';
+                            const vel =
+                                pitch.velocity != null
+                                    ? `<div style="font-size:8px;opacity:0.8;">${Math.round(pitch.velocity)}</div>`
+                                    : '';
+                            return `<td style="padding:2px;">
+                              <div style="background:${s.bg};color:${s.color};${border}border-radius:4px;width:36px;text-align:center;padding:3px 2px;display:inline-block;vertical-align:top;">
+                                <div style="font-size:8px;font-weight:700;line-height:1.2;">${pitch.balls_before}-${pitch.strikes_before}</div>
+                                <div style="font-size:11px;font-weight:800;line-height:1.3;">${abbrev}</div>
+                                <div style="font-size:8px;font-weight:600;line-height:1.2;">${s.label}</div>
+                                ${vel}
+                              </div>
+                            </td>`;
+                        })
+                        .join('');
+                    return `<tr>
+                      <td style="font-size:11px;font-weight:600;color:#374151;white-space:nowrap;padding:4px 6px 4px 0;vertical-align:top;width:52px;">${inningLabel}</td>
+                      <td style="font-size:11px;color:#6b7280;white-space:nowrap;padding:4px 8px 4px 0;vertical-align:top;width:90px;">${result}</td>
+                      <td style="vertical-align:top;padding:2px 0;">
+                        <table style="border-collapse:collapse;"><tr>${pitchCells}</tr></table>
+                      </td>
+                    </tr>`;
+                })
+                .join('');
+
+            return `<div class="batter-block">
+              <div class="batter-header">
+                <span class="batter-order">${batter.batting_order}</span>
+                <strong>${batter.batter_name}</strong>
+                <span class="batter-meta">${batter.position ?? '—'} · ${batter.bats}HH · ${batter.at_bats.length} AB · ${totalPitches}P</span>
+              </div>
+              <table style="width:100%;border-collapse:collapse;margin-top:6px;">${atBatRows}</table>
+            </div>`;
+        })
+        .join('');
+
+    return `<div class="section">
+  <div class="section-title">Batter Breakdown</div>
+  <div class="section-body">
+    <div style="font-size:10px;color:#9ca3af;margin-bottom:8px;font-style:italic;">Count · Type · Result · Vel &nbsp;|&nbsp; <span style="display:inline-block;width:10px;height:10px;border:2px solid #eab308;border-radius:2px;vertical-align:middle;"></span> = AB-ending pitch</div>
+    ${batterSections}
+  </div>
+</div>`;
+}
+
+function buildSummaryHtml(summary: PerformanceSummary, batterBreakdown: BatterBreakdown[]): string {
     const pitchRows = summary.pitch_type_breakdown
         .sort((a, b) => b.count - a.count)
         .map(
@@ -91,6 +177,11 @@ function buildSummaryHtml(summary: PerformanceSummary): string {
   .highlights .section-title { color: #16a34a; }
   .concerns .section-title { color: #dc2626; }
   .footer { margin-top: 24px; text-align: center; color: #9ca3af; font-size: 11px; }
+  .batter-block { margin-bottom: 14px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+  .batter-header { display: flex; align-items: center; gap: 8px; background: #f9fafb; padding: 6px 10px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+  .batter-order { width: 22px; height: 22px; border-radius: 50%; background: #1e3a5f; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .batter-meta { font-size: 11px; color: #9ca3af; margin-left: 4px; }
+  .batter-block table { padding: 6px 10px; }
 </style>
 </head>
 <body>
@@ -151,6 +242,8 @@ ${
         : ''
 }
 
+${buildBatterBreakdownHtml(batterBreakdown)}
+
 <div class="footer">PitchChart</div>
 </body>
 </html>`;
@@ -208,7 +301,7 @@ export default function GamePerformanceSummaryScreen() {
         if (!currentSummary) return;
         setExporting(true);
         try {
-            const html = buildSummaryHtml(currentSummary);
+            const html = buildSummaryHtml(currentSummary, batterBreakdown);
             const { uri } = await Print.printToFileAsync({ html, base64: false });
             const canShare = await Sharing.isAvailableAsync();
             if (canShare) {
