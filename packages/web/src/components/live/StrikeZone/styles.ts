@@ -23,7 +23,7 @@ export const ZoneWrapper = styled.div({
 
 export const MainSvg = styled.svg({
     width: '100%',
-    maxWidth: '350px',
+    maxWidth: '420px',
     height: 'auto',
     cursor: 'crosshair',
     borderRadius: theme.borderRadius.lg,

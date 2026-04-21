@@ -4,6 +4,7 @@
 
 export { isOutResult, getOutsForResult, getSuggestedAdvancement, removeRunner, clearBases } from './utils/atBatHelpers';
 export { BALL_RADIUS, BALL_DIAMETER, TARGET_ACCURACY_THRESHOLD, targetDistance, isTargetHit } from './utils/pitchLocation';
+export { getCountBucket, deriveGameMode } from './utils/gameMode';
 
 // ============================================================================
 // User & Authentication Types
@@ -189,6 +190,10 @@ export interface PitcherGameLogsResponse {
 
 export type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 export type InningHalf = 'top' | 'bottom';
+export type ChartingMode = 'our_pitcher' | 'opp_pitcher' | 'both';
+export type GameMode = 'our_pitcher' | 'opp_pitcher';
+export type TeamSide = 'our_team' | 'opponent';
+export type CountBucket = '1st_pitch' | 'ahead' | 'even' | 'behind';
 
 // ============================================================================
 // Base Runner Types
@@ -226,6 +231,7 @@ export interface Game {
     is_home_game?: boolean;
     lineup_size?: number;
     total_innings?: number;
+    charting_mode?: ChartingMode;
     game_date: string;
     game_time?: string;
     location?: string;
@@ -373,6 +379,7 @@ export interface Pitch {
     balls_before: number;
     strikes_before: number;
     pitch_result: PitchResult;
+    team_side?: TeamSide;
     created_at: string;
 }
 
@@ -935,6 +942,55 @@ export interface PerformanceSummary {
     pitch_type_breakdown: PitchTypeSummary[];
     highlights: string[];
     concerns: string[];
+}
+
+// ============================================================================
+// Opposing Pitcher Types
+// ============================================================================
+
+export interface OpposingPitcher {
+    id: string;
+    game_id: string;
+    team_name: string;
+    pitcher_name: string;
+    jersey_number?: number | null;
+    throws: ThrowingHand;
+    created_at: string;
+}
+
+export interface CreateOpposingPitcherParams {
+    game_id: string;
+    team_name: string;
+    pitcher_name: string;
+    jersey_number?: number | null;
+    throws: ThrowingHand;
+}
+
+// ============================================================================
+// Count Breakdown Types
+// ============================================================================
+
+export interface CountBucketStats {
+    total: number;
+    strikes: number;
+    balls: number;
+    strike_percentage: number;
+    pitch_type_breakdown: {
+        pitch_type: PitchType;
+        count: number;
+        strikes: number;
+        strike_percentage: number;
+    }[];
+}
+
+export interface CountBucketBreakdown {
+    game_id: string;
+    pitcher_id?: string;
+    team_side?: TeamSide;
+    '1st_pitch': CountBucketStats;
+    ahead: CountBucketStats;
+    even: CountBucketStats;
+    behind: CountBucketStats;
 }
 
 // ============================================================================

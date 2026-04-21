@@ -143,6 +143,18 @@ export class AnalyticsController {
             next(error);
         }
     }
+
+    async getCountBreakdown(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const gameId = req.params.gameId as string;
+            const pitcherId = req.query.pitcherId as string | undefined;
+            const teamSide = req.query.team_side as string | undefined;
+            const breakdown = await analyticsService.getCountBreakdown(gameId, pitcherId, teamSide);
+            res.status(200).json({ breakdown });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new AnalyticsController();

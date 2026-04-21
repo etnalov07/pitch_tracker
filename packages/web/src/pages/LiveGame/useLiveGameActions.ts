@@ -1,6 +1,7 @@
 import {
     BaseRunners,
     BaserunnerEventType,
+    deriveGameMode,
     RunnerBase,
     getSuggestedAdvancement,
     clearBases,
@@ -229,6 +230,10 @@ export function useLiveGameActions(state: LiveGameState) {
                     pitch_result: pitchResult,
                     balls_before: currentAtBat.balls,
                     strikes_before: currentAtBat.strikes,
+                    team_side:
+                        deriveGameMode(game?.is_home_game ?? true, game?.inning_half ?? 'top') === 'our_pitcher'
+                            ? 'our_team'
+                            : 'opponent',
                 })
             ).unwrap();
 

@@ -23,6 +23,8 @@ import {
     BaserunnerEventType,
     getSuggestedAdvancement,
     clearBases,
+    deriveGameMode,
+    GameMode,
 } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
@@ -53,6 +55,10 @@ import {
     updateBaseRunners,
     recordBaserunnerEvent,
     fetchBaseRunners,
+    fetchOpposingPitchers,
+    createOpposingPitcher,
+    deleteOpposingPitcher,
+    setCurrentOpposingPitcher,
 } from '../../../src/state';
 import {
     StrikeZone,
@@ -73,6 +79,8 @@ import {
     PitcherTendenciesModal,
     HitterTendenciesModal,
 } from '../../../src/components/live';
+import OpposingPitcherModal from '../../../src/components/live/OpposingPitcherModal';
+import CountBreakdownModal from '../../../src/components/live/CountBreakdownModal';
 import type { CompletedAtBatEntry } from '../../../src/components/live';
 import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/components/common';
 import { HitLocation } from '../../../src/components/live/InPlayModal';
@@ -94,6 +102,8 @@ export default function LiveGameScreen() {
         opponentLineup,
         pitches,
         baseRunners,
+        opposingPitchers,
+        currentOpposingPitcher,
         gameStateLoading,
         loading,
         error,
@@ -132,6 +142,7 @@ export default function LiveGameScreen() {
 
     // Base runner modals state
     const [showBaserunnerOutModal, setShowBaserunnerOutModal] = useState(false);
+    const [preSelectedRunnerBase, setPreSelectedRunnerBase] = useState<RunnerBase | null>(null);
     const [showPickoffModal, setShowPickoffModal] = useState(false);
     const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
     const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
@@ -162,10 +173,16 @@ export default function LiveGameScreen() {
     // Velocity state (optional)
     const [velocity, setVelocity] = useState<string>('');
 
+    // Opposing pitcher modal
+    const [showOpposingPitcherModal, setShowOpposingPitcherModal] = useState(false);
+    const [showCountBreakdownModal, setShowCountBreakdownModal] = useState(false);
+    const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
+
     // Settings
     const { pitchCallingEnabled, velocityEnabled } = useAppSelector((state) => state.settings);
 
     const game = currentGameState?.game || selectedGame;
+    const gameMode: GameMode = game ? deriveGameMode(game.is_home_game ?? true, game.inning_half) : 'our_pitcher';
 
     // Walkie-talkie state
     const [walkieTalkieActive, setWalkieTalkieActive] = useState(false);
@@ -197,6 +214,7 @@ export default function LiveGameScreen() {
             dispatch(fetchGamePitchers(id));
             dispatch(fetchOpponentLineup(id));
             dispatch(fetchBaseRunners(id));
+            dispatch(fetchOpposingPitchers(id));
             gamesApi
                 .getGamePitches(id)
                 .then(setAllGamePitches)
@@ -681,12 +699,14 @@ export default function LiveGameScreen() {
                 opponent_batter_id: currentBatter?.id,
                 balls_before: balls,
                 strikes_before: strikes,
+                team_side: gameMode === 'our_pitcher' ? 'our_team' : 'opponent',
             });
             if (!result.success) {
                 Alert.alert('Error', 'Failed to log pitch');
                 return;
             }
             setTotalPitchCount((prev) => prev + 1);
+            setStatsRefreshTrigger((prev) => prev + 1);
             const newBalls = balls + (selectedResult === 'ball' ? 1 : 0);
             const newStrikes =
                 effectiveStrikes +
@@ -839,8 +859,8 @@ export default function LiveGameScreen() {
 
     const handleRunnerPress = useCallback(
         (base: RunnerBase) => {
-            // Show baserunner out modal if there are runners on base
             if (baseRunners[base]) {
+                setPreSelectedRunnerBase(base);
                 setShowBaserunnerOutModal(true);
             }
         },
@@ -1068,10 +1088,14 @@ export default function LiveGameScreen() {
             />
             <BaserunnerOutModal
                 visible={showBaserunnerOutModal}
-                onDismiss={() => setShowBaserunnerOutModal(false)}
+                onDismiss={() => {
+                    setShowBaserunnerOutModal(false);
+                    setPreSelectedRunnerBase(null);
+                }}
                 runners={baseRunners}
                 currentOuts={currentOuts}
                 onRecordOut={handleRecordBaserunnerOut}
+                preSelectedBase={preSelectedRunnerBase}
             />
             <PickoffModal
                 visible={showPickoffModal}
@@ -1109,6 +1133,33 @@ export default function LiveGameScreen() {
                     batterName={currentBatter.player_name}
                     batterType="opponent"
                     gameId={id}
+                />
+            )}
+            {game && game.charting_mode !== 'our_pitcher' && id && (
+                <OpposingPitcherModal
+                    visible={showOpposingPitcherModal}
+                    onDismiss={() => setShowOpposingPitcherModal(false)}
+                    gameId={id}
+                    opposingPitchers={opposingPitchers}
+                    currentOpposingPitcher={currentOpposingPitcher}
+                    onSelect={(p) => dispatch(setCurrentOpposingPitcher(p))}
+                    onCreate={async (params) => {
+                        await dispatch(createOpposingPitcher(params)).unwrap();
+                    }}
+                    onDelete={async (pid) => {
+                        await dispatch(deleteOpposingPitcher(pid)).unwrap();
+                    }}
+                    opponentName={game.opponent_name}
+                />
+            )}
+            {id && (
+                <CountBreakdownModal
+                    visible={showCountBreakdownModal}
+                    onDismiss={() => setShowCountBreakdownModal(false)}
+                    gameId={id}
+                    pitcherId={gameMode === 'our_pitcher' ? currentPitcher?.player_id : undefined}
+                    teamSide={gameMode === 'our_pitcher' ? 'our_team' : 'opponent'}
+                    refreshTrigger={statsRefreshTrigger}
                 />
             )}
         </Portal>
@@ -1209,6 +1260,30 @@ export default function LiveGameScreen() {
                                         Hitter
                                     </Button>
                                 )}
+                            </View>
+                        )}
+                        {game.status === 'in_progress' && game.charting_mode !== 'our_pitcher' && (
+                            <View style={styles.tendenciesRow}>
+                                <Button
+                                    mode="outlined"
+                                    compact
+                                    onPress={() => setShowOpposingPitcherModal(true)}
+                                    style={styles.tendencyBtn}
+                                    labelStyle={styles.tendencyBtnLabel}
+                                    icon="baseball"
+                                >
+                                    {currentOpposingPitcher ? currentOpposingPitcher.pitcher_name.split(' ').pop() : 'Opp. Pitcher'}
+                                </Button>
+                                <Button
+                                    mode="outlined"
+                                    compact
+                                    onPress={() => setShowCountBreakdownModal(true)}
+                                    style={styles.tendencyBtn}
+                                    labelStyle={styles.tendencyBtnLabel}
+                                    icon="counter"
+                                >
+                                    Counts
+                                </Button>
                             </View>
                         )}
                         <View style={styles.statsPlaceholder}>

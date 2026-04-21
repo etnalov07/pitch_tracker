@@ -4,11 +4,14 @@ import BatterSelector from '../../components/game/BatterSelector';
 import PitcherSelector from '../../components/game/PitcherSelector';
 import BaseRunnerDisplay from '../../components/live/BaseRunnerDisplay';
 import BatterHistory from '../../components/live/BatterHistory';
+import CountBreakdownPanel from '../../components/live/CountBreakdownPanel';
 import HitterTendenciesPanel from '../../components/live/HitterTendenciesPanel';
+import OpposingPitcherPanel from '../../components/live/OpposingPitcherPanel';
 import PitcherStats from '../../components/live/PitcherStats';
 import PitcherTendenciesPanel from '../../components/live/PitcherTendenciesPanel';
 import SituationalCallsRow from '../../components/live/SituationalCallsRow';
 import StrikeZone from '../../components/live/StrikeZone';
+import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { theme } from '../../styles/theme';
 import BaserunnerOutModal from './BaserunnerOutModal';
 import DiamondModal from './DiamondModal';
@@ -143,6 +146,13 @@ const LiveGame: React.FC = () => {
         showHitterTendencies,
         setShowHitterTendencies,
         localShakeCount,
+        opposingPitchers,
+        setOpposingPitchers,
+        currentOpposingPitcher,
+        setCurrentOpposingPitcher,
+        showCountBreakdown,
+        setShowCountBreakdown,
+        gameMode,
     } = state;
 
     if (loading) {
@@ -169,6 +179,52 @@ const LiveGame: React.FC = () => {
                     refreshTrigger={statsRefreshTrigger}
                 />
                 <BatterHistory batterId={currentBatter?.id || ''} pitcherId={currentPitcher?.player_id || ''} />
+                {game.charting_mode !== 'our_pitcher' && gameId && (
+                    <OpposingPitcherPanel
+                        gameId={gameId}
+                        opposingPitchers={opposingPitchers}
+                        currentOpposingPitcher={currentOpposingPitcher}
+                        onSelect={setCurrentOpposingPitcher}
+                        opponentName={game.opponent_name}
+                        onCreate={async (params) => {
+                            const pitcher = await opposingPitcherService.create(params);
+                            setOpposingPitchers((prev) => [...prev, pitcher]);
+                            setCurrentOpposingPitcher(pitcher);
+                        }}
+                        onDelete={async (id) => {
+                            await opposingPitcherService.delete(id);
+                            setOpposingPitchers((prev) => prev.filter((p) => p.id !== id));
+                            if (currentOpposingPitcher?.id === id) setCurrentOpposingPitcher(null);
+                        }}
+                    />
+                )}
+                {gameId && (
+                    <>
+                        <button
+                            onClick={() => setShowCountBreakdown((v) => !v)}
+                            style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                background: showCountBreakdown ? theme.colors.primary[600] : theme.colors.gray[100],
+                                color: showCountBreakdown ? 'white' : theme.colors.gray[700],
+                                border: `1px solid ${showCountBreakdown ? theme.colors.primary[400] : theme.colors.gray[300]}`,
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                width: '100%',
+                            }}
+                        >
+                            {showCountBreakdown ? 'Hide' : 'Show'} Count Breakdown
+                        </button>
+                        {showCountBreakdown && (
+                            <CountBreakdownPanel
+                                gameId={gameId}
+                                pitcherId={gameMode === 'our_pitcher' ? currentPitcher?.player_id : undefined}
+                                teamSide={gameMode === 'our_pitcher' ? 'our_team' : 'opponent'}
+                                refreshTrigger={statsRefreshTrigger}
+                            />
+                        )}
+                    </>
+                )}
             </LeftPanel>
 
             <MainPanel>

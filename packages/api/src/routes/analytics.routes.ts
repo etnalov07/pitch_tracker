@@ -26,6 +26,9 @@ router.get('/hitter/:batterId/tendencies-live', analyticsController.getHitterLiv
 // Game state
 router.get('/game/:gameId/state', analyticsController.getGameState.bind(analyticsController));
 
+// Count breakdown
+router.get('/game/:gameId/count-breakdown', analyticsController.getCountBreakdown.bind(analyticsController));
+
 // Matchup analytics
 router.get('/matchup/:batterId/:pitcherId', analyticsController.getMatchupStats.bind(analyticsController));
 

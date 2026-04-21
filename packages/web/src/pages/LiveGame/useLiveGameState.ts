@@ -1,10 +1,11 @@
-import { PitchCall, PitchCallZone } from '@pitch-tracker/shared';
-import { useState, useEffect } from 'react';
+import { deriveGameMode, GameMode, OpposingPitcher, PitchCall, PitchCallZone } from '@pitch-tracker/shared';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
 import useHeatZones from '../../hooks/useHeatZones';
 import { useAppDispatch, useAppSelector, fetchGameById } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
+import { opposingPitcherService } from '../../services/opposingPitcherService';
 import {
     PitchType,
     PitchResult,
@@ -103,6 +104,16 @@ export function useLiveGameState() {
     const [showTeamAtBat, setShowTeamAtBat] = useState(false);
     const [teamAtBatRuns, setTeamAtBatRuns] = useState<string>('0');
 
+    // Opposing pitcher charting
+    const [opposingPitchers, setOpposingPitchers] = useState<OpposingPitcher[]>([]);
+    const [currentOpposingPitcher, setCurrentOpposingPitcher] = useState<OpposingPitcher | null>(null);
+    const [showCountBreakdown, setShowCountBreakdown] = useState(false);
+
+    const gameMode: GameMode = useMemo(() => {
+        if (!game) return 'our_pitcher';
+        return deriveGameMode(game.is_home_game ?? true, game.inning_half);
+    }, [game?.is_home_game, game?.inning_half]);
+
     // Auto-show TeamAtBat modal when user's team is batting (visitor games)
     const isUserBatting = game && game.status === 'in_progress' && !game.is_home_game && game.inning_half === 'top';
     useEffect(() => {
@@ -130,6 +141,13 @@ export function useLiveGameState() {
             gamesApi
                 .getBaseRunners(gameId)
                 .then(setBaseRunners)
+                .catch(() => {});
+            opposingPitcherService
+                .getByGame(gameId)
+                .then((pitchers) => {
+                    setOpposingPitchers(pitchers);
+                    if (pitchers.length > 0) setCurrentOpposingPitcher(pitchers[pitchers.length - 1]);
+                })
                 .catch(() => {});
         }
     }, [dispatch, gameId]);
@@ -247,6 +265,14 @@ export function useLiveGameState() {
         setShowTeamAtBat,
         teamAtBatRuns,
         setTeamAtBatRuns,
+        // Opposing pitcher charting
+        opposingPitchers,
+        setOpposingPitchers,
+        currentOpposingPitcher,
+        setCurrentOpposingPitcher,
+        showCountBreakdown,
+        setShowCountBreakdown,
+        gameMode,
     };
 }
 

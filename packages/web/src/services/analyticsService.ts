@@ -1,11 +1,13 @@
 import {
     BatterHistory,
+    BatterScoutingNote,
+    BatterScoutingReport,
+    CountBucketBreakdown,
+    HitterTendenciesLive,
+    PitcherTendenciesLive,
     PitchLocationHeatMap,
     SprayChart,
-    BatterScoutingReport,
-    BatterScoutingNote,
-    PitcherTendenciesLive,
-    HitterTendenciesLive,
+    TeamSide,
 } from '../types';
 import api from './api';
 
@@ -60,6 +62,16 @@ export const analyticsService = {
             `/analytics/hitter/${batterId}/tendencies-live?batter_type=${batterType}`
         );
         return response.data.tendencies;
+    },
+
+    // Get count breakdown for a game
+    getCountBreakdown: async (gameId: string, pitcherId?: string, teamSide?: TeamSide): Promise<CountBucketBreakdown> => {
+        const params = new URLSearchParams();
+        if (pitcherId) params.append('pitcherId', pitcherId);
+        if (teamSide) params.append('team_side', teamSide);
+        const qs = params.toString() ? `?${params}` : '';
+        const response = await api.get<{ breakdown: CountBucketBreakdown }>(`/analytics/game/${gameId}/count-breakdown${qs}`);
+        return response.data.breakdown;
     },
 };
 

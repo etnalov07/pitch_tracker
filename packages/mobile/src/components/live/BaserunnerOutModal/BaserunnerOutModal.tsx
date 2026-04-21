@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Modal, Portal, Text, Button, Chip, useTheme } from 'react-native-paper';
 import { BaseRunners, RunnerBase, BaserunnerEventType } from '@pitch-tracker/shared';
@@ -10,6 +10,7 @@ interface BaserunnerOutModalProps {
     runners: BaseRunners;
     currentOuts: number;
     onRecordOut: (eventType: BaserunnerEventType, runnerBase: RunnerBase) => void;
+    preSelectedBase?: RunnerBase | null;
 }
 
 const EVENT_TYPES: { type: BaserunnerEventType; label: string; description: string }[] = [
@@ -27,10 +28,24 @@ const BASE_LABELS: { base: RunnerBase; label: string }[] = [
     { base: 'third', label: '3rd Base' },
 ];
 
-const BaserunnerOutModal: React.FC<BaserunnerOutModalProps> = ({ visible, onDismiss, runners, currentOuts, onRecordOut }) => {
+const BaserunnerOutModal: React.FC<BaserunnerOutModalProps> = ({
+    visible,
+    onDismiss,
+    runners,
+    currentOuts,
+    onRecordOut,
+    preSelectedBase,
+}) => {
     const theme = useTheme();
-    const [selectedBase, setSelectedBase] = useState<RunnerBase | null>(null);
+    const [selectedBase, setSelectedBase] = useState<RunnerBase | null>(preSelectedBase || null);
     const [selectedEventType, setSelectedEventType] = useState<BaserunnerEventType | null>(null);
+
+    useEffect(() => {
+        if (visible) {
+            setSelectedBase(preSelectedBase || null);
+            setSelectedEventType(null);
+        }
+    }, [visible, preSelectedBase]);
 
     // Get occupied bases
     const occupiedBases = BASE_LABELS.filter((b) => runners[b.base]);
@@ -45,7 +60,7 @@ const BaserunnerOutModal: React.FC<BaserunnerOutModalProps> = ({ visible, onDism
     };
 
     const handleDismiss = () => {
-        setSelectedBase(null);
+        setSelectedBase(preSelectedBase || null);
         setSelectedEventType(null);
         onDismiss();
     };

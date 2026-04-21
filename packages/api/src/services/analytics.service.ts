@@ -948,6 +948,88 @@ export class AnalyticsService {
 
         return sequence.slice(0, 3);
     }
+
+    async getCountBreakdown(gameId: string, pitcherId?: string, teamSide?: string): Promise<any> {
+        const params: any[] = [gameId];
+        let filters = '';
+
+        if (pitcherId) {
+            params.push(pitcherId);
+            filters += ` AND pitcher_id = $${params.length}`;
+        }
+        if (teamSide) {
+            params.push(teamSide);
+            filters += ` AND team_side = $${params.length}`;
+        }
+
+        const result = await query(
+            `SELECT
+                balls_before,
+                strikes_before,
+                pitch_type,
+                pitch_result,
+                COUNT(*) as count
+             FROM pitches
+             WHERE game_id = $1${filters}
+             GROUP BY balls_before, strikes_before, pitch_type, pitch_result
+             ORDER BY balls_before, strikes_before, pitch_type`,
+            params
+        );
+
+        const buckets: Record<
+            string,
+            { total: number; strikes: number; byType: Record<string, { count: number; strikes: number }> }
+        > = {
+            '1st_pitch': { total: 0, strikes: 0, byType: {} },
+            ahead: { total: 0, strikes: 0, byType: {} },
+            even: { total: 0, strikes: 0, byType: {} },
+            behind: { total: 0, strikes: 0, byType: {} },
+        };
+
+        for (const row of result.rows) {
+            const b = parseInt(row.balls_before, 10);
+            const s = parseInt(row.strikes_before, 10);
+            const cnt = parseInt(row.count, 10);
+            const isStrike = ['called_strike', 'swinging_strike', 'foul'].includes(row.pitch_result);
+
+            let bucket: string;
+            if (b === 0 && s === 0) bucket = '1st_pitch';
+            else if (s > b) bucket = 'ahead';
+            else if (b > s) bucket = 'behind';
+            else bucket = 'even';
+
+            buckets[bucket].total += cnt;
+            if (isStrike) buckets[bucket].strikes += cnt;
+
+            if (!buckets[bucket].byType[row.pitch_type]) {
+                buckets[bucket].byType[row.pitch_type] = { count: 0, strikes: 0 };
+            }
+            buckets[bucket].byType[row.pitch_type].count += cnt;
+            if (isStrike) buckets[bucket].byType[row.pitch_type].strikes += cnt;
+        }
+
+        const formatBucket = (b: (typeof buckets)[string]) => ({
+            total: b.total,
+            strikes: b.strikes,
+            strike_percentage: b.total > 0 ? Math.round((b.strikes / b.total) * 100) : 0,
+            pitch_type_breakdown: Object.entries(b.byType).map(([pitch_type, stats]) => ({
+                pitch_type,
+                count: stats.count,
+                strikes: stats.strikes,
+                strike_percentage: stats.count > 0 ? Math.round((stats.strikes / stats.count) * 100) : 0,
+            })),
+        });
+
+        return {
+            game_id: gameId,
+            pitcher_id: pitcherId ?? null,
+            team_side: teamSide ?? null,
+            '1st_pitch': formatBucket(buckets['1st_pitch']),
+            ahead: formatBucket(buckets['ahead']),
+            even: formatBucket(buckets['even']),
+            behind: formatBucket(buckets['behind']),
+        };
+    }
 }
 
 export default new AnalyticsService();

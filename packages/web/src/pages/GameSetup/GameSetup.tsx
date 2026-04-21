@@ -62,6 +62,7 @@ const GameSetup: React.FC = () => {
         opponent_name: '',
         is_home_game: true,
         lineup_size: 9,
+        charting_mode: 'our_pitcher' as 'our_pitcher' | 'opp_pitcher' | 'both',
         game_date: new Date().toISOString().split('T')[0],
         game_time: '18:00',
         location: '',
@@ -111,6 +112,7 @@ const GameSetup: React.FC = () => {
                     opponent_name: formData.opponent_name.trim(),
                     is_home_game: formData.is_home_game,
                     lineup_size: formData.lineup_size,
+                    charting_mode: formData.charting_mode,
                     game_date: game_dateTime.toISOString(),
                     location: formData.location.trim() || undefined,
                 })
@@ -220,6 +222,7 @@ const GameSetup: React.FC = () => {
                                     </TeamSelectGroup>
                                 </TeamsRow>
 
+                                <Label style={{ marginTop: '12px', marginBottom: '4px' }}>Your team is playing:</Label>
                                 <HomeAwayToggle>
                                     <ToggleOption
                                         type="button"
@@ -234,6 +237,30 @@ const GameSetup: React.FC = () => {
                                         onClick={() => setFormData((prev) => ({ ...prev, is_home_game: false }))}
                                     >
                                         Away
+                                    </ToggleOption>
+                                </HomeAwayToggle>
+                                <Label style={{ marginTop: '12px', marginBottom: '4px' }}>Chart pitches for:</Label>
+                                <HomeAwayToggle>
+                                    <ToggleOption
+                                        type="button"
+                                        active={formData.charting_mode === 'our_pitcher'}
+                                        onClick={() => setFormData((prev) => ({ ...prev, charting_mode: 'our_pitcher' }))}
+                                    >
+                                        Our Pitcher
+                                    </ToggleOption>
+                                    <ToggleOption
+                                        type="button"
+                                        active={formData.charting_mode === 'both'}
+                                        onClick={() => setFormData((prev) => ({ ...prev, charting_mode: 'both' }))}
+                                    >
+                                        Both
+                                    </ToggleOption>
+                                    <ToggleOption
+                                        type="button"
+                                        active={formData.charting_mode === 'opp_pitcher'}
+                                        onClick={() => setFormData((prev) => ({ ...prev, charting_mode: 'opp_pitcher' }))}
+                                    >
+                                        Opp Pitcher
                                     </ToggleOption>
                                 </HomeAwayToggle>
                             </TeamSelectionSection>

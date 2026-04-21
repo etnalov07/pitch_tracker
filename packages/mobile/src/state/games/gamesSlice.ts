@@ -13,6 +13,8 @@ import {
     BaserunnerEvent,
     BaserunnerEventType,
     RunnerBase,
+    OpposingPitcher,
+    CreateOpposingPitcherParams,
 } from '@pitch-tracker/shared';
 import { gamesApi, GameState } from './api/gamesApi';
 
@@ -31,6 +33,8 @@ interface GamesSliceState {
     opponentLineup: OpponentLineupPlayer[];
     pitches: Pitch[];
     baseRunners: BaseRunners;
+    opposingPitchers: OpposingPitcher[];
+    currentOpposingPitcher: OpposingPitcher | null;
     loading: boolean;
     gameStateLoading: boolean;
     error: string | null;
@@ -46,6 +50,8 @@ const initialState: GamesSliceState = {
     opponentLineup: [],
     pitches: [],
     baseRunners: { first: false, second: false, third: false },
+    opposingPitchers: [],
+    currentOpposingPitcher: null,
     loading: false,
     gameStateLoading: false,
     error: null,
@@ -274,6 +280,37 @@ export const toggleHomeAway = createAsyncThunk('games/toggleHomeAway', async (ga
     }
 });
 
+export const fetchOpposingPitchers = createAsyncThunk(
+    'games/fetchOpposingPitchers',
+    async (gameId: string, { rejectWithValue }) => {
+        try {
+            return await gamesApi.getOpposingPitchers(gameId);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to fetch opposing pitchers'));
+        }
+    }
+);
+
+export const createOpposingPitcher = createAsyncThunk(
+    'games/createOpposingPitcher',
+    async (params: CreateOpposingPitcherParams, { rejectWithValue }) => {
+        try {
+            return await gamesApi.createOpposingPitcher(params);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to create opposing pitcher'));
+        }
+    }
+);
+
+export const deleteOpposingPitcher = createAsyncThunk('games/deleteOpposingPitcher', async (id: string, { rejectWithValue }) => {
+    try {
+        await gamesApi.deleteOpposingPitcher(id);
+        return id;
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to delete opposing pitcher'));
+    }
+});
+
 export const recordBaserunnerEvent = createAsyncThunk(
     'games/recordBaserunnerEvent',
     async (
@@ -329,6 +366,9 @@ const gamesSlice = createSlice({
         },
         clearBaseRunners: (state) => {
             state.baseRunners = { first: false, second: false, third: false };
+        },
+        setCurrentOpposingPitcher: (state, action: PayloadAction<OpposingPitcher | null>) => {
+            state.currentOpposingPitcher = action.payload;
         },
     },
     extraReducers: (builder) => {
@@ -561,6 +601,27 @@ const gamesSlice = createSlice({
             const base = action.payload.runner_base as keyof BaseRunners;
             state.baseRunners[base] = false;
         });
+
+        // Opposing Pitchers
+        builder.addCase(fetchOpposingPitchers.fulfilled, (state, action) => {
+            state.opposingPitchers = action.payload;
+            if (action.payload.length > 0) {
+                state.currentOpposingPitcher = action.payload[action.payload.length - 1];
+            }
+        });
+
+        builder.addCase(createOpposingPitcher.fulfilled, (state, action) => {
+            state.opposingPitchers.push(action.payload);
+            state.currentOpposingPitcher = action.payload;
+        });
+
+        builder.addCase(deleteOpposingPitcher.fulfilled, (state, action) => {
+            state.opposingPitchers = state.opposingPitchers.filter((p) => p.id !== action.payload);
+            if (state.currentOpposingPitcher?.id === action.payload) {
+                state.currentOpposingPitcher =
+                    state.opposingPitchers.length > 0 ? state.opposingPitchers[state.opposingPitchers.length - 1] : null;
+            }
+        });
     },
 });
 
@@ -573,6 +634,7 @@ export const {
     clearPitches,
     setBaseRunners,
     clearBaseRunners,
+    setCurrentOpposingPitcher,
 } = gamesSlice.actions;
 
 export default gamesSlice.reducer;

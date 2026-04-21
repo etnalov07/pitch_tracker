@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useAppDispatch } from '../state';
 import { logPitch, createAtBat, updateAtBat, recordPlay, addPitch } from '../state';
-import { Pitch, AtBat, Play, PitchType, PitchResult } from '@pitch-tracker/shared';
+import { Pitch, AtBat, Play, PitchType, PitchResult, TeamSide } from '@pitch-tracker/shared';
 
 // Offline support disabled for iOS 26.2 beta testing (TurboModule crash)
 // This hook now always performs online operations directly
@@ -20,6 +20,7 @@ interface LogPitchPayload {
     velocity?: number;
     balls_before: number;
     strikes_before: number;
+    team_side?: TeamSide;
 }
 
 interface CreateAtBatPayload extends Partial<AtBat> {

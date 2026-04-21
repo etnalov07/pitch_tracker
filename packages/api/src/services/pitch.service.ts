@@ -22,6 +22,7 @@ export class PitchService {
             balls_before,
             strikes_before,
             pitch_result,
+            team_side,
         } = pitchData;
 
         // Either batter_id (own team) or opponent_batter_id (opponent) is required
@@ -47,9 +48,9 @@ export class PitchService {
                 `INSERT INTO pitches (
           id, at_bat_id, game_id, pitcher_id, batter_id, opponent_batter_id, pitch_number,
           pitch_type, velocity, location_x, location_y, target_location_x, target_location_y, target_zone, zone,
-          balls_before, strikes_before, pitch_result
+          balls_before, strikes_before, pitch_result, team_side
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
         RETURNING *`,
                 [
                     pitchId,
@@ -70,6 +71,7 @@ export class PitchService {
                     balls_before ?? 0,
                     strikes_before ?? 0,
                     pitch_result,
+                    team_side ?? null,
                 ]
             );
 

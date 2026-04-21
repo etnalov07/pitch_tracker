@@ -20,6 +20,7 @@ export default function NewGameScreen() {
     const [opponentName, setOpponentName] = useState('');
     const [lineupSize, setLineupSize] = useState('9');
     const [totalInnings, setTotalInnings] = useState('7');
+    const [chartingMode, setChartingMode] = useState<'our_pitcher' | 'opp_pitcher' | 'both'>('our_pitcher');
     const [gameDate, setGameDate] = useState(new Date().toISOString().split('T')[0]);
     const [gameTime, setGameTime] = useState('18:00');
     const [location, setLocation] = useState('');
@@ -69,6 +70,7 @@ export default function NewGameScreen() {
                     is_home_game: isHomeGame,
                     lineup_size: parseInt(lineupSize, 10),
                     total_innings: parseInt(totalInnings, 10),
+                    charting_mode: chartingMode,
                     game_date: gameDateTime.toISOString(),
                     location: location.trim() || undefined,
                 })
@@ -134,7 +136,7 @@ export default function NewGameScreen() {
 
                         {/* Home / Away */}
                         <Text variant="labelLarge" style={styles.sectionLabel}>
-                            Home / Away
+                            Your team is playing:
                         </Text>
                         <SegmentedButtons
                             value={isHomeGame ? 'home' : 'away'}
@@ -183,6 +185,24 @@ export default function NewGameScreen() {
                                 { value: '6', label: '6' },
                                 { value: '7', label: '7' },
                                 { value: '9', label: '9' },
+                            ]}
+                            style={styles.segmented}
+                        />
+
+                        {/* Charting Mode */}
+                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                            Chart pitches for:
+                        </Text>
+                        <SegmentedButtons
+                            value={chartingMode}
+                            onValueChange={(value) => {
+                                Haptics.selectionAsync();
+                                setChartingMode(value as 'our_pitcher' | 'opp_pitcher' | 'both');
+                            }}
+                            buttons={[
+                                { value: 'our_pitcher', label: 'Our Pitcher' },
+                                { value: 'both', label: 'Both' },
+                                { value: 'opp_pitcher', label: 'Opp Pitcher' },
                             ]}
                             style={styles.segmented}
                         />

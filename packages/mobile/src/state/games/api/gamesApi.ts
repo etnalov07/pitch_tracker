@@ -11,6 +11,10 @@ import {
     OpponentLineupPlayer,
     BaseRunners,
     BaserunnerEvent,
+    OpposingPitcher,
+    CreateOpposingPitcherParams,
+    CountBucketBreakdown,
+    TeamSide,
 } from '@pitch-tracker/shared';
 
 export interface GameState {
@@ -199,5 +203,30 @@ export const gamesApi = {
     toggleHomeAway: async (id: string): Promise<Game> => {
         const response = await api.post<{ game: Game }>(`/games/${id}/toggle-home-away`);
         return response.data.game;
+    },
+
+    // Opposing pitcher operations
+    getOpposingPitchers: async (gameId: string): Promise<OpposingPitcher[]> => {
+        const response = await api.get<{ pitchers: OpposingPitcher[] }>(`/opposing-pitchers/game/${gameId}`);
+        return response.data.pitchers;
+    },
+
+    createOpposingPitcher: async (params: CreateOpposingPitcherParams): Promise<OpposingPitcher> => {
+        const response = await api.post<{ pitcher: OpposingPitcher }>('/opposing-pitchers', params);
+        return response.data.pitcher;
+    },
+
+    deleteOpposingPitcher: async (id: string): Promise<void> => {
+        await api.delete(`/opposing-pitchers/${id}`);
+    },
+
+    // Count breakdown
+    getCountBreakdown: async (gameId: string, pitcherId?: string, teamSide?: TeamSide): Promise<CountBucketBreakdown> => {
+        const params = new URLSearchParams();
+        if (pitcherId) params.append('pitcherId', pitcherId);
+        if (teamSide) params.append('team_side', teamSide);
+        const qs = params.toString() ? `?${params}` : '';
+        const response = await api.get<{ breakdown: CountBucketBreakdown }>(`/analytics/game/${gameId}/count-breakdown${qs}`);
+        return response.data.breakdown;
     },
 };

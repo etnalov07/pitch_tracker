@@ -43,6 +43,10 @@ export {
     clearPitches,
     setBaseRunners,
     clearBaseRunners,
+    setCurrentOpposingPitcher,
+    fetchOpposingPitchers,
+    createOpposingPitcher,
+    deleteOpposingPitcher,
 } from './games/gamesSlice';
 
 export {
