@@ -1,8 +1,10 @@
 import styled from '@emotion/styled';
-import { Game, GamePitcherWithPlayer } from '@pitch-tracker/shared';
-import React, { useState, useEffect } from 'react';
+import { Game, GamePitcherWithPlayer, PerformanceSummary } from '@pitch-tracker/shared';
+import React, { useState, useEffect, useRef } from 'react';
 import CountBreakdownPanel from '../../components/live/CountBreakdownPanel';
 import PitcherStats from '../../components/live/PitcherStats';
+import { PerformanceSummaryCard } from '../../components/performanceSummary';
+import { performanceSummaryService } from '../../services/performanceSummaryService';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { theme } from '../../styles/theme';
 
@@ -12,9 +14,17 @@ interface Props {
     onExit?: () => void;
 }
 
+const NARRATIVE_POLL_INTERVAL_MS = 3000;
+const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
+
 const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
-    const [activeTab, setActiveTab] = useState<'stats' | 'counts'>('stats');
+    const [activeTab, setActiveTab] = useState<'stats' | 'counts' | 'summary'>('stats');
     const [activePitcher, setActivePitcher] = useState<GamePitcherWithPlayer | null>(null);
+    const [summary, setSummary] = useState<PerformanceSummary | null>(null);
+    const [summaryLoading, setSummaryLoading] = useState(false);
+    const [regenerating, setRegenerating] = useState(false);
+    const pollAttemptsRef = useRef(0);
+    const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         gamesApi
@@ -25,6 +35,48 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
             })
             .catch(() => {});
     }, [game.id, refreshTrigger]);
+
+    useEffect(() => {
+        if (activeTab !== 'summary' || summary) return;
+        setSummaryLoading(true);
+        performanceSummaryService
+            .getSummary('game', game.id)
+            .then((s) => setSummary(s))
+            .catch(() => {})
+            .finally(() => setSummaryLoading(false));
+    }, [activeTab, game.id, summary]);
+
+    // Poll until narrative arrives
+    useEffect(() => {
+        if (!summary || summary.narrative) {
+            pollAttemptsRef.current = 0;
+            if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+            return;
+        }
+        if (pollAttemptsRef.current >= NARRATIVE_POLL_MAX_ATTEMPTS) return;
+        pollTimerRef.current = setTimeout(() => {
+            pollAttemptsRef.current += 1;
+            performanceSummaryService
+                .getSummary('game', game.id)
+                .then((s) => setSummary(s))
+                .catch(() => {});
+        }, NARRATIVE_POLL_INTERVAL_MS);
+        return () => {
+            if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+        };
+    }, [summary, game.id]);
+
+    const handleRegenerate = async () => {
+        if (!summary) return;
+        setRegenerating(true);
+        try {
+            await performanceSummaryService.regenerateNarrative(summary.id);
+            const updated = await performanceSummaryService.getSummary('game', game.id);
+            setSummary(updated);
+        } finally {
+            setRegenerating(false);
+        }
+    };
 
     const pitcherId = activePitcher?.player_id;
 
@@ -51,6 +103,11 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 <Tab active={activeTab === 'counts'} onClick={() => setActiveTab('counts')}>
                     Count Breakdown
                 </Tab>
+                {game.status === 'completed' && (
+                    <Tab active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>
+                        Performance Summary
+                    </Tab>
+                )}
             </TabRow>
 
             <Content>
@@ -59,6 +116,15 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 )}
                 {activeTab === 'counts' && (
                     <CountBreakdownPanel gameId={game.id} pitcherId={pitcherId} refreshTrigger={refreshTrigger} />
+                )}
+                {activeTab === 'summary' && (
+                    <SummaryWrapper>
+                        {summaryLoading && <LoadingText>Loading performance summary…</LoadingText>}
+                        {!summaryLoading && !summary && <LoadingText>No performance data available for this game.</LoadingText>}
+                        {summary && (
+                            <PerformanceSummaryCard summary={summary} onRegenerate={handleRegenerate} regenerating={regenerating} />
+                        )}
+                    </SummaryWrapper>
                 )}
             </Content>
         </Wrapper>
@@ -170,6 +236,18 @@ const Content = styled.div`
     flex: 1;
     overflow-y: auto;
     padding: ${theme.spacing.xl};
+`;
+
+const SummaryWrapper = styled.div`
+    max-width: 800px;
+    margin: 0 auto;
+`;
+
+const LoadingText = styled.p`
+    color: ${theme.colors.gray[500]};
+    font-size: ${theme.fontSize.sm};
+    text-align: center;
+    margin-top: ${theme.spacing['2xl']};
 `;
 
 export default ViewerDashboard;
