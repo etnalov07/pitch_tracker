@@ -11,7 +11,18 @@
       "Skill(preflight)",
       "Bash(xargs grep *)",
       "Bash(npx expo *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(gh run *)",
+      "WebFetch(domain:claude.ai)",
+      "Bash(npx eslint *)",
+      "Bash(bash *)",
+      "Skill(save-plan)",
+      "Bash(mkdir -p C:/Projects/pitch_tracker/packages/web/src/components/live/OpposingPitcherPanel)",
+      "Bash(mkdir -p C:/Projects/pitch_tracker/packages/web/src/components/live/CountBreakdownPanel)",
+      "Bash(git -C C:/Projects/pitch_tracker status)",
+      "Bash(git -C C:/Projects/pitch_tracker log --oneline -3)",
+      "Bash(git *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('expo',{}\\).get\\('extra',{}\\), indent=2\\)\\)\")"
     ]
   }
 }

@@ -1199,3 +1199,58 @@ export const HeatZonePitchButton = styled.button<{ active?: boolean }>((props) =
         backgroundColor: props.active ? theme.colors.primary[700] : theme.colors.gray[200],
     },
 }));
+
+// Role selection overlay
+export const RoleSelectOverlay = styled.div({
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 200,
+});
+
+export const RoleSelectCard = styled.div({
+    background: 'white',
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing['3xl'],
+    boxShadow: theme.shadows.xl,
+    textAlign: 'center',
+    minWidth: 320,
+});
+
+export const RoleSelectTitle = styled.h2({
+    fontSize: theme.fontSize['2xl'],
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.gray[900],
+    marginBottom: theme.spacing.sm,
+});
+
+export const RoleSelectSubtitle = styled.p({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[500],
+    marginBottom: theme.spacing['2xl'],
+});
+
+export const RoleSelectButtons = styled.div({
+    display: 'flex',
+    gap: theme.spacing.md,
+    justifyContent: 'center',
+});
+
+export const RoleButton = styled.button({
+    padding: `${theme.spacing.sm} ${theme.spacing['2xl']}`,
+    background: theme.colors.primary[600],
+    color: 'white',
+    border: 'none',
+    borderRadius: theme.borderRadius.lg,
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    transition: 'background 0.15s',
+
+    '&:hover': {
+        background: theme.colors.primary[700],
+    },
+});

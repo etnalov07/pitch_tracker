@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import {
     Game,
+    GameRole,
     Team,
     Player,
     AtBat,
@@ -35,6 +36,7 @@ interface GamesSliceState {
     baseRunners: BaseRunners;
     opposingPitchers: OpposingPitcher[];
     currentOpposingPitcher: OpposingPitcher | null;
+    currentGameRole: GameRole | null;
     loading: boolean;
     gameStateLoading: boolean;
     error: string | null;
@@ -52,6 +54,7 @@ const initialState: GamesSliceState = {
     baseRunners: { first: false, second: false, third: false },
     opposingPitchers: [],
     currentOpposingPitcher: null,
+    currentGameRole: null,
     loading: false,
     gameStateLoading: false,
     error: null,
@@ -370,6 +373,9 @@ const gamesSlice = createSlice({
         setCurrentOpposingPitcher: (state, action: PayloadAction<OpposingPitcher | null>) => {
             state.currentOpposingPitcher = action.payload;
         },
+        setCurrentGameRole: (state, action: PayloadAction<GameRole | null>) => {
+            state.currentGameRole = action.payload;
+        },
     },
     extraReducers: (builder) => {
         // Fetch All Games
@@ -635,6 +641,7 @@ export const {
     setBaseRunners,
     clearBaseRunners,
     setCurrentOpposingPitcher,
+    setCurrentGameRole,
 } = gamesSlice.actions;
 
 export default gamesSlice.reducer;

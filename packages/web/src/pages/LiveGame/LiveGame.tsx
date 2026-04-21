@@ -11,6 +11,7 @@ import PitcherStats from '../../components/live/PitcherStats';
 import PitcherTendenciesPanel from '../../components/live/PitcherTendenciesPanel';
 import SituationalCallsRow from '../../components/live/SituationalCallsRow';
 import StrikeZone from '../../components/live/StrikeZone';
+import { useGameWebSocket } from '../../hooks/useGameWebSocket';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { theme } from '../../styles/theme';
 import BaserunnerOutModal from './BaserunnerOutModal';
@@ -83,10 +84,17 @@ import {
     PitchTypeGrid,
     PitchTypeButton,
     SwapButton,
+    RoleSelectOverlay,
+    RoleSelectCard,
+    RoleSelectTitle,
+    RoleSelectSubtitle,
+    RoleSelectButtons,
+    RoleButton,
 } from './styles';
 import TeamAtBatModal from './TeamAtBatModal';
 import { useLiveGameActions } from './useLiveGameActions';
 import { useLiveGameState } from './useLiveGameState';
+import ViewerDashboard from './ViewerDashboard';
 
 const LiveGame: React.FC = () => {
     const state = useLiveGameState();
@@ -153,7 +161,17 @@ const LiveGame: React.FC = () => {
         showCountBreakdown,
         setShowCountBreakdown,
         gameMode,
+        gameRole,
+        setGameRole,
+        setStatsRefreshTrigger,
     } = state;
+
+    useGameWebSocket(gameId ?? null, {
+        pitch_logged: () => setStatsRefreshTrigger((prev) => prev + 1),
+        at_bat_ended: () => setStatsRefreshTrigger((prev) => prev + 1),
+        inning_changed: () => setStatsRefreshTrigger((prev) => prev + 1),
+        runners_updated: () => setStatsRefreshTrigger((prev) => prev + 1),
+    });
 
     if (loading) {
         return <LoadingContainer>Loading game...</LoadingContainer>;
@@ -161,6 +179,25 @@ const LiveGame: React.FC = () => {
 
     if (!game) {
         return <ErrorContainer>Game not found</ErrorContainer>;
+    }
+
+    if (gameRole === null && game.status === 'in_progress') {
+        return (
+            <RoleSelectOverlay>
+                <RoleSelectCard>
+                    <RoleSelectTitle>Join Game</RoleSelectTitle>
+                    <RoleSelectSubtitle>Select your role for this session</RoleSelectSubtitle>
+                    <RoleSelectButtons>
+                        <RoleButton onClick={() => setGameRole('charter')}>Charter</RoleButton>
+                        <RoleButton onClick={() => setGameRole('viewer')}>Viewer</RoleButton>
+                    </RoleSelectButtons>
+                </RoleSelectCard>
+            </RoleSelectOverlay>
+        );
+    }
+
+    if (gameRole === 'viewer') {
+        return <ViewerDashboard game={game} pitcherId={currentPitcher?.player_id} refreshTrigger={statsRefreshTrigger} />;
     }
 
     const needsSetup = !currentPitcher || !currentBatter;

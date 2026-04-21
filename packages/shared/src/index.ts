@@ -967,6 +967,28 @@ export interface CreateOpposingPitcherParams {
 }
 
 // ============================================================================
+// WebSocket / Real-Time Sync Types
+// ============================================================================
+
+export type GameRole = 'charter' | 'viewer';
+
+export type WsMessageType = 'pitch_logged' | 'at_bat_ended' | 'inning_changed' | 'runners_updated';
+
+export interface WsMessage {
+    type: WsMessageType;
+    game_id: string;
+    payload: Record<string, unknown>;
+}
+
+export interface GameRoleRecord {
+    id: string;
+    user_id: string;
+    game_id: string;
+    role: GameRole;
+    assigned_at: string;
+}
+
+// ============================================================================
 // Count Breakdown Types
 // ============================================================================
 

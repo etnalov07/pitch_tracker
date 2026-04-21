@@ -1,8 +1,9 @@
-import { deriveGameMode, GameMode, OpposingPitcher, PitchCall, PitchCallZone } from '@pitch-tracker/shared';
+import { deriveGameMode, GameMode, GameRole, OpposingPitcher, PitchCall, PitchCallZone } from '@pitch-tracker/shared';
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
 import useHeatZones from '../../hooks/useHeatZones';
+import { gameRoleService } from '../../services/gameRoleService';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { useAppDispatch, useAppSelector, fetchGameById } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
@@ -109,6 +110,9 @@ export function useLiveGameState() {
     const [currentOpposingPitcher, setCurrentOpposingPitcher] = useState<OpposingPitcher | null>(null);
     const [showCountBreakdown, setShowCountBreakdown] = useState(false);
 
+    // Game role (charter or viewer)
+    const [gameRole, setGameRole] = useState<GameRole | null>(null);
+
     const gameMode: GameMode = useMemo(() => {
         if (!game) return 'our_pitcher';
         return deriveGameMode(game.is_home_game ?? true, game.inning_half);
@@ -148,6 +152,10 @@ export function useLiveGameState() {
                     setOpposingPitchers(pitchers);
                     if (pitchers.length > 0) setCurrentOpposingPitcher(pitchers[pitchers.length - 1]);
                 })
+                .catch(() => {});
+            gameRoleService
+                .getRole(gameId)
+                .then(setGameRole)
                 .catch(() => {});
         }
     }, [dispatch, gameId]);
@@ -273,6 +281,8 @@ export function useLiveGameState() {
         showCountBreakdown,
         setShowCountBreakdown,
         gameMode,
+        gameRole,
+        setGameRole,
     };
 }
 

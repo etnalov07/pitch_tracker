@@ -1,6 +1,7 @@
 import app from './app';
 import { config } from './config/env';
 import pool from './config/database';
+import { init as initWsServer } from './websocket/wsServer';
 
 console.log('🔄 Server script starting...');
 console.log('🔄 Imports completed');
@@ -20,6 +21,7 @@ pool.query('SELECT NOW()', (err, res) => {
 
 // Start server
 const server = app.listen(PORT, () => {
+    initWsServer(server);
     console.log('🚀 Baseball Tracker API Server');
     console.log(`📡 Server running on port ${PORT}`);
     console.log(`🌍 Environment: ${config.nodeEnv}`);

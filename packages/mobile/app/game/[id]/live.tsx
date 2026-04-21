@@ -59,7 +59,9 @@ import {
     createOpposingPitcher,
     deleteOpposingPitcher,
     setCurrentOpposingPitcher,
+    setCurrentGameRole,
 } from '../../../src/state';
+import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
 import {
     StrikeZone,
     PITCH_TYPE_COLORS,
@@ -104,6 +106,7 @@ export default function LiveGameScreen() {
         baseRunners,
         opposingPitchers,
         currentOpposingPitcher,
+        currentGameRole,
         gameStateLoading,
         loading,
         error,
@@ -219,6 +222,12 @@ export default function LiveGameScreen() {
                 .getGamePitches(id)
                 .then(setAllGamePitches)
                 .catch(() => setAllGamePitches([]));
+            gamesApi
+                .getGameRole(id)
+                .then((role) => {
+                    if (role) dispatch(setCurrentGameRole(role));
+                })
+                .catch(() => {});
         }
     }, [id, dispatch]);
 
@@ -874,6 +883,13 @@ export default function LiveGameScreen() {
         ? { name: currentBatter.player_name, batting_order: currentBatter.batting_order }
         : null;
 
+    useGameWebSocket(id ?? null, {
+        pitch_logged: () => setStatsRefreshTrigger((prev) => prev + 1),
+        at_bat_ended: () => setStatsRefreshTrigger((prev) => prev + 1),
+        inning_changed: () => setStatsRefreshTrigger((prev) => prev + 1),
+        runners_updated: () => setStatsRefreshTrigger((prev) => prev + 1),
+    });
+
     if (gameStateLoading || loading) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -901,6 +917,41 @@ export default function LiveGameScreen() {
     }
 
     const isReadOnly = game.status !== 'in_progress';
+
+    if (game.status === 'in_progress' && currentGameRole === null) {
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+                <View style={styles.roleSelectContainer}>
+                    <Text variant="headlineMedium" style={styles.roleSelectTitle}>
+                        Join Game
+                    </Text>
+                    <Text variant="bodyMedium" style={styles.roleSelectSubtitle}>
+                        Select your role for this session
+                    </Text>
+                    <View style={styles.roleSelectButtons}>
+                        <Button mode="contained" onPress={() => dispatch(setCurrentGameRole('charter'))} style={styles.roleButton}>
+                            Charter
+                        </Button>
+                        <Button
+                            mode="outlined"
+                            onPress={() => {
+                                dispatch(setCurrentGameRole('viewer'));
+                                router.push(`/game/${id}/viewer` as any);
+                            }}
+                            style={styles.roleButton}
+                        >
+                            Viewer
+                        </Button>
+                    </View>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (currentGameRole === 'viewer') {
+        router.replace(`/game/${id}/viewer` as any);
+        return null;
+    }
 
     const filteredGamePitches =
         pitchTypeFilter === 'all' ? allGamePitches : allGamePitches.filter((p) => (p.pitch_type || 'other') === pitchTypeFilter);
@@ -1919,5 +1970,28 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '700' as const,
         color: '#1f2937',
+    },
+    roleSelectContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 32,
+    },
+    roleSelectTitle: {
+        fontWeight: '700',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    roleSelectSubtitle: {
+        color: '#6b7280',
+        marginBottom: 32,
+        textAlign: 'center',
+    },
+    roleSelectButtons: {
+        flexDirection: 'row',
+        gap: 16,
+    },
+    roleButton: {
+        minWidth: 120,
     },
 });

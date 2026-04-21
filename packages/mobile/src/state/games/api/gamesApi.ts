@@ -1,6 +1,8 @@
 import api from '../../../services/api';
 import {
     Game,
+    GameRole,
+    GameRoleRecord,
     Team,
     Player,
     AtBat,
@@ -218,6 +220,17 @@ export const gamesApi = {
 
     deleteOpposingPitcher: async (id: string): Promise<void> => {
         await api.delete(`/opposing-pitchers/${id}`);
+    },
+
+    // Game roles
+    getGameRole: async (gameId: string): Promise<GameRole | null> => {
+        const response = await api.get<{ role: GameRole | null }>(`/game/${gameId}/role`);
+        return response.data.role;
+    },
+
+    assignGameRole: async (gameId: string, role: GameRole): Promise<GameRoleRecord> => {
+        const response = await api.post<{ role: GameRoleRecord }>(`/game/${gameId}/role`, { role });
+        return response.data.role;
     },
 
     // Count breakdown

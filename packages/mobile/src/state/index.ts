@@ -44,6 +44,7 @@ export {
     setBaseRunners,
     clearBaseRunners,
     setCurrentOpposingPitcher,
+    setCurrentGameRole,
     fetchOpposingPitchers,
     createOpposingPitcher,
     deleteOpposingPitcher,
