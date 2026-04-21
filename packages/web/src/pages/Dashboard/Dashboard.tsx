@@ -175,6 +175,15 @@ const Dashboard: React.FC = () => {
     const upcomingGames = games.filter((g) => g.status === 'scheduled');
     const completedGames = games.filter((g) => g.status === 'completed');
 
+    // Poll for live game updates every 30 seconds while any game is in progress
+    useEffect(() => {
+        if (liveGames.length === 0) return;
+        const interval = setInterval(() => {
+            dispatch(fetchAllGames());
+        }, 30000);
+        return () => clearInterval(interval);
+    }, [dispatch, liveGames.length]);
+
     return (
         <Container>
             <Header>
