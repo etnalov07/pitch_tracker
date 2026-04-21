@@ -29,6 +29,9 @@ router.get('/game/:gameId/state', analyticsController.getGameState.bind(analytic
 // Count breakdown
 router.get('/game/:gameId/count-breakdown', analyticsController.getCountBreakdown.bind(analyticsController));
 
+// Pitcher's chart (per-count breakdown)
+router.get('/game/:gameId/pitch-chart', analyticsController.getPitchChart.bind(analyticsController));
+
 // Matchup analytics
 router.get('/matchup/:batterId/:pitcherId', analyticsController.getMatchupStats.bind(analyticsController));
 

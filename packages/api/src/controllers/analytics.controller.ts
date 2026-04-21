@@ -155,6 +155,18 @@ export class AnalyticsController {
             next(error);
         }
     }
+
+    async getPitchChart(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const gameId = req.params.gameId as string;
+            const pitcherId = req.query.pitcherId as string | undefined;
+            const teamSide = req.query.team_side as string | undefined;
+            const chart = await analyticsService.getPitchChart(gameId, pitcherId, teamSide);
+            res.status(200).json({ chart });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new AnalyticsController();

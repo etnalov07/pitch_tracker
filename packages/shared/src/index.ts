@@ -1040,6 +1040,26 @@ export interface CountBucketBreakdown {
 }
 
 // ============================================================================
+// Pitch Chart Types (per-count breakdown, matches traditional pitcher's chart)
+// ============================================================================
+
+export interface PitchChartCountData {
+    total: number;
+    strike_pct: number;
+    by_type: Array<{ pitch_type: string; count: number }>;
+}
+
+export interface PitchChart {
+    game_id: string;
+    pitcher_id: string | null;
+    team_side: string | null;
+    pitch_types: string[];
+    counts: Record<string, PitchChartCountData>;
+    totals_by_type: Array<{ pitch_type: string; count: number; strike_pct: number }>;
+    grand_total: number;
+}
+
+// ============================================================================
 // API Response Wrappers
 // ============================================================================
 

@@ -4,6 +4,7 @@ import {
     BatterScoutingReport,
     CountBucketBreakdown,
     HitterTendenciesLive,
+    PitchChart,
     PitcherTendenciesLive,
     PitchLocationHeatMap,
     SprayChart,
@@ -72,6 +73,16 @@ export const analyticsService = {
         const qs = params.toString() ? `?${params}` : '';
         const response = await api.get<{ breakdown: CountBucketBreakdown }>(`/analytics/game/${gameId}/count-breakdown${qs}`);
         return response.data.breakdown;
+    },
+
+    // Get pitcher's chart (per-individual-count breakdown)
+    getPitchChart: async (gameId: string, pitcherId?: string, teamSide?: TeamSide): Promise<PitchChart> => {
+        const params = new URLSearchParams();
+        if (pitcherId) params.append('pitcherId', pitcherId);
+        if (teamSide) params.append('team_side', teamSide);
+        const qs = params.toString() ? `?${params}` : '';
+        const response = await api.get<{ chart: PitchChart }>(`/analytics/game/${gameId}/pitch-chart${qs}`);
+        return response.data.chart;
     },
 };
 

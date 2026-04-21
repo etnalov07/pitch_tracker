@@ -949,6 +949,119 @@ export class AnalyticsService {
         return sequence.slice(0, 3);
     }
 
+    async getPitchChart(gameId: string, pitcherId?: string, teamSide?: string): Promise<any> {
+        const params: any[] = [gameId];
+        let filters = '';
+
+        if (pitcherId) {
+            params.push(pitcherId);
+            filters += ` AND pitcher_id = $${params.length}`;
+        }
+        if (teamSide) {
+            params.push(teamSide);
+            filters += ` AND team_side = $${params.length}`;
+        }
+
+        const result = await query(
+            `SELECT
+                balls_before,
+                strikes_before,
+                pitch_type,
+                pitch_result,
+                COUNT(*) as count
+             FROM pitches
+             WHERE game_id = $1${filters}
+               AND pitch_type IS NOT NULL
+             GROUP BY balls_before, strikes_before, pitch_type, pitch_result
+             ORDER BY balls_before, strikes_before, pitch_type`,
+            params
+        );
+
+        const ALL_COUNTS: [number, number][] = [
+            [0, 0],
+            [0, 1],
+            [0, 2],
+            [1, 2],
+            [1, 1],
+            [2, 2],
+            [1, 0],
+            [2, 0],
+            [2, 1],
+            [3, 0],
+            [3, 1],
+            [3, 2],
+        ];
+
+        const countMap: Record<
+            string,
+            { total: number; strikes: number; byType: Record<string, { count: number; strikes: number }> }
+        > = {};
+        for (const [b, s] of ALL_COUNTS) {
+            countMap[`${b}-${s}`] = { total: 0, strikes: 0, byType: {} };
+        }
+
+        const pitchTypeUsage: Record<string, number> = {};
+
+        for (const row of result.rows) {
+            const b = parseInt(row.balls_before, 10);
+            const s = parseInt(row.strikes_before, 10);
+            const cnt = parseInt(row.count, 10);
+            const key = `${b}-${s}`;
+            const isStrike = ['called_strike', 'swinging_strike', 'foul'].includes(row.pitch_result);
+
+            if (!countMap[key]) continue;
+
+            countMap[key].total += cnt;
+            if (isStrike) countMap[key].strikes += cnt;
+
+            if (row.pitch_type) {
+                if (!countMap[key].byType[row.pitch_type]) {
+                    countMap[key].byType[row.pitch_type] = { count: 0, strikes: 0 };
+                }
+                countMap[key].byType[row.pitch_type].count += cnt;
+                if (isStrike) countMap[key].byType[row.pitch_type].strikes += cnt;
+                pitchTypeUsage[row.pitch_type] = (pitchTypeUsage[row.pitch_type] || 0) + cnt;
+            }
+        }
+
+        const totalsByType: Record<string, { count: number; strikes: number }> = {};
+        for (const [, data] of Object.entries(countMap)) {
+            for (const [pt, stats] of Object.entries(data.byType)) {
+                if (!totalsByType[pt]) totalsByType[pt] = { count: 0, strikes: 0 };
+                totalsByType[pt].count += stats.count;
+                totalsByType[pt].strikes += stats.strikes;
+            }
+        }
+
+        const pitchTypes = Object.keys(pitchTypeUsage).sort((a, b) => (pitchTypeUsage[b] || 0) - (pitchTypeUsage[a] || 0));
+
+        const grandTotal = Object.values(totalsByType).reduce((sum, t) => sum + t.count, 0);
+
+        const counts: Record<string, any> = {};
+        for (const key of Object.keys(countMap)) {
+            const data = countMap[key];
+            counts[key] = {
+                total: data.total,
+                strike_pct: data.total > 0 ? Math.round((data.strikes / data.total) * 100) : 0,
+                by_type: Object.entries(data.byType).map(([pt, s]) => ({ pitch_type: pt, count: s.count })),
+            };
+        }
+
+        return {
+            game_id: gameId,
+            pitcher_id: pitcherId ?? null,
+            team_side: teamSide ?? null,
+            pitch_types: pitchTypes,
+            counts,
+            totals_by_type: Object.entries(totalsByType).map(([pt, s]) => ({
+                pitch_type: pt,
+                count: s.count,
+                strike_pct: s.count > 0 ? Math.round((s.strikes / s.count) * 100) : 0,
+            })),
+            grand_total: grandTotal,
+        };
+    }
+
     async getCountBreakdown(gameId: string, pitcherId?: string, teamSide?: string): Promise<any> {
         const params: any[] = [gameId];
         let filters = '';
