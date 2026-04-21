@@ -62,7 +62,6 @@ import {
     StartGameButton,
     TopBarRight,
     EndGameButton,
-    ResumeGameButton,
     StartGamePrompt,
     StartGameText,
     OutsContainer,
@@ -199,7 +198,7 @@ const LiveGame: React.FC = () => {
         );
     }
 
-    if (gameRole === 'viewer') {
+    if (gameRole === 'viewer' || game.status === 'completed') {
         return <ViewerDashboard game={game} refreshTrigger={statsRefreshTrigger} onExit={() => navigate('/')} />;
     }
 
@@ -304,9 +303,6 @@ const LiveGame: React.FC = () => {
                             </SwapButton>
                         )}
                         {game.status === 'in_progress' && <EndGameButton onClick={actions.handleEndGame}>End Game</EndGameButton>}
-                        {game.status === 'completed' && (
-                            <ResumeGameButton onClick={actions.handleResumeGame}>Resume Game</ResumeGameButton>
-                        )}
                     </TopBarRight>
                 </TopBar>
 
@@ -377,7 +373,7 @@ const LiveGame: React.FC = () => {
                             )}
                         </PlayerInfo>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-                            <ChangeButton onClick={() => setShowPitcherSelector(true)} disabled={game.status === 'completed'}>
+                            <ChangeButton onClick={() => setShowPitcherSelector(true)}>
                                 {currentPitcher ? 'Change' : 'Select'}
                             </ChangeButton>
                             {currentPitcher && (
@@ -415,7 +411,6 @@ const LiveGame: React.FC = () => {
                                 )}
                             </PlayerInfo>
                             <ChangeButton
-                                disabled={game.status === 'completed'}
                                 onClick={() => {
                                     /* inline select handled via dropdown below */
                                 }}
@@ -454,7 +449,7 @@ const LiveGame: React.FC = () => {
                                 )}
                             </PlayerInfo>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-                                <ChangeButton onClick={() => setShowBatterSelector(true)} disabled={game.status === 'completed'}>
+                                <ChangeButton onClick={() => setShowBatterSelector(true)}>
                                     {currentBatter ? 'Change' : 'Select'}
                                 </ChangeButton>
                                 {currentBatter && (
@@ -706,10 +701,8 @@ const LiveGame: React.FC = () => {
                     </>
                 ) : (
                     <NoAtBatContainer>
-                        <NoAtBatText>
-                            {game.status === 'completed' ? 'Game completed - Resume to continue tracking' : 'No active at-bat'}
-                        </NoAtBatText>
-                        <StartAtBatButton onClick={actions.handleStartAtBat} disabled={needsSetup || game.status === 'completed'}>
+                        <NoAtBatText>No active at-bat</NoAtBatText>
+                        <StartAtBatButton onClick={actions.handleStartAtBat} disabled={needsSetup}>
                             Start New At-Bat
                         </StartAtBatButton>
                     </NoAtBatContainer>
