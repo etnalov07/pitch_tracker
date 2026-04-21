@@ -9,6 +9,8 @@ import {
     Play,
     Inning,
     GamePitcherWithPlayer,
+    MyTeamLineupPlayer,
+    CreateMyTeamLineupPlayerParams,
     OpponentLineupPlayer,
     BaseRunners,
     BaserunnerEvent,
@@ -32,6 +34,8 @@ interface GamesSliceState {
     currentInning: Inning | null;
     gamePitchers: GamePitcherWithPlayer[];
     opponentLineup: OpponentLineupPlayer[];
+    myTeamLineup: MyTeamLineupPlayer[];
+    currentMyBatter: MyTeamLineupPlayer | null;
     pitches: Pitch[];
     baseRunners: BaseRunners;
     opposingPitchers: OpposingPitcher[];
@@ -50,6 +54,8 @@ const initialState: GamesSliceState = {
     currentInning: null,
     gamePitchers: [],
     opponentLineup: [],
+    myTeamLineup: [],
+    currentMyBatter: null,
     pitches: [],
     baseRunners: { first: false, second: false, third: false },
     opposingPitchers: [],
@@ -335,6 +341,25 @@ export const recordBaserunnerEvent = createAsyncThunk(
     }
 );
 
+export const fetchMyTeamLineup = createAsyncThunk('games/fetchMyTeamLineup', async (gameId: string, { rejectWithValue }) => {
+    try {
+        return await gamesApi.getMyTeamLineup(gameId);
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to fetch my team lineup'));
+    }
+});
+
+export const createMyTeamLineup = createAsyncThunk(
+    'games/createMyTeamLineup',
+    async ({ gameId, players }: { gameId: string; players: CreateMyTeamLineupPlayerParams[] }, { rejectWithValue }) => {
+        try {
+            return await gamesApi.createMyTeamLineupBulk(gameId, players);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to create my team lineup'));
+        }
+    }
+);
+
 const gamesSlice = createSlice({
     name: 'games',
     initialState,
@@ -349,6 +374,8 @@ const gamesSlice = createSlice({
             state.currentInning = null;
             state.gamePitchers = [];
             state.opponentLineup = [];
+            state.myTeamLineup = [];
+            state.currentMyBatter = null;
             state.pitches = [];
             state.baseRunners = { first: false, second: false, third: false };
         },
@@ -375,6 +402,9 @@ const gamesSlice = createSlice({
         },
         setCurrentGameRole: (state, action: PayloadAction<GameRole | null>) => {
             state.currentGameRole = action.payload;
+        },
+        setCurrentMyBatter: (state, action: PayloadAction<MyTeamLineupPlayer | null>) => {
+            state.currentMyBatter = action.payload;
         },
     },
     extraReducers: (builder) => {
@@ -628,6 +658,23 @@ const gamesSlice = createSlice({
                     state.opposingPitchers.length > 0 ? state.opposingPitchers[state.opposingPitchers.length - 1] : null;
             }
         });
+
+        // My Team Lineup
+        builder.addCase(fetchMyTeamLineup.fulfilled, (state, action) => {
+            state.myTeamLineup = action.payload;
+            if (action.payload.length > 0 && !state.currentMyBatter) {
+                const first = action.payload.find((p) => p.batting_order === 1 && p.is_starter);
+                if (first) state.currentMyBatter = first;
+            }
+        });
+
+        builder.addCase(createMyTeamLineup.fulfilled, (state, action) => {
+            state.myTeamLineup = action.payload;
+            if (action.payload.length > 0) {
+                const first = action.payload.find((p) => p.batting_order === 1 && p.is_starter);
+                if (first) state.currentMyBatter = first;
+            }
+        });
     },
 });
 
@@ -642,6 +689,7 @@ export const {
     clearBaseRunners,
     setCurrentOpposingPitcher,
     setCurrentGameRole,
+    setCurrentMyBatter,
 } = gamesSlice.actions;
 
 export default gamesSlice.reducer;

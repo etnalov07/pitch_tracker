@@ -164,6 +164,9 @@ const LiveGame: React.FC = () => {
         gameRole,
         setGameRole,
         setStatsRefreshTrigger,
+        myTeamLineup,
+        currentMyBatter,
+        setCurrentMyBatter,
     } = state;
 
     useGameWebSocket(gameId ?? null, {
@@ -200,7 +203,7 @@ const LiveGame: React.FC = () => {
         return <ViewerDashboard game={game} pitcherId={currentPitcher?.player_id} refreshTrigger={statsRefreshTrigger} />;
     }
 
-    const needsSetup = !currentPitcher || !currentBatter;
+    const needsSetup = gameMode === 'opp_pitcher' ? !currentOpposingPitcher : !currentPitcher || !currentBatter;
 
     const pitcherName = currentPitcher?.player
         ? `${currentPitcher.player.first_name} ${currentPitcher.player.last_name}`
@@ -398,52 +401,101 @@ const LiveGame: React.FC = () => {
                         </div>
                     </PlayerDisplay>
 
-                    <PlayerDisplay>
-                        <PlayerInfo>
-                            <PlayerLabel>Batter (#{currentBattingOrder})</PlayerLabel>
-                            {currentBatter ? (
-                                <PlayerName>{currentBatter.player_name}</PlayerName>
-                            ) : (
-                                <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
-                            )}
-                        </PlayerInfo>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-                            <ChangeButton onClick={() => setShowBatterSelector(true)} disabled={game.status === 'completed'}>
-                                {currentBatter ? 'Change' : 'Select'}
-                            </ChangeButton>
-                            {currentBatter && (
-                                <button
-                                    onClick={() => setShowHitterTendencies(true)}
-                                    style={{
-                                        padding: '3px 8px',
-                                        fontSize: '11px',
-                                        fontWeight: 600,
-                                        background: theme.colors.green[600],
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: theme.borderRadius.sm,
-                                        cursor: 'pointer',
-                                        whiteSpace: 'nowrap' as const,
+                    {gameMode === 'opp_pitcher' ? (
+                        <PlayerDisplay>
+                            <PlayerInfo>
+                                <PlayerLabel>Our Batter</PlayerLabel>
+                                {currentMyBatter?.player ? (
+                                    <PlayerName>
+                                        {currentMyBatter.player.jersey_number ? `#${currentMyBatter.player.jersey_number} ` : ''}
+                                        {currentMyBatter.player.first_name} {currentMyBatter.player.last_name}
+                                    </PlayerName>
+                                ) : (
+                                    <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
+                                )}
+                            </PlayerInfo>
+                            <ChangeButton
+                                disabled={game.status === 'completed'}
+                                onClick={() => {
+                                    /* inline select handled via dropdown below */
+                                }}
+                            >
+                                <select
+                                    value={currentMyBatter?.id ?? ''}
+                                    onChange={(e) => {
+                                        const found = myTeamLineup.find((p) => p.id === e.target.value);
+                                        if (found) setCurrentMyBatter(found);
                                     }}
+                                    style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '13px' }}
                                 >
-                                    Tendencies
-                                </button>
-                            )}
-                        </div>
-                    </PlayerDisplay>
+                                    <option value="">Select batter</option>
+                                    {myTeamLineup
+                                        .filter((p) => p.is_starter)
+                                        .sort((a, b) => a.batting_order - b.batting_order)
+                                        .map((p) => (
+                                            <option key={p.id} value={p.id}>
+                                                #{p.batting_order}{' '}
+                                                {p.player
+                                                    ? `${p.player.first_name} ${p.player.last_name}`
+                                                    : `Player ${p.batting_order}`}
+                                            </option>
+                                        ))}
+                                </select>
+                            </ChangeButton>
+                        </PlayerDisplay>
+                    ) : (
+                        <PlayerDisplay>
+                            <PlayerInfo>
+                                <PlayerLabel>Batter (#{currentBattingOrder})</PlayerLabel>
+                                {currentBatter ? (
+                                    <PlayerName>{currentBatter.player_name}</PlayerName>
+                                ) : (
+                                    <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
+                                )}
+                            </PlayerInfo>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                                <ChangeButton onClick={() => setShowBatterSelector(true)} disabled={game.status === 'completed'}>
+                                    {currentBatter ? 'Change' : 'Select'}
+                                </ChangeButton>
+                                {currentBatter && (
+                                    <button
+                                        onClick={() => setShowHitterTendencies(true)}
+                                        style={{
+                                            padding: '3px 8px',
+                                            fontSize: '11px',
+                                            fontWeight: 600,
+                                            background: theme.colors.green[600],
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: theme.borderRadius.sm,
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap' as const,
+                                        }}
+                                    >
+                                        Tendencies
+                                    </button>
+                                )}
+                            </div>
+                        </PlayerDisplay>
+                    )}
                 </PlayersRow>
 
                 {needsSetup && !currentAtBat && (
                     <SetupPrompt>
                         <SetupText>
-                            {!currentPitcher && !currentBatter
-                                ? 'Select your pitcher and the opponent batter to start tracking pitches.'
-                                : !currentPitcher
-                                  ? 'Select your pitcher to continue.'
-                                  : 'Select the opponent batter to continue.'}
+                            {!currentPitcher && gameMode === 'opp_pitcher'
+                                ? 'Select the opposing pitcher and your batter to start tracking.'
+                                : !currentPitcher && !currentBatter
+                                  ? 'Select your pitcher and the opponent batter to start tracking pitches.'
+                                  : !currentPitcher
+                                    ? 'Select your pitcher to continue.'
+                                    : 'Select the opponent batter to continue.'}
                         </SetupText>
-                        {!currentBatter && (
+                        {!currentBatter && gameMode !== 'opp_pitcher' && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Opponent Lineup</SetupButton>
+                        )}
+                        {gameMode === 'opp_pitcher' && myTeamLineup.length === 0 && (
+                            <SetupButton onClick={() => navigate(`/game/${gameId}/my-lineup`)}>Setup My Team Lineup</SetupButton>
                         )}
                     </SetupPrompt>
                 )}

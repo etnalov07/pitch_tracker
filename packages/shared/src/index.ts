@@ -276,6 +276,30 @@ export interface OpponentLineupWithSub extends OpponentLineupPlayer {
 }
 
 // ============================================================================
+// My Team Lineup Types
+// ============================================================================
+
+export interface MyTeamLineupPlayer {
+    id: string;
+    game_id: string;
+    player_id: string;
+    batting_order: number;
+    position?: string;
+    is_starter: boolean;
+    replaced_by_id?: string | null;
+    inning_entered?: number | null;
+    created_at: string;
+    player?: Player;
+}
+
+export interface CreateMyTeamLineupPlayerParams {
+    player_id: string;
+    batting_order: number;
+    position?: string;
+    is_starter: boolean;
+}
+
+// ============================================================================
 // Game Pitchers Types
 // ============================================================================
 

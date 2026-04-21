@@ -60,6 +60,8 @@ import {
     deleteOpposingPitcher,
     setCurrentOpposingPitcher,
     setCurrentGameRole,
+    fetchMyTeamLineup,
+    setCurrentMyBatter,
 } from '../../../src/state';
 import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
 import {
@@ -102,6 +104,8 @@ export default function LiveGameScreen() {
         currentInning,
         gamePitchers,
         opponentLineup,
+        myTeamLineup,
+        currentMyBatter,
         pitches,
         baseRunners,
         opposingPitchers,
@@ -178,6 +182,7 @@ export default function LiveGameScreen() {
 
     // Opposing pitcher modal
     const [showOpposingPitcherModal, setShowOpposingPitcherModal] = useState(false);
+    const [myBatterModalVisible, setMyBatterModalVisible] = useState(false);
     const [showCountBreakdownModal, setShowCountBreakdownModal] = useState(false);
     const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
 
@@ -216,6 +221,7 @@ export default function LiveGameScreen() {
             dispatch(fetchCurrentInning(id));
             dispatch(fetchGamePitchers(id));
             dispatch(fetchOpponentLineup(id));
+            dispatch(fetchMyTeamLineup(id));
             dispatch(fetchBaseRunners(id));
             dispatch(fetchOpposingPitchers(id));
             gamesApi
@@ -268,13 +274,14 @@ export default function LiveGameScreen() {
         }
     }, [currentPitcher?.player_id]);
 
-    // Auto-show TeamAtBat modal when user's team is batting (visitor games)
+    // Auto-show TeamAtBat modal when user's team is batting (visitor games),
+    // except when charting_mode is 'both' — in that mode we chart at-bats directly.
     const isUserBatting = game && game.status === 'in_progress' && !game.is_home_game && game.inning_half === 'top';
     useEffect(() => {
-        if (isUserBatting && !showInningChange) {
+        if (isUserBatting && !showInningChange && game?.charting_mode !== 'both') {
             setShowTeamAtBat(true);
         }
-    }, [isUserBatting, game?.current_inning, game?.inning_half, showInningChange]);
+    }, [isUserBatting, game?.current_inning, game?.inning_half, game?.charting_mode, showInningChange]);
 
     // Calculate count from pitches
     const balls = pitches.filter((p) => p.pitch_result === 'ball').length;
@@ -877,11 +884,20 @@ export default function LiveGameScreen() {
     );
 
     const canLogPitch = selectedPitchType && selectedResult && pitchLocation && !isLogging;
-    const canStartAtBat = currentPitcher && currentBatter && !currentAtBat;
+    const canStartAtBat =
+        gameMode === 'opp_pitcher'
+            ? currentOpposingPitcher && currentMyBatter && !currentAtBat
+            : currentPitcher && currentBatter && !currentAtBat;
     const activePitcherDisplay = currentPitcher?.player || null;
-    const activeBatterDisplay = currentBatter
-        ? { name: currentBatter.player_name, batting_order: currentBatter.batting_order }
-        : null;
+    const activeBatterDisplay =
+        gameMode === 'opp_pitcher' && currentMyBatter?.player
+            ? {
+                  name: `${currentMyBatter.player.first_name} ${currentMyBatter.player.last_name}`,
+                  batting_order: currentMyBatter.batting_order,
+              }
+            : currentBatter
+              ? { name: currentBatter.player_name, batting_order: currentBatter.batting_order }
+              : null;
 
     useGameWebSocket(id ?? null, {
         pitch_logged: () => setStatsRefreshTrigger((prev) => prev + 1),
@@ -1055,7 +1071,13 @@ export default function LiveGameScreen() {
             runners={baseRunners}
             pitchCount={totalPitchCount}
             onPitcherPress={game.status === 'in_progress' ? () => setPitcherModalVisible(true) : undefined}
-            onBatterPress={game.status === 'in_progress' ? () => setBatterModalVisible(true) : undefined}
+            onBatterPress={
+                game.status === 'in_progress'
+                    ? gameMode === 'opp_pitcher'
+                        ? () => setMyBatterModalVisible(true)
+                        : () => setBatterModalVisible(true)
+                    : undefined
+            }
             onRunnerPress={game.status === 'in_progress' ? handleRunnerPress : undefined}
             onSwapPress={!game.total_pitches ? handleToggleHomeAway : undefined}
         />
@@ -1075,6 +1097,31 @@ export default function LiveGameScreen() {
                     Start At-Bat
                 </Button>
             );
+        }
+        if (gameMode === 'opp_pitcher') {
+            if (!currentOpposingPitcher || !currentMyBatter) {
+                return (
+                    <View style={styles.selectPrompt}>
+                        <Text style={styles.selectPromptText}>
+                            {!currentOpposingPitcher && !currentMyBatter
+                                ? 'Select opposing pitcher and your batter to begin'
+                                : !currentOpposingPitcher
+                                  ? 'Select the opposing pitcher to begin'
+                                  : 'Select your batter to begin'}
+                        </Text>
+                        {myTeamLineup.length === 0 && (
+                            <Button
+                                mode="outlined"
+                                onPress={() => router.push(`/game/${id}/my-lineup` as any)}
+                                style={{ marginTop: 8 }}
+                            >
+                                Setup My Lineup
+                            </Button>
+                        )}
+                    </View>
+                );
+            }
+            return null;
         }
         if (!currentPitcher || !currentBatter) {
             return (
@@ -1120,6 +1167,44 @@ export default function LiveGameScreen() {
                 lineupSize={lineupSize}
                 onBatterAdded={() => dispatch(fetchOpponentLineup(id!))}
             />
+            {myBatterModalVisible && (
+                <View style={styles.myBatterOverlay}>
+                    <View style={styles.myBatterModal}>
+                        <Text variant="titleMedium" style={{ marginBottom: 12 }}>
+                            Select Your Batter
+                        </Text>
+                        <ScrollView>
+                            {myTeamLineup
+                                .filter((p) => p.is_starter)
+                                .sort((a, b) => a.batting_order - b.batting_order)
+                                .map((p) => (
+                                    <TouchableOpacity
+                                        key={p.id}
+                                        onPress={() => {
+                                            dispatch(setCurrentMyBatter(p));
+                                            setMyBatterModalVisible(false);
+                                        }}
+                                        style={[styles.myBatterItem, currentMyBatter?.id === p.id && styles.myBatterItemSelected]}
+                                    >
+                                        <Text style={styles.myBatterOrder}>#{p.batting_order}</Text>
+                                        <Text style={styles.myBatterName}>
+                                            {p.player
+                                                ? `${p.player.first_name} ${p.player.last_name}`
+                                                : `Batter ${p.batting_order}`}
+                                        </Text>
+                                        <Text style={styles.myBatterPos}>{p.position || p.player?.primary_position || ''}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            {myTeamLineup.length === 0 && (
+                                <Text style={{ color: '#6b7280', marginVertical: 16 }}>No lineup set up yet.</Text>
+                            )}
+                        </ScrollView>
+                        <Button onPress={() => setMyBatterModalVisible(false)} style={{ marginTop: 8 }}>
+                            Close
+                        </Button>
+                    </View>
+                </View>
+            )}
             <InningChangeModal
                 visible={showInningChange}
                 inningChangeInfo={inningChangeInfo}
@@ -1993,5 +2078,51 @@ const styles = StyleSheet.create({
     },
     roleButton: {
         minWidth: 120,
+    },
+    myBatterOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 999,
+    },
+    myBatterModal: {
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 20,
+        width: '85%',
+        maxHeight: '70%',
+    },
+    myBatterItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+        borderRadius: 8,
+        marginBottom: 4,
+        backgroundColor: '#f9fafb',
+    },
+    myBatterItemSelected: {
+        backgroundColor: '#dbeafe',
+    },
+    myBatterOrder: {
+        width: 32,
+        fontWeight: '700',
+        color: '#374151',
+    },
+    myBatterName: {
+        flex: 1,
+        fontSize: 15,
+        color: '#111827',
+    },
+    myBatterPos: {
+        fontSize: 12,
+        color: '#6b7280',
+        width: 36,
+        textAlign: 'right',
     },
 });

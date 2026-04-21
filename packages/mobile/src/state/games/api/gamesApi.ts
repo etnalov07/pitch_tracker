@@ -10,6 +10,8 @@ import {
     Play,
     Inning,
     GamePitcherWithPlayer,
+    MyTeamLineupPlayer,
+    CreateMyTeamLineupPlayerParams,
     OpponentLineupPlayer,
     BaseRunners,
     BaserunnerEvent,
@@ -241,5 +243,22 @@ export const gamesApi = {
         const qs = params.toString() ? `?${params}` : '';
         const response = await api.get<{ breakdown: CountBucketBreakdown }>(`/analytics/game/${gameId}/count-breakdown${qs}`);
         return response.data.breakdown;
+    },
+
+    // My team lineup
+    getMyTeamLineup: async (gameId: string): Promise<MyTeamLineupPlayer[]> => {
+        const response = await api.get<{ lineup: MyTeamLineupPlayer[] }>(`/my-team-lineup/game/${gameId}`);
+        return response.data.lineup;
+    },
+
+    createMyTeamLineupBulk: async (gameId: string, players: CreateMyTeamLineupPlayerParams[]): Promise<MyTeamLineupPlayer[]> => {
+        const response = await api.post<{ lineup: MyTeamLineupPlayer[] }>(`/my-team-lineup/game/${gameId}/bulk`, { players });
+        return response.data.lineup;
+    },
+
+    // All team players (full roster)
+    getTeamPlayers: async (teamId: string): Promise<Player[]> => {
+        const response = await api.get<{ players: Player[] }>(`/players/team/${teamId}`);
+        return response.data.players;
     },
 };

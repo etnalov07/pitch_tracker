@@ -117,8 +117,11 @@ const OpponentLineup: React.FC = () => {
 
             await gamesApi.createOpponentLineupBulk(gameId!, players);
 
-            // Navigate to the game (or pitcher selection)
-            navigate(`/game/${gameId}`);
+            const nextPage =
+                game?.charting_mode === 'opp_pitcher' || game?.charting_mode === 'both'
+                    ? `/game/${gameId}/my-lineup`
+                    : `/game/${gameId}`;
+            navigate(nextPage);
         } catch (err) {
             setError('Failed to save lineup');
         } finally {
@@ -127,8 +130,11 @@ const OpponentLineup: React.FC = () => {
     };
 
     const handleSkip = () => {
-        // Allow skipping - can add lineup during the game
-        navigate(`/game/${gameId}`);
+        const nextPage =
+            game?.charting_mode === 'opp_pitcher' || game?.charting_mode === 'both'
+                ? `/game/${gameId}/my-lineup`
+                : `/game/${gameId}`;
+        navigate(nextPage);
     };
 
     if (loading) {

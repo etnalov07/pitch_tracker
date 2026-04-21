@@ -13,6 +13,7 @@ import InviteAccept from './pages/InviteAccept/InviteAccept';
 import JoinTeam from './pages/JoinTeam/JoinTeam';
 import LiveGame from './pages/LiveGame/LiveGame';
 import Login from './pages/Login/Login';
+import MyTeamLineup from './pages/MyTeamLineup/MyTeamLineup';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
 import PitcherProfile from './pages/PitcherProfile';
 import ScoutingReport from './pages/ScoutingReport';
@@ -63,6 +64,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <OpponentLineup />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/game/:gameId/my-lineup"
+                    element={
+                        <ProtectedRoute>
+                            <MyTeamLineup />
                         </ProtectedRoute>
                     }
                 />

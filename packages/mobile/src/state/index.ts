@@ -48,6 +48,9 @@ export {
     fetchOpposingPitchers,
     createOpposingPitcher,
     deleteOpposingPitcher,
+    fetchMyTeamLineup,
+    createMyTeamLineup,
+    setCurrentMyBatter,
 } from './games/gamesSlice';
 
 export {

@@ -1,10 +1,21 @@
-import { deriveGameMode, GameMode, GameRole, OpposingPitcher, PitchCall, PitchCallZone } from '@pitch-tracker/shared';
+import {
+    deriveGameMode,
+    GameMode,
+    GameRole,
+    MyTeamLineupPlayer,
+    OpposingPitcher,
+    PitchCall,
+    PitchCallZone,
+    Player,
+} from '@pitch-tracker/shared';
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
 import useHeatZones from '../../hooks/useHeatZones';
 import { gameRoleService } from '../../services/gameRoleService';
+import { myTeamLineupService } from '../../services/myTeamLineupService';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
+import { teamService } from '../../services/teamService';
 import { useAppDispatch, useAppSelector, fetchGameById } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import {
@@ -110,6 +121,11 @@ export function useLiveGameState() {
     const [currentOpposingPitcher, setCurrentOpposingPitcher] = useState<OpposingPitcher | null>(null);
     const [showCountBreakdown, setShowCountBreakdown] = useState(false);
 
+    // My team lineup (for opp_pitcher / both charting modes)
+    const [myTeamLineup, setMyTeamLineup] = useState<MyTeamLineupPlayer[]>([]);
+    const [currentMyBatter, setCurrentMyBatter] = useState<MyTeamLineupPlayer | null>(null);
+    const [teamRosterPlayers, setTeamRosterPlayers] = useState<Player[]>([]);
+
     // Game role (charter or viewer)
     const [gameRole, setGameRole] = useState<GameRole | null>(null);
 
@@ -118,13 +134,14 @@ export function useLiveGameState() {
         return deriveGameMode(game.is_home_game ?? true, game.inning_half);
     }, [game]);
 
-    // Auto-show TeamAtBat modal when user's team is batting (visitor games)
+    // Auto-show TeamAtBat modal when user's team is batting (visitor games),
+    // but not when charting_mode is 'both' — in that mode we chart at-bats directly.
     const isUserBatting = game && game.status === 'in_progress' && !game.is_home_game && game.inning_half === 'top';
     useEffect(() => {
-        if (isUserBatting && !showInningChange) {
+        if (isUserBatting && !showInningChange && game?.charting_mode !== 'both') {
             setShowTeamAtBat(true);
         }
-    }, [isUserBatting, game?.current_inning, game?.inning_half, showInningChange]);
+    }, [isUserBatting, game?.current_inning, game?.inning_half, game?.charting_mode, showInningChange]);
 
     useEffect(() => {
         if (gameId) {
@@ -157,8 +174,28 @@ export function useLiveGameState() {
                 .getRole(gameId)
                 .then(setGameRole)
                 .catch(() => {});
+            myTeamLineupService
+                .getByGame(gameId)
+                .then((lineup) => {
+                    setMyTeamLineup(lineup || []);
+                    if (lineup && lineup.length > 0) {
+                        const first = lineup.find((p) => p.batting_order === 1 && p.is_starter);
+                        if (first) setCurrentMyBatter((prev) => (prev ? prev : first));
+                    }
+                })
+                .catch(() => {});
         }
     }, [dispatch, gameId]);
+
+    // Load team roster when game team is known
+    useEffect(() => {
+        if (game?.home_team_id) {
+            teamService
+                .getTeamRoster(game.home_team_id)
+                .then(setTeamRosterPlayers)
+                .catch(() => {});
+        }
+    }, [game?.home_team_id]);
 
     // Load pitcher's pitch types when pitcher changes
     useEffect(() => {
@@ -283,6 +320,12 @@ export function useLiveGameState() {
         gameMode,
         gameRole,
         setGameRole,
+        // My team lineup
+        myTeamLineup,
+        setMyTeamLineup,
+        currentMyBatter,
+        setCurrentMyBatter,
+        teamRosterPlayers,
     };
 }
 
