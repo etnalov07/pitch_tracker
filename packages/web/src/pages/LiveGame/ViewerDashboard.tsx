@@ -9,9 +9,10 @@ import { theme } from '../../styles/theme';
 interface Props {
     game: Game;
     refreshTrigger: number;
+    onExit?: () => void;
 }
 
-const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger }) => {
+const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
     const [activeTab, setActiveTab] = useState<'stats' | 'counts'>('stats');
     const [activePitcher, setActivePitcher] = useState<GamePitcherWithPlayer | null>(null);
 
@@ -40,6 +41,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger }) => {
                 </ScoreRow>
                 <InningBadge>{inningLabel}</InningBadge>
                 <ViewerBadge>VIEWER</ViewerBadge>
+                {onExit && <ExitButton onClick={onExit}>← Dashboard</ExitButton>}
             </Header>
 
             <TabRow>
@@ -118,6 +120,24 @@ const ViewerBadge = styled.span`
     border-radius: ${theme.borderRadius.sm};
     padding: 2px ${theme.spacing.xs};
     letter-spacing: 1px;
+`;
+
+const ExitButton = styled.button`
+    font-size: ${theme.fontSize.xs};
+    font-weight: ${theme.fontWeight.medium};
+    color: ${theme.colors.gray[600]};
+    background: none;
+    border: 1px solid ${theme.colors.gray[300]};
+    border-radius: ${theme.borderRadius.md};
+    padding: ${theme.spacing.xs} ${theme.spacing.sm};
+    cursor: pointer;
+    white-space: nowrap;
+    margin-left: auto;
+
+    &:hover {
+        background: ${theme.colors.gray[100]};
+        color: ${theme.colors.gray[800]};
+    }
 `;
 
 const TabRow = styled.div`
