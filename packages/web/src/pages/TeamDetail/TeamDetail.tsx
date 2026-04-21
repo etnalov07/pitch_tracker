@@ -3,6 +3,7 @@ import { InviteModal } from '../../components/InviteModal';
 import { JoinRequestsPanel } from '../../components/JoinRequestsPanel';
 import { TeamLogo } from '../../components/team';
 import PlayerForm from './PlayerForm';
+import RosterImport from './RosterImport';
 import RosterTable from './RosterTable';
 import {
     Container,
@@ -14,6 +15,7 @@ import {
     Title,
     Subtitle,
     AddButton,
+    ImportButton,
     SettingsButton,
     Content,
     LoadingText,
@@ -24,9 +26,11 @@ import { useTeamDetail } from './useTeamDetail';
 
 const TeamDetail: React.FC = () => {
     const state = useTeamDetail();
-    const { navigate, team_id, team, players, loading, showAddPlayer, setShowAddPlayer, handleEdit, handleDelete } = state;
+    const { navigate, team_id, team, players, loading, showAddPlayer, setShowAddPlayer, handleEdit, handleDelete, loadPlayers } =
+        state;
 
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [showImportModal, setShowImportModal] = useState(false);
 
     if (loading) {
         return (
@@ -81,6 +85,7 @@ const TeamDetail: React.FC = () => {
                     <SettingsButton onClick={() => navigate(`/teams/${team_id}/scouting`)}>Scouting</SettingsButton>
                     <SettingsButton onClick={() => navigate(`/teams/${team_id}/settings`)}>Settings</SettingsButton>
                     <AddButton onClick={() => setShowInviteModal(true)}>Invite</AddButton>
+                    <ImportButton onClick={() => setShowImportModal(true)}>Import Roster</ImportButton>
                     {!showAddPlayer && <AddButton onClick={() => setShowAddPlayer(true)}>+ Add Player</AddButton>}
                 </HeaderRight>
             </Header>
@@ -101,6 +106,16 @@ const TeamDetail: React.FC = () => {
             </Content>
 
             {showInviteModal && <InviteModal teamId={team_id!} players={players} onClose={() => setShowInviteModal(false)} />}
+            {showImportModal && (
+                <RosterImport
+                    teamId={team_id!}
+                    onClose={() => setShowImportModal(false)}
+                    onImported={() => {
+                        loadPlayers();
+                        setShowImportModal(false);
+                    }}
+                />
+            )}
         </Container>
     );
 };

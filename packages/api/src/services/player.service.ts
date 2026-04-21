@@ -1,5 +1,5 @@
-import { query } from '../config/database';
-import { Player } from '../types';
+import { query, transaction } from '../config/database';
+import { Player, RosterImportRow, RosterImportResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class PlayerService {
@@ -131,6 +131,59 @@ export class PlayerService {
 
         const pitch_types = await this.getPitcherPitchTypes(player_id);
         return { ...player, pitch_types };
+    }
+
+    async importRoster(team_id: string, rows: RosterImportRow[], mode: 'merge' | 'replace'): Promise<RosterImportResult> {
+        const result: RosterImportResult = { imported: 0, skipped: 0, errors: [], players: [] };
+
+        await transaction(async (client) => {
+            if (mode === 'replace') {
+                await client.query('UPDATE players SET is_active = false WHERE team_id = $1', [team_id]);
+            }
+
+            for (const row of rows) {
+                try {
+                    const player_id = uuidv4();
+                    const { rows: inserted } = await client.query(
+                        `INSERT INTO players (id, team_id, first_name, last_name, jersey_number, primary_position, bats, throws)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                         RETURNING *`,
+                        [
+                            player_id,
+                            team_id,
+                            row.first_name.trim(),
+                            row.last_name.trim(),
+                            row.jersey_number ?? null,
+                            row.primary_position,
+                            row.bats,
+                            row.throws,
+                        ]
+                    );
+
+                    const player: Player = inserted[0];
+
+                    if (row.primary_position === 'P' && row.pitch_types && row.pitch_types.length > 0) {
+                        for (const pt of row.pitch_types) {
+                            await client.query('INSERT INTO pitcher_pitch_types (id, player_id, pitch_type) VALUES ($1, $2, $3)', [
+                                uuidv4(),
+                                player_id,
+                                pt,
+                            ]);
+                        }
+                    }
+
+                    result.players.push(player);
+                    result.imported++;
+                } catch (err: unknown) {
+                    result.skipped++;
+                    result.errors.push(
+                        `Row ${row.first_name} ${row.last_name}: ${err instanceof Error ? err.message : 'unknown error'}`
+                    );
+                }
+            }
+        });
+
+        return result;
     }
 
     async getPitchersWithPitchTypes(team_id: string): Promise<any[]> {

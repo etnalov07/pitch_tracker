@@ -24,5 +24,6 @@ router.put(
     playerController.setPitcherPitchTypes.bind(playerController)
 );
 router.get('/:id/game-stats/:game_id', playerController.getPitcherGameStats.bind(playerController));
+router.post('/team/:team_id/import', requirePlayerTeamRole('owner', 'coach'), playerController.importRoster.bind(playerController));
 
 export default router;

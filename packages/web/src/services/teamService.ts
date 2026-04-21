@@ -1,4 +1,4 @@
-import { Team, Player } from '../types';
+import { Team, Player, RosterImportRow, RosterImportResult } from '../types';
 import api from './api';
 
 export const teamService = {
@@ -52,5 +52,11 @@ export const teamService = {
     // Delete player
     deletePlayer: async (player_id: string): Promise<void> => {
         await api.delete(`/players/${player_id}`);
+    },
+
+    // Import roster from parsed rows
+    importRoster: async (team_id: string, players: RosterImportRow[], mode: 'merge' | 'replace'): Promise<RosterImportResult> => {
+        const response = await api.post<{ result: RosterImportResult }>(`/players/team/${team_id}/import`, { players, mode });
+        return response.data.result;
     },
 };

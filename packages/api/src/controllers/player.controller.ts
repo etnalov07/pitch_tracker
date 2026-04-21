@@ -124,6 +124,24 @@ export class PlayerController {
             next(error);
         }
     }
+
+    async importRoster(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { team_id } = req.params;
+            const { players, mode } = req.body;
+
+            if (!Array.isArray(players) || players.length === 0) {
+                res.status(400).json({ error: 'players array is required' });
+                return;
+            }
+
+            const importMode: 'merge' | 'replace' = mode === 'replace' ? 'replace' : 'merge';
+            const result = await playerService.importRoster(team_id as string, players, importMode);
+            res.status(200).json({ result });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new PlayerController();

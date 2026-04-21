@@ -1060,6 +1060,28 @@ export interface PitchChart {
 }
 
 // ============================================================================
+// Roster Import Types
+// ============================================================================
+
+export interface RosterImportRow {
+    first_name: string;
+    last_name: string;
+    jersey_number?: number;
+    primary_position: string;
+    bats: string;
+    throws: string;
+    pitch_types?: string[];
+    _errors?: string[];
+}
+
+export interface RosterImportResult {
+    imported: number;
+    skipped: number;
+    errors: string[];
+    players: Player[];
+}
+
+// ============================================================================
 // API Response Wrappers
 // ============================================================================
 

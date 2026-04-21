@@ -147,6 +147,10 @@ export function useTeamDetail() {
         }
     };
 
+    const loadPlayers = () => {
+        if (team_id) dispatch(fetchTeamRoster(team_id));
+    };
+
     return {
         navigate,
         team_id,
@@ -166,6 +170,7 @@ export function useTeamDetail() {
         handleSubmit,
         handleEdit,
         handleDelete,
+        loadPlayers,
     };
 }
 
