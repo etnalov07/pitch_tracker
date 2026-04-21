@@ -122,8 +122,8 @@ const GameSetup: React.FC = () => {
                 throw new Error('Failed to create game');
             }
 
-            // Navigate to opponent lineup setup
-            navigate(`/game/${newGame.id}/lineup`);
+            // Navigate to my team lineup setup first
+            navigate(`/game/${newGame.id}/my-lineup`);
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Failed to create game');
         } finally {

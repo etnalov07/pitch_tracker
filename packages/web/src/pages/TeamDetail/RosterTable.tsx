@@ -35,13 +35,13 @@ const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlaye
     return (
         <RosterSection>
             <SectionHeader>
-                <SectionTitle>Pitchers ({players.length})</SectionTitle>
+                <SectionTitle>Roster ({players.length})</SectionTitle>
             </SectionHeader>
 
             {players.length === 0 ? (
                 <EmptyState>
-                    <EmptyText>No pitchers on the roster yet.</EmptyText>
-                    {!showAddPlayer && <AddButtonSmall onClick={onAddPlayer}>Add Your First Pitcher</AddButtonSmall>}
+                    <EmptyText>No players on the roster yet.</EmptyText>
+                    {!showAddPlayer && <AddButtonSmall onClick={onAddPlayer}>Add Your First Player</AddButtonSmall>}
                 </EmptyState>
             ) : (
                 <RosterTableStyled>
@@ -49,7 +49,8 @@ const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlaye
                         <tr>
                             <Th>#</Th>
                             <Th>Name</Th>
-                            <Th>Type</Th>
+                            <Th>Pos</Th>
+                            <Th>Bats</Th>
                             <Th>Actions</Th>
                         </tr>
                     </thead>
@@ -62,16 +63,22 @@ const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlaye
                                 <Td>
                                     <PlayerName>
                                         {player.first_name} {player.last_name}
+                                        {player.primary_position === 'P' && (
+                                            <Handedness style={{ marginLeft: 6 }}>
+                                                {player.throws === 'L' ? 'LHP' : 'RHP'}
+                                            </Handedness>
+                                        )}
                                     </PlayerName>
                                 </Td>
-                                <Td>
-                                    <Handedness>{player.throws === 'L' ? 'LHP' : 'RHP'}</Handedness>
-                                </Td>
+                                <Td>{player.primary_position || '—'}</Td>
+                                <Td>{player.bats || '—'}</Td>
                                 <Td>
                                     <ActionButtons>
-                                        <ProfileButton onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}`)}>
-                                            Profile
-                                        </ProfileButton>
+                                        {player.primary_position === 'P' && (
+                                            <ProfileButton onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}`)}>
+                                                Profile
+                                            </ProfileButton>
+                                        )}
                                         <EditButton onClick={() => onEdit(player)}>Edit</EditButton>
                                         <RemoveButton
                                             onClick={() => onDelete(player.id, `${player.first_name} ${player.last_name}`)}

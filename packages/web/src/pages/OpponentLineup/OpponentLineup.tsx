@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { Game } from '../../types';
 import {
@@ -48,8 +49,8 @@ const OpponentLineup: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [startingPitcherName, setStartingPitcherName] = useState('');
 
-    // Initialize 9 empty lineup slots
     const [lineup, setLineup] = useState<LineupEntry[]>(
         Array.from({ length: 9 }, (_, i) => ({
             player_name: '',
@@ -63,9 +64,9 @@ const OpponentLineup: React.FC = () => {
         const fetchGame = async () => {
             if (!gameId) return;
             try {
-                const game = await gamesApi.getGameById(gameId);
-                setGame(game);
-                const size = game.lineup_size ?? 9;
+                const g = await gamesApi.getGameById(gameId);
+                setGame(g);
+                const size = g.lineup_size ?? 9;
                 setLineup(
                     Array.from({ length: size }, (_, i) => ({
                         player_name: '',
@@ -74,7 +75,7 @@ const OpponentLineup: React.FC = () => {
                         bats: 'R' as const,
                     }))
                 );
-            } catch (err) {
+            } catch {
                 setError('Failed to load game');
             } finally {
                 setLoading(false);
@@ -92,10 +93,11 @@ const OpponentLineup: React.FC = () => {
         setError('');
     };
 
+    const proceed = () => navigate(`/game/${gameId}`);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Filter out empty entries
         const filledEntries = lineup.filter((entry) => entry.player_name.trim());
 
         if (filledEntries.length === 0) {
@@ -106,7 +108,6 @@ const OpponentLineup: React.FC = () => {
         try {
             setSubmitting(true);
 
-            // Create lineup entries
             const players = filledEntries.map((entry) => ({
                 player_name: entry.player_name.trim(),
                 batting_order: entry.batting_order,
@@ -117,24 +118,21 @@ const OpponentLineup: React.FC = () => {
 
             await gamesApi.createOpponentLineupBulk(gameId!, players);
 
-            const nextPage =
-                game?.charting_mode === 'opp_pitcher' || game?.charting_mode === 'both'
-                    ? `/game/${gameId}/my-lineup`
-                    : `/game/${gameId}`;
-            navigate(nextPage);
-        } catch (err) {
+            if (startingPitcherName.trim()) {
+                await opposingPitcherService.create({
+                    game_id: gameId!,
+                    pitcher_name: startingPitcherName.trim(),
+                    team_name: game?.opponent_name ?? '',
+                    throws: 'R',
+                });
+            }
+
+            proceed();
+        } catch {
             setError('Failed to save lineup');
         } finally {
             setSubmitting(false);
         }
-    };
-
-    const handleSkip = () => {
-        const nextPage =
-            game?.charting_mode === 'opp_pitcher' || game?.charting_mode === 'both'
-                ? `/game/${gameId}/my-lineup`
-                : `/game/${gameId}`;
-        navigate(nextPage);
     };
 
     if (loading) {
@@ -187,7 +185,17 @@ const OpponentLineup: React.FC = () => {
                     {error && <ErrorMessage>{error}</ErrorMessage>}
 
                     <form onSubmit={handleSubmit}>
-                        <SectionTitle>Enter Opponent&apos;s Batting Order</SectionTitle>
+                        <SectionTitle>Starting Pitcher</SectionTitle>
+                        <HelpText>Enter the opponent's starting pitcher name.</HelpText>
+                        <Input
+                            type="text"
+                            value={startingPitcherName}
+                            onChange={(e) => setStartingPitcherName(e.target.value)}
+                            placeholder="e.g. Smith"
+                            style={{ marginBottom: '24px' }}
+                        />
+
+                        <SectionTitle>Batting Order</SectionTitle>
                         <HelpText>
                             Enter the names of opposing batters in their batting order. You can add or change players during the
                             game.
@@ -249,7 +257,7 @@ const OpponentLineup: React.FC = () => {
                                 <CancelButton type="button" onClick={() => navigate('/')}>
                                     Cancel
                                 </CancelButton>
-                                <SkipButton type="button" onClick={handleSkip} style={{ marginLeft: '16px' }}>
+                                <SkipButton type="button" onClick={proceed} style={{ marginLeft: '16px' }}>
                                     Skip for now
                                 </SkipButton>
                             </div>

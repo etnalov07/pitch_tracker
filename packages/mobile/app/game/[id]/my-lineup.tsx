@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
-import { Text, Button, useTheme, IconButton, ActivityIndicator, Menu } from 'react-native-paper';
+import { Text, Button, useTheme, IconButton, ActivityIndicator, Menu, Divider } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import { Game, Player } from '@pitch-tracker/shared';
@@ -27,6 +27,8 @@ export default function MyTeamLineupScreen() {
     const [submitting, setSubmitting] = useState(false);
     const [positionMenuIndex, setPositionMenuIndex] = useState<number | null>(null);
     const [playerMenuIndex, setPlayerMenuIndex] = useState<number | null>(null);
+    const [pitcherMenuVisible, setPitcherMenuVisible] = useState(false);
+    const [startingPitcherId, setStartingPitcherId] = useState('');
 
     const [lineup, setLineup] = useState<LineupEntry[]>(
         Array.from({ length: 9 }, (_, i) => ({
@@ -69,6 +71,8 @@ export default function MyTeamLineupScreen() {
         });
     };
 
+    const proceed = () => router.replace(`/game/${id}/lineup` as any);
+
     const handleSubmit = async () => {
         if (!id) return;
 
@@ -91,8 +95,11 @@ export default function MyTeamLineupScreen() {
                     })),
                 })
             ).unwrap();
+            if (startingPitcherId) {
+                await gamesApi.addGamePitcher(id, startingPitcherId);
+            }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            router.replace(`/game/${id}` as any);
+            proceed();
         } catch {
             Alert.alert('Error', 'Failed to save lineup');
         } finally {
@@ -105,6 +112,16 @@ export default function MyTeamLineupScreen() {
         if (!p) return '-- Select Player --';
         return `${p.jersey_number ? `#${p.jersey_number} ` : ''}${p.first_name} ${p.last_name} (${p.bats})`;
     };
+
+    const pitcherLabel = () => {
+        if (!startingPitcherId) return 'Select Starting Pitcher';
+        const p = roster.find((r) => r.id === startingPitcherId);
+        if (!p) return 'Select Starting Pitcher';
+        return `${p.jersey_number ? `#${p.jersey_number} ` : ''}${p.first_name} ${p.last_name}`;
+    };
+
+    const pitchers = roster.filter((p) => p.primary_position === 'P');
+    const nonPitchers = roster.filter((p) => p.primary_position !== 'P');
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -125,7 +142,61 @@ export default function MyTeamLineupScreen() {
                 <ActivityIndicator style={{ marginVertical: 40 }} />
             ) : (
                 <ScrollView contentContainerStyle={styles.content}>
-                    <Text variant="bodyMedium" style={styles.helpText}>
+                    <Text variant="titleMedium" style={styles.sectionTitle}>
+                        Starting Pitcher
+                    </Text>
+                    <Text variant="bodySmall" style={styles.helpText}>
+                        Select your starting pitcher for this game.
+                    </Text>
+                    <Menu
+                        visible={pitcherMenuVisible}
+                        onDismiss={() => setPitcherMenuVisible(false)}
+                        anchor={
+                            <Button
+                                mode="outlined"
+                                onPress={() => setPitcherMenuVisible(true)}
+                                style={styles.pitcherButton}
+                                contentStyle={{ justifyContent: 'flex-start' }}
+                                labelStyle={styles.playerLabel}
+                            >
+                                {pitcherLabel()}
+                            </Button>
+                        }
+                    >
+                        <Menu.Item
+                            onPress={() => {
+                                setStartingPitcherId('');
+                                setPitcherMenuVisible(false);
+                            }}
+                            title="-- None --"
+                        />
+                        {pitchers.map((p) => (
+                            <Menu.Item
+                                key={p.id}
+                                onPress={() => {
+                                    setStartingPitcherId(p.id);
+                                    setPitcherMenuVisible(false);
+                                }}
+                                title={`${p.jersey_number ? `#${p.jersey_number} ` : ''}${p.first_name} ${p.last_name} (${p.throws === 'L' ? 'LHP' : 'RHP'})`}
+                            />
+                        ))}
+                        {nonPitchers.length > 0 && pitchers.length > 0 && <Divider />}
+                        {nonPitchers.map((p) => (
+                            <Menu.Item
+                                key={p.id}
+                                onPress={() => {
+                                    setStartingPitcherId(p.id);
+                                    setPitcherMenuVisible(false);
+                                }}
+                                title={`${p.jersey_number ? `#${p.jersey_number} ` : ''}${p.first_name} ${p.last_name}`}
+                            />
+                        ))}
+                    </Menu>
+
+                    <Text variant="titleMedium" style={[styles.sectionTitle, { marginTop: 24 }]}>
+                        Batting Order
+                    </Text>
+                    <Text variant="bodySmall" style={styles.helpText}>
                         Select your team's batting order from your roster.
                     </Text>
 
@@ -167,7 +238,7 @@ export default function MyTeamLineupScreen() {
                                                 handleChange(index, 'player_id', p.id);
                                                 setPlayerMenuIndex(null);
                                             }}
-                                            title={`${p.jersey_number ? `#${p.jersey_number} ` : ''}${p.first_name} ${p.last_name} (${p.bats})`}
+                                            title={`${p.jersey_number ? `#${p.jersey_number} ` : ''}${p.first_name} ${p.last_name}${p.primary_position ? ` (${p.primary_position})` : ''}`}
                                         />
                                     ))}
                                 </Menu>
@@ -212,7 +283,7 @@ export default function MyTeamLineupScreen() {
                     ))}
 
                     <View style={styles.actions}>
-                        <Button mode="outlined" onPress={() => router.replace(`/game/${id}` as any)} style={styles.skipButton}>
+                        <Button mode="outlined" onPress={proceed} style={styles.skipButton}>
                             Skip for Now
                         </Button>
                         <Button
@@ -242,7 +313,9 @@ const styles = StyleSheet.create({
         borderBottomColor: '#e5e7eb',
     },
     content: { padding: 16, paddingBottom: 40 },
-    helpText: { color: '#6b7280', marginBottom: 16 },
+    sectionTitle: { fontWeight: '600', color: '#111827', marginBottom: 4 },
+    helpText: { color: '#6b7280', marginBottom: 12 },
+    pitcherButton: { backgroundColor: '#ffffff', width: '100%', marginBottom: 4 },
     row: { flexDirection: 'row', marginBottom: 12, alignItems: 'flex-start' },
     orderBadge: {
         width: 32,

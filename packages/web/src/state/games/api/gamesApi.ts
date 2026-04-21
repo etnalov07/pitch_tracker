@@ -148,6 +148,15 @@ export const gamesApi = {
         return response.data.pitchers;
     },
 
+    addGamePitcher: async (gameId: string, playerId: string): Promise<GamePitcherWithPlayer> => {
+        const response = await api.post<{ pitcher: GamePitcherWithPlayer }>(`/game-pitchers/game/${gameId}`, {
+            player_id: playerId,
+            pitching_order: 1,
+            inning_entered: 1,
+        });
+        return response.data.pitcher;
+    },
+
     changePitcher: async (gameId: string, playerId: string, inningEntered: number): Promise<GamePitcherWithPlayer> => {
         const response = await api.post<{ pitcher: GamePitcherWithPlayer }>(`/game-pitchers/game/${gameId}/change`, {
             player_id: playerId,

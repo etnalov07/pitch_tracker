@@ -46,6 +46,7 @@ const MyTeamLineup: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [startingPitcherId, setStartingPitcherId] = useState('');
 
     const [lineup, setLineup] = useState<LineupEntry[]>(
         Array.from({ length: 9 }, (_, i) => ({
@@ -89,6 +90,8 @@ const MyTeamLineup: React.FC = () => {
         });
     };
 
+    const proceed = () => navigate(`/game/${gameId}/lineup`);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!gameId) return;
@@ -110,13 +113,19 @@ const MyTeamLineup: React.FC = () => {
                     is_starter: true,
                 }))
             );
-            navigate(`/game/${gameId}`);
+            if (startingPitcherId) {
+                await gamesApi.addGamePitcher(gameId, startingPitcherId);
+            }
+            proceed();
         } catch {
             setError('Failed to save lineup');
         } finally {
             setSubmitting(false);
         }
     };
+
+    const pitchers = roster.filter((p) => p.primary_position === 'P');
+    const nonPitchers = roster.filter((p) => p.primary_position !== 'P');
 
     if (loading)
         return (
@@ -129,7 +138,7 @@ const MyTeamLineup: React.FC = () => {
         <Container>
             <Header>
                 <HeaderLeft>
-                    <BackButton onClick={() => navigate(`/game/${gameId}`)}>Back</BackButton>
+                    <BackButton onClick={() => navigate('/')}>Back</BackButton>
                     <Title>My Team Lineup</Title>
                     {game?.opponent_name && (
                         <GameInfo>
@@ -142,6 +151,44 @@ const MyTeamLineup: React.FC = () => {
 
             <FormCard>
                 {error && <ErrorMessage>{error}</ErrorMessage>}
+
+                <SectionTitle>Starting Pitcher</SectionTitle>
+                <HelpText>Select your starting pitcher for this game.</HelpText>
+                <select
+                    value={startingPitcherId}
+                    onChange={(e) => setStartingPitcherId(e.target.value)}
+                    style={{
+                        width: '100%',
+                        padding: '8px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        marginBottom: '24px',
+                    }}
+                >
+                    <option value="">-- Select Starting Pitcher --</option>
+                    {pitchers.length > 0 && (
+                        <optgroup label="Pitchers">
+                            {pitchers.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.jersey_number ? `#${p.jersey_number} ` : ''}
+                                    {p.first_name} {p.last_name} ({p.throws === 'L' ? 'LHP' : 'RHP'})
+                                </option>
+                            ))}
+                        </optgroup>
+                    )}
+                    {nonPitchers.length > 0 && (
+                        <optgroup label="Other Players">
+                            {nonPitchers.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.jersey_number ? `#${p.jersey_number} ` : ''}
+                                    {p.first_name} {p.last_name}
+                                </option>
+                            ))}
+                        </optgroup>
+                    )}
+                </select>
+
                 <SectionTitle>Batting Order</SectionTitle>
                 <HelpText>Select your team's batting order. Batter handedness comes from player profiles.</HelpText>
 
@@ -178,6 +225,7 @@ const MyTeamLineup: React.FC = () => {
                                                     <option key={p.id} value={p.id}>
                                                         {p.jersey_number ? `#${p.jersey_number} ` : ''}
                                                         {p.first_name} {p.last_name}
+                                                        {p.primary_position ? ` (${p.primary_position})` : ''}
                                                     </option>
                                                 ))}
                                             </select>
@@ -203,14 +251,14 @@ const MyTeamLineup: React.FC = () => {
                     </LineupTable>
 
                     <FormActions>
-                        <CancelButton type="button" onClick={() => navigate(`/game/${gameId}`)}>
+                        <CancelButton type="button" onClick={() => navigate('/')}>
                             Cancel
                         </CancelButton>
-                        <SkipButton type="button" onClick={() => navigate(`/game/${gameId}`)}>
+                        <SkipButton type="button" onClick={proceed}>
                             Skip for Now
                         </SkipButton>
                         <SubmitButton type="submit" disabled={submitting}>
-                            {submitting ? 'Saving...' : 'Save Lineup'}
+                            {submitting ? 'Saving...' : 'Save & Continue'}
                         </SubmitButton>
                     </FormActions>
                 </form>

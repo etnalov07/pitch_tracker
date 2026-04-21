@@ -33,6 +33,8 @@ const PITCH_TYPES: { value: PitchType; label: string }[] = [
     { value: 'knuckleball', label: 'Knuckle' },
 ];
 
+const POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'UTIL'];
+
 interface PlayerFormProps {
     state: TeamDetailState;
 }
@@ -50,9 +52,11 @@ const PlayerForm: React.FC<PlayerFormProps> = ({ state }) => {
         handleSubmit,
     } = state;
 
+    const isPitcher = formData.primary_position === 'P';
+
     return (
         <FormCard>
-            <FormTitle>{editingPlayer ? 'Edit Pitcher' : 'Add Pitcher'}</FormTitle>
+            <FormTitle>{editingPlayer ? 'Edit Player' : 'Add Player'}</FormTitle>
             {error && <ErrorMessage>{error}</ErrorMessage>}
             <Form onSubmit={handleSubmit}>
                 <FormRow>
@@ -98,36 +102,67 @@ const PlayerForm: React.FC<PlayerFormProps> = ({ state }) => {
                     </FormGroup>
 
                     <FormGroup>
-                        <Label htmlFor="throws">Pitcher Type</Label>
-                        <Select id="throws" name="throws" value={formData.throws} onChange={handleChange}>
-                            <option value="R">RHP (Right)</option>
-                            <option value="L">LHP (Left)</option>
+                        <Label htmlFor="primary_position">Position</Label>
+                        <Select
+                            id="primary_position"
+                            name="primary_position"
+                            value={formData.primary_position}
+                            onChange={handleChange}
+                        >
+                            {POSITIONS.map((pos) => (
+                                <option key={pos} value={pos}>
+                                    {pos}
+                                </option>
+                            ))}
                         </Select>
                     </FormGroup>
                 </FormRow>
 
-                <PitchTypesSection>
-                    <PitchTypesLabel>Pitch Types (select all that apply)</PitchTypesLabel>
-                    <PitchTypesGrid>
-                        {PITCH_TYPES.map(({ value, label }) => (
-                            <PitchTypeCheckbox key={value} checked={selectedPitchTypes.includes(value)}>
-                                <input
-                                    type="checkbox"
-                                    checked={selectedPitchTypes.includes(value)}
-                                    onChange={() => handlePitchTypeToggle(value)}
-                                />
-                                {label}
-                            </PitchTypeCheckbox>
-                        ))}
-                    </PitchTypesGrid>
-                </PitchTypesSection>
+                <FormRow>
+                    <FormGroup>
+                        <Label htmlFor="bats">Bats</Label>
+                        <Select id="bats" name="bats" value={formData.bats} onChange={handleChange}>
+                            <option value="R">Right (R)</option>
+                            <option value="L">Left (L)</option>
+                            <option value="S">Switch (S)</option>
+                        </Select>
+                    </FormGroup>
+
+                    {isPitcher && (
+                        <FormGroup>
+                            <Label htmlFor="throws">Throws</Label>
+                            <Select id="throws" name="throws" value={formData.throws} onChange={handleChange}>
+                                <option value="R">Right (RHP)</option>
+                                <option value="L">Left (LHP)</option>
+                            </Select>
+                        </FormGroup>
+                    )}
+                </FormRow>
+
+                {isPitcher && (
+                    <PitchTypesSection>
+                        <PitchTypesLabel>Pitch Types (select all that apply)</PitchTypesLabel>
+                        <PitchTypesGrid>
+                            {PITCH_TYPES.map(({ value, label }) => (
+                                <PitchTypeCheckbox key={value} checked={selectedPitchTypes.includes(value)}>
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedPitchTypes.includes(value)}
+                                        onChange={() => handlePitchTypeToggle(value)}
+                                    />
+                                    {label}
+                                </PitchTypeCheckbox>
+                            ))}
+                        </PitchTypesGrid>
+                    </PitchTypesSection>
+                )}
 
                 <FormActions>
                     <CancelButton type="button" onClick={resetForm}>
                         Cancel
                     </CancelButton>
                     <SubmitButton type="submit" disabled={submitting}>
-                        {submitting ? 'Saving...' : editingPlayer ? 'Update Pitcher' : 'Add Pitcher'}
+                        {submitting ? 'Saving...' : editingPlayer ? 'Update Player' : 'Add Player'}
                     </SubmitButton>
                 </FormActions>
             </Form>

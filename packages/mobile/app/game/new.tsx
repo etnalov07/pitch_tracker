@@ -76,7 +76,7 @@ export default function NewGameScreen() {
                 })
             ).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            router.replace(`/game/${newGame.id}/lineup` as any);
+            router.replace(`/game/${newGame.id}/my-lineup` as any);
         } catch {
             Alert.alert('Error', 'Failed to create game');
         } finally {
