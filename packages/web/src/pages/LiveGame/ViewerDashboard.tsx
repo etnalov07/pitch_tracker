@@ -1,18 +1,31 @@
 import styled from '@emotion/styled';
-import { Game } from '@pitch-tracker/shared';
-import React, { useState } from 'react';
+import { Game, GamePitcherWithPlayer } from '@pitch-tracker/shared';
+import React, { useState, useEffect } from 'react';
 import CountBreakdownPanel from '../../components/live/CountBreakdownPanel';
 import PitcherStats from '../../components/live/PitcherStats';
+import { gamesApi } from '../../state/games/api/gamesApi';
 import { theme } from '../../styles/theme';
 
 interface Props {
     game: Game;
-    pitcherId?: string;
     refreshTrigger: number;
 }
 
-const ViewerDashboard: React.FC<Props> = ({ game, pitcherId, refreshTrigger }) => {
+const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger }) => {
     const [activeTab, setActiveTab] = useState<'stats' | 'counts'>('stats');
+    const [activePitcher, setActivePitcher] = useState<GamePitcherWithPlayer | null>(null);
+
+    useEffect(() => {
+        gamesApi
+            .getGamePitchers(game.id)
+            .then((pitchers) => {
+                const active = pitchers.find((p) => !p.inning_exited) ?? pitchers[pitchers.length - 1] ?? null;
+                setActivePitcher(active);
+            })
+            .catch(() => {});
+    }, [game.id, refreshTrigger]);
+
+    const pitcherId = activePitcher?.player_id;
 
     const score = `${game.home_score} – ${game.away_score}`;
     const inningLabel = `${game.inning_half === 'top' ? '▲' : '▼'} ${game.current_inning}`;

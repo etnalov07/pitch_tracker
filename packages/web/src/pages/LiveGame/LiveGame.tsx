@@ -200,7 +200,7 @@ const LiveGame: React.FC = () => {
     }
 
     if (gameRole === 'viewer') {
-        return <ViewerDashboard game={game} pitcherId={currentPitcher?.player_id} refreshTrigger={statsRefreshTrigger} />;
+        return <ViewerDashboard game={game} refreshTrigger={statsRefreshTrigger} />;
     }
 
     const needsSetup = gameMode === 'opp_pitcher' ? !currentOpposingPitcher : !currentPitcher || !currentBatter;
