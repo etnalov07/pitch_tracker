@@ -3,9 +3,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
 import useHeatZones from '../../hooks/useHeatZones';
+import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { useAppDispatch, useAppSelector, fetchGameById } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
-import { opposingPitcherService } from '../../services/opposingPitcherService';
 import {
     PitchType,
     PitchResult,
@@ -112,7 +112,7 @@ export function useLiveGameState() {
     const gameMode: GameMode = useMemo(() => {
         if (!game) return 'our_pitcher';
         return deriveGameMode(game.is_home_game ?? true, game.inning_half);
-    }, [game?.is_home_game, game?.inning_half]);
+    }, [game]);
 
     // Auto-show TeamAtBat modal when user's team is batting (visitor games)
     const isUserBatting = game && game.status === 'in_progress' && !game.is_home_game && game.inning_half === 'top';

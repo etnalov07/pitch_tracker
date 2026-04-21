@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { CountBucketBreakdown, TeamSide } from '../../../types';
 import { analyticsService } from '../../../services/analyticsService';
+import { CountBucketBreakdown, TeamSide } from '../../../types';
 import {
     BucketCard,
     BucketLabel,

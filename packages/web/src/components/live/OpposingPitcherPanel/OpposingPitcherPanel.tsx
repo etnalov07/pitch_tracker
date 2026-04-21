@@ -35,7 +35,7 @@ const OpposingPitcherPanel: React.FC<Props> = ({
     currentOpposingPitcher,
     onSelect,
     onCreate,
-    onDelete,
+    onDelete: _onDelete,
     opponentName,
 }) => {
     const [showForm, setShowForm] = useState(false);
