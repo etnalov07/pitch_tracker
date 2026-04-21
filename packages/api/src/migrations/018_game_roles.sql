@@ -29,9 +29,9 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS pitches_notify ON pitches;
 CREATE TRIGGER pitches_notify
     AFTER INSERT OR UPDATE ON pitches
-    FOR EACH ROW EXECUTE FUNCTION notify_game_update();
+    FOR EACH ROW EXECUTE PROCEDURE notify_game_update();
 
 DROP TRIGGER IF EXISTS at_bats_notify ON at_bats;
 CREATE TRIGGER at_bats_notify
     AFTER INSERT OR UPDATE ON at_bats
-    FOR EACH ROW EXECUTE FUNCTION notify_game_update();
+    FOR EACH ROW EXECUTE PROCEDURE notify_game_update();
