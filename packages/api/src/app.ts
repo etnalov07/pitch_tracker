@@ -32,6 +32,9 @@ import teamRoutes from './routes/team.routes';
 
 const app: Application = express();
 
+// Trust reverse proxy (Namecheap/nginx sets X-Forwarded-For)
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 
