@@ -1,5 +1,6 @@
-import { PerformanceSummary } from '@pitch-tracker/shared';
-import React from 'react';
+import { PerformanceSummary, BatterBreakdown, BatterAtBatPitch, PitchType, PitchResult } from '@pitch-tracker/shared';
+import React, { useEffect, useState } from 'react';
+import { performanceSummaryService } from '../../../services/performanceSummaryService';
 import {
     Card,
     NarrativeBox,
@@ -21,7 +22,131 @@ import {
     HighlightItem,
     ConcernItem,
     RegenerateButton,
+    BatterList,
+    BatterRowContainer,
+    BatterHeader,
+    BatterOrderBadge,
+    BatterNameBlock,
+    BatterNameText,
+    BatterMetaText,
+    AtBatBlock,
+    AtBatHeaderRow,
+    AtBatInningLabel,
+    AtBatResultLabel,
+    PitchSequence,
+    PitchCard,
+    PitchTextLine,
+    BreakdownLegend,
+    LegendItem,
+    LegendDot,
 } from './styles';
+
+const PITCH_ABBREV: Record<PitchType, string> = {
+    fastball: 'FB',
+    '2-seam': '2S',
+    '4-seam': '4S',
+    cutter: 'CT',
+    sinker: 'SK',
+    slider: 'SL',
+    curveball: 'CB',
+    changeup: 'CH',
+    splitter: 'SP',
+    knuckleball: 'KN',
+    screwball: 'SC',
+    other: 'OT',
+};
+
+const RESULT_COLOR: Record<PitchResult, { bg: string; text: string }> = {
+    ball: { bg: '#dbeafe', text: '#1d4ed8' },
+    called_strike: { bg: '#fee2e2', text: '#dc2626' },
+    swinging_strike: { bg: '#dc2626', text: '#ffffff' },
+    foul: { bg: '#fef3c7', text: '#92400e' },
+    in_play: { bg: '#dcfce7', text: '#166534' },
+    hit_by_pitch: { bg: '#f3e8ff', text: '#6d28d9' },
+};
+
+const RESULT_LABEL: Record<PitchResult, string> = {
+    ball: 'B',
+    called_strike: 'K',
+    swinging_strike: 'SW',
+    foul: 'F',
+    in_play: 'IP',
+    hit_by_pitch: 'HBP',
+};
+
+const LEGEND_ITEMS: [PitchResult, string][] = [
+    ['ball', 'Ball'],
+    ['called_strike', 'Called K'],
+    ['swinging_strike', 'Swing K'],
+    ['foul', 'Foul'],
+    ['in_play', 'In Play'],
+];
+
+function formatResult(result?: string): string {
+    if (!result) return '—';
+    return result.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatInning(num: number, half: string): string {
+    return `${half === 'top' ? 'Top' : 'Bot'} ${num}`;
+}
+
+function WebPitchCard({ pitch }: { pitch: BatterAtBatPitch }) {
+    const colors = RESULT_COLOR[pitch.pitch_result];
+    const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
+    return (
+        <PitchCard bg={colors.bg} isEnding={pitch.is_ab_ending} title={pitch.pitch_type}>
+            <PitchTextLine color={colors.text} size={9}>
+                {pitch.balls_before}-{pitch.strikes_before}
+            </PitchTextLine>
+            <PitchTextLine color={colors.text} size={13}>
+                {abbrev}
+            </PitchTextLine>
+            <PitchTextLine color={colors.text} size={9}>
+                {RESULT_LABEL[pitch.pitch_result]}
+            </PitchTextLine>
+            {pitch.velocity != null && (
+                <PitchTextLine color={colors.text} size={9}>
+                    {Math.round(pitch.velocity)}
+                </PitchTextLine>
+            )}
+        </PitchCard>
+    );
+}
+
+function WebBatterRow({ batter }: { batter: BatterBreakdown }) {
+    const [expanded, setExpanded] = useState(true);
+    const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
+    return (
+        <BatterRowContainer>
+            <BatterHeader onClick={() => setExpanded((e) => !e)}>
+                <BatterOrderBadge>{batter.batting_order}</BatterOrderBadge>
+                <BatterNameBlock>
+                    <BatterNameText>{batter.batter_name}</BatterNameText>
+                    <BatterMetaText>
+                        {batter.position ?? '—'} · {batter.bats}HH · {batter.at_bats.length} AB · {totalPitches}P
+                    </BatterMetaText>
+                </BatterNameBlock>
+                <span style={{ fontSize: 11, color: '#9ca3af' }}>{expanded ? '▲' : '▽'}</span>
+            </BatterHeader>
+            {expanded &&
+                batter.at_bats.map((ab) => (
+                    <AtBatBlock key={ab.at_bat_id}>
+                        <AtBatHeaderRow>
+                            <AtBatInningLabel>{formatInning(ab.inning_number, ab.inning_half)}</AtBatInningLabel>
+                            <AtBatResultLabel>{formatResult(ab.result)}</AtBatResultLabel>
+                            <span style={{ fontSize: 11, color: '#9ca3af' }}>{ab.pitches.length} pitches</span>
+                        </AtBatHeaderRow>
+                        <PitchSequence>
+                            {ab.pitches.map((pitch) => (
+                                <WebPitchCard key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} />
+                            ))}
+                        </PitchSequence>
+                    </AtBatBlock>
+                ))}
+        </BatterRowContainer>
+    );
+}
 
 interface Props {
     summary: PerformanceSummary;
@@ -34,6 +159,15 @@ const formatPitchType = (type: string): string => {
 };
 
 const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regenerating }) => {
+    const [batterBreakdown, setBatterBreakdown] = useState<BatterBreakdown[] | null>(null);
+
+    useEffect(() => {
+        if (summary.source_type !== 'game') return;
+        performanceSummaryService
+            .getBatterBreakdown(summary.source_id)
+            .then((data) => setBatterBreakdown(data))
+            .catch(() => setBatterBreakdown([]));
+    }, [summary.source_id, summary.source_type]);
     return (
         <Card>
             {/* AI Narrative */}
@@ -158,6 +292,38 @@ const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regene
                             <ConcernItem key={i}>{c}</ConcernItem>
                         ))}
                     </HighlightsList>
+                </>
+            )}
+
+            {/* Batter Breakdown */}
+            {batterBreakdown != null && batterBreakdown.length > 0 && (
+                <>
+                    <SectionTitle>Batter Breakdown</SectionTitle>
+                    <BreakdownLegend>
+                        {LEGEND_ITEMS.map(([result, label]) => {
+                            const c = RESULT_COLOR[result];
+                            return (
+                                <LegendItem key={result}>
+                                    <LegendDot bg={c.bg} border={c.text} />
+                                    {label}
+                                </LegendItem>
+                            );
+                        })}
+                        <LegendItem>
+                            <LegendDot bg="#fef9c3" border="#eab308" isEnding />
+                            AB-Ending Pitch
+                        </LegendItem>
+                    </BreakdownLegend>
+                    <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 8px', fontStyle: 'italic' }}>
+                        Count · Type · Result · Vel
+                    </p>
+                    <BatterList>
+                        {[...batterBreakdown]
+                            .sort((a, b) => a.batting_order - b.batting_order)
+                            .map((batter) => (
+                                <WebBatterRow key={batter.batter_id} batter={batter} />
+                            ))}
+                    </BatterList>
                 </>
             )}
 

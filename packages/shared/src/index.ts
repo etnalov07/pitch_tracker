@@ -969,6 +969,37 @@ export interface PerformanceSummary {
 }
 
 // ============================================================================
+// Batter Breakdown (per-game pitch-by-pitch view)
+// ============================================================================
+
+export interface BatterAtBatPitch {
+    pitch_number: number;
+    pitch_type: PitchType;
+    pitch_result: PitchResult;
+    balls_before: number;
+    strikes_before: number;
+    velocity?: number;
+    is_ab_ending: boolean;
+}
+
+export interface BatterAtBatSummary {
+    at_bat_id: string;
+    inning_number: number;
+    inning_half: InningHalf;
+    result?: string;
+    pitches: BatterAtBatPitch[];
+}
+
+export interface BatterBreakdown {
+    batter_id: string;
+    batter_name: string;
+    batting_order: number;
+    bats: HandednessType;
+    position?: string;
+    at_bats: BatterAtBatSummary[];
+}
+
+// ============================================================================
 // Opposing Pitcher Types
 // ============================================================================
 

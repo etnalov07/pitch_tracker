@@ -113,6 +113,7 @@ export {
     fetchPerformanceSummary,
     fetchPitcherSummaries,
     regenerateNarrative,
+    fetchBatterBreakdown,
     clearPerformanceSummary,
     clearPerformanceSummaryError,
 } from './performanceSummary/performanceSummarySlice';

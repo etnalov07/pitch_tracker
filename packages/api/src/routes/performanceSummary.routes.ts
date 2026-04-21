@@ -6,8 +6,9 @@ const router = Router();
 
 router.use(authenticateToken);
 
-// Specific route before parameterized to avoid conflicts
+// Specific routes before parameterized to avoid conflicts
 router.get('/pitcher/:pitcherId', performanceSummaryController.getSummariesByPitcher.bind(performanceSummaryController));
+router.get('/game/:gameId/batter-breakdown', performanceSummaryController.getBatterBreakdown.bind(performanceSummaryController));
 
 // Get or generate summary for a game or bullpen session
 router.get('/:sourceType/:sourceId', performanceSummaryController.getOrGenerateSummary.bind(performanceSummaryController));

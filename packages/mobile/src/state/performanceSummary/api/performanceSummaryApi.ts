@@ -1,5 +1,5 @@
 import api from '../../../services/api';
-import { PerformanceSummary, SummarySourceType } from '@pitch-tracker/shared';
+import { PerformanceSummary, SummarySourceType, BatterBreakdown } from '@pitch-tracker/shared';
 
 export const performanceSummaryApi = {
     getSummary: async (sourceType: SummarySourceType, sourceId: string): Promise<PerformanceSummary | null> => {
@@ -27,5 +27,10 @@ export const performanceSummaryApi = {
     regenerateNarrative: async (id: string): Promise<PerformanceSummary> => {
         const response = await api.post<{ summary: PerformanceSummary }>(`/performance-summaries/${id}/regenerate-narrative`);
         return response.data.summary;
+    },
+
+    getBatterBreakdown: async (gameId: string): Promise<BatterBreakdown[]> => {
+        const response = await api.get<{ breakdown: BatterBreakdown[] }>(`/performance-summaries/game/${gameId}/batter-breakdown`);
+        return response.data.breakdown;
     },
 };

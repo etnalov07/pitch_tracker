@@ -1,11 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { PerformanceSummary, SummarySourceType } from '@pitch-tracker/shared';
+import { PerformanceSummary, SummarySourceType, BatterBreakdown } from '@pitch-tracker/shared';
 import { performanceSummaryApi } from './api/performanceSummaryApi';
 
 interface PerformanceSummaryState {
     currentSummary: PerformanceSummary | null;
     pitcherSummaries: PerformanceSummary[];
     totalCount: number;
+    batterBreakdown: BatterBreakdown[];
     loading: boolean;
     error: string | null;
 }
@@ -14,6 +15,7 @@ const initialState: PerformanceSummaryState = {
     currentSummary: null,
     pitcherSummaries: [],
     totalCount: 0,
+    batterBreakdown: [],
     loading: false,
     error: null,
 };
@@ -36,12 +38,17 @@ export const regenerateNarrative = createAsyncThunk('performanceSummary/regenera
     return await performanceSummaryApi.regenerateNarrative(id);
 });
 
+export const fetchBatterBreakdown = createAsyncThunk('performanceSummary/fetchBatterBreakdown', async (gameId: string) => {
+    return await performanceSummaryApi.getBatterBreakdown(gameId);
+});
+
 const performanceSummarySlice = createSlice({
     name: 'performanceSummary',
     initialState,
     reducers: {
         clearPerformanceSummary: (state) => {
             state.currentSummary = null;
+            state.batterBreakdown = [];
             state.error = null;
         },
         clearPerformanceSummaryError: (state) => {
@@ -77,6 +84,9 @@ const performanceSummarySlice = createSlice({
             })
             .addCase(regenerateNarrative.fulfilled, (state, action) => {
                 state.currentSummary = action.payload;
+            })
+            .addCase(fetchBatterBreakdown.fulfilled, (state, action) => {
+                state.batterBreakdown = action.payload;
             });
     },
 });

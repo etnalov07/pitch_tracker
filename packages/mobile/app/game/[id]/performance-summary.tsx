@@ -8,6 +8,7 @@ import {
     useAppDispatch,
     useAppSelector,
     fetchPerformanceSummary,
+    fetchBatterBreakdown,
     regenerateNarrative,
     clearPerformanceSummary,
 } from '../../../src/state';
@@ -165,10 +166,13 @@ export default function GamePerformanceSummaryScreen() {
     const pollAttemptsRef = useRef(0);
     const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const { currentSummary, loading, error } = useAppSelector((state) => state.performanceSummary);
+    const { currentSummary, batterBreakdown, loading, error } = useAppSelector((state) => state.performanceSummary);
 
     useEffect(() => {
-        if (id) dispatch(fetchPerformanceSummary({ sourceType: 'game', sourceId: id }));
+        if (id) {
+            dispatch(fetchPerformanceSummary({ sourceType: 'game', sourceId: id }));
+            dispatch(fetchBatterBreakdown(id));
+        }
         return () => {
             dispatch(clearPerformanceSummary());
             if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
@@ -273,7 +277,12 @@ export default function GamePerformanceSummaryScreen() {
                     <Text style={styles.exportingText}>Generating PDF…</Text>
                 </View>
             )}
-            <PerformanceSummaryView summary={currentSummary} onRegenerate={handleRegenerate} regenerating={regenerating} />
+            <PerformanceSummaryView
+                summary={currentSummary}
+                batterBreakdown={batterBreakdown}
+                onRegenerate={handleRegenerate}
+                regenerating={regenerating}
+            />
         </SafeAreaView>
     );
 }

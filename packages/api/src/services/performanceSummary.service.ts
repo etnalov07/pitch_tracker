@@ -1,6 +1,15 @@
 import { TARGET_ACCURACY_THRESHOLD, isTargetHit } from '../utils/pitchLocation';
 import { query, transaction } from '../config/database';
-import { PerformanceSummary, PerformanceMetric, PitchTypeSummary, MetricRating, SummarySourceType } from '../types';
+import {
+    PerformanceSummary,
+    PerformanceMetric,
+    PitchTypeSummary,
+    MetricRating,
+    SummarySourceType,
+    BatterBreakdown,
+    BatterAtBatSummary,
+    BatterAtBatPitch,
+} from '../types';
 
 // Fixed coaching benchmarks
 const BENCHMARKS = {
@@ -618,6 +627,88 @@ export class PerformanceSummaryService {
         }
 
         return { highlights, concerns };
+    }
+
+    // ========================================================================
+    // Batter Breakdown
+    // ========================================================================
+
+    async getBatterBreakdown(gameId: string): Promise<BatterBreakdown[]> {
+        const result = await query(
+            `SELECT
+                ol.id AS batter_id,
+                ol.player_name AS batter_name,
+                ol.batting_order,
+                ol.bats,
+                ol.position,
+                ab.id AS at_bat_id,
+                ab.result AS at_bat_result,
+                ab.created_at AS ab_created_at,
+                i.inning_number,
+                i.half AS inning_half,
+                p.pitch_number,
+                p.pitch_type,
+                p.pitch_result,
+                p.balls_before,
+                p.strikes_before,
+                p.velocity,
+                (p.pitch_number = (
+                    SELECT MAX(p2.pitch_number) FROM pitches p2 WHERE p2.at_bat_id = ab.id
+                )) AS is_ab_ending
+             FROM opponent_lineups ol
+             JOIN at_bats ab ON ab.opponent_batter_id = ol.id
+             JOIN innings i ON ab.inning_id = i.id
+             JOIN pitches p ON p.at_bat_id = ab.id
+             WHERE ol.game_id = $1
+             ORDER BY ol.batting_order, i.inning_number,
+                 CASE i.half WHEN 'top' THEN 0 ELSE 1 END,
+                 ab.created_at, p.pitch_number`,
+            [gameId]
+        );
+
+        // Aggregate rows into nested BatterBreakdown[]
+        const batterMap = new Map<string, BatterBreakdown>();
+        const atBatMap = new Map<string, BatterAtBatSummary>();
+
+        for (const row of result.rows) {
+            if (!batterMap.has(row.batter_id)) {
+                batterMap.set(row.batter_id, {
+                    batter_id: row.batter_id,
+                    batter_name: row.batter_name,
+                    batting_order: row.batting_order,
+                    bats: row.bats,
+                    position: row.position || undefined,
+                    at_bats: [],
+                });
+            }
+            const batter = batterMap.get(row.batter_id)!;
+
+            if (!atBatMap.has(row.at_bat_id)) {
+                const atBat: BatterAtBatSummary = {
+                    at_bat_id: row.at_bat_id,
+                    inning_number: row.inning_number,
+                    inning_half: row.inning_half,
+                    result: row.at_bat_result || undefined,
+                    pitches: [],
+                };
+                atBatMap.set(row.at_bat_id, atBat);
+                batter.at_bats.push(atBat);
+            }
+            const atBat = atBatMap.get(row.at_bat_id)!;
+
+            const pitch: BatterAtBatPitch = {
+                pitch_number: row.pitch_number,
+                pitch_type: row.pitch_type,
+                pitch_result: row.pitch_result,
+                balls_before: row.balls_before,
+                strikes_before: row.strikes_before,
+                velocity: row.velocity != null ? parseFloat(row.velocity) : undefined,
+                is_ab_ending: row.is_ab_ending === true || row.is_ab_ending === 't',
+            };
+            atBat.pitches.push(pitch);
+        }
+
+        return Array.from(batterMap.values());
     }
 
     // ========================================================================

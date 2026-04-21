@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Divider, Chip, Button } from 'react-native-paper';
-import { PerformanceSummary, MetricRating } from '@pitch-tracker/shared';
+import { PerformanceSummary, MetricRating, BatterBreakdown } from '@pitch-tracker/shared';
+import BatterBreakdownView from './BatterBreakdownView';
 
 const RATING_COLORS: Record<MetricRating, { bg: string; text: string }> = {
     highlight: { bg: '#dcfce7', text: '#16a34a' },
@@ -11,11 +12,12 @@ const RATING_COLORS: Record<MetricRating, { bg: string; text: string }> = {
 
 interface Props {
     summary: PerformanceSummary;
+    batterBreakdown?: BatterBreakdown[];
     onRegenerate?: () => void;
     regenerating?: boolean;
 }
 
-export default function PerformanceSummaryView({ summary, onRegenerate, regenerating }: Props) {
+export default function PerformanceSummaryView({ summary, batterBreakdown, onRegenerate, regenerating }: Props) {
     return (
         <ScrollView contentContainerStyle={styles.content}>
             {/* AI Narrative */}
@@ -184,6 +186,9 @@ export default function PerformanceSummaryView({ summary, onRegenerate, regenera
                     </Card.Content>
                 </Card>
             )}
+
+            {/* Batter Breakdown */}
+            {batterBreakdown != null && <BatterBreakdownView breakdown={batterBreakdown} />}
 
             {/* Regenerate button */}
             {onRegenerate && (

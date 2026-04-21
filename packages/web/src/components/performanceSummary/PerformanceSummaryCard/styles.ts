@@ -166,6 +166,140 @@ export const ConcernItem = styled.li({
     },
 });
 
+export const BatterList = styled.div({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.xs,
+});
+
+export const BatterRowContainer = styled.div({
+    borderRadius: theme.borderRadius.md,
+    border: `1px solid ${theme.colors.gray[100]}`,
+    overflow: 'hidden',
+});
+
+export const BatterHeader = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    backgroundColor: theme.colors.gray[50],
+    cursor: 'pointer',
+    userSelect: 'none' as const,
+    '&:hover': {
+        backgroundColor: theme.colors.gray[100],
+    },
+});
+
+export const BatterOrderBadge = styled.div({
+    width: 26,
+    height: 26,
+    borderRadius: '50%',
+    backgroundColor: '#1e3a5f',
+    color: '#ffffff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.bold,
+    flexShrink: 0,
+});
+
+export const BatterNameBlock = styled.div({
+    flex: 1,
+});
+
+export const BatterNameText = styled.span({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[900],
+});
+
+export const BatterMetaText = styled.span({
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.gray[400],
+    marginLeft: theme.spacing.sm,
+});
+
+export const AtBatBlock = styled.div({
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    borderTop: `1px solid ${theme.colors.gray[100]}`,
+});
+
+export const AtBatHeaderRow = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
+});
+
+export const AtBatInningLabel = styled.span({
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[600],
+    minWidth: 52,
+});
+
+export const AtBatResultLabel = styled.span({
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.gray[500],
+    flex: 1,
+});
+
+export const PitchSequence = styled.div({
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: 4,
+});
+
+export const PitchCard = styled.div<{ bg: string; isEnding: boolean }>(({ bg, isEnding }) => ({
+    width: 44,
+    height: 52,
+    borderRadius: 6,
+    backgroundColor: bg,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2,
+    position: 'relative' as const,
+    boxSizing: 'border-box' as const,
+    ...(isEnding && {
+        outline: '2px solid #eab308',
+        outlineOffset: -2,
+    }),
+}));
+
+export const PitchTextLine = styled.span<{ color: string; size?: number }>(({ color, size = 11 }) => ({
+    fontSize: size,
+    fontWeight: 700,
+    color,
+    lineHeight: 1.2,
+}));
+
+export const BreakdownLegend = styled.div({
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+});
+
+export const LegendItem = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.gray[500],
+});
+
+export const LegendDot = styled.div<{ bg: string; border: string; isEnding?: boolean }>(({ bg, border, isEnding }) => ({
+    width: 10,
+    height: 10,
+    borderRadius: '50%',
+    backgroundColor: bg,
+    border: `${isEnding ? 2 : 1}px solid ${border}`,
+}));
+
 export const RegenerateButton = styled.button({
     display: 'flex',
     alignItems: 'center',
