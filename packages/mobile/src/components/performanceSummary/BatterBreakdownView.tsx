@@ -160,7 +160,7 @@ export default function BatterBreakdownView({ breakdown }: Props) {
                 </View>
                 <Divider style={styles.divider} />
                 <Text style={styles.pitchDotHint}>Count · Type · Result · Vel</Text>
-                {breakdown
+                {[...breakdown]
                     .sort((a, b) => a.batting_order - b.batting_order)
                     .map((batter, idx) => (
                         <View key={batter.batter_id}>
