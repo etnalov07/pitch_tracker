@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useAppDispatch } from '../state';
 import { logPitch, createAtBat, updateAtBat, recordPlay, addPitch } from '../state';
-import { Pitch, AtBat, Play, PitchType, PitchResult, TeamSide } from '@pitch-tracker/shared';
+import { Pitch, AtBat, Play, PitchType, PitchResult, PitchCallZone, TeamSide } from '@pitch-tracker/shared';
 
 // Offline support disabled for iOS 26.2 beta testing (TurboModule crash)
 // This hook now always performs online operations directly
@@ -17,6 +17,7 @@ interface LogPitchPayload {
     location_y: number;
     target_location_x?: number;
     target_location_y?: number;
+    target_zone?: PitchCallZone;
     velocity?: number;
     balls_before: number;
     strikes_before: number;
@@ -60,6 +61,7 @@ export const useOfflineActions = () => {
                 location_y: payload.location_y,
                 target_location_x: payload.target_location_x,
                 target_location_y: payload.target_location_y,
+                target_zone: payload.target_zone,
                 velocity: payload.velocity,
                 balls_before: payload.balls_before,
                 strikes_before: payload.strikes_before,

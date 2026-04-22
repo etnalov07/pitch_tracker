@@ -733,6 +733,7 @@ export default function LiveGameScreen() {
                 location_y: pitchLocation.y,
                 target_location_x: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].x : undefined,
                 target_location_y: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].y : undefined,
+                target_zone: targetZone ?? undefined,
                 velocity: veloNum && !isNaN(veloNum) ? veloNum : undefined,
                 opponent_batter_id: currentBatter?.id,
                 balls_before: balls,
