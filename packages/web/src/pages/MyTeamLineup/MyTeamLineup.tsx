@@ -92,7 +92,7 @@ const MyTeamLineup: React.FC = () => {
         });
     };
 
-    const proceed = () => navigate(fromLive ? `/game/${gameId}/live` : `/game/${gameId}/lineup`);
+    const proceed = () => navigate(fromLive ? `/game/${gameId}` : `/game/${gameId}/lineup`);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -140,7 +140,7 @@ const MyTeamLineup: React.FC = () => {
         <Container>
             <Header>
                 <HeaderLeft>
-                    <BackButton onClick={() => navigate(fromLive ? `/game/${gameId}/live` : '/')}>Back</BackButton>
+                    <BackButton onClick={() => navigate(fromLive ? `/game/${gameId}` : '/')}>Back</BackButton>
                     <Title>My Team Lineup</Title>
                     {game?.opponent_name && (
                         <GameInfo>
@@ -253,7 +253,7 @@ const MyTeamLineup: React.FC = () => {
                     </LineupTable>
 
                     <FormActions>
-                        <CancelButton type="button" onClick={() => navigate(fromLive ? `/game/${gameId}/live` : '/')}>
+                        <CancelButton type="button" onClick={() => navigate(fromLive ? `/game/${gameId}` : '/')}>
                             Cancel
                         </CancelButton>
                         <SkipButton type="button" onClick={proceed}>

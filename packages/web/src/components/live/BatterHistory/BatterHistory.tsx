@@ -40,6 +40,7 @@ const BatterHistory: React.FC<BatterHistoryProps> = ({ batterId, pitcherId, limi
     const [showAllTime, setShowAllTime] = useState(false);
 
     const loadHistory = useCallback(async () => {
+        if (!batterId) return;
         try {
             setLoading(true);
             const data = await analyticsService.getBatterHistory(batterId, showAllTime ? undefined : pitcherId, limit);
