@@ -68,9 +68,64 @@ function MiniZone({ zone, dotColor }: MiniZoneProps) {
     );
 }
 
-function formatResult(result?: string): string {
+const POSITION_NUM: Record<string, number> = {
+    P: 1,
+    C: 2,
+    '1B': 3,
+    '2B': 4,
+    '3B': 5,
+    SS: 6,
+    LF: 7,
+    CF: 8,
+    RF: 9,
+};
+
+function formatAtBatResult(result?: string, fieldedBy?: string, pitches?: { pitch_result: string }[]): string {
     if (!result) return '—';
-    return result.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    const fn = fieldedBy ? (POSITION_NUM[fieldedBy] ?? null) : null;
+    switch (result) {
+        case 'strikeout': {
+            const lastPitch = pitches?.[pitches.length - 1];
+            return lastPitch?.pitch_result === 'called_strike' ? 'ꓘ' : 'K';
+        }
+        case 'walk':
+            return 'BB';
+        case 'hit_by_pitch':
+            return 'HBP';
+        case 'single':
+            return '1B';
+        case 'double':
+            return '2B';
+        case 'triple':
+            return '3B';
+        case 'home_run':
+            return 'HR';
+        case 'groundout':
+            if (fn === null) return 'GO';
+            return fn === 3 ? '3U' : `${fn}-3`;
+        case 'flyout':
+            return fn !== null ? `F${fn}` : 'FO';
+        case 'lineout':
+            return fn !== null ? `L${fn}` : 'LO';
+        case 'popout':
+            return fn !== null ? `P${fn}` : 'PO';
+        case 'sacrifice_fly':
+            return fn !== null ? `SF${fn}` : 'SF';
+        case 'sacrifice_bunt':
+            return 'SH';
+        case 'double_play':
+            return 'DP';
+        case 'triple_play':
+            return 'TP';
+        case 'fielders_choice':
+            return 'FC';
+        case 'force_out':
+            return fn !== null ? `FO${fn}` : 'FO';
+        case 'strikeout_dropped':
+            return 'K+WP';
+        default:
+            return result.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    }
 }
 
 function formatInning(num: number, half: string): string {
@@ -85,8 +140,6 @@ function PitchDot({ pitch }: PitchDotProps) {
     const colors = RESULT_COLOR[pitch.pitch_result];
     const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
     const resultLabel = RESULT_LABEL[pitch.pitch_result];
-    const hasTarget = pitch.target_zone != null;
-
     return (
         <View style={[styles.pitchDot, { backgroundColor: colors.bg }, pitch.is_ab_ending && styles.pitchDotEnding]}>
             <Text style={[styles.pitchCount, { color: colors.text }]}>
@@ -95,7 +148,7 @@ function PitchDot({ pitch }: PitchDotProps) {
             <Text style={[styles.pitchType, { color: colors.text }]}>{abbrev}</Text>
             <Text style={[styles.pitchResult, { color: colors.text }]}>{resultLabel}</Text>
             {pitch.velocity != null && <Text style={[styles.pitchVel, { color: colors.text }]}>{Math.round(pitch.velocity)}</Text>}
-            {hasTarget && <MiniZone zone={pitch.target_zone} dotColor={colors.text} />}
+            <MiniZone zone={pitch.target_zone} dotColor={colors.text} />
             {pitch.is_ab_ending && <View style={styles.endingIndicator} />}
         </View>
     );
@@ -129,7 +182,9 @@ function BatterRow({ batter }: BatterRowProps) {
                     <View key={ab.at_bat_id} style={styles.atBatBlock}>
                         <View style={styles.atBatHeader}>
                             <Text style={styles.atBatInning}>{formatInning(ab.inning_number, ab.inning_half)}</Text>
-                            <Text style={styles.atBatResult}>{formatResult(ab.result)}</Text>
+                            <Text style={styles.atBatResult}>
+                                {formatAtBatResult(ab.result, ab.fielded_by_position, ab.pitches)}
+                            </Text>
                             <Text style={styles.atBatPitchCount}>{ab.pitches.length} pitches</Text>
                         </View>
                         <View style={styles.pitchRow}>
@@ -310,7 +365,8 @@ const styles = StyleSheet.create({
     },
     atBatResult: {
         fontSize: 11,
-        color: '#6b7280',
+        fontWeight: '700',
+        color: '#374151',
         flex: 1,
     },
     atBatPitchCount: {

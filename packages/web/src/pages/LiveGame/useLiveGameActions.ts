@@ -1,6 +1,8 @@
 import {
     BaseRunners,
     BaserunnerEventType,
+    ContactType,
+    PlayerPosition,
     deriveGameMode,
     RunnerBase,
     getSuggestedAdvancement,
@@ -60,6 +62,7 @@ export function useLiveGameActions(state: LiveGameState) {
         teamRunsScored,
         setTeamRunsScored,
         setShowDiamondModal,
+        hitLocation,
         setHitLocation,
         baseRunners,
         setBaseRunners,
@@ -342,7 +345,31 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
+    const deriveFielderPosition = (x: number, y: number): string | null => {
+        const dx = x - 50;
+        const dy = 82 - y;
+        if (dy <= 2) return null;
+        const angleDeg = (Math.atan2(dx, dy) * 180) / Math.PI;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 38) {
+            if (angleDeg < -22) return 'LF';
+            if (angleDeg > 22) return 'RF';
+            return 'CF';
+        }
+        if (dist < 12) return 'P';
+        if (angleDeg < -33) return '3B';
+        if (angleDeg < -10) return 'SS';
+        if (angleDeg < 10) return '2B';
+        if (angleDeg < 33) return '1B';
+        return '1B';
+    };
+
     const handleDiamondResult = async (result: string) => {
+        // Capture before clearing
+        const capturedHitLocation = hitLocation;
+        const capturedAtBat = currentAtBat;
+        const capturedPitches = pitches;
+
         setShowDiamondModal(false);
         setHitLocation(null);
         setTargetZone(null);
@@ -380,6 +407,34 @@ export function useLiveGameActions(state: LiveGameState) {
             await handleEndAtBat(result, { rbi: suggestedRuns, runs_scored: suggestedRuns });
         } else {
             await handleEndAtBat(result);
+        }
+
+        // Record play with derived fielder position (non-critical, fire-and-forget)
+        if (capturedHitLocation && capturedAtBat) {
+            const lastPitch = capturedPitches[capturedPitches.length - 1];
+            if (lastPitch?.id) {
+                const fieldedBy = deriveFielderPosition(capturedHitLocation.x, capturedHitLocation.y);
+                const isOut = !isHitResult && result !== 'error';
+                const contactType =
+                    result === 'popout'
+                        ? 'pop_up'
+                        : capturedHitLocation.hitType === 'ground_ball'
+                          ? 'ground_ball'
+                          : capturedHitLocation.hitType === 'fly_ball'
+                            ? 'fly_ball'
+                            : 'line_drive';
+                gamesApi
+                    .recordPlay({
+                        pitch_id: lastPitch.id,
+                        at_bat_id: capturedAtBat.id,
+                        contact_type: contactType as ContactType,
+                        fielded_by_position: (fieldedBy ?? undefined) as PlayerPosition | undefined,
+                        is_error: result === 'error',
+                        is_out: isOut,
+                        runs_scored: 0,
+                    })
+                    .catch(() => {}); // non-critical
+            }
         }
     };
 

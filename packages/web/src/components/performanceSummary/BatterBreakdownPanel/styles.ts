@@ -125,7 +125,8 @@ export const AtBatInningLabel = styled.span({
 
 export const AtBatResultLabel = styled.span({
     fontSize: theme.fontSize.xs,
-    color: theme.colors.gray[500],
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.gray[700],
     flex: 1,
 });
 

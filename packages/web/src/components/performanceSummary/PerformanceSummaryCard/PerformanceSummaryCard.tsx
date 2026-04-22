@@ -203,7 +203,7 @@ function WebPitchCard({ pitch }: { pitch: BatterAtBatPitch }) {
                     {Math.round(pitch.velocity)}
                 </PitchTextLine>
             )}
-            {pitch.target_zone != null && <WebMiniZone zone={pitch.target_zone} dotColor={colors.text} />}
+            <WebMiniZone zone={pitch.target_zone} dotColor={colors.text} />
         </PitchCard>
     );
 }

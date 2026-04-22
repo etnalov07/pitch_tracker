@@ -179,7 +179,7 @@ function PitchCardItem({ pitch }: { pitch: BatterAtBatPitch }) {
                     {Math.round(pitch.velocity)}
                 </PitchTextLine>
             )}
-            {pitch.target_zone != null && <MiniZone zone={pitch.target_zone} dotColor={colors.text} />}
+            <MiniZone zone={pitch.target_zone} dotColor={colors.text} />
         </PitchCard>
     );
 }

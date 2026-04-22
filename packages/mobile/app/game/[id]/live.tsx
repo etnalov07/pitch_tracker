@@ -25,6 +25,8 @@ import {
     clearBases,
     deriveGameMode,
     GameMode,
+    ContactType,
+    PlayerPosition,
 } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
@@ -817,8 +819,31 @@ export default function LiveGameScreen() {
         }
     };
 
+    const deriveFielderPosition = (x: number, y: number): string | null => {
+        const dx = x - 50;
+        const dy = 82 - y;
+        if (dy <= 2) return null;
+        const angleDeg = (Math.atan2(dx, dy) * 180) / Math.PI;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 38) {
+            if (angleDeg < -22) return 'LF';
+            if (angleDeg > 22) return 'RF';
+            return 'CF';
+        }
+        if (dist < 12) return 'P';
+        if (angleDeg < -33) return '3B';
+        if (angleDeg < -10) return 'SS';
+        if (angleDeg < 10) return '2B';
+        if (angleDeg < 33) return '1B';
+        return '1B';
+    };
+
     const handleInPlayResult = useCallback(
         async (result: string, hitLocation?: HitLocation) => {
+            // Capture before any async clears state
+            const capturedAtBat = currentAtBat;
+            const capturedPitches = pitches;
+
             setShowInPlayModal(false);
             // For hits, show runner advancement modal
             const hitResults = ['single', 'double', 'triple', 'home_run', 'walk', 'hit_by_pitch', 'sacrifice_fly'];
@@ -836,8 +861,43 @@ export default function LiveGameScreen() {
                 // Out result - just end at-bat
                 await handleEndAtBat(result);
             }
+
+            // Record the play with hit location and derived fielder position
+            if (hitLocation && capturedAtBat) {
+                const lastPitch = capturedPitches[capturedPitches.length - 1];
+                if (lastPitch?.id) {
+                    const fieldedBy = deriveFielderPosition(hitLocation.x, hitLocation.y);
+                    const isOut =
+                        result !== 'single' &&
+                        result !== 'double' &&
+                        result !== 'triple' &&
+                        result !== 'home_run' &&
+                        result !== 'walk' &&
+                        result !== 'hit_by_pitch' &&
+                        result !== 'error';
+                    const contactType =
+                        result === 'popout'
+                            ? 'pop_up'
+                            : hitLocation.hitType === 'ground_ball'
+                              ? 'ground_ball'
+                              : hitLocation.hitType === 'fly_ball'
+                                ? 'fly_ball'
+                                : 'line_drive';
+                    gamesApi
+                        .recordPlay({
+                            pitch_id: lastPitch.id,
+                            at_bat_id: capturedAtBat.id,
+                            contact_type: contactType as ContactType,
+                            fielded_by_position: (fieldedBy ?? undefined) as PlayerPosition | undefined,
+                            is_error: result === 'error',
+                            is_out: isOut,
+                            runs_scored: 0,
+                        })
+                        .catch(() => {}); // non-critical
+                }
+            }
         },
-        [handleEndAtBat, baseRunners, id, dispatch]
+        [handleEndAtBat, baseRunners, id, dispatch, currentAtBat, pitches]
     );
 
     const handleRunnerAdvancementConfirm = useCallback(
