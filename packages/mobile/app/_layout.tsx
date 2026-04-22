@@ -126,6 +126,7 @@ function RootLayoutContent() {
                     <Stack.Screen name="game/[id]/lineup" options={{ title: 'Opponent Lineup' }} />
                     <Stack.Screen name="team/[id]" options={{ title: 'Team Details' }} />
                     <Stack.Screen name="invite/[token]" options={{ title: 'Team Invite' }} />
+                    <Stack.Screen name="games/history" options={{ title: 'Game History' }} />
                     <Stack.Screen name="join-team" options={{ title: 'Find a Team' }} />
                     <Stack.Screen name="+not-found" />
                 </Stack>

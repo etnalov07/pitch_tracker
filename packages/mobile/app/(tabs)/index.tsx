@@ -90,7 +90,8 @@ export default function DashboardScreen() {
     }, [loadGames]);
 
     const activeGames = games.filter((g) => g.status === 'in_progress');
-    const recentGames = games.filter((g) => g.status === 'completed').slice(0, 5);
+    const completedGames = games.filter((g) => g.status === 'completed');
+    const recentGames = completedGames.slice(0, 5);
     const scheduledGames = games.filter((g) => g.status === 'scheduled').slice(0, 3);
 
     const [startingGameId, setStartingGameId] = useState<string | null>(null);
@@ -199,7 +200,7 @@ export default function DashboardScreen() {
                                 {games.length}
                             </Text>
                             <Text variant="bodyMedium" style={styles.cardSubtext}>
-                                {activeGames.length} active, {recentGames.length} completed
+                                {activeGames.length} active, {completedGames.length} completed
                             </Text>
                         </Card.Content>
                     </Card>
@@ -246,14 +247,26 @@ export default function DashboardScreen() {
                 {/* Recent Games Section */}
                 {recentGames.length > 0 && (
                     <View style={styles.section}>
-                        <Text variant="titleMedium" style={styles.sectionTitle}>
-                            Recent Games
-                        </Text>
+                        <View style={styles.sectionHeader}>
+                            <Text variant="titleMedium" style={styles.sectionTitle}>
+                                Recent Games
+                            </Text>
+                            {completedGames.length > 5 && (
+                                <Pressable onPress={() => router.push('/games/history' as any)}>
+                                    <Text style={styles.viewAll}>View All ({completedGames.length})</Text>
+                                </Pressable>
+                            )}
+                        </View>
                         <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
                             {recentGames.map((game) => (
                                 <GameCard key={game.id} game={game} onPress={() => handleGamePress(game)} />
                             ))}
                         </View>
+                        {completedGames.length > 5 && (
+                            <Pressable style={styles.viewAllButton} onPress={() => router.push('/games/history' as any)}>
+                                <Text style={styles.viewAllButtonText}>View all {completedGames.length} games →</Text>
+                            </Pressable>
+                        )}
                     </View>
                 )}
 
@@ -301,9 +314,33 @@ const styles = StyleSheet.create({
     section: {
         marginBottom: 24,
     },
-    sectionTitle: {
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 12,
+    },
+    sectionTitle: {
         color: '#374151',
+    },
+    viewAll: {
+        fontSize: 13,
+        color: '#3b82f6',
+        fontWeight: '600',
+    },
+    viewAllButton: {
+        marginTop: 12,
+        alignItems: 'center',
+        paddingVertical: 10,
+        backgroundColor: '#eff6ff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#bfdbfe',
+    },
+    viewAllButtonText: {
+        fontSize: 13,
+        color: '#2563eb',
+        fontWeight: '600',
     },
     gameList: {
         gap: 12,
