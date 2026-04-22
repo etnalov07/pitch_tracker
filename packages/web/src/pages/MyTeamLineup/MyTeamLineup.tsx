@@ -1,6 +1,6 @@
 import { Game, Player } from '@pitch-tracker/shared';
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { myTeamLineupService } from '../../services/myTeamLineupService';
 import { teamService } from '../../services/teamService';
 import { gamesApi } from '../../state/games/api/gamesApi';
@@ -40,6 +40,8 @@ interface LineupEntry {
 const MyTeamLineup: React.FC = () => {
     const navigate = useNavigate();
     const { gameId } = useParams<{ gameId: string }>();
+    const [searchParams] = useSearchParams();
+    const fromLive = searchParams.get('from') === 'live';
 
     const [game, setGame] = useState<Game | null>(null);
     const [roster, setRoster] = useState<Player[]>([]);
@@ -90,7 +92,7 @@ const MyTeamLineup: React.FC = () => {
         });
     };
 
-    const proceed = () => navigate(`/game/${gameId}/lineup`);
+    const proceed = () => navigate(fromLive ? `/game/${gameId}/live` : `/game/${gameId}/lineup`);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -138,7 +140,7 @@ const MyTeamLineup: React.FC = () => {
         <Container>
             <Header>
                 <HeaderLeft>
-                    <BackButton onClick={() => navigate('/')}>Back</BackButton>
+                    <BackButton onClick={() => navigate(fromLive ? `/game/${gameId}/live` : '/')}>Back</BackButton>
                     <Title>My Team Lineup</Title>
                     {game?.opponent_name && (
                         <GameInfo>
@@ -251,7 +253,7 @@ const MyTeamLineup: React.FC = () => {
                     </LineupTable>
 
                     <FormActions>
-                        <CancelButton type="button" onClick={() => navigate('/')}>
+                        <CancelButton type="button" onClick={() => navigate(fromLive ? `/game/${gameId}/live` : '/')}>
                             Cancel
                         </CancelButton>
                         <SkipButton type="button" onClick={proceed}>

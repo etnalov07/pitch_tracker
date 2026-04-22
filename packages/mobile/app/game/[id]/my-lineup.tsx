@@ -16,7 +16,8 @@ interface LineupEntry {
 }
 
 export default function MyTeamLineupScreen() {
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+    const fromLive = from === 'live';
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
@@ -71,7 +72,7 @@ export default function MyTeamLineupScreen() {
         });
     };
 
-    const proceed = () => router.replace(`/game/${id}/lineup` as any);
+    const proceed = () => router.replace((fromLive ? `/game/${id}/live` : `/game/${id}/lineup`) as any);
 
     const handleSubmit = async () => {
         if (!id) return;
@@ -126,7 +127,10 @@ export default function MyTeamLineupScreen() {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <View style={styles.header}>
-                <IconButton icon="arrow-left" onPress={() => router.back()} />
+                <IconButton
+                    icon="arrow-left"
+                    onPress={() => (fromLive ? router.replace(`/game/${id}/live` as any) : router.back())}
+                />
                 <View style={{ flex: 1 }}>
                     <Text variant="titleLarge">My Team Lineup</Text>
                     {game?.opponent_name && (

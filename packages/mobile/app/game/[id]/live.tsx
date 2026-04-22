@@ -1114,7 +1114,7 @@ export default function LiveGameScreen() {
                         {myTeamLineup.length === 0 && (
                             <Button
                                 mode="outlined"
-                                onPress={() => router.push(`/game/${id}/my-lineup` as any)}
+                                onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
                                 style={{ marginTop: 8 }}
                             >
                                 Setup My Lineup
@@ -1370,6 +1370,19 @@ export default function LiveGameScreen() {
                 <View style={styles.tabletContent}>
                     <View style={styles.statsPanel}>
                         {renderGameHeader()}
+                        {game.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0 && game.status === 'in_progress' && (
+                            <View style={styles.lineupBanner}>
+                                <Text style={styles.lineupBannerText}>My team lineup not set</Text>
+                                <Button
+                                    mode="contained"
+                                    compact
+                                    onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
+                                    style={styles.lineupBannerBtn}
+                                >
+                                    Set Lineup
+                                </Button>
+                            </View>
+                        )}
                         {renderRunnerOutButton()}
                         {renderAtBatControls()}
                         {game.status === 'in_progress' && (currentPitcher || currentBatter) && (
@@ -1625,6 +1638,19 @@ export default function LiveGameScreen() {
             </View>
             <ScrollView style={styles.phoneContent} contentContainerStyle={styles.phoneContentInner}>
                 {renderGameHeader()}
+                {game.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0 && game.status === 'in_progress' && (
+                    <View style={styles.lineupBanner}>
+                        <Text style={styles.lineupBannerText}>My team lineup not set</Text>
+                        <Button
+                            mode="contained"
+                            compact
+                            onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
+                            style={styles.lineupBannerBtn}
+                        >
+                            Set Lineup
+                        </Button>
+                    </View>
+                )}
                 {renderRunnerOutButton()}
                 {renderAtBatControls()}
                 {/* Tendencies buttons */}
@@ -2080,6 +2106,27 @@ const styles = StyleSheet.create({
     },
     roleButton: {
         minWidth: 120,
+    },
+    lineupBanner: {
+        flexDirection: 'row' as const,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#fef3c7',
+        borderWidth: 1,
+        borderColor: '#fcd34d',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        marginBottom: 6,
+    },
+    lineupBannerText: {
+        fontSize: 13,
+        fontWeight: '600' as const,
+        color: '#92400e',
+        flex: 1,
+    },
+    lineupBannerBtn: {
+        backgroundColor: '#d97706',
     },
     myBatterOverlay: {
         position: 'absolute',

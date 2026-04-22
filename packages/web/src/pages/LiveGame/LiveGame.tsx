@@ -497,8 +497,10 @@ const LiveGame: React.FC = () => {
                         {!currentBatter && gameMode !== 'opp_pitcher' && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Opponent Lineup</SetupButton>
                         )}
-                        {gameMode === 'opp_pitcher' && myTeamLineup.length === 0 && (
-                            <SetupButton onClick={() => navigate(`/game/${gameId}/my-lineup`)}>Setup My Team Lineup</SetupButton>
+                        {game?.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0 && (
+                            <SetupButton onClick={() => navigate(`/game/${gameId}/my-lineup?from=live`)}>
+                                Setup My Team Lineup
+                            </SetupButton>
                         )}
                     </SetupPrompt>
                 )}
