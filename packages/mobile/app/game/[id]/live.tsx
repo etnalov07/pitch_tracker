@@ -283,6 +283,13 @@ export default function LiveGameScreen() {
         }
     }, [isUserBatting, game?.current_inning, game?.inning_half, game?.charting_mode, showInningChange]);
 
+    // Must be here (before any conditional returns) to avoid "more hooks than previous render" violation
+    useEffect(() => {
+        if (currentGameRole === 'viewer' && id) {
+            router.replace(`/game/${id}/viewer` as any);
+        }
+    }, [currentGameRole, id, router]);
+
     // Calculate count from pitches
     const balls = pitches.filter((p) => p.pitch_result === 'ball').length;
     const effectiveStrikes = (() => {
@@ -963,12 +970,6 @@ export default function LiveGameScreen() {
             </SafeAreaView>
         );
     }
-
-    React.useEffect(() => {
-        if (currentGameRole === 'viewer' && id) {
-            router.replace(`/game/${id}/viewer` as any);
-        }
-    }, [currentGameRole, id]);
 
     const filteredGamePitches =
         pitchTypeFilter === 'all' ? allGamePitches : allGamePitches.filter((p) => (p.pitch_type || 'other') === pitchTypeFilter);
