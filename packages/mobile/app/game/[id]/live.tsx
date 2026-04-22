@@ -215,6 +215,8 @@ export default function LiveGameScreen() {
     // Load game state on mount
     useEffect(() => {
         if (id) {
+            // Always reset role to null so the charter/viewer prompt appears on every entry
+            dispatch(setCurrentGameRole(null));
             dispatch(fetchCurrentGameState(id))
                 .unwrap()
                 .catch(() => {
@@ -230,12 +232,6 @@ export default function LiveGameScreen() {
                 .getGamePitches(id)
                 .then(setAllGamePitches)
                 .catch(() => setAllGamePitches([]));
-            gamesApi
-                .getGameRole(id)
-                .then((role) => {
-                    if (role) dispatch(setCurrentGameRole(role));
-                })
-                .catch(() => {});
         }
     }, [id, dispatch]);
 
