@@ -980,6 +980,9 @@ export interface BatterAtBatPitch {
     strikes_before: number;
     velocity?: number;
     is_ab_ending: boolean;
+    target_zone?: PitchCallZone;
+    target_location_x?: number;
+    target_location_y?: number;
 }
 
 export interface BatterAtBatSummary {

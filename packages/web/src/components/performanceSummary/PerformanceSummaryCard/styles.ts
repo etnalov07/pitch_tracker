@@ -252,9 +252,41 @@ export const PitchSequence = styled.div({
     gap: 4,
 });
 
+export const MiniZoneGrid = styled.div({
+    width: 27,
+    height: 27,
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    border: '0.5px solid rgba(0,0,0,0.15)',
+    borderRadius: 2,
+    overflow: 'hidden',
+    position: 'relative' as const,
+    marginTop: 2,
+    flexShrink: 0,
+});
+
+export const MiniZoneCell = styled.div<{ active: boolean; dotColor: string }>(({ active, dotColor }) => ({
+    width: 9,
+    height: 9,
+    border: '0.5px solid rgba(0,0,0,0.1)',
+    backgroundColor: active ? dotColor : 'rgba(255,255,255,0.35)',
+    boxSizing: 'border-box' as const,
+}));
+
+export const MiniZoneWasteDot = styled.div<{ dotColor: string }>(({ dotColor }) => ({
+    position: 'absolute' as const,
+    top: 9,
+    left: 9,
+    width: 9,
+    height: 9,
+    borderRadius: '50%',
+    backgroundColor: dotColor,
+    opacity: 0.7,
+}));
+
 export const PitchCard = styled.div<{ bg: string; isEnding: boolean }>(({ bg, isEnding }) => ({
     width: 44,
-    height: 52,
+    minHeight: 52,
     borderRadius: 6,
     backgroundColor: bg,
     display: 'flex',

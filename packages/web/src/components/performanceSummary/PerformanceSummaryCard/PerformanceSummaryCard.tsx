@@ -1,4 +1,11 @@
-import { PerformanceSummary, BatterBreakdown, BatterAtBatPitch, PitchType, PitchResult } from '@pitch-tracker/shared';
+import {
+    PerformanceSummary,
+    BatterBreakdown,
+    BatterAtBatPitch,
+    PitchType,
+    PitchResult,
+    PitchCallZone,
+} from '@pitch-tracker/shared';
 import React, { useEffect, useState } from 'react';
 import { performanceSummaryService } from '../../../services/performanceSummaryService';
 import {
@@ -36,6 +43,9 @@ import {
     PitchSequence,
     PitchCard,
     PitchTextLine,
+    MiniZoneGrid,
+    MiniZoneCell,
+    MiniZoneWasteDot,
     BreakdownLegend,
     LegendItem,
     LegendDot,
@@ -91,6 +101,31 @@ function formatInning(num: number, half: string): string {
     return `${half === 'top' ? 'Top' : 'Bot'} ${num}`;
 }
 
+function parseStrikeZone(zone?: PitchCallZone): { row: number; col: number } | null {
+    if (!zone || zone.startsWith('W-')) return null;
+    const parts = zone.split('-');
+    if (parts.length !== 2) return null;
+    const row = parseInt(parts[0]);
+    const col = parseInt(parts[1]);
+    if (isNaN(row) || isNaN(col)) return null;
+    return { row, col };
+}
+
+function WebMiniZone({ zone, dotColor }: { zone?: PitchCallZone; dotColor: string }) {
+    const parsed = parseStrikeZone(zone);
+    const isWaste = zone?.startsWith('W-') ?? false;
+    return (
+        <MiniZoneGrid>
+            {[0, 1, 2].map((row) =>
+                [0, 1, 2].map((col) => (
+                    <MiniZoneCell key={`${row}-${col}`} active={parsed?.row === row && parsed?.col === col} dotColor={dotColor} />
+                ))
+            )}
+            {isWaste && <MiniZoneWasteDot dotColor={dotColor} />}
+        </MiniZoneGrid>
+    );
+}
+
 function WebPitchCard({ pitch }: { pitch: BatterAtBatPitch }) {
     const colors = RESULT_COLOR[pitch.pitch_result];
     const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
@@ -110,6 +145,7 @@ function WebPitchCard({ pitch }: { pitch: BatterAtBatPitch }) {
                     {Math.round(pitch.velocity)}
                 </PitchTextLine>
             )}
+            {pitch.target_zone != null && <WebMiniZone zone={pitch.target_zone} dotColor={colors.text} />}
         </PitchCard>
     );
 }

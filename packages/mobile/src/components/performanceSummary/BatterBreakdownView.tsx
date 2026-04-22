@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, Card, Divider } from 'react-native-paper';
-import { BatterBreakdown, BatterAtBatPitch, PitchType, PitchResult } from '@pitch-tracker/shared';
+import { BatterBreakdown, BatterAtBatPitch, PitchType, PitchResult, PitchCallZone } from '@pitch-tracker/shared';
 
 const PITCH_ABBREV: Record<PitchType, string> = {
     fastball: 'FB',
@@ -36,6 +36,38 @@ const RESULT_LABEL: Record<PitchResult, string> = {
     hit_by_pitch: 'HBP',
 };
 
+// Parse '0-0'..'2-2' → {row, col}. Returns null for waste or unknown zones.
+function parseStrikeZone(zone?: PitchCallZone): { row: number; col: number } | null {
+    if (!zone || zone.startsWith('W-')) return null;
+    const parts = zone.split('-');
+    if (parts.length !== 2) return null;
+    const row = parseInt(parts[0]);
+    const col = parseInt(parts[1]);
+    if (isNaN(row) || isNaN(col)) return null;
+    return { row, col };
+}
+
+interface MiniZoneProps {
+    zone?: PitchCallZone;
+    dotColor: string;
+}
+
+function MiniZone({ zone, dotColor }: MiniZoneProps) {
+    const parsed = parseStrikeZone(zone);
+    const isWaste = zone?.startsWith('W-') ?? false;
+    return (
+        <View style={styles.miniZone}>
+            {[0, 1, 2].map((row) =>
+                [0, 1, 2].map((col) => {
+                    const active = parsed?.row === row && parsed?.col === col;
+                    return <View key={`${row}-${col}`} style={[styles.miniZoneCell, active && { backgroundColor: dotColor }]} />;
+                })
+            )}
+            {isWaste && <View style={[styles.miniZoneWaste, { backgroundColor: dotColor }]} />}
+        </View>
+    );
+}
+
 function formatResult(result?: string): string {
     if (!result) return '—';
     return result.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
@@ -53,6 +85,7 @@ function PitchDot({ pitch }: PitchDotProps) {
     const colors = RESULT_COLOR[pitch.pitch_result];
     const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
     const resultLabel = RESULT_LABEL[pitch.pitch_result];
+    const hasTarget = pitch.target_zone != null;
 
     return (
         <View style={[styles.pitchDot, { backgroundColor: colors.bg }, pitch.is_ab_ending && styles.pitchDotEnding]}>
@@ -62,6 +95,7 @@ function PitchDot({ pitch }: PitchDotProps) {
             <Text style={[styles.pitchType, { color: colors.text }]}>{abbrev}</Text>
             <Text style={[styles.pitchResult, { color: colors.text }]}>{resultLabel}</Text>
             {pitch.velocity != null && <Text style={[styles.pitchVel, { color: colors.text }]}>{Math.round(pitch.velocity)}</Text>}
+            {hasTarget && <MiniZone zone={pitch.target_zone} dotColor={colors.text} />}
             {pitch.is_ab_ending && <View style={styles.endingIndicator} />}
         </View>
     );
@@ -289,7 +323,7 @@ const styles = StyleSheet.create({
     },
     pitchDot: {
         width: 44,
-        height: 52,
+        minHeight: 52,
         borderRadius: 6,
         alignItems: 'center',
         justifyContent: 'center',
@@ -337,5 +371,33 @@ const styles = StyleSheet.create({
     batterDivider: {
         marginVertical: 4,
         backgroundColor: '#e5e7eb',
+    },
+    miniZone: {
+        width: 27,
+        height: 27,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginTop: 2,
+        borderWidth: 0.5,
+        borderColor: 'rgba(0,0,0,0.15)',
+        borderRadius: 2,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    miniZoneCell: {
+        width: 9,
+        height: 9,
+        borderWidth: 0.5,
+        borderColor: 'rgba(0,0,0,0.1)',
+        backgroundColor: 'rgba(255,255,255,0.35)',
+    },
+    miniZoneWaste: {
+        position: 'absolute',
+        top: 9,
+        left: 9,
+        width: 9,
+        height: 9,
+        borderRadius: 5,
+        opacity: 0.7,
     },
 });

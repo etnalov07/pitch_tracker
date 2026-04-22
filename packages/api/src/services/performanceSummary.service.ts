@@ -652,6 +652,9 @@ export class PerformanceSummaryService {
                 p.balls_before,
                 p.strikes_before,
                 p.velocity,
+                p.target_zone,
+                p.target_location_x,
+                p.target_location_y,
                 (p.pitch_number = (
                     SELECT MAX(p2.pitch_number) FROM pitches p2 WHERE p2.at_bat_id = ab.id
                 )) AS is_ab_ending
@@ -704,6 +707,9 @@ export class PerformanceSummaryService {
                 strikes_before: row.strikes_before,
                 velocity: row.velocity != null ? parseFloat(row.velocity) : undefined,
                 is_ab_ending: row.is_ab_ending === true || row.is_ab_ending === 't',
+                target_zone: row.target_zone ?? undefined,
+                target_location_x: row.target_location_x != null ? parseFloat(row.target_location_x) : undefined,
+                target_location_y: row.target_location_y != null ? parseFloat(row.target_location_y) : undefined,
             };
             atBat.pitches.push(pitch);
         }

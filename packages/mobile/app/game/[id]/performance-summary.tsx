@@ -13,7 +13,7 @@ import {
     clearPerformanceSummary,
 } from '../../../src/state';
 import { PerformanceSummaryView } from '../../../src/components/performanceSummary';
-import { PerformanceSummary, BatterBreakdown, PitchType, PitchResult } from '@pitch-tracker/shared';
+import { PerformanceSummary, BatterBreakdown, PitchType, PitchResult, PitchCallZone } from '@pitch-tracker/shared';
 
 const NARRATIVE_POLL_INTERVAL_MS = 3000;
 const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
@@ -42,6 +42,37 @@ const RESULT_STYLE: Record<PitchResult, { bg: string; color: string; label: stri
     hit_by_pitch: { bg: '#f3e8ff', color: '#6d28d9', label: 'HBP' },
 };
 
+function buildMiniZoneHtml(zone: PitchCallZone | undefined, dotColor: string): string {
+    if (!zone) return '';
+    const isWaste = zone.startsWith('W-');
+    let parsed: { row: number; col: number } | null = null;
+    if (!isWaste) {
+        const parts = zone.split('-');
+        const row = parseInt(parts[0]);
+        const col = parseInt(parts[1]);
+        if (!isNaN(row) && !isNaN(col)) parsed = { row, col };
+    }
+    const cellSize = 7;
+    const cells = [0, 1, 2]
+        .map((row) =>
+            [0, 1, 2]
+                .map((col) => {
+                    const active = parsed?.row === row && parsed?.col === col;
+                    return `<td style="width:${cellSize}px;height:${cellSize}px;border:0.5px solid rgba(0,0,0,0.1);background:${active ? dotColor : 'rgba(255,255,255,0.35)'};padding:0;"></td>`;
+                })
+                .join('')
+        )
+        .map((row) => `<tr>${row}</tr>`)
+        .join('');
+    const wasteOverlay = isWaste
+        ? `<div style="position:absolute;top:${cellSize}px;left:${cellSize}px;width:${cellSize}px;height:${cellSize}px;border-radius:50%;background:${dotColor};opacity:0.7;"></div>`
+        : '';
+    return `<div style="position:relative;display:inline-block;margin-top:2px;border:0.5px solid rgba(0,0,0,0.15);border-radius:2px;overflow:hidden;line-height:0;">
+      <table style="border-collapse:collapse;width:${cellSize * 3}px;">${cells}</table>
+      ${wasteOverlay}
+    </div>`;
+}
+
 function buildBatterBreakdownHtml(breakdown: BatterBreakdown[]): string {
     if (!breakdown.length) return '';
 
@@ -64,12 +95,14 @@ function buildBatterBreakdownHtml(breakdown: BatterBreakdown[]): string {
                                 pitch.velocity != null
                                     ? `<div style="font-size:8px;opacity:0.8;">${Math.round(pitch.velocity)}</div>`
                                     : '';
+                            const zone = pitch.target_zone != null ? buildMiniZoneHtml(pitch.target_zone, s.color) : '';
                             return `<td style="padding:2px;">
                               <div style="background:${s.bg};color:${s.color};${border}border-radius:4px;width:36px;text-align:center;padding:3px 2px;display:inline-block;vertical-align:top;">
                                 <div style="font-size:8px;font-weight:700;line-height:1.2;">${pitch.balls_before}-${pitch.strikes_before}</div>
                                 <div style="font-size:11px;font-weight:800;line-height:1.3;">${abbrev}</div>
                                 <div style="font-size:8px;font-weight:600;line-height:1.2;">${s.label}</div>
                                 ${vel}
+                                ${zone}
                               </div>
                             </td>`;
                         })
@@ -98,7 +131,7 @@ function buildBatterBreakdownHtml(breakdown: BatterBreakdown[]): string {
     return `<div class="section">
   <div class="section-title">Batter Breakdown</div>
   <div class="section-body">
-    <div style="font-size:10px;color:#9ca3af;margin-bottom:8px;font-style:italic;">Count · Type · Result · Vel &nbsp;|&nbsp; <span style="display:inline-block;width:10px;height:10px;border:2px solid #eab308;border-radius:2px;vertical-align:middle;"></span> = AB-ending pitch</div>
+    <div style="font-size:10px;color:#9ca3af;margin-bottom:8px;font-style:italic;">Count · Type · Result · Vel · Zone &nbsp;|&nbsp; <span style="display:inline-block;width:10px;height:10px;border:2px solid #eab308;border-radius:2px;vertical-align:middle;"></span> = AB-ending pitch</div>
     ${batterSections}
   </div>
 </div>`;
