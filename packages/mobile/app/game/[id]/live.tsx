@@ -840,7 +840,7 @@ export default function LiveGameScreen() {
     };
 
     const handleInPlayResult = useCallback(
-        async (result: string, hitLocation?: HitLocation) => {
+        async (result: string, hitLocation?: HitLocation, fieldedBy?: string) => {
             // Capture before any async clears state
             const capturedAtBat = currentAtBat;
             const capturedPitches = pitches;
@@ -863,11 +863,12 @@ export default function LiveGameScreen() {
                 await handleEndAtBat(result);
             }
 
-            // Record the play with hit location and derived fielder position
+            // Record the play with hit location and fielder position
             if (hitLocation && capturedAtBat) {
                 const lastPitch = capturedPitches[capturedPitches.length - 1];
                 if (lastPitch?.id) {
-                    const fieldedBy = deriveFielderPosition(hitLocation.x, hitLocation.y);
+                    // Use explicitly selected fielder; fall back to coordinate-derived position
+                    const resolvedFielder = fieldedBy ?? deriveFielderPosition(hitLocation.x, hitLocation.y);
                     const isOut =
                         result !== 'single' &&
                         result !== 'double' &&
@@ -889,7 +890,7 @@ export default function LiveGameScreen() {
                             pitch_id: lastPitch.id,
                             at_bat_id: capturedAtBat.id,
                             contact_type: contactType as ContactType,
-                            fielded_by_position: (fieldedBy ?? undefined) as PlayerPosition | undefined,
+                            fielded_by_position: (resolvedFielder ?? undefined) as PlayerPosition | undefined,
                             is_error: result === 'error',
                             is_out: isOut,
                             runs_scored: 0,

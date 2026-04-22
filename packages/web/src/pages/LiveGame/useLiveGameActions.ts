@@ -364,7 +364,7 @@ export function useLiveGameActions(state: LiveGameState) {
         return '1B';
     };
 
-    const handleDiamondResult = async (result: string) => {
+    const handleDiamondResult = async (result: string, fieldedByOverride?: string) => {
         // Capture before clearing
         const capturedHitLocation = hitLocation;
         const capturedAtBat = currentAtBat;
@@ -413,7 +413,7 @@ export function useLiveGameActions(state: LiveGameState) {
         if (capturedHitLocation && capturedAtBat) {
             const lastPitch = capturedPitches[capturedPitches.length - 1];
             if (lastPitch?.id) {
-                const fieldedBy = deriveFielderPosition(capturedHitLocation.x, capturedHitLocation.y);
+                const fieldedBy = fieldedByOverride ?? deriveFielderPosition(capturedHitLocation.x, capturedHitLocation.y);
                 const isOut = !isHitResult && result !== 'error';
                 const contactType =
                     result === 'popout'

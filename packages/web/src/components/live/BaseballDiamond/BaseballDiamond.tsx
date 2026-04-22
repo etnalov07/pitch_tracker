@@ -10,69 +10,81 @@ export interface HitLocation {
     hitType: HitType;
 }
 
+// Fielder positions in 0–100 viewBox space
+const FIELDER_POSITIONS: Record<string, { x: number; y: number }> = {
+    CF: { x: 50, y: 32 },
+    LF: { x: 22, y: 44 },
+    RF: { x: 78, y: 44 },
+    SS: { x: 37, y: 57 },
+    '2B': { x: 63, y: 57 },
+    '3B': { x: 24, y: 70 },
+    '1B': { x: 76, y: 70 },
+    P: { x: 50, y: 65 },
+    C: { x: 50, y: 88 },
+};
+
 interface BaseballDiamondProps {
     onLocationSelect: (location: HitLocation) => void;
     selectedLocation?: HitLocation | null;
     hitType: HitType;
+    selectedFielder?: string | null;
+    onFielderSelect?: (position: string) => void;
 }
 
-const BaseballDiamond: React.FC<BaseballDiamondProps> = ({ onLocationSelect, selectedLocation, hitType }) => {
+const BaseballDiamond: React.FC<BaseballDiamondProps> = ({
+    onLocationSelect,
+    selectedLocation,
+    hitType,
+    selectedFielder,
+    onFielderSelect,
+}) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const [hoverLocation, setHoverLocation] = useState<{ x: number; y: number } | null>(null);
 
-    const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
-        if (!svgRef.current) return;
-
+    const getSvgCoords = (e: React.MouseEvent<SVGSVGElement>) => {
+        if (!svgRef.current) return null;
         const rect = svgRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        return {
+            x: ((e.clientX - rect.left) / rect.width) * 100,
+            y: ((e.clientY - rect.top) / rect.height) * 100,
+        };
+    };
 
-        onLocationSelect({ x, y, hitType });
+    const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
+        const coords = getSvgCoords(e);
+        if (!coords) return;
+        onLocationSelect({ x: coords.x, y: coords.y, hitType });
     };
 
     const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-        if (!svgRef.current) return;
-
-        const rect = svgRef.current.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 100;
-        const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-        setHoverLocation({ x, y });
+        const coords = getSvgCoords(e);
+        if (coords) setHoverLocation(coords);
     };
 
     const handleMouseLeave = () => {
         setHoverLocation(null);
     };
 
-    // Generate trajectory path from home plate to hit location
     const generateTrajectoryPath = (endX: number, endY: number, type: HitType): string => {
-        const startX = 50; // Home plate x
-        const startY = 85; // Home plate y
+        const startX = 50;
+        const startY = 85;
 
         if (type === 'line_drive') {
-            // Straight line
             return `M ${startX} ${startY} L ${endX} ${endY}`;
         } else if (type === 'fly_ball') {
-            // Curved arc (control point above the midpoint)
             const midX = (startX + endX) / 2;
-            const midY = Math.min(startY, endY) - 15; // Arc above
+            const midY = Math.min(startY, endY) - 15;
             return `M ${startX} ${startY} Q ${midX} ${midY} ${endX} ${endY}`;
         } else {
-            // Ground ball - squiggly line using multiple small curves
             const segments = 6;
             let path = `M ${startX} ${startY}`;
             const dx = (endX - startX) / segments;
             const dy = (endY - startY) / segments;
-
             for (let i = 0; i < segments; i++) {
                 const x1 = startX + dx * i + dx / 2;
                 const y1 = startY + dy * i + dy / 2;
                 const wiggle = i % 2 === 0 ? 2 : -2;
-                const cpX = x1 + wiggle;
-                const cpY = y1;
-                const nextX = startX + dx * (i + 1);
-                const nextY = startY + dy * (i + 1);
-                path += ` Q ${cpX} ${cpY} ${nextX} ${nextY}`;
+                path += ` Q ${x1 + wiggle} ${y1} ${startX + dx * (i + 1)} ${startY + dy * (i + 1)}`;
             }
             return path;
         }
@@ -99,6 +111,7 @@ const BaseballDiamond: React.FC<BaseballDiamondProps> = ({ onLocationSelect, sel
                 onClick={handleClick}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
+                style={{ cursor: 'crosshair' }}
             >
                 {/* Outfield grass */}
                 <path
@@ -161,7 +174,14 @@ const BaseballDiamond: React.FC<BaseballDiamondProps> = ({ onLocationSelect, sel
                 />
 
                 {/* Pitcher's mound */}
-                <circle cx="50" cy="65" r="2" fill={theme.colors.yellow[300]} stroke={theme.colors.yellow[500]} strokeWidth="0.5" />
+                <circle
+                    cx="50"
+                    cy="65"
+                    r="1.5"
+                    fill={theme.colors.yellow[300]}
+                    stroke={theme.colors.yellow[500]}
+                    strokeWidth="0.5"
+                />
 
                 {/* Foul lines */}
                 <line x1="50" y1="85" x2="5" y2="40" stroke={theme.colors.gray[400]} strokeWidth="0.5" strokeDasharray="2,2" />
@@ -175,29 +195,6 @@ const BaseballDiamond: React.FC<BaseballDiamondProps> = ({ onLocationSelect, sel
                     strokeWidth="0.5"
                     strokeDasharray="2,2"
                 />
-
-                {/* Field positions labels */}
-                <text x="50" y="38" fontSize="3" fill={theme.colors.gray[500]} textAnchor="middle">
-                    CF
-                </text>
-                <text x="25" y="48" fontSize="3" fill={theme.colors.gray[500]} textAnchor="middle">
-                    LF
-                </text>
-                <text x="75" y="48" fontSize="3" fill={theme.colors.gray[500]} textAnchor="middle">
-                    RF
-                </text>
-                <text x="38" y="60" fontSize="3" fill={theme.colors.gray[500]} textAnchor="middle">
-                    SS
-                </text>
-                <text x="62" y="60" fontSize="3" fill={theme.colors.gray[500]} textAnchor="middle">
-                    2B
-                </text>
-                <text x="25" y="72" fontSize="3" fill={theme.colors.gray[500]} textAnchor="middle">
-                    3B
-                </text>
-                <text x="75" y="72" fontSize="3" fill={theme.colors.gray[500]} textAnchor="middle">
-                    1B
-                </text>
 
                 {/* Hover indicator */}
                 {hoverLocation && !selectedLocation && (
@@ -214,7 +211,7 @@ const BaseballDiamond: React.FC<BaseballDiamondProps> = ({ onLocationSelect, sel
                     </>
                 )}
 
-                {/* Selected location with trajectory */}
+                {/* Selected hit location with trajectory */}
                 {selectedLocation && (
                     <>
                         <path
@@ -229,10 +226,45 @@ const BaseballDiamond: React.FC<BaseballDiamondProps> = ({ onLocationSelect, sel
                             r="3"
                             fill={getTrajectoryColor(selectedLocation.hitType)}
                         />
-                        {/* Ball marker */}
                         <circle cx={selectedLocation.x} cy={selectedLocation.y} r="1.5" fill="white" />
                     </>
                 )}
+
+                {/* Fielder circles — rendered last so they appear on top */}
+                {Object.entries(FIELDER_POSITIONS).map(([pos, coords]) => {
+                    const isSelected = selectedFielder === pos;
+                    return (
+                        <g
+                            key={pos}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onFielderSelect?.(pos);
+                            }}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <circle
+                                cx={coords.x}
+                                cy={coords.y}
+                                r="4.5"
+                                fill={isSelected ? '#1e3a5f' : 'rgba(255,255,255,0.9)'}
+                                stroke={isSelected ? '#1e3a5f' : theme.colors.gray[400]}
+                                strokeWidth={isSelected ? '1' : '0.5'}
+                            />
+                            <text
+                                x={coords.x}
+                                y={coords.y + 1.2}
+                                fontSize={pos.length > 2 ? '2.2' : '2.5'}
+                                fill={isSelected ? '#ffffff' : theme.colors.gray[600]}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                fontWeight="700"
+                                style={{ pointerEvents: 'none', userSelect: 'none' }}
+                            >
+                                {pos}
+                            </text>
+                        </g>
+                    );
+                })}
             </DiamondSvg>
 
             <Legend>
