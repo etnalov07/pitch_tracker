@@ -646,6 +646,7 @@ export class PerformanceSummaryService {
                 ab.created_at AS ab_created_at,
                 i.inning_number,
                 i.half AS inning_half,
+                pl.fielded_by_position,
                 p.pitch_number,
                 p.pitch_type,
                 p.pitch_result,
@@ -662,6 +663,7 @@ export class PerformanceSummaryService {
              JOIN at_bats ab ON ab.opponent_batter_id = ol.id
              JOIN innings i ON ab.inning_id = i.id
              JOIN pitches p ON p.at_bat_id = ab.id
+             LEFT JOIN plays pl ON pl.at_bat_id = ab.id
              WHERE ol.game_id = $1
              ORDER BY ol.batting_order, i.inning_number,
                  CASE i.half WHEN 'top' THEN 0 ELSE 1 END,
@@ -692,6 +694,7 @@ export class PerformanceSummaryService {
                     inning_number: row.inning_number,
                     inning_half: row.inning_half,
                     result: row.at_bat_result || undefined,
+                    fielded_by_position: row.fielded_by_position || undefined,
                     pitches: [],
                 };
                 atBatMap.set(row.at_bat_id, atBat);

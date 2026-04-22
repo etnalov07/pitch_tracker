@@ -73,6 +73,73 @@ function buildMiniZoneHtml(zone: PitchCallZone | undefined, dotColor: string): s
     </div>`;
 }
 
+const POSITION_NUM: Record<string, number> = {
+    P: 1,
+    C: 2,
+    '1B': 3,
+    '2B': 4,
+    '3B': 5,
+    SS: 6,
+    LF: 7,
+    CF: 8,
+    RF: 9,
+};
+
+function formatAtBatResultHtml(
+    result: string | undefined,
+    fieldedBy: string | undefined,
+    pitches: { pitch_result: string }[]
+): string {
+    if (!result) return '—';
+    const fn = fieldedBy ? (POSITION_NUM[fieldedBy] ?? null) : null;
+    switch (result) {
+        case 'strikeout': {
+            const last = pitches[pitches.length - 1];
+            if (last?.pitch_result === 'called_strike') {
+                return '<span style="display:inline-block;transform:scaleX(-1);">K</span>';
+            }
+            return 'K';
+        }
+        case 'walk':
+            return 'BB';
+        case 'hit_by_pitch':
+            return 'HBP';
+        case 'single':
+            return '1B';
+        case 'double':
+            return '2B';
+        case 'triple':
+            return '3B';
+        case 'home_run':
+            return 'HR';
+        case 'groundout':
+            if (fn === null) return 'GO';
+            return fn === 3 ? '3U' : `${fn}-3`;
+        case 'flyout':
+            return fn !== null ? `F${fn}` : 'FO';
+        case 'lineout':
+            return fn !== null ? `L${fn}` : 'LO';
+        case 'popout':
+            return fn !== null ? `P${fn}` : 'PO';
+        case 'sacrifice_fly':
+            return fn !== null ? `SF${fn}` : 'SF';
+        case 'sacrifice_bunt':
+            return 'SH';
+        case 'double_play':
+            return 'DP';
+        case 'triple_play':
+            return 'TP';
+        case 'fielders_choice':
+            return 'FC';
+        case 'force_out':
+            return fn !== null ? `FO${fn}` : 'FO';
+        case 'strikeout_dropped':
+            return 'K+WP';
+        default:
+            return result.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+}
+
 function buildBatterBreakdownHtml(breakdown: BatterBreakdown[]): string {
     if (!breakdown.length) return '';
 
@@ -83,7 +150,7 @@ function buildBatterBreakdownHtml(breakdown: BatterBreakdown[]): string {
             const atBatRows = batter.at_bats
                 .map((ab) => {
                     const inningLabel = `${ab.inning_half === 'top' ? '▲' : '▼'} ${ab.inning_number}`;
-                    const result = ab.result ? ab.result.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '—';
+                    const result = formatAtBatResultHtml(ab.result, ab.fielded_by_position, ab.pitches);
                     const pitchCells = ab.pitches
                         .map((pitch) => {
                             const s = RESULT_STYLE[pitch.pitch_result] ?? { bg: '#f3f4f6', color: '#374151', label: '?' };

@@ -991,6 +991,7 @@ export interface BatterAtBatSummary {
     inning_number: number;
     inning_half: InningHalf;
     result?: string;
+    fielded_by_position?: string;
     pitches: BatterAtBatPitch[];
 }
 
