@@ -215,9 +215,10 @@ export default function LiveGameScreen() {
     // Load game state on mount
     useEffect(() => {
         if (id) {
-            // Always reset role/at-bat so the charter/viewer prompt appears and stale at-bat from a previous game doesn't block starting a new one
+            // Always reset role/at-bat/batter so stale state from a previous game doesn't carry over
             dispatch(setCurrentGameRole(null));
             dispatch(setCurrentAtBat(null));
+            dispatch(setCurrentMyBatter(null));
             dispatch(fetchCurrentGameState(id))
                 .unwrap()
                 .catch(() => {
@@ -594,11 +595,16 @@ export default function LiveGameScreen() {
         try {
             if (gameMode === 'opp_pitcher') {
                 if (!currentOpposingPitcher || !currentMyBatter) return;
+                const batterId = currentMyBatter.player_id ?? currentMyBatter.player?.id;
+                if (!batterId) {
+                    Alert.alert('Error', 'Batter player record not found. Please re-select the batter.');
+                    return;
+                }
                 await dispatch(
                     createAtBat({
                         game_id: id,
                         inning_id: currentInning.id,
-                        batter_id: currentMyBatter.player_id,
+                        batter_id: batterId,
                         opposing_pitcher_id: currentOpposingPitcher.id,
                         batting_order: currentMyBatter.batting_order,
                         balls: 0,
