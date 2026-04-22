@@ -1583,8 +1583,16 @@ export default function LiveGameScreen() {
                             previousPitches={isReadOnly ? filteredGamePitches : pitches}
                             disabled={isReadOnly || isLogging}
                             colorBy={isReadOnly ? 'pitchType' : 'result'}
-                            batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
-                            pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
+                            batterSide={
+                                gameMode === 'opp_pitcher'
+                                    ? (currentMyBatter?.player?.bats as 'R' | 'L' | 'S' | undefined)
+                                    : (currentBatter?.bats as 'R' | 'L' | 'S' | undefined)
+                            }
+                            pitcherThrows={
+                                gameMode === 'opp_pitcher'
+                                    ? (currentOpposingPitcher?.throws as 'R' | 'L' | undefined)
+                                    : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
+                            }
                         />
                         {renderPitchBreakdown()}
                         {/* Send Call (optional, setting-gated) */}
@@ -1830,8 +1838,16 @@ export default function LiveGameScreen() {
                     disabled={isReadOnly || isLogging}
                     compact
                     colorBy={isReadOnly ? 'pitchType' : 'result'}
-                    batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
-                    pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
+                    batterSide={
+                        gameMode === 'opp_pitcher'
+                            ? (currentMyBatter?.player?.bats as 'R' | 'L' | 'S' | undefined)
+                            : (currentBatter?.bats as 'R' | 'L' | 'S' | undefined)
+                    }
+                    pitcherThrows={
+                        gameMode === 'opp_pitcher'
+                            ? (currentOpposingPitcher?.throws as 'R' | 'L' | undefined)
+                            : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
+                    }
                 />
                 {renderPitchBreakdown()}
                 {/* 3. Pitch Calling (optional, setting-gated) */}
