@@ -98,6 +98,47 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
+    const advanceInning = async (runs: number) => {
+        if (!gameId || !game) return;
+        try {
+            const currentHomeScore = game.home_score || 0;
+            const currentAwayScore = game.away_score || 0;
+            await gamesApi.updateScore(gameId, currentHomeScore, currentAwayScore + runs);
+
+            if (game.is_home_game === false || game.charting_mode === 'both') {
+                // Visitor game or both-team mode: advance 1 half to user's batting half
+                await gamesApi.advanceInning(gameId);
+            } else {
+                // Home game (single-team): skip user's batting half entirely (advance 2)
+                await gamesApi.advanceInning(gameId);
+                await gamesApi.advanceInning(gameId);
+            }
+
+            setBaseRunners(clearBases());
+            dispatch(fetchGameById(gameId));
+            const newInning = await gamesApi.getCurrentInning(gameId);
+            setCurrentInning(newInning);
+            setShowInningChange(false);
+
+            if (game.is_home_game !== false && game.charting_mode !== 'both') {
+                // Home game single-team mode: set up next opponent batter immediately
+                const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
+                setCurrentBattingOrder(nextOrder);
+                const firstBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
+                if (firstBatter && newInning) {
+                    setCurrentBatter(firstBatter);
+                    await startAtBatForBatter(firstBatter, 0, newInning);
+                } else {
+                    setCurrentBatter(null);
+                }
+            }
+            // In 'both' mode or visitor games, game mode switches automatically on re-render
+        } catch (error) {
+            console.error('Failed to advance inning:', error);
+            alert('Failed to advance inning');
+        }
+    };
+
     const handleEndAtBat = async (result: string, extra?: { rbi?: number; runs_scored?: number }) => {
         if (!currentAtBat) return;
 
@@ -123,12 +164,16 @@ export function useLiveGameActions(state: LiveGameState) {
             if (outsFromPlay > 0) {
                 if (newOutCount >= 3) {
                     setCurrentOuts(0);
-                    setTeamRunsScored('0');
-                    setInningChangeInfo({
-                        inning: game?.current_inning || 1,
-                        half: game?.inning_half || 'top',
-                    });
-                    setShowInningChange(true);
+                    if (game?.charting_mode === 'both') {
+                        await advanceInning(0);
+                    } else {
+                        setTeamRunsScored('0');
+                        setInningChangeInfo({
+                            inning: game?.current_inning || 1,
+                            half: game?.inning_half || 'top',
+                        });
+                        setShowInningChange(true);
+                    }
                 } else {
                     setCurrentOuts(newOutCount);
                     const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
@@ -339,53 +384,7 @@ export function useLiveGameActions(state: LiveGameState) {
     };
 
     const handleInningChangeConfirm = async () => {
-        if (!gameId || !game) return;
-
-        try {
-            const runsToAdd = parseInt(teamRunsScored, 10) || 0;
-
-            // Runs scored while our team is pitching go to opponent (away_score)
-            const currentHomeScore = game.home_score || 0;
-            const currentAwayScore = game.away_score || 0;
-            await gamesApi.updateScore(gameId, currentHomeScore, currentAwayScore + runsToAdd);
-
-            if (game.is_home_game === false) {
-                // Visitor game: advance 1 half (to user's batting half)
-                // TeamAtBat modal will handle the next transition
-                await gamesApi.advanceInning(gameId);
-            } else {
-                // Home game: skip opponent's batting half (advance 2)
-                await gamesApi.advanceInning(gameId);
-                await gamesApi.advanceInning(gameId);
-            }
-
-            // Clear base runners on inning change
-            setBaseRunners(clearBases());
-
-            dispatch(fetchGameById(gameId));
-
-            const newInning = await gamesApi.getCurrentInning(gameId);
-            setCurrentInning(newInning);
-
-            setShowInningChange(false);
-
-            if (game.is_home_game !== false) {
-                // Home game: set up next batter immediately
-                const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
-                setCurrentBattingOrder(nextOrder);
-                const firstBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
-                if (firstBatter && newInning) {
-                    setCurrentBatter(firstBatter);
-                    await startAtBatForBatter(firstBatter, 0, newInning);
-                } else {
-                    setCurrentBatter(null);
-                }
-            }
-            // For visitor games, TeamAtBat modal will auto-show via useEffect
-        } catch (error) {
-            console.error('Failed to advance inning:', error);
-            alert('Failed to advance inning');
-        }
+        await advanceInning(parseInt(teamRunsScored, 10) || 0);
     };
 
     const handleTeamAtBatConfirm = async () => {
@@ -484,12 +483,16 @@ export function useLiveGameActions(state: LiveGameState) {
             const newOuts = currentOuts + 1;
             if (newOuts >= 3) {
                 setCurrentOuts(0);
-                setTeamRunsScored('0');
-                setInningChangeInfo({
-                    inning: game?.current_inning || 1,
-                    half: game?.inning_half || 'top',
-                });
-                setShowInningChange(true);
+                if (game?.charting_mode === 'both') {
+                    await advanceInning(0);
+                } else {
+                    setTeamRunsScored('0');
+                    setInningChangeInfo({
+                        inning: game?.current_inning || 1,
+                        half: game?.inning_half || 'top',
+                    });
+                    setShowInningChange(true);
+                }
             } else {
                 setCurrentOuts(newOuts);
             }

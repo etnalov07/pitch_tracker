@@ -720,6 +720,101 @@ export class PerformanceSummaryService {
         return Array.from(batterMap.values());
     }
 
+    async getMyTeamBatterBreakdown(gameId: string): Promise<BatterBreakdown[]> {
+        const result = await query(
+            `WITH active_lineup AS (
+                SELECT DISTINCT ON (player_id) player_id, batting_order, position
+                FROM my_team_lineup
+                WHERE game_id = $1
+                ORDER BY player_id, batting_order
+            )
+            SELECT
+                ab.batter_id,
+                p.first_name || ' ' || p.last_name AS batter_name,
+                COALESCE(al.batting_order, ab.batting_order) AS batting_order,
+                COALESCE(p.bats, 'R') AS bats,
+                al.position,
+                ab.id AS at_bat_id,
+                ab.result AS at_bat_result,
+                ab.created_at AS ab_created_at,
+                i.inning_number,
+                i.half AS inning_half,
+                pl.fielded_by_position,
+                pt.pitch_number,
+                pt.pitch_type,
+                pt.pitch_result,
+                pt.balls_before,
+                pt.strikes_before,
+                pt.velocity,
+                pt.target_zone,
+                pt.target_location_x,
+                pt.target_location_y,
+                (pt.pitch_number = (
+                    SELECT MAX(p2.pitch_number) FROM pitches p2 WHERE p2.at_bat_id = ab.id
+                )) AS is_ab_ending
+            FROM at_bats ab
+            JOIN players p ON p.id = ab.batter_id
+            JOIN innings i ON ab.inning_id = i.id
+            JOIN pitches pt ON pt.at_bat_id = ab.id
+            LEFT JOIN active_lineup al ON al.player_id = ab.batter_id
+            LEFT JOIN plays pl ON pl.at_bat_id = ab.id
+            WHERE ab.game_id = $1
+              AND ab.batter_id IS NOT NULL
+            ORDER BY COALESCE(al.batting_order, ab.batting_order) NULLS LAST,
+                     i.inning_number,
+                     CASE i.half WHEN 'top' THEN 0 ELSE 1 END,
+                     ab.created_at, pt.pitch_number`,
+            [gameId]
+        );
+
+        const batterMap = new Map<string, BatterBreakdown>();
+        const atBatMap = new Map<string, BatterAtBatSummary>();
+
+        for (const row of result.rows) {
+            if (!batterMap.has(row.batter_id)) {
+                batterMap.set(row.batter_id, {
+                    batter_id: row.batter_id,
+                    batter_name: row.batter_name,
+                    batting_order: row.batting_order,
+                    bats: row.bats,
+                    position: row.position || undefined,
+                    at_bats: [],
+                });
+            }
+            const batter = batterMap.get(row.batter_id)!;
+
+            if (!atBatMap.has(row.at_bat_id)) {
+                const atBat: BatterAtBatSummary = {
+                    at_bat_id: row.at_bat_id,
+                    inning_number: row.inning_number,
+                    inning_half: row.inning_half,
+                    result: row.at_bat_result || undefined,
+                    fielded_by_position: row.fielded_by_position || undefined,
+                    pitches: [],
+                };
+                atBatMap.set(row.at_bat_id, atBat);
+                batter.at_bats.push(atBat);
+            }
+            const atBat = atBatMap.get(row.at_bat_id)!;
+
+            const pitch: BatterAtBatPitch = {
+                pitch_number: row.pitch_number,
+                pitch_type: row.pitch_type,
+                pitch_result: row.pitch_result,
+                balls_before: row.balls_before,
+                strikes_before: row.strikes_before,
+                velocity: row.velocity != null ? parseFloat(row.velocity) : undefined,
+                is_ab_ending: row.is_ab_ending === true || row.is_ab_ending === 't',
+                target_zone: row.target_zone ?? undefined,
+                target_location_x: row.target_location_x != null ? parseFloat(row.target_location_x) : undefined,
+                target_location_y: row.target_location_y != null ? parseFloat(row.target_location_y) : undefined,
+            };
+            atBat.pitches.push(pitch);
+        }
+
+        return Array.from(batterMap.values());
+    }
+
     // ========================================================================
     // AI Narrative
     // ========================================================================

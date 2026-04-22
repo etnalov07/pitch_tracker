@@ -82,6 +82,16 @@ export class PerformanceSummaryController {
         }
     }
 
+    async getMyTeamBatterBreakdown(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { gameId } = req.params;
+            const breakdown = await performanceSummaryService.getMyTeamBatterBreakdown(gameId as string);
+            res.status(200).json({ breakdown });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async regenerateNarrative(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const id = req.params.id as string;

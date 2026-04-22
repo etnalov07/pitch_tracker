@@ -28,4 +28,11 @@ export const performanceSummaryService = {
         const response = await api.get<{ breakdown: BatterBreakdown[] }>(`/performance-summaries/game/${gameId}/batter-breakdown`);
         return response.data.breakdown;
     },
+
+    getMyTeamBatterBreakdown: async (gameId: string): Promise<BatterBreakdown[]> => {
+        const response = await api.get<{ breakdown: BatterBreakdown[] }>(
+            `/performance-summaries/game/${gameId}/my-team-batter-breakdown`
+        );
+        return response.data.breakdown;
+    },
 };

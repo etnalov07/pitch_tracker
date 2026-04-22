@@ -328,6 +328,72 @@ export default function LiveGameScreen() {
         [id, currentPitcher, dispatch]
     );
 
+    const advanceInningWithRuns = useCallback(
+        async (runs: number) => {
+            if (!id || !game) return;
+            try {
+                const newAwayScore = (game.away_score || 0) + runs;
+                const homeScore = game.home_score || 0;
+                const isHomeGame = game.is_home_game !== false;
+                const totalInnings = game.total_innings ?? 7;
+                const isLastInningOrLater = game.current_inning >= totalInnings;
+
+                await gamesApi.updateScore(id, homeScore, newAwayScore);
+
+                if (isLastInningOrLater) {
+                    if (isHomeGame && homeScore > newAwayScore) {
+                        await dispatch(endGame({ gameId: id, finalData: { home_score: homeScore, away_score: newAwayScore } }));
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        router.replace(`/game/${id}` as any);
+                        return;
+                    }
+                    if (!isHomeGame && homeScore !== newAwayScore) {
+                        await dispatch(endGame({ gameId: id, finalData: { home_score: homeScore, away_score: newAwayScore } }));
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        router.replace(`/game/${id}` as any);
+                        return;
+                    }
+                }
+
+                if (game.is_home_game === false || game.charting_mode === 'both') {
+                    // Visitor game or both-team mode: advance 1 half to user's batting half
+                    await gamesApi.advanceInning(id);
+                } else {
+                    // Home game (single-team): skip user's batting half entirely (advance 2)
+                    await gamesApi.advanceInning(id);
+                    await gamesApi.advanceInning(id);
+                }
+
+                dispatch(setBaseRunners(clearBases()));
+                dispatch(fetchGameById(id));
+                const newInning = await gamesApi.getCurrentInning(id);
+                setShowInningChange(false);
+
+                if (game.is_home_game !== false && game.charting_mode !== 'both') {
+                    // Home game single-team mode: set up next opponent batter immediately
+                    const nextOrder = currentBattingOrder >= lineupSize ? 1 : currentBattingOrder + 1;
+                    setCurrentBattingOrder(nextOrder);
+                    const firstBatter = activeBatters.find((p) => p.batting_order === nextOrder);
+                    if (firstBatter && newInning) {
+                        setCurrentBatter(firstBatter);
+                        await startAtBatForBatter(firstBatter, 0, newInning);
+                        dispatch(fetchCurrentInning(id));
+                    } else {
+                        setCurrentBatter(null);
+                        dispatch(fetchCurrentInning(id));
+                    }
+                } else {
+                    // In 'both' mode or visitor games, game mode switches automatically on re-render
+                    dispatch(fetchCurrentInning(id));
+                }
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch {
+                Alert.alert('Error', 'Failed to advance inning');
+            }
+        },
+        [id, game, currentBattingOrder, activeBatters, lineupSize, dispatch, startAtBatForBatter, router]
+    );
+
     const handleEndAtBat = useCallback(
         async (result: string, finalPitch?: Partial<Pitch>, extra?: { rbi?: number; runs_scored?: number }) => {
             if (!currentAtBat) return;
@@ -364,9 +430,13 @@ export default function LiveGameScreen() {
 
                 if (outsFromPlay > 0 && newOutCount >= 3) {
                     setCurrentOuts(0);
-                    setTeamRunsScored('0');
-                    setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
-                    setShowInningChange(true);
+                    if (game?.charting_mode === 'both') {
+                        await advanceInningWithRuns(0);
+                    } else {
+                        setTeamRunsScored('0');
+                        setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
+                        setShowInningChange(true);
+                    }
                 } else {
                     if (outsFromPlay > 0) setCurrentOuts(newOutCount);
                     const nextOrder = currentBattingOrder >= lineupSize ? 1 : currentBattingOrder + 1;
@@ -395,79 +465,13 @@ export default function LiveGameScreen() {
             currentBatter,
             dispatch,
             startAtBatForBatter,
+            advanceInningWithRuns,
         ]
     );
 
     const handleInningChangeConfirm = useCallback(async () => {
-        if (!id || !game) return;
-        try {
-            const runsToAdd = parseInt(teamRunsScored, 10) || 0;
-            const newAwayScore = (game.away_score || 0) + runsToAdd;
-            const homeScore = game.home_score || 0;
-            const isHomeGame = game.is_home_game !== false;
-            const totalInnings = game.total_innings ?? 7;
-            const isLastInningOrLater = game.current_inning >= totalInnings;
-
-            // Runs scored while our team is pitching go to opponent (away_score)
-            await gamesApi.updateScore(id, homeScore, newAwayScore);
-
-            // Check for auto-end conditions at end of regulation or extra innings
-            if (isLastInningOrLater) {
-                if (isHomeGame && homeScore > newAwayScore) {
-                    // Home team winning after top of last — no need to bat, game over
-                    await dispatch(endGame({ gameId: id, finalData: { home_score: homeScore, away_score: newAwayScore } }));
-                    setShowInningChange(false);
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    router.replace(`/game/${id}` as any);
-                    return;
-                }
-                if (!isHomeGame && homeScore !== newAwayScore) {
-                    // Away game: after bottom of last, game is decided
-                    await dispatch(endGame({ gameId: id, finalData: { home_score: homeScore, away_score: newAwayScore } }));
-                    setShowInningChange(false);
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    router.replace(`/game/${id}` as any);
-                    return;
-                }
-            }
-
-            if (game.is_home_game === false) {
-                // Visitor game: advance 1 half (to user's batting half)
-                await gamesApi.advanceInning(id);
-            } else {
-                // Home game: skip opponent's batting half (advance 2)
-                await gamesApi.advanceInning(id);
-                await gamesApi.advanceInning(id);
-            }
-
-            // Clear base runners on inning change (also done server-side)
-            dispatch(setBaseRunners(clearBases()));
-            dispatch(fetchGameById(id));
-            const newInning = await gamesApi.getCurrentInning(id);
-            setShowInningChange(false);
-
-            if (game.is_home_game !== false) {
-                // Home game: set up next batter immediately
-                const nextOrder = currentBattingOrder >= lineupSize ? 1 : currentBattingOrder + 1;
-                setCurrentBattingOrder(nextOrder);
-                const firstBatter = activeBatters.find((p) => p.batting_order === nextOrder);
-                if (firstBatter && newInning) {
-                    setCurrentBatter(firstBatter);
-                    await startAtBatForBatter(firstBatter, 0, newInning);
-                    dispatch(fetchCurrentInning(id));
-                } else {
-                    setCurrentBatter(null);
-                    dispatch(fetchCurrentInning(id));
-                }
-            } else {
-                // For visitor games, TeamAtBat modal will auto-show via useEffect
-                dispatch(fetchCurrentInning(id));
-            }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {
-            Alert.alert('Error', 'Failed to advance inning');
-        }
-    }, [id, game, teamRunsScored, currentBattingOrder, activeBatters, lineupSize, dispatch, startAtBatForBatter, router]);
+        await advanceInningWithRuns(parseInt(teamRunsScored, 10) || 0);
+    }, [advanceInningWithRuns, teamRunsScored]);
 
     const handleTeamAtBatConfirm = useCallback(async () => {
         if (!id || !game) return;
@@ -868,16 +872,20 @@ export default function LiveGameScreen() {
                 const newOuts = currentOuts + 1;
                 setCurrentOuts(newOuts);
                 if (newOuts >= 3) {
-                    setTeamRunsScored('0');
-                    setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
-                    setShowInningChange(true);
+                    if (game?.charting_mode === 'both') {
+                        await advanceInningWithRuns(0);
+                    } else {
+                        setTeamRunsScored('0');
+                        setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
+                        setShowInningChange(true);
+                    }
                 }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {
                 Alert.alert('Error', 'Failed to record baserunner out');
             }
         },
-        [id, currentInning, currentAtBat, currentOuts, game, dispatch, baseRunners]
+        [id, currentInning, currentAtBat, currentOuts, game, dispatch, baseRunners, advanceInningWithRuns]
     );
 
     const handleRunnerPress = useCallback(

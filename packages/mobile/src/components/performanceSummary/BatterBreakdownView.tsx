@@ -146,15 +146,16 @@ function BatterRow({ batter }: BatterRowProps) {
 
 interface Props {
     breakdown: BatterBreakdown[];
+    title?: string;
 }
 
-export default function BatterBreakdownView({ breakdown }: Props) {
+export default function BatterBreakdownView({ breakdown, title = 'Batter Breakdown' }: Props) {
     if (breakdown.length === 0) {
         return (
             <Card style={styles.card}>
                 <Card.Content>
                     <Text variant="titleMedium" style={styles.sectionTitle}>
-                        Batter Breakdown
+                        {title}
                     </Text>
                     <Divider style={styles.divider} />
                     <Text style={styles.empty}>No batter data available.</Text>
@@ -167,7 +168,7 @@ export default function BatterBreakdownView({ breakdown }: Props) {
         <Card style={styles.card}>
             <Card.Content>
                 <Text variant="titleMedium" style={styles.sectionTitle}>
-                    Batter Breakdown
+                    {title}
                 </Text>
                 <View style={styles.legend}>
                     {(

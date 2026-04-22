@@ -1,9 +1,9 @@
 import styled from '@emotion/styled';
-import { Game, GamePitcherWithPlayer, PerformanceSummary } from '@pitch-tracker/shared';
+import { BatterBreakdown, Game, GamePitcherWithPlayer, PerformanceSummary } from '@pitch-tracker/shared';
 import React, { useState, useEffect, useRef } from 'react';
 import CountBreakdownPanel from '../../components/live/CountBreakdownPanel';
 import PitcherStats from '../../components/live/PitcherStats';
-import { PerformanceSummaryCard } from '../../components/performanceSummary';
+import { BatterBreakdownPanel, PerformanceSummaryCard } from '../../components/performanceSummary';
 import { performanceSummaryService } from '../../services/performanceSummaryService';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { theme } from '../../styles/theme';
@@ -18,11 +18,15 @@ const NARRATIVE_POLL_INTERVAL_MS = 3000;
 const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
 
 const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
-    const [activeTab, setActiveTab] = useState<'stats' | 'counts' | 'summary'>('stats');
+    const [activeTab, setActiveTab] = useState<'stats' | 'counts' | 'breakdown' | 'summary'>('stats');
     const [activePitcher, setActivePitcher] = useState<GamePitcherWithPlayer | null>(null);
     const [summary, setSummary] = useState<PerformanceSummary | null>(null);
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [regenerating, setRegenerating] = useState(false);
+    const [oppBreakdown, setOppBreakdown] = useState<BatterBreakdown[] | null>(null);
+    const [myTeamBreakdown, setMyTeamBreakdown] = useState<BatterBreakdown[] | null>(null);
+    const [breakdownLoading, setBreakdownLoading] = useState(false);
+    const breakdownFetchedRef = useRef(false);
     const pollAttemptsRef = useRef(0);
     const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -35,6 +39,23 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
             })
             .catch(() => {});
     }, [game.id, refreshTrigger]);
+
+    // Batter breakdown — re-fetch whenever the tab is active or a new pitch is logged
+    useEffect(() => {
+        if (activeTab !== 'breakdown') return;
+        if (!breakdownFetchedRef.current) setBreakdownLoading(true);
+        Promise.all([
+            performanceSummaryService.getBatterBreakdown(game.id),
+            game.charting_mode === 'both' ? performanceSummaryService.getMyTeamBatterBreakdown(game.id) : Promise.resolve([]),
+        ])
+            .then(([opp, mine]) => {
+                setOppBreakdown(opp);
+                setMyTeamBreakdown(mine);
+                breakdownFetchedRef.current = true;
+            })
+            .catch(() => {})
+            .finally(() => setBreakdownLoading(false));
+    }, [activeTab, game.id, game.charting_mode, refreshTrigger]);
 
     useEffect(() => {
         if (activeTab !== 'summary' || summary) return;
@@ -83,6 +104,11 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
     const score = `${game.home_score} – ${game.away_score}`;
     const inningLabel = `${game.inning_half === 'top' ? '▲' : '▼'} ${game.current_inning}`;
 
+    const breakdownSections = [
+        { title: 'Opponent Lineup vs. Our Pitcher', batters: oppBreakdown ?? [] },
+        ...(game.charting_mode === 'both' ? [{ title: 'Our Lineup vs. Opponent Pitcher', batters: myTeamBreakdown ?? [] }] : []),
+    ];
+
     return (
         <Wrapper>
             <Header>
@@ -103,6 +129,9 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 <Tab active={activeTab === 'counts'} onClick={() => setActiveTab('counts')}>
                     Count Breakdown
                 </Tab>
+                <Tab active={activeTab === 'breakdown'} onClick={() => setActiveTab('breakdown')}>
+                    Batter Breakdown
+                </Tab>
                 {game.status === 'completed' && (
                     <Tab active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>
                         Performance Summary
@@ -116,6 +145,11 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 )}
                 {activeTab === 'counts' && (
                     <CountBreakdownPanel gameId={game.id} pitcherId={pitcherId} refreshTrigger={refreshTrigger} />
+                )}
+                {activeTab === 'breakdown' && (
+                    <BreakdownWrapper>
+                        <BatterBreakdownPanel sections={breakdownSections} loading={breakdownLoading} />
+                    </BreakdownWrapper>
                 )}
                 {activeTab === 'summary' && (
                     <SummaryWrapper>
@@ -236,6 +270,11 @@ const Content = styled.div`
     flex: 1;
     overflow-y: auto;
     padding: ${theme.spacing.xl};
+`;
+
+const BreakdownWrapper = styled.div`
+    max-width: 800px;
+    margin: 0 auto;
 `;
 
 const SummaryWrapper = styled.div`

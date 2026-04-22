@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
-import { Text, Button, useTheme } from 'react-native-paper';
+import { Text, Button, useTheme, SegmentedButtons } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { BatterBreakdown } from '@pitch-tracker/shared';
 import { useAppDispatch, useAppSelector, fetchCurrentGameState, fetchGamePitchers } from '../../../src/state';
 import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
+import { BatterBreakdownView } from '../../../src/components/performanceSummary';
+import { performanceSummaryApi } from '../../../src/state/performanceSummary/api/performanceSummaryApi';
 import CountBreakdownModal from '../../../src/components/live/CountBreakdownModal';
+
+type ViewerTab = 'pitcher' | 'breakdown';
 
 export default function ViewerScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -14,20 +19,47 @@ export default function ViewerScreen() {
     const { selectedGame, currentGameState, gamePitchers } = useAppSelector((state) => state.games);
     const game = currentGameState?.game || selectedGame;
 
+    const [activeTab, setActiveTab] = useState<ViewerTab>('pitcher');
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [showCountBreakdown, setShowCountBreakdown] = useState(false);
+    const [oppBreakdown, setOppBreakdown] = useState<BatterBreakdown[]>([]);
+    const [myTeamBreakdown, setMyTeamBreakdown] = useState<BatterBreakdown[]>([]);
+    const [breakdownLoading, setBreakdownLoading] = useState(false);
 
     const activePitcher = gamePitchers.find((p) => !p.inning_exited);
     const pitcherId = activePitcher?.player_id;
     const pitcherName = activePitcher?.player ? `${activePitcher.player.first_name} ${activePitcher.player.last_name}` : 'Pitcher';
 
-    // Load game data on mount
-    React.useEffect(() => {
+    useEffect(() => {
         if (id) {
             dispatch(fetchCurrentGameState(id)).catch(() => {});
             dispatch(fetchGamePitchers(id));
         }
     }, [id, dispatch]);
+
+    const fetchBreakdown = useCallback(async () => {
+        if (!id) return;
+        setBreakdownLoading(true);
+        try {
+            const [opp, mine] = await Promise.all([
+                performanceSummaryApi.getBatterBreakdown(id),
+                game?.charting_mode === 'both' ? performanceSummaryApi.getMyTeamBatterBreakdown(id) : Promise.resolve([]),
+            ]);
+            setOppBreakdown(opp);
+            setMyTeamBreakdown(mine);
+        } catch {
+            // leave previous data in place on error
+        } finally {
+            setBreakdownLoading(false);
+        }
+    }, [id, game?.charting_mode]);
+
+    // Re-fetch breakdown whenever on that tab and any pitch is logged
+    useEffect(() => {
+        if (activeTab === 'breakdown') {
+            fetchBreakdown();
+        }
+    }, [activeTab, refreshTrigger, fetchBreakdown]);
 
     useGameWebSocket(id ?? null, {
         pitch_logged: () => {
@@ -68,39 +100,74 @@ export default function ViewerScreen() {
                 </View>
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                <View style={styles.scoreCard}>
-                    <View style={styles.scoreRow}>
-                        <Text variant="bodySmall" style={styles.teamLabel}>
-                            {game.home_team_name ?? 'Home'}
-                        </Text>
-                        <Text variant="headlineMedium" style={styles.score}>
-                            {game.home_score} – {game.away_score}
-                        </Text>
-                        <Text variant="bodySmall" style={styles.teamLabel}>
-                            {game.opponent_name ?? 'Away'}
-                        </Text>
-                    </View>
-                    <Text variant="bodyLarge" style={styles.inning}>
-                        {inningLabel}
-                    </Text>
-                </View>
+            <View style={styles.scoreStrip}>
+                <Text variant="bodySmall" style={styles.teamLabel}>
+                    {game.home_team_name ?? 'Home'}
+                </Text>
+                <Text variant="headlineSmall" style={styles.score}>
+                    {game.home_score} – {game.away_score}
+                </Text>
+                <Text variant="bodySmall" style={styles.teamLabel}>
+                    {game.opponent_name ?? 'Away'}
+                </Text>
+                <Text variant="bodyMedium" style={styles.inning}>
+                    {inningLabel}
+                </Text>
+            </View>
 
-                {pitcherName && activePitcher && (
-                    <View style={styles.statsCard}>
-                        <Text variant="titleSmall" style={styles.cardTitle}>
-                            Now Pitching: {pitcherName}
-                        </Text>
-                        <Text variant="bodySmall" style={styles.statLabel}>
-                            {activePitcher.player?.throws === 'L' ? 'Left-handed' : 'Right-handed'} •{' '}
-                            {activePitcher.player?.jersey_number ? `#${activePitcher.player.jersey_number}` : ''}
-                        </Text>
-                    </View>
+            <View style={styles.tabRow}>
+                <SegmentedButtons
+                    value={activeTab}
+                    onValueChange={(v) => setActiveTab(v as ViewerTab)}
+                    buttons={[
+                        { value: 'pitcher', label: 'Pitcher Info' },
+                        { value: 'breakdown', label: 'Batter Breakdown' },
+                    ]}
+                    style={styles.segmented}
+                />
+            </View>
+
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                {activeTab === 'pitcher' && (
+                    <>
+                        {activePitcher && (
+                            <View style={styles.statsCard}>
+                                <Text variant="titleSmall" style={styles.cardTitle}>
+                                    Now Pitching: {pitcherName}
+                                </Text>
+                                <Text variant="bodySmall" style={styles.statLabel}>
+                                    {activePitcher.player?.throws === 'L' ? 'Left-handed' : 'Right-handed'} •{' '}
+                                    {activePitcher.player?.jersey_number ? `#${activePitcher.player.jersey_number}` : ''}
+                                </Text>
+                            </View>
+                        )}
+                        <Button
+                            mode="outlined"
+                            icon="chart-bar"
+                            onPress={() => setShowCountBreakdown(true)}
+                            style={styles.countBtn}
+                        >
+                            Count Breakdown
+                        </Button>
+                    </>
                 )}
 
-                <Button mode="outlined" icon="chart-bar" onPress={() => setShowCountBreakdown(true)} style={styles.countBtn}>
-                    Count Breakdown
-                </Button>
+                {activeTab === 'breakdown' && (
+                    <View style={styles.breakdownContainer}>
+                        {breakdownLoading && oppBreakdown.length === 0 ? (
+                            <Text style={styles.loadingText}>Loading batter breakdown…</Text>
+                        ) : (
+                            <>
+                                <BatterBreakdownView breakdown={oppBreakdown} title="Opponent Lineup vs. Our Pitcher" />
+                                {game.charting_mode === 'both' && (
+                                    <View style={styles.secondSection}>
+                                        <BatterBreakdownView breakdown={myTeamBreakdown} title="Our Lineup vs. Opponent Pitcher" />
+                                    </View>
+                                )}
+                            </>
+                        )}
+                    </View>
+                )}
             </ScrollView>
 
             <CountBreakdownModal
@@ -133,34 +200,30 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 2,
     },
-    viewerBadgeText: {
-        color: 'white',
-        fontSize: 10,
-        fontWeight: '700',
-        letterSpacing: 1,
-    },
-    content: { flex: 1, padding: 16 },
-    scoreCard: {
-        backgroundColor: 'white',
-        borderRadius: 12,
-        padding: 20,
-        alignItems: 'center',
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-    },
-    scoreRow: {
+    viewerBadgeText: { color: 'white', fontSize: 10, fontWeight: '700', letterSpacing: 1 },
+    scoreStrip: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
-        marginBottom: 8,
+        justifyContent: 'center',
+        gap: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        backgroundColor: 'white',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
     },
     teamLabel: { color: '#6b7280' },
     score: { fontWeight: '700', letterSpacing: 2 },
-    inning: { color: '#1d4ed8', fontWeight: '600' },
+    inning: { color: '#1d4ed8', fontWeight: '600', marginLeft: 8 },
+    tabRow: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: 'white',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+    },
+    segmented: { height: 36 },
+    content: { flex: 1, padding: 12 },
     statsCard: {
         backgroundColor: 'white',
         borderRadius: 12,
@@ -172,15 +235,10 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 2,
     },
-    cardTitle: {
-        fontWeight: '600',
-        marginBottom: 12,
-        color: '#1f2937',
-    },
-    statLabel: {
-        fontSize: 11,
-        color: '#6b7280',
-        marginTop: 4,
-    },
-    countBtn: { marginTop: 8 },
+    cardTitle: { fontWeight: '600', marginBottom: 4, color: '#1f2937' },
+    statLabel: { fontSize: 11, color: '#6b7280', marginTop: 4 },
+    countBtn: { marginTop: 4 },
+    breakdownContainer: { gap: 0 },
+    secondSection: { marginTop: 12 },
+    loadingText: { textAlign: 'center', color: '#9ca3af', marginTop: 32, fontSize: 14 },
 });
