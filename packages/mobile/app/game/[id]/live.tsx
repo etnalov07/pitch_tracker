@@ -411,7 +411,8 @@ export default function LiveGameScreen() {
                 // where the last pitch was just dispatched but Redux state hasn't re-rendered yet)
                 const endedAtBat = currentAtBat;
                 const endedPitches = finalPitch ? [...pitches, finalPitch as Pitch] : [...pitches];
-                const endedBatterId = currentBatter?.id;
+                const endedBatterId =
+                    gameMode === 'opp_pitcher' ? (currentMyBatter?.player_id ?? currentMyBatter?.player?.id) : currentBatter?.id;
 
                 const outsFromPlay = getOutsForResult(result);
                 const newOutCount = currentOuts + outsFromPlay;
@@ -448,14 +449,26 @@ export default function LiveGameScreen() {
                     }
                 } else {
                     if (outsFromPlay > 0) setCurrentOuts(newOutCount);
-                    const nextOrder = currentBattingOrder >= lineupSize ? 1 : currentBattingOrder + 1;
-                    setCurrentBattingOrder(nextOrder);
-                    const nextBatter = activeBatters.find((p) => p.batting_order === nextOrder);
-                    if (nextBatter) {
-                        setCurrentBatter(nextBatter);
-                        await startAtBatForBatter(nextBatter, outsFromPlay > 0 ? newOutCount : currentOuts, currentInning);
+                    if (gameMode === 'opp_pitcher') {
+                        // Advance to next batter in my team's lineup
+                        const myStarters = myTeamLineup
+                            .filter((p) => p.is_starter)
+                            .sort((a, b) => a.batting_order - b.batting_order);
+                        const currentMyOrder = currentMyBatter?.batting_order ?? 1;
+                        const myLineupSize = myStarters.length;
+                        const nextMyOrder = currentMyOrder >= myLineupSize ? 1 : currentMyOrder + 1;
+                        const nextMyBatter = myStarters.find((p) => p.batting_order === nextMyOrder) ?? myStarters[0] ?? null;
+                        dispatch(setCurrentMyBatter(nextMyBatter));
                     } else {
-                        setCurrentBatter(null);
+                        const nextOrder = currentBattingOrder >= lineupSize ? 1 : currentBattingOrder + 1;
+                        setCurrentBattingOrder(nextOrder);
+                        const nextBatter = activeBatters.find((p) => p.batting_order === nextOrder);
+                        if (nextBatter) {
+                            setCurrentBatter(nextBatter);
+                            await startAtBatForBatter(nextBatter, outsFromPlay > 0 ? newOutCount : currentOuts, currentInning);
+                        } else {
+                            setCurrentBatter(null);
+                        }
                     }
                 }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -472,6 +485,9 @@ export default function LiveGameScreen() {
             game,
             pitches,
             currentBatter,
+            gameMode,
+            currentMyBatter,
+            myTeamLineup,
             dispatch,
             startAtBatForBatter,
             advanceInningWithRuns,
