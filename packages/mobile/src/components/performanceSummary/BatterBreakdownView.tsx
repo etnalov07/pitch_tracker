@@ -36,36 +36,14 @@ const RESULT_LABEL: Record<PitchResult, string> = {
     hit_by_pitch: 'HBP',
 };
 
-// Parse '0-0'..'2-2' → {row, col}. Returns null for waste or unknown zones.
-function parseStrikeZone(zone?: PitchCallZone): { row: number; col: number } | null {
-    if (!zone || zone.startsWith('W-')) return null;
-    const parts = zone.split('-');
-    if (parts.length !== 2) return null;
-    const row = parseInt(parts[0]);
-    const col = parseInt(parts[1]);
-    if (isNaN(row) || isNaN(col)) return null;
-    return { row, col };
-}
-
-interface MiniZoneProps {
-    zone?: PitchCallZone;
-    dotColor: string;
-}
-
-function MiniZone({ zone, dotColor }: MiniZoneProps) {
-    const parsed = parseStrikeZone(zone);
-    const isWaste = zone?.startsWith('W-') ?? false;
-    return (
-        <View style={styles.miniZone}>
-            {[0, 1, 2].map((row) =>
-                [0, 1, 2].map((col) => {
-                    const active = parsed?.row === row && parsed?.col === col;
-                    return <View key={`${row}-${col}`} style={[styles.miniZoneCell, active && { backgroundColor: dotColor }]} />;
-                })
-            )}
-            {isWaste && <View style={[styles.miniZoneWaste, { backgroundColor: dotColor }]} />}
-        </View>
-    );
+function getLocationLabel(zone?: PitchCallZone, bats?: string): string | null {
+    if (!zone) return null;
+    if (zone.startsWith('W-')) return 'W';
+    const col = parseInt(zone.split('-')[1]);
+    if (isNaN(col)) return null;
+    if (col === 1) return 'Mid';
+    const isLHH = bats === 'L';
+    return col === 0 ? (isLHH ? 'Out' : 'In') : isLHH ? 'In' : 'Out';
 }
 
 const POSITION_NUM: Record<string, number> = {
@@ -134,12 +112,14 @@ function formatInning(num: number, half: string): string {
 
 interface PitchDotProps {
     pitch: BatterAtBatPitch;
+    bats?: string;
 }
 
-function PitchDot({ pitch }: PitchDotProps) {
+function PitchDot({ pitch, bats }: PitchDotProps) {
     const colors = RESULT_COLOR[pitch.pitch_result];
     const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
     const resultLabel = RESULT_LABEL[pitch.pitch_result];
+    const locationLabel = getLocationLabel(pitch.target_zone, bats);
     return (
         <View style={[styles.pitchDot, { backgroundColor: colors.bg }, pitch.is_ab_ending && styles.pitchDotEnding]}>
             <Text style={[styles.pitchCount, { color: colors.text }]}>
@@ -148,7 +128,7 @@ function PitchDot({ pitch }: PitchDotProps) {
             <Text style={[styles.pitchType, { color: colors.text }]}>{abbrev}</Text>
             <Text style={[styles.pitchResult, { color: colors.text }]}>{resultLabel}</Text>
             {pitch.velocity != null && <Text style={[styles.pitchVel, { color: colors.text }]}>{Math.round(pitch.velocity)}</Text>}
-            <MiniZone zone={pitch.target_zone} dotColor={colors.text} />
+            {locationLabel != null && <Text style={[styles.pitchLoc, { color: colors.text }]}>{locationLabel}</Text>}
             {pitch.is_ab_ending && <View style={styles.endingIndicator} />}
         </View>
     );
@@ -189,7 +169,7 @@ function BatterRow({ batter }: BatterRowProps) {
                         </View>
                         <View style={styles.pitchRow}>
                             {ab.pitches.map((pitch) => (
-                                <PitchDot key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} />
+                                <PitchDot key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
                             ))}
                         </View>
                         {abIdx < batter.at_bats.length - 1 && <View style={styles.atBatDivider} />}
@@ -249,7 +229,7 @@ export default function BatterBreakdownView({ breakdown, title = 'Batter Breakdo
                     </View>
                 </View>
                 <Divider style={styles.divider} />
-                <Text style={styles.pitchDotHint}>Count · Type · Result · Vel</Text>
+                <Text style={styles.pitchDotHint}>Count · Type · Result · Vel · Loc</Text>
                 {[...breakdown]
                     .sort((a, b) => a.batting_order - b.batting_order)
                     .map((batter, idx) => (
@@ -429,32 +409,10 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         backgroundColor: '#e5e7eb',
     },
-    miniZone: {
-        width: 27,
-        height: 27,
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginTop: 2,
-        borderWidth: 0.5,
-        borderColor: 'rgba(0,0,0,0.15)',
-        borderRadius: 2,
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    miniZoneCell: {
-        width: 9,
-        height: 9,
-        borderWidth: 0.5,
-        borderColor: 'rgba(0,0,0,0.1)',
-        backgroundColor: 'rgba(255,255,255,0.35)',
-    },
-    miniZoneWaste: {
-        position: 'absolute',
-        top: 9,
-        left: 9,
-        width: 9,
-        height: 9,
-        borderRadius: 5,
-        opacity: 0.7,
+    pitchLoc: {
+        fontSize: 9,
+        fontWeight: '600',
+        lineHeight: 11,
+        opacity: 0.85,
     },
 });

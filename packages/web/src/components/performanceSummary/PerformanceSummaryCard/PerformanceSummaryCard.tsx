@@ -43,9 +43,6 @@ import {
     PitchSequence,
     PitchCard,
     PitchTextLine,
-    MiniZoneGrid,
-    MiniZoneCell,
-    MiniZoneWasteDot,
     BreakdownLegend,
     LegendItem,
     LegendDot,
@@ -159,34 +156,20 @@ function formatInning(num: number, half: string): string {
     return `${half === 'top' ? 'Top' : 'Bot'} ${num}`;
 }
 
-function parseStrikeZone(zone?: PitchCallZone): { row: number; col: number } | null {
-    if (!zone || zone.startsWith('W-')) return null;
-    const parts = zone.split('-');
-    if (parts.length !== 2) return null;
-    const row = parseInt(parts[0]);
-    const col = parseInt(parts[1]);
-    if (isNaN(row) || isNaN(col)) return null;
-    return { row, col };
+function getLocationLabel(zone?: PitchCallZone, bats?: string): string | null {
+    if (!zone) return null;
+    if (zone.startsWith('W-')) return 'W';
+    const col = parseInt(zone.split('-')[1]);
+    if (isNaN(col)) return null;
+    if (col === 1) return 'Mid';
+    const isLHH = bats === 'L';
+    return col === 0 ? (isLHH ? 'Out' : 'In') : isLHH ? 'In' : 'Out';
 }
 
-function WebMiniZone({ zone, dotColor }: { zone?: PitchCallZone; dotColor: string }) {
-    const parsed = parseStrikeZone(zone);
-    const isWaste = zone?.startsWith('W-') ?? false;
-    return (
-        <MiniZoneGrid>
-            {[0, 1, 2].map((row) =>
-                [0, 1, 2].map((col) => (
-                    <MiniZoneCell key={`${row}-${col}`} active={parsed?.row === row && parsed?.col === col} dotColor={dotColor} />
-                ))
-            )}
-            {isWaste && <MiniZoneWasteDot dotColor={dotColor} />}
-        </MiniZoneGrid>
-    );
-}
-
-function WebPitchCard({ pitch }: { pitch: BatterAtBatPitch }) {
+function WebPitchCard({ pitch, bats }: { pitch: BatterAtBatPitch; bats?: string }) {
     const colors = RESULT_COLOR[pitch.pitch_result];
     const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
+    const locationLabel = getLocationLabel(pitch.target_zone, bats);
     return (
         <PitchCard bg={colors.bg} isEnding={pitch.is_ab_ending} title={pitch.pitch_type}>
             <PitchTextLine color={colors.text} size={9}>
@@ -203,7 +186,11 @@ function WebPitchCard({ pitch }: { pitch: BatterAtBatPitch }) {
                     {Math.round(pitch.velocity)}
                 </PitchTextLine>
             )}
-            <WebMiniZone zone={pitch.target_zone} dotColor={colors.text} />
+            {locationLabel != null && (
+                <PitchTextLine color={colors.text} size={9}>
+                    {locationLabel}
+                </PitchTextLine>
+            )}
         </PitchCard>
     );
 }
@@ -233,7 +220,7 @@ function WebBatterRow({ batter }: { batter: BatterBreakdown }) {
                         </AtBatHeaderRow>
                         <PitchSequence>
                             {ab.pitches.map((pitch) => (
-                                <WebPitchCard key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} />
+                                <WebPitchCard key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
                             ))}
                         </PitchSequence>
                     </AtBatBlock>
@@ -409,7 +396,7 @@ const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regene
                         </LegendItem>
                     </BreakdownLegend>
                     <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 8px', fontStyle: 'italic' }}>
-                        Count · Type · Result · Vel
+                        Count · Type · Result · Vel · Loc
                     </p>
                     <BatterList>
                         {[...batterBreakdown]

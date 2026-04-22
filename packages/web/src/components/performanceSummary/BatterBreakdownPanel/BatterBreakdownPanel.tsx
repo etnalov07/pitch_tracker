@@ -22,9 +22,6 @@ import {
     PitchSequence,
     PitchCard,
     PitchTextLine,
-    MiniZoneGrid,
-    MiniZoneCell,
-    MiniZoneWasteDot,
 } from './styles';
 
 const PITCH_ABBREV: Record<PitchType, string> = {
@@ -135,34 +132,20 @@ function formatInning(num: number, half: string): string {
     return `${half === 'top' ? 'Top' : 'Bot'} ${num}`;
 }
 
-function parseStrikeZone(zone?: PitchCallZone): { row: number; col: number } | null {
-    if (!zone || zone.startsWith('W-')) return null;
-    const parts = zone.split('-');
-    if (parts.length !== 2) return null;
-    const row = parseInt(parts[0]);
-    const col = parseInt(parts[1]);
-    if (isNaN(row) || isNaN(col)) return null;
-    return { row, col };
+function getLocationLabel(zone?: PitchCallZone, bats?: string): string | null {
+    if (!zone) return null;
+    if (zone.startsWith('W-')) return 'W';
+    const col = parseInt(zone.split('-')[1]);
+    if (isNaN(col)) return null;
+    if (col === 1) return 'Mid';
+    const isLHH = bats === 'L';
+    return col === 0 ? (isLHH ? 'Out' : 'In') : isLHH ? 'In' : 'Out';
 }
 
-function MiniZone({ zone, dotColor }: { zone?: PitchCallZone; dotColor: string }) {
-    const parsed = parseStrikeZone(zone);
-    const isWaste = zone?.startsWith('W-') ?? false;
-    return (
-        <MiniZoneGrid>
-            {[0, 1, 2].map((row) =>
-                [0, 1, 2].map((col) => (
-                    <MiniZoneCell key={`${row}-${col}`} active={parsed?.row === row && parsed?.col === col} dotColor={dotColor} />
-                ))
-            )}
-            {isWaste && <MiniZoneWasteDot dotColor={dotColor} />}
-        </MiniZoneGrid>
-    );
-}
-
-function PitchCardItem({ pitch }: { pitch: BatterAtBatPitch }) {
+function PitchCardItem({ pitch, bats }: { pitch: BatterAtBatPitch; bats?: string }) {
     const colors = RESULT_COLOR[pitch.pitch_result];
     const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
+    const locationLabel = getLocationLabel(pitch.target_zone, bats);
     return (
         <PitchCard bg={colors.bg} isEnding={pitch.is_ab_ending} title={pitch.pitch_type}>
             <PitchTextLine color={colors.text} size={9}>
@@ -179,7 +162,11 @@ function PitchCardItem({ pitch }: { pitch: BatterAtBatPitch }) {
                     {Math.round(pitch.velocity)}
                 </PitchTextLine>
             )}
-            <MiniZone zone={pitch.target_zone} dotColor={colors.text} />
+            {locationLabel != null && (
+                <PitchTextLine color={colors.text} size={9}>
+                    {locationLabel}
+                </PitchTextLine>
+            )}
         </PitchCard>
     );
 }
@@ -209,7 +196,7 @@ function BatterRow({ batter }: { batter: BatterBreakdown }) {
                         </AtBatHeaderRow>
                         <PitchSequence>
                             {ab.pitches.map((pitch) => (
-                                <PitchCardItem key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} />
+                                <PitchCardItem key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
                             ))}
                         </PitchSequence>
                     </AtBatBlock>
@@ -257,7 +244,7 @@ const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading }) => {
                     AB-Ending Pitch
                 </LegendItem>
             </Legend>
-            <HintText>Count · Type · Result · Vel</HintText>
+            <HintText>Count · Type · Result · Vel · Loc</HintText>
             {sections.map((section) =>
                 section.batters.length === 0 ? null : (
                     <div key={section.title}>
