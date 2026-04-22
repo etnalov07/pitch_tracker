@@ -14,9 +14,10 @@ export function useGameWebSocket(gameId: string | null, handlers: MessageHandler
         if (!gameId || !mountedRef.current) return;
 
         const token = localStorage.getItem('token') ?? '';
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        const url = `${protocol}//${host}/bt-api/ws/game/${gameId}?token=${encodeURIComponent(token)}`;
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/bt-api';
+        const apiOrigin = new URL(apiUrl).origin;
+        const wsOrigin = apiOrigin.replace(/^https/, 'wss').replace(/^http/, 'ws');
+        const url = `${wsOrigin}/bt-api/ws/game/${gameId}?token=${encodeURIComponent(token)}`;
 
         const socket = new WebSocket(url);
         wsRef.current = socket;
