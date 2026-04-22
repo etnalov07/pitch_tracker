@@ -126,8 +126,8 @@ const MyTeamLineup: React.FC = () => {
         }
     };
 
-    const pitchers = roster.filter((p) => p.primary_position === 'P');
-    const nonPitchers = roster.filter((p) => p.primary_position !== 'P');
+    const pitchers = roster.filter((p) => p.primary_position === 'P' || p.secondary_position === 'P');
+    const nonPitchers = roster.filter((p) => p.primary_position !== 'P' && p.secondary_position !== 'P');
 
     if (loading)
         return (

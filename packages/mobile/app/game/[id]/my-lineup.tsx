@@ -121,8 +121,8 @@ export default function MyTeamLineupScreen() {
         return `${p.jersey_number ? `#${p.jersey_number} ` : ''}${p.first_name} ${p.last_name}`;
     };
 
-    const pitchers = roster.filter((p) => p.primary_position === 'P');
-    const nonPitchers = roster.filter((p) => p.primary_position !== 'P');
+    const pitchers = roster.filter((p) => p.primary_position === 'P' || p.secondary_position === 'P');
+    const nonPitchers = roster.filter((p) => p.primary_position !== 'P' && p.secondary_position !== 'P');
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>

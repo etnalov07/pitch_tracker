@@ -33,8 +33,8 @@ export const teamService = {
 
     // Get team roster (players)
     getTeamRoster: async (team_id: string): Promise<Player[]> => {
-        const response = await api.get<{ players: Player[] }>(`/teams/${team_id}/players`);
-        return response.data.players ?? [];
+        const response = await api.get<{ team: { players: Player[] } }>(`/teams/${team_id}/players`);
+        return response.data.team?.players ?? [];
     },
 
     // Add player to team
