@@ -234,8 +234,8 @@ export class AnalyticsService {
               p.last_name as pitcher_last_name,
               p.jersey_number as pitcher_jersey
        FROM at_bats ab
-       JOIN players b ON ab.batter_id = b.id
-       JOIN players p ON ab.pitcher_id = p.id
+       LEFT JOIN players b ON ab.batter_id = b.id
+       LEFT JOIN players p ON ab.pitcher_id = p.id
        WHERE ab.game_id = $1 AND ab.ab_end_time IS NULL
        ORDER BY ab.created_at DESC
        LIMIT 1`,

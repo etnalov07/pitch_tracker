@@ -215,8 +215,9 @@ export default function LiveGameScreen() {
     // Load game state on mount
     useEffect(() => {
         if (id) {
-            // Always reset role to null so the charter/viewer prompt appears on every entry
+            // Always reset role/at-bat so the charter/viewer prompt appears and stale at-bat from a previous game doesn't block starting a new one
             dispatch(setCurrentGameRole(null));
+            dispatch(setCurrentAtBat(null));
             dispatch(fetchCurrentGameState(id))
                 .unwrap()
                 .catch(() => {
