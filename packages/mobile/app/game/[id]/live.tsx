@@ -589,25 +589,52 @@ export default function LiveGameScreen() {
     }, [id, dispatch]);
 
     const handleStartAtBat = useCallback(async () => {
-        if (!currentPitcher || !currentBatter || !id || !currentInning) return;
+        if (!id || !currentInning) return;
         try {
-            await dispatch(
-                createAtBat({
-                    game_id: id,
-                    inning_id: currentInning.id,
-                    opponent_batter_id: currentBatter.id,
-                    pitcher_id: currentPitcher.player_id,
-                    batting_order: currentBatter.batting_order,
-                    balls: 0,
-                    strikes: 0,
-                    outs_before: currentOuts,
-                })
-            ).unwrap();
+            if (gameMode === 'opp_pitcher') {
+                if (!currentOpposingPitcher || !currentMyBatter) return;
+                await dispatch(
+                    createAtBat({
+                        game_id: id,
+                        inning_id: currentInning.id,
+                        batter_id: currentMyBatter.player_id,
+                        opposing_pitcher_id: currentOpposingPitcher.id,
+                        batting_order: currentMyBatter.batting_order,
+                        balls: 0,
+                        strikes: 0,
+                        outs_before: currentOuts,
+                    })
+                ).unwrap();
+            } else {
+                if (!currentPitcher || !currentBatter) return;
+                await dispatch(
+                    createAtBat({
+                        game_id: id,
+                        inning_id: currentInning.id,
+                        opponent_batter_id: currentBatter.id,
+                        pitcher_id: currentPitcher.player_id,
+                        batting_order: currentBatter.batting_order,
+                        balls: 0,
+                        strikes: 0,
+                        outs_before: currentOuts,
+                    })
+                ).unwrap();
+            }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {
             Alert.alert('Error', 'Failed to create at-bat. You can still log pitches offline.');
         }
-    }, [currentPitcher, currentBatter, id, currentInning, currentOuts, dispatch]);
+    }, [
+        gameMode,
+        currentPitcher,
+        currentBatter,
+        currentOpposingPitcher,
+        currentMyBatter,
+        id,
+        currentInning,
+        currentOuts,
+        dispatch,
+    ]);
 
     // Map PitchType to PitchCallAbbrev
     const toPitchCallAbbrev = (pt: string): PitchCallAbbrev => {

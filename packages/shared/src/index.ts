@@ -346,7 +346,8 @@ export interface AtBat {
     inning_id: string;
     batter_id?: string;
     opponent_batter_id?: string;
-    pitcher_id: string;
+    pitcher_id?: string;
+    opposing_pitcher_id?: string;
     batting_order?: number;
     balls: number;
     strikes: number;

@@ -3,12 +3,16 @@ import { AtBat } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class AtBatService {
-    async createAtBat(atBatData: Partial<AtBat> & { opponent_batter_id?: string }): Promise<AtBat> {
-        const { game_id, inning_id, batter_id, opponent_batter_id, pitcher_id, batting_order, outs_before } = atBatData;
+    async createAtBat(atBatData: Partial<AtBat> & { opponent_batter_id?: string; opposing_pitcher_id?: string }): Promise<AtBat> {
+        const { game_id, inning_id, batter_id, opponent_batter_id, pitcher_id, opposing_pitcher_id, batting_order, outs_before } =
+            atBatData;
 
-        // Either batter_id (own team) or opponent_batter_id (opponent) is required
-        if (!game_id || !inning_id || !pitcher_id || outs_before === undefined) {
-            throw new Error('game_id, inning_id, pitcher_id, and outs_before are required');
+        if (!game_id || !inning_id || outs_before === undefined) {
+            throw new Error('game_id, inning_id, and outs_before are required');
+        }
+
+        if (!pitcher_id && !opposing_pitcher_id) {
+            throw new Error('Either pitcher_id or opposing_pitcher_id is required');
         }
 
         if (!batter_id && !opponent_batter_id) {
@@ -18,17 +22,18 @@ export class AtBatService {
         const atBatId = uuidv4();
         const result = await query(
             `INSERT INTO at_bats (
-        id, game_id, inning_id, batter_id, pitcher_id, opponent_batter_id, batting_order, outs_before, outs_after
+        id, game_id, inning_id, batter_id, pitcher_id, opponent_batter_id, opposing_pitcher_id, batting_order, outs_before, outs_after
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *`,
             [
                 atBatId,
                 game_id,
                 inning_id,
                 batter_id || null,
-                pitcher_id,
+                pitcher_id || null,
                 opponent_batter_id || null,
+                opposing_pitcher_id || null,
                 batting_order,
                 outs_before,
                 outs_before,
@@ -48,8 +53,8 @@ export class AtBatService {
               p.last_name as pitcher_last_name,
               p.jersey_number as pitcher_jersey
        FROM at_bats ab
-       JOIN players b ON ab.batter_id = b.id
-       JOIN players p ON ab.pitcher_id = p.id
+       LEFT JOIN players b ON ab.batter_id = b.id
+       LEFT JOIN players p ON ab.pitcher_id = p.id
        WHERE ab.id = $1`,
             [atBatId]
         );
@@ -65,8 +70,8 @@ export class AtBatService {
               p.first_name as pitcher_first_name,
               p.last_name as pitcher_last_name
        FROM at_bats ab
-       JOIN players b ON ab.batter_id = b.id
-       JOIN players p ON ab.pitcher_id = p.id
+       LEFT JOIN players b ON ab.batter_id = b.id
+       LEFT JOIN players p ON ab.pitcher_id = p.id
        WHERE ab.game_id = $1
        ORDER BY ab.created_at ASC`,
             [gameId]
@@ -82,8 +87,8 @@ export class AtBatService {
               p.first_name as pitcher_first_name,
               p.last_name as pitcher_last_name
        FROM at_bats ab
-       JOIN players b ON ab.batter_id = b.id
-       JOIN players p ON ab.pitcher_id = p.id
+       LEFT JOIN players b ON ab.batter_id = b.id
+       LEFT JOIN players p ON ab.pitcher_id = p.id
        WHERE ab.inning_id = $1
        ORDER BY ab.created_at ASC`,
             [inningId]
