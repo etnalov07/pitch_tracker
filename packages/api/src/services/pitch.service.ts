@@ -90,17 +90,19 @@ export class PitchService {
 
             await client.query('UPDATE at_bats SET balls = $1, strikes = $2 WHERE id = $3', [newBalls, newStrikes, at_bat_id]);
 
-            // Auto-add pitch type to pitcher's profile if not already present
-            const existing = await client.query('SELECT 1 FROM pitcher_pitch_types WHERE player_id = $1 AND pitch_type = $2', [
-                pitcher_id,
-                pitch_type,
-            ]);
-            if (existing.rows.length === 0) {
-                await client.query('INSERT INTO pitcher_pitch_types (id, player_id, pitch_type) VALUES ($1, $2, $3)', [
-                    uuidv4(),
+            // Auto-add pitch type to pitcher's profile if not already present (skip for opp_pitcher mode)
+            if (pitcher_id) {
+                const existing = await client.query('SELECT 1 FROM pitcher_pitch_types WHERE player_id = $1 AND pitch_type = $2', [
                     pitcher_id,
                     pitch_type,
                 ]);
+                if (existing.rows.length === 0) {
+                    await client.query('INSERT INTO pitcher_pitch_types (id, player_id, pitch_type) VALUES ($1, $2, $3)', [
+                        uuidv4(),
+                        pitcher_id,
+                        pitch_type,
+                    ]);
+                }
             }
 
             return pitchResult.rows[0];
