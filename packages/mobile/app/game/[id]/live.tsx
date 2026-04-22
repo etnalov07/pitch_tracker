@@ -972,7 +972,15 @@ export default function LiveGameScreen() {
         gameMode === 'opp_pitcher'
             ? currentOpposingPitcher && currentMyBatter && !currentAtBat
             : currentPitcher && currentBatter && !currentAtBat;
-    const activePitcherDisplay = currentPitcher?.player || null;
+    const activePitcherDisplay =
+        gameMode === 'opp_pitcher'
+            ? currentOpposingPitcher
+                ? ({
+                      first_name: currentOpposingPitcher.pitcher_name.split(' ')[0] ?? currentOpposingPitcher.pitcher_name,
+                      last_name: currentOpposingPitcher.pitcher_name.split(' ').slice(1).join(' ') || '',
+                  } as Player)
+                : null
+            : currentPitcher?.player || null;
     const activeBatterDisplay =
         gameMode === 'opp_pitcher' && currentMyBatter?.player
             ? {
@@ -1149,7 +1157,13 @@ export default function LiveGameScreen() {
             outs={currentOuts}
             runners={baseRunners}
             pitchCount={totalPitchCount}
-            onPitcherPress={game.status === 'in_progress' ? () => setPitcherModalVisible(true) : undefined}
+            onPitcherPress={
+                game.status === 'in_progress'
+                    ? gameMode === 'opp_pitcher'
+                        ? () => setShowOpposingPitcherModal(true)
+                        : () => setPitcherModalVisible(true)
+                    : undefined
+            }
             onBatterPress={
                 game.status === 'in_progress'
                     ? gameMode === 'opp_pitcher'

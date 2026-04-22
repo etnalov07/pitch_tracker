@@ -369,7 +369,13 @@ const LiveGame: React.FC = () => {
                     <PlayerDisplay>
                         <PlayerInfo>
                             <PlayerLabel>Pitcher</PlayerLabel>
-                            {currentPitcher ? (
+                            {gameMode === 'opp_pitcher' ? (
+                                currentOpposingPitcher ? (
+                                    <PlayerName>{currentOpposingPitcher.pitcher_name}</PlayerName>
+                                ) : (
+                                    <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
+                                )
+                            ) : currentPitcher ? (
                                 <>
                                     <PlayerNumber>{currentPitcher.player?.jersey_number || '#'}</PlayerNumber>
                                     <PlayerName>
@@ -380,29 +386,31 @@ const LiveGame: React.FC = () => {
                                 <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
                             )}
                         </PlayerInfo>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
-                            <ChangeButton onClick={() => setShowPitcherSelector(true)}>
-                                {currentPitcher ? 'Change' : 'Select'}
-                            </ChangeButton>
-                            {currentPitcher && (
-                                <button
-                                    onClick={() => setShowPitcherTendencies(true)}
-                                    style={{
-                                        padding: '3px 8px',
-                                        fontSize: '11px',
-                                        fontWeight: 600,
-                                        background: theme.colors.primary[600],
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: theme.borderRadius.sm,
-                                        cursor: 'pointer',
-                                        whiteSpace: 'nowrap' as const,
-                                    }}
-                                >
-                                    Tendencies
-                                </button>
-                            )}
-                        </div>
+                        {gameMode !== 'opp_pitcher' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                                <ChangeButton onClick={() => setShowPitcherSelector(true)}>
+                                    {currentPitcher ? 'Change' : 'Select'}
+                                </ChangeButton>
+                                {currentPitcher && (
+                                    <button
+                                        onClick={() => setShowPitcherTendencies(true)}
+                                        style={{
+                                            padding: '3px 8px',
+                                            fontSize: '11px',
+                                            fontWeight: 600,
+                                            background: theme.colors.primary[600],
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: theme.borderRadius.sm,
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap' as const,
+                                        }}
+                                    >
+                                        Tendencies
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </PlayerDisplay>
 
                     {gameMode === 'opp_pitcher' ? (
