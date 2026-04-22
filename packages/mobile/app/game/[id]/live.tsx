@@ -964,10 +964,11 @@ export default function LiveGameScreen() {
         );
     }
 
-    if (currentGameRole === 'viewer') {
-        router.replace(`/game/${id}/viewer` as any);
-        return null;
-    }
+    React.useEffect(() => {
+        if (currentGameRole === 'viewer' && id) {
+            router.replace(`/game/${id}/viewer` as any);
+        }
+    }, [currentGameRole, id]);
 
     const filteredGamePitches =
         pitchTypeFilter === 'all' ? allGamePitches : allGamePitches.filter((p) => (p.pitch_type || 'other') === pitchTypeFilter);
