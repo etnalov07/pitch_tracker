@@ -45,4 +45,16 @@ export const teamsApi = {
     deletePlayer: async (playerId: string): Promise<void> => {
         await api.delete(`/players/${playerId}`);
     },
+
+    getPitchTypes: async (playerId: string): Promise<string[]> => {
+        const response = await api.get<{ pitch_types: string[] }>(`/players/${playerId}/pitch-types`);
+        return response.data.pitch_types || [];
+    },
+
+    setPitchTypes: async (playerId: string, pitchTypes: string[]): Promise<string[]> => {
+        const response = await api.put<{ pitch_types: string[] }>(`/players/${playerId}/pitch-types`, {
+            pitch_types: pitchTypes,
+        });
+        return response.data.pitch_types || pitchTypes;
+    },
 };

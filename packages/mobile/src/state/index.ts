@@ -76,6 +76,7 @@ export {
     addPlayer,
     updatePlayer,
     deletePlayer,
+    setPlayerPitchTypes,
     clearTeamsError,
     clearSelectedTeam,
     setSelectedTeam,

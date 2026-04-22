@@ -95,6 +95,7 @@ export interface Player {
     last_name: string;
     jersey_number?: number;
     primary_position: PlayerPosition;
+    secondary_position?: PlayerPosition;
     bats: HandednessType;
     throws: ThrowingHand;
     is_active?: boolean;

@@ -109,6 +109,18 @@ export const deletePlayer = createAsyncThunk('teams/deletePlayer', async (player
     }
 });
 
+export const setPlayerPitchTypes = createAsyncThunk(
+    'teams/setPlayerPitchTypes',
+    async ({ playerId, pitchTypes }: { playerId: string; pitchTypes: string[] }, { rejectWithValue }) => {
+        try {
+            const saved = await teamsApi.setPitchTypes(playerId, pitchTypes);
+            return { playerId, pitchTypes: saved };
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to save pitch types'));
+        }
+    }
+);
+
 const teamsSlice = createSlice({
     name: 'teams',
     initialState,
@@ -208,6 +220,13 @@ const teamsSlice = createSlice({
             // Delete player
             .addCase(deletePlayer.fulfilled, (state, action) => {
                 state.players = state.players.filter((p) => p.id !== action.payload);
+            })
+            // Set pitch types
+            .addCase(setPlayerPitchTypes.fulfilled, (state, action) => {
+                const index = state.players.findIndex((p) => p.id === action.payload.playerId);
+                if (index !== -1) {
+                    state.players[index] = { ...state.players[index], pitch_types: action.payload.pitchTypes };
+                }
             });
     },
 });

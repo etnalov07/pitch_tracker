@@ -63,18 +63,21 @@ const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlaye
                                 <Td>
                                     <PlayerName>
                                         {player.first_name} {player.last_name}
-                                        {player.primary_position === 'P' && (
+                                        {(player.primary_position === 'P' || player.secondary_position === 'P') && (
                                             <Handedness style={{ marginLeft: 6 }}>
                                                 {player.throws === 'L' ? 'LHP' : 'RHP'}
                                             </Handedness>
                                         )}
                                     </PlayerName>
                                 </Td>
-                                <Td>{player.primary_position || '—'}</Td>
+                                <Td>
+                                    {player.primary_position || '—'}
+                                    {player.secondary_position ? ` / ${player.secondary_position}` : ''}
+                                </Td>
                                 <Td>{player.bats || '—'}</Td>
                                 <Td>
                                     <ActionButtons>
-                                        {player.primary_position === 'P' && (
+                                        {(player.primary_position === 'P' || player.secondary_position === 'P') && (
                                             <ProfileButton onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}`)}>
                                                 Profile
                                             </ProfileButton>

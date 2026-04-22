@@ -52,7 +52,7 @@ const PlayerForm: React.FC<PlayerFormProps> = ({ state }) => {
         handleSubmit,
     } = state;
 
-    const isPitcher = formData.primary_position === 'P';
+    const isPitcher = formData.primary_position === 'P' || formData.secondary_position === 'P';
 
     return (
         <FormCard>
@@ -102,13 +102,30 @@ const PlayerForm: React.FC<PlayerFormProps> = ({ state }) => {
                     </FormGroup>
 
                     <FormGroup>
-                        <Label htmlFor="primary_position">Position</Label>
+                        <Label htmlFor="primary_position">Primary Position</Label>
                         <Select
                             id="primary_position"
                             name="primary_position"
                             value={formData.primary_position}
                             onChange={handleChange}
                         >
+                            {POSITIONS.map((pos) => (
+                                <option key={pos} value={pos}>
+                                    {pos}
+                                </option>
+                            ))}
+                        </Select>
+                    </FormGroup>
+
+                    <FormGroup>
+                        <Label htmlFor="secondary_position">Secondary Position</Label>
+                        <Select
+                            id="secondary_position"
+                            name="secondary_position"
+                            value={formData.secondary_position}
+                            onChange={handleChange}
+                        >
+                            <option value="">— None —</option>
                             {POSITIONS.map((pos) => (
                                 <option key={pos} value={pos}>
                                     {pos}

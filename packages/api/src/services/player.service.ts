@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export class PlayerService {
     async createPlayer(playerData: Partial<Player>): Promise<Player> {
-        const { team_id, first_name, last_name, jersey_number, primary_position, bats, throws } = playerData;
+        const { team_id, first_name, last_name, jersey_number, primary_position, secondary_position, bats, throws } = playerData;
 
         if (!team_id || !first_name || !last_name || !primary_position) {
             throw new Error('team_id, first_name, last_name, and primary_position are required');
@@ -12,10 +12,10 @@ export class PlayerService {
 
         const player_id = uuidv4();
         const result = await query(
-            `INSERT INTO players (id, team_id, first_name, last_name, jersey_number, primary_position, bats, throws)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            `INSERT INTO players (id, team_id, first_name, last_name, jersey_number, primary_position, secondary_position, bats, throws)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-            [player_id, team_id, first_name, last_name, jersey_number, primary_position, bats, throws]
+            [player_id, team_id, first_name, last_name, jersey_number, primary_position, secondary_position ?? null, bats, throws]
         );
 
         return result.rows[0];
@@ -42,20 +42,21 @@ export class PlayerService {
             throw new Error('Player not found');
         }
 
-        const { first_name, last_name, jersey_number, primary_position, bats, throws, is_active } = updates;
+        const { first_name, last_name, jersey_number, primary_position, secondary_position, bats, throws, is_active } = updates;
 
         const result = await query(
-            `UPDATE players 
+            `UPDATE players
        SET first_name = COALESCE($1, first_name),
            last_name = COALESCE($2, last_name),
            jersey_number = COALESCE($3, jersey_number),
            primary_position = COALESCE($4, primary_position),
-           bats = COALESCE($5, bats),
-           throws = COALESCE($6, throws),
-           is_active = COALESCE($7, is_active)
-       WHERE id = $8
+           secondary_position = $5,
+           bats = COALESCE($6, bats),
+           throws = COALESCE($7, throws),
+           is_active = COALESCE($8, is_active)
+       WHERE id = $9
        RETURNING *`,
-            [first_name, last_name, jersey_number, primary_position, bats, throws, is_active, player_id]
+            [first_name, last_name, jersey_number, primary_position, secondary_position ?? null, bats, throws, is_active, player_id]
         );
 
         return result.rows[0];
@@ -89,11 +90,11 @@ export class PlayerService {
         };
     }
 
-    // Get only pitchers from a team
+    // Get players who can pitch (primary or secondary position is P)
     async getPitchersByTeam(team_id: string): Promise<Player[]> {
         const result = await query(
             `SELECT * FROM players
-       WHERE team_id = $1 AND is_active = true AND primary_position = 'P'
+       WHERE team_id = $1 AND is_active = true AND (primary_position = 'P' OR secondary_position = 'P')
        ORDER BY jersey_number, last_name`,
             [team_id]
         );

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
 import { Text, Card, FAB, Portal, Divider, Button, useTheme } from 'react-native-paper';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
@@ -8,7 +8,6 @@ import { useDeviceType } from '../../../src/hooks/useDeviceType';
 import { LoadingScreen, EmptyState } from '../../../src/components/common';
 import { AddPlayerModal, PlayerListItem } from '../../../src/components/team';
 import { PlayerWithPitchTypes } from '@pitch-tracker/shared';
-import { useState } from 'react';
 
 export default function TeamDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -20,6 +19,7 @@ export default function TeamDetailScreen() {
     const { selectedTeam, players: rawPlayers, loading, playersLoading } = useAppSelector((state) => state.teams);
     const players = rawPlayers || [];
     const [modalVisible, setModalVisible] = useState(false);
+    const [editingPlayer, setEditingPlayer] = useState<PlayerWithPitchTypes | null>(null);
 
     const loadData = useCallback(() => {
         if (id) {
@@ -31,6 +31,12 @@ export default function TeamDetailScreen() {
     useEffect(() => {
         loadData();
     }, [loadData]);
+
+    const handleEditPlayer = (player: PlayerWithPitchTypes) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setEditingPlayer(player);
+        setModalVisible(true);
+    };
 
     const handleDeletePlayer = (player: PlayerWithPitchTypes) => {
         Alert.alert('Remove Player', `Are you sure you want to remove ${player.first_name} ${player.last_name} from the roster?`, [
@@ -50,8 +56,14 @@ export default function TeamDetailScreen() {
         ]);
     };
 
-    const pitchers = players.filter((p) => p.primary_position === 'P');
-    const fieldPlayers = players.filter((p) => p.primary_position !== 'P');
+    const handleModalDismiss = () => {
+        setModalVisible(false);
+        setEditingPlayer(null);
+        loadData();
+    };
+
+    const pitchers = players.filter((p) => p.primary_position === 'P' || p.secondary_position === 'P');
+    const fieldPlayers = players.filter((p) => p.primary_position !== 'P' && p.secondary_position !== 'P');
 
     if (loading && !selectedTeam) {
         return <LoadingScreen message="Loading team..." />;
@@ -69,16 +81,15 @@ export default function TeamDetailScreen() {
                     <View style={styles.rosterHeader}>
                         <Text style={[styles.rosterHeaderText, styles.rosterJersey]}>#</Text>
                         <Text style={[styles.rosterHeaderText, styles.rosterNameCol]}>Name</Text>
-                        <Text style={[styles.rosterHeaderText, { width: 40, textAlign: 'center' }]}>Pos</Text>
-                        <Text style={[styles.rosterHeaderText, { width: 36, textAlign: 'center' }]}>B/T</Text>
-                        <View style={{ width: 34 }} />
+                        <Text style={[styles.rosterHeaderText, { minWidth: 52, textAlign: 'center' }]}>Pos</Text>
+                        <View style={{ width: 68 }} />
                     </View>
                     <Divider />
                     {playerList.map((player, idx) => (
-                        <>
-                            <PlayerListItem key={player.id} player={player} onDelete={handleDeletePlayer} />
+                        <React.Fragment key={player.id}>
+                            <PlayerListItem player={player} onEdit={handleEditPlayer} onDelete={handleDeletePlayer} />
                             {idx < playerList.length - 1 && <Divider />}
-                        </>
+                        </React.Fragment>
                     ))}
                 </Card>
             </View>
@@ -118,7 +129,7 @@ export default function TeamDetailScreen() {
                                             : selectedTeam?.season || (selectedTeam?.year ? `${selectedTeam.year}` : ''),
                                     ]
                                         .filter(Boolean)
-                                        .join(' \u00B7 ')}
+                                        .join(' · ')}
                                 </Text>
                             )}
                             <View style={styles.teamStats}>
@@ -193,6 +204,7 @@ export default function TeamDetailScreen() {
                     color={theme.colors.onPrimary}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        setEditingPlayer(null);
                         setModalVisible(true);
                     }}
                     label={isTablet ? 'Add Player' : undefined}
@@ -201,9 +213,10 @@ export default function TeamDetailScreen() {
                 <Portal>
                     <AddPlayerModal
                         visible={modalVisible}
-                        onDismiss={() => setModalVisible(false)}
+                        onDismiss={handleModalDismiss}
                         teamId={id!}
                         isTablet={isTablet}
+                        editingPlayer={editingPlayer}
                     />
                 </Portal>
             </View>
