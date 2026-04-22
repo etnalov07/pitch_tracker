@@ -100,6 +100,7 @@ export function useLiveGameState() {
     const [showBaserunnerOutModal, setShowBaserunnerOutModal] = useState(false);
     const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
     const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
+    const [showDroppedThirdModal, setShowDroppedThirdModal] = useState(false);
 
     // Pitch call state
     const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
@@ -292,6 +293,8 @@ export function useLiveGameState() {
         setShowRunnerAdvancementModal,
         pendingHitResult,
         setPendingHitResult,
+        showDroppedThirdModal,
+        setShowDroppedThirdModal,
         // Pitch call
         activeCall,
         setActiveCall,

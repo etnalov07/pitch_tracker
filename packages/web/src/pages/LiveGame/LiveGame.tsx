@@ -89,6 +89,12 @@ import {
     RoleSelectSubtitle,
     RoleSelectButtons,
     RoleButton,
+    DroppedThirdOverlay,
+    DroppedThirdDialog,
+    DroppedThirdTitle,
+    DroppedThirdMessage,
+    DroppedThirdButtons,
+    DroppedThirdBtn,
 } from './styles';
 import TeamAtBatModal from './TeamAtBatModal';
 import { useLiveGameActions } from './useLiveGameActions';
@@ -143,6 +149,8 @@ const LiveGame: React.FC = () => {
         showRunnerAdvancementModal,
         setShowRunnerAdvancementModal,
         pendingHitResult,
+        showDroppedThirdModal,
+        setShowDroppedThirdModal,
         showTeamAtBat,
         teamAtBatRuns,
         setTeamAtBatRuns,
@@ -779,6 +787,35 @@ const LiveGame: React.FC = () => {
                     hitResult={pendingHitResult}
                     onConfirm={actions.handleRunnerAdvancementConfirm}
                 />
+            )}
+
+            {showDroppedThirdModal && (
+                <DroppedThirdOverlay onClick={() => setShowDroppedThirdModal(false)}>
+                    <DroppedThirdDialog onClick={(e) => e.stopPropagation()}>
+                        <DroppedThirdTitle>Third Strike</DroppedThirdTitle>
+                        <DroppedThirdMessage>Was the third strike dropped?</DroppedThirdMessage>
+                        <DroppedThirdButtons>
+                            <DroppedThirdBtn
+                                variant="yes"
+                                onClick={() => {
+                                    setShowDroppedThirdModal(false);
+                                    actions.handleDroppedThird(true);
+                                }}
+                            >
+                                Yes
+                            </DroppedThirdBtn>
+                            <DroppedThirdBtn
+                                variant="no"
+                                onClick={() => {
+                                    setShowDroppedThirdModal(false);
+                                    actions.handleDroppedThird(false);
+                                }}
+                            >
+                                No
+                            </DroppedThirdBtn>
+                        </DroppedThirdButtons>
+                    </DroppedThirdDialog>
+                </DroppedThirdOverlay>
             )}
 
             {showPitcherTendencies && currentPitcher && (

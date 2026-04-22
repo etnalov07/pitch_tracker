@@ -66,6 +66,7 @@ export function useLiveGameActions(state: LiveGameState) {
         setShowBaserunnerOutModal,
         setShowRunnerAdvancementModal,
         setPendingHitResult,
+        setShowDroppedThirdModal,
         setShowTeamAtBat,
         teamAtBatRuns,
         setTeamAtBatRuns,
@@ -285,9 +286,8 @@ export function useLiveGameActions(state: LiveGameState) {
                 // MLB rule: batter can reach on an uncaught third strike only when 1st base
                 // is unoccupied, OR when there are 2 outs. Prompt the scorer to distinguish.
                 const canDropThird = !baseRunners.first || currentOuts >= 2;
-                if (canDropThird && window.confirm('Was the third strike dropped?')) {
-                    setPendingHitResult('strikeout_dropped');
-                    setShowRunnerAdvancementModal(true);
+                if (canDropThird) {
+                    setShowDroppedThirdModal(true);
                 } else {
                     handleEndAtBat('strikeout');
                 }
@@ -612,6 +612,15 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
+    const handleDroppedThird = (wasDropped: boolean) => {
+        if (wasDropped) {
+            setPendingHitResult('strikeout_dropped');
+            setShowRunnerAdvancementModal(true);
+        } else {
+            handleEndAtBat('strikeout');
+        }
+    };
+
     return {
         handleSendCall,
         handleSituationalCall,
@@ -632,5 +641,6 @@ export function useLiveGameActions(state: LiveGameState) {
         handleTargetZoneSelect,
         handleTargetClear,
         handleToggleHomeAway,
+        handleDroppedThird,
     };
 }

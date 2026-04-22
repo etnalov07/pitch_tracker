@@ -1254,3 +1254,65 @@ export const RoleButton = styled.button({
         background: theme.colors.primary[700],
     },
 });
+
+export const DroppedThirdOverlay = styled.div({
+    position: 'fixed',
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+});
+
+export const DroppedThirdDialog = styled.div({
+    backgroundColor: 'white',
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing['2xl'],
+    width: 320,
+    boxShadow: theme.shadows.xl,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+});
+
+export const DroppedThirdTitle = styled.h3({
+    margin: 0,
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.gray[900],
+});
+
+export const DroppedThirdMessage = styled.p({
+    margin: 0,
+    fontSize: theme.fontSize.base,
+    color: theme.colors.gray[600],
+    textAlign: 'center',
+});
+
+export const DroppedThirdButtons = styled.div({
+    display: 'flex',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+});
+
+export const DroppedThirdBtn = styled.button<{ variant: 'yes' | 'no' }>(({ variant }) => ({
+    padding: `${theme.spacing.sm} ${theme.spacing['2xl']}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    border: 'none',
+    ...(variant === 'yes'
+        ? {
+              backgroundColor: theme.colors.green[600],
+              color: 'white',
+              '&:hover': { backgroundColor: theme.colors.green[700] },
+          }
+        : {
+              backgroundColor: theme.colors.gray[200],
+              color: theme.colors.gray[700],
+              '&:hover': { backgroundColor: theme.colors.gray[300] },
+          }),
+}));
