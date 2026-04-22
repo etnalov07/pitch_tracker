@@ -25,8 +25,7 @@ export class PitchService {
             team_side,
         } = pitchData;
 
-        // Either batter_id (own team) or opponent_batter_id (opponent) is required
-        if (!at_bat_id || !game_id || !pitcher_id || !pitch_type || !pitch_result) {
+        if (!at_bat_id || !game_id || !pitch_type || !pitch_result) {
             throw new Error('Required fields missing');
         }
 

@@ -745,7 +745,7 @@ export default function LiveGameScreen() {
             Alert.alert('Missing Info', 'Please select pitch type, location, and result');
             return;
         }
-        if (!currentPitcher) {
+        if (gameMode === 'our_pitcher' && !currentPitcher) {
             Alert.alert('No Pitcher', 'Please select a pitcher first');
             return;
         }
@@ -756,7 +756,7 @@ export default function LiveGameScreen() {
             const result = await logPitchOffline({
                 at_bat_id: currentAtBat?.id || '',
                 game_id: id!,
-                pitcher_id: currentPitcher.player_id,
+                pitcher_id: gameMode === 'our_pitcher' ? currentPitcher?.player_id : undefined,
                 pitch_type: selectedPitchType,
                 pitch_result: selectedResult,
                 location_x: pitchLocation.x,
@@ -765,7 +765,8 @@ export default function LiveGameScreen() {
                 target_location_y: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].y : undefined,
                 target_zone: targetZone ?? undefined,
                 velocity: veloNum && !isNaN(veloNum) ? veloNum : undefined,
-                opponent_batter_id: currentBatter?.id,
+                batter_id: gameMode === 'opp_pitcher' ? (currentMyBatter?.player_id ?? currentMyBatter?.player?.id) : undefined,
+                opponent_batter_id: gameMode === 'our_pitcher' ? currentBatter?.id : undefined,
                 balls_before: balls,
                 strikes_before: strikes,
                 team_side: gameMode === 'our_pitcher' ? 'our_team' : 'opponent',

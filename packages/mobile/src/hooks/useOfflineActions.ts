@@ -10,6 +10,7 @@ interface LogPitchPayload {
     at_bat_id: string;
     game_id: string;
     pitcher_id?: string;
+    batter_id?: string;
     opponent_batter_id?: string;
     pitch_type: PitchType;
     pitch_result: PitchResult;
@@ -54,6 +55,7 @@ export const useOfflineActions = () => {
                 at_bat_id: payload.at_bat_id,
                 game_id: payload.game_id,
                 pitcher_id: payload.pitcher_id,
+                batter_id: payload.batter_id,
                 opponent_batter_id: payload.opponent_batter_id,
                 pitch_type: payload.pitch_type,
                 pitch_result: payload.pitch_result,
