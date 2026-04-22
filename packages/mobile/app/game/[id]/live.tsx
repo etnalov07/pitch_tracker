@@ -383,7 +383,16 @@ export default function LiveGameScreen() {
                         dispatch(fetchCurrentInning(id));
                     }
                 } else {
-                    // In 'both' mode or visitor games, game mode switches automatically on re-render
+                    // In 'both' mode or visitor games, game mode switches automatically on re-render.
+                    // Re-fetch opposing pitcher + my lineup so they auto-populate on the batting half.
+                    await Promise.all([
+                        dispatch(fetchOpposingPitchers(id))
+                            .unwrap()
+                            .catch(() => null),
+                        dispatch(fetchMyTeamLineup(id))
+                            .unwrap()
+                            .catch(() => null),
+                    ]);
                     dispatch(fetchCurrentInning(id));
                 }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

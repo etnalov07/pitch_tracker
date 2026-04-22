@@ -4,7 +4,7 @@ import { Text, Button, useTheme, IconButton, ActivityIndicator, TextInput, Menu,
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import { Game } from '@pitch-tracker/shared';
-import { useAppDispatch, fetchGameById, createOpponentLineup } from '../../../src/state';
+import { useAppDispatch, fetchGameById, createOpponentLineup, createOpposingPitcher } from '../../../src/state';
 
 const POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH'];
 
@@ -25,6 +25,10 @@ export default function LineupScreen() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [positionMenuIndex, setPositionMenuIndex] = useState<number | null>(null);
+
+    const [pitcherName, setPitcherName] = useState('');
+    const [pitcherJersey, setPitcherJersey] = useState('');
+    const [pitcherThrows, setPitcherThrows] = useState<'R' | 'L'>('R');
 
     const [lineup, setLineup] = useState<LineupEntry[]>(
         Array.from({ length: 9 }, (_, i) => ({
@@ -74,6 +78,18 @@ export default function LineupScreen() {
 
         setSubmitting(true);
         try {
+            if (pitcherName.trim()) {
+                await dispatch(
+                    createOpposingPitcher({
+                        game_id: id,
+                        team_name: game?.opponent_name ?? 'Opponent',
+                        pitcher_name: pitcherName.trim(),
+                        jersey_number: pitcherJersey.trim() ? parseInt(pitcherJersey.trim(), 10) : null,
+                        throws: pitcherThrows,
+                    })
+                ).unwrap();
+            }
+
             const players = filledEntries.map((entry) => ({
                 player_name: entry.player_name.trim(),
                 batting_order: entry.batting_order,
@@ -117,6 +133,65 @@ export default function LineupScreen() {
                 <ScrollView contentContainerStyle={styles.content}>
                     <Text variant="bodyMedium" style={styles.helpText}>
                         Enter the opposing team's batting order. You can add or change players during the game.
+                    </Text>
+
+                    <View style={styles.pitcherSection}>
+                        <Text variant="titleSmall" style={styles.pitcherSectionTitle}>
+                            Starting Pitcher
+                        </Text>
+                        <TextInput
+                            label="Pitcher Name"
+                            value={pitcherName}
+                            onChangeText={setPitcherName}
+                            mode="outlined"
+                            placeholder="e.g. Smith"
+                            style={styles.nameInput}
+                            dense
+                        />
+                        <View style={styles.pitcherBottomRow}>
+                            <TextInput
+                                label="Jersey #"
+                                value={pitcherJersey}
+                                onChangeText={setPitcherJersey}
+                                mode="outlined"
+                                keyboardType="numeric"
+                                style={styles.jerseyInput}
+                                dense
+                            />
+                            <View style={styles.throwsContainer}>
+                                <Text variant="bodySmall" style={styles.throwsLabel}>
+                                    Throws
+                                </Text>
+                                <SegmentedButtons
+                                    value={pitcherThrows}
+                                    onValueChange={(v) => setPitcherThrows(v as 'R' | 'L')}
+                                    buttons={[
+                                        {
+                                            value: 'R',
+                                            label: 'R',
+                                            checkedColor: '#ffffff',
+                                            style: pitcherThrows === 'R' ? styles.batsSelected : styles.batsUnselected,
+                                            labelStyle:
+                                                pitcherThrows === 'R' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                        },
+                                        {
+                                            value: 'L',
+                                            label: 'L',
+                                            checkedColor: '#ffffff',
+                                            style: pitcherThrows === 'L' ? styles.batsSelected : styles.batsUnselected,
+                                            labelStyle:
+                                                pitcherThrows === 'L' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                        },
+                                    ]}
+                                    style={styles.batsToggle}
+                                    density="small"
+                                />
+                            </View>
+                        </View>
+                    </View>
+
+                    <Text variant="titleSmall" style={styles.battingOrderTitle}>
+                        Batting Order
                     </Text>
 
                     {lineup.map((entry, index) => (
@@ -252,6 +327,41 @@ const styles = StyleSheet.create({
     helpText: {
         color: '#6b7280',
         marginBottom: 16,
+    },
+    pitcherSection: {
+        backgroundColor: '#f9fafb',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+    },
+    pitcherSectionTitle: {
+        fontWeight: '600',
+        color: '#1f2937',
+        marginBottom: 8,
+    },
+    pitcherBottomRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        gap: 8,
+        marginTop: 4,
+    },
+    jerseyInput: {
+        backgroundColor: '#ffffff',
+        width: 90,
+    },
+    throwsContainer: {
+        flex: 1,
+    },
+    throwsLabel: {
+        color: '#6b7280',
+        marginBottom: 4,
+    },
+    battingOrderTitle: {
+        fontWeight: '600',
+        color: '#1f2937',
+        marginBottom: 12,
     },
     row: {
         flexDirection: 'row',
