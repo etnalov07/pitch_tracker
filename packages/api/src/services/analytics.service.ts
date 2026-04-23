@@ -6,6 +6,7 @@ import type {
     HitterTendenciesLive,
     HitterZoneStat,
     PitchCallZone,
+    PitchLocationHeatMap,
     PitcherPitchTypeStat,
     PitcherTendenciesLive,
     PitcherZoneStat,
@@ -107,33 +108,47 @@ export class AnalyticsService {
     }
 
     // Pitch location heat map for a batter
-    async getBatterPitchHeatMap(batterId: string, pitcherId?: string): Promise<any[]> {
+    async getBatterPitchHeatMap(batterId: string, pitcherId?: string): Promise<PitchLocationHeatMap> {
         let queryText = `
-      SELECT 
-        location_x,
-        location_y,
-        zone,
-        pitch_type,
-        pitch_result,
-        velocity,
-        COUNT(*) as count
-      FROM pitches
-      WHERE batter_id = $1
-      AND location_x IS NOT NULL
-      AND location_y IS NOT NULL
+      SELECT
+        p.zone,
+        COUNT(*) AS count,
+        COUNT(CASE WHEN p.pitch_result IN ('swinging_strike', 'foul', 'in_play') THEN 1 END) AS swings,
+        COUNT(CASE WHEN p.pitch_result = 'in_play'
+                        AND ab.result IN ('single', 'double', 'triple', 'home_run') THEN 1 END) AS hits,
+        COUNT(CASE WHEN p.pitch_result = 'in_play' THEN 1 END) AS in_play
+      FROM pitches p
+      JOIN at_bats ab ON p.at_bat_id = ab.id
+      WHERE p.batter_id = $1
+      AND p.zone IS NOT NULL
     `;
 
-        const params: any[] = [batterId];
+        const params: (string | undefined)[] = [batterId];
 
         if (pitcherId) {
-            queryText += ' AND pitcher_id = $2';
+            queryText += ' AND p.pitcher_id = $2';
             params.push(pitcherId);
         }
 
-        queryText += ' GROUP BY location_x, location_y, zone, pitch_type, pitch_result, velocity';
+        queryText += ' GROUP BY p.zone';
 
         const result = await query(queryText, params);
-        return result.rows;
+
+        const zones: PitchLocationHeatMap['zones'] = {};
+        for (const row of result.rows) {
+            const count = parseInt(row.count, 10);
+            const swings = parseInt(row.swings, 10);
+            const hits = parseInt(row.hits, 10);
+            const inPlay = parseInt(row.in_play, 10);
+            zones[row.zone] = {
+                count,
+                swings,
+                hits,
+                avg: inPlay > 0 ? hits / inPlay : 0,
+            };
+        }
+
+        return { batter_id: batterId, pitcher_id: pitcherId, zones };
     }
 
     // Spray chart for a batter
