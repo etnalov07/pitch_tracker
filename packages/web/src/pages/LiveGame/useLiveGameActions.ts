@@ -1,5 +1,6 @@
 import {
     BaseRunners,
+    BaserunnerEvent,
     BaserunnerEventType,
     ContactType,
     PlayerPosition,
@@ -580,7 +581,7 @@ export function useLiveGameActions(state: LiveGameState) {
                 runner_to_base: runnerToBase,
                 new_base_runners: newRunners,
                 outs_before: currentOuts,
-            } as any);
+            } as Partial<BaserunnerEvent> & { new_base_runners?: BaseRunners });
             setBaseRunners(newRunners);
             if (runsScored > 0 && game) {
                 const newAwayScore = (game.away_score || 0) + runsScored;

@@ -298,7 +298,7 @@ const RunnerEventModal: React.FC<RunnerEventModalProps> = ({
             setAfterRunners(suggestedRunners);
             setRunsScored(suggestedRuns);
         }
-    }, [advEventType]);
+    }, [advEventType, runners]);
 
     const resetAdvance = () => {
         setAdvEventType(null);
@@ -317,7 +317,7 @@ const RunnerEventModal: React.FC<RunnerEventModalProps> = ({
         const entry = BASE_LABELS.find((b) => b.base === base);
         const nextBase = entry?.next;
         const newRunners = { ...runners, [base]: false };
-        if (nextBase && nextBase !== 'home') (newRunners as any)[nextBase] = true;
+        if (nextBase && nextBase !== 'home') newRunners[nextBase as RunnerBase] = true;
         setAfterRunners(newRunners);
         setRunsScored(nextBase === 'home' ? 1 : 0);
     };
