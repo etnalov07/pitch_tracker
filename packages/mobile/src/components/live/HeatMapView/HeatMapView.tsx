@@ -42,7 +42,7 @@ interface Props {
 }
 
 export default function HeatMapView({ heatmap, bats }: Props) {
-    const zones = heatmap.zones;
+    const zones = heatmap.zones ?? {};
     const allCounts = Object.values(zones).map((z) => z.count);
     const maxCount = allCounts.length > 0 ? Math.max(...allCounts) : 1;
 
