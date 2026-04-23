@@ -55,7 +55,7 @@ interface Props {
 }
 
 export default function BatterSprayChartView({ sprayChart }: Props) {
-    const plays = sprayChart.plays.filter((p) => p.field_location);
+    const plays = (sprayChart.plays ?? []).filter((p) => p.field_location);
     const maxR = CY - 8;
 
     return (

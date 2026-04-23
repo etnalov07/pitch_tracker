@@ -60,7 +60,7 @@ interface Props {
 }
 
 export default function SprayChartView({ sprayChart }: Props) {
-    const plays = sprayChart.plays.filter((p) => p.field_location);
+    const plays = (sprayChart.plays ?? []).filter((p) => p.field_location);
 
     return (
         <View style={styles.wrapper}>
