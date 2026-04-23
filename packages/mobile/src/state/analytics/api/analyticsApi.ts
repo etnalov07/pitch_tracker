@@ -1,5 +1,5 @@
 import api from '../../../services/api';
-import { HitterTendenciesLive, PitchLocationHeatMap, PitcherTendenciesLive, SprayChart } from '@pitch-tracker/shared';
+import { HitterTendenciesLive, PitchLocationHeatMap, PitcherTendenciesLive, SprayChartData } from '@pitch-tracker/shared';
 
 export const analyticsApi = {
     getPitcherLiveTendencies: async (pitcherId: string, batterHand: 'L' | 'R'): Promise<PitcherTendenciesLive> => {
@@ -17,14 +17,14 @@ export const analyticsApi = {
     },
 
     getHeatMap: async (batterId: string, pitcherId?: string): Promise<PitchLocationHeatMap> => {
-        const params = pitcherId ? `?pitcher_id=${pitcherId}` : '';
-        const response = await api.get<{ heatmap: PitchLocationHeatMap }>(`/analytics/batter/${batterId}/heat-map${params}`);
-        return response.data.heatmap;
+        const params = pitcherId ? `?pitcherId=${pitcherId}` : '';
+        const response = await api.get<{ heatMap: PitchLocationHeatMap }>(`/analytics/batter/${batterId}/heat-map${params}`);
+        return response.data.heatMap;
     },
 
-    getSprayChart: async (batterId: string, gameId?: string): Promise<SprayChart> => {
+    getSprayChart: async (batterId: string, gameId?: string): Promise<SprayChartData[]> => {
         const params = gameId ? `?game_id=${gameId}` : '';
-        const response = await api.get<{ spray_chart: SprayChart }>(`/analytics/batter/${batterId}/spray-chart${params}`);
-        return response.data.spray_chart;
+        const response = await api.get<{ sprayChart: SprayChartData[] }>(`/analytics/batter/${batterId}/spray-chart${params}`);
+        return response.data.sprayChart ?? [];
     },
 };

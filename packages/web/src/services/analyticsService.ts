@@ -7,7 +7,7 @@ import {
     PitchChart,
     PitcherTendenciesLive,
     PitchLocationHeatMap,
-    SprayChart,
+    SprayChartData,
     TeamSide,
 } from '../types';
 import api from './api';
@@ -27,14 +27,14 @@ export const analyticsService = {
     // Get pitch location heat map
     getHeatMap: async (batterId: string, pitcherId?: string): Promise<PitchLocationHeatMap> => {
         const params = pitcherId ? `?pitcherId=${pitcherId}` : '';
-        const response = await api.get<PitchLocationHeatMap>(`/analytics/batter/${batterId}/heatmap${params}`);
-        return response.data;
+        const response = await api.get<{ heatMap: PitchLocationHeatMap }>(`/analytics/batter/${batterId}/heat-map${params}`);
+        return response.data.heatMap;
     },
 
     // Get spray chart
-    getSprayChart: async (batterId: string): Promise<SprayChart> => {
-        const response = await api.get<SprayChart>(`/analytics/batter/${batterId}/spray-chart`);
-        return response.data;
+    getSprayChart: async (batterId: string): Promise<SprayChartData[]> => {
+        const response = await api.get<{ sprayChart: SprayChartData[] }>(`/analytics/batter/${batterId}/spray-chart`);
+        return response.data.sprayChart ?? [];
     },
 
     // Get pitcher tendencies

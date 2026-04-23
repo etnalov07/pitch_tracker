@@ -5,7 +5,7 @@ import {
     PitchLocationHeatMap,
     PitchResult,
     PitchType,
-    SprayChart,
+    SprayChartData,
 } from '@pitch-tracker/shared';
 import React, { useCallback, useState } from 'react';
 import { analyticsService } from '../../../services/analyticsService';
@@ -192,7 +192,7 @@ function BatterRow({ batter, pitcherId }: { batter: BatterBreakdown; pitcherId?:
     const [expanded, setExpanded] = useState(true);
     const [view, setView] = useState<BatterView>('pitches');
     const [heatmap, setHeatmap] = useState<PitchLocationHeatMap | null>(null);
-    const [sprayChart, setSprayChart] = useState<SprayChart | null>(null);
+    const [sprayChart, setSprayChart] = useState<SprayChartData[] | null>(null);
     const [chartLoading, setChartLoading] = useState(false);
     const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
 
@@ -278,7 +278,7 @@ function BatterRow({ batter, pitcherId }: { batter: BatterBreakdown; pitcherId?:
                     {view === 'spray' && (
                         <ChartContainer>
                             {chartLoading && <ChartLoading>Loading spray chart…</ChartLoading>}
-                            {!chartLoading && sprayChart && <BatterSprayChartView sprayChart={sprayChart} />}
+                            {!chartLoading && sprayChart && <BatterSprayChartView sprayData={sprayChart} />}
                             {!chartLoading && !sprayChart && <ChartLoading>No spray chart data.</ChartLoading>}
                         </ChartContainer>
                     )}

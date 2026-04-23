@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { ContactQuality, FieldLocation, SprayChart } from '@pitch-tracker/shared';
+import { ContactQuality, FieldLocation, SprayChartData } from '@pitch-tracker/shared';
 import React from 'react';
 import { theme } from '../../../styles/theme';
 
@@ -51,11 +51,11 @@ function jitter(idx: number, range: number): number {
 }
 
 interface Props {
-    sprayChart: SprayChart;
+    sprayData: SprayChartData[];
 }
 
-export default function BatterSprayChartView({ sprayChart }: Props) {
-    const plays = (sprayChart.plays ?? []).filter((p) => p.field_location);
+export default function BatterSprayChartView({ sprayData }: Props) {
+    const plays = sprayData.filter((p) => p.field_location);
     const maxR = CY - 8;
 
     return (
@@ -87,18 +87,19 @@ export default function BatterSprayChartView({ sprayChart }: Props) {
                 })()}
                 {/* Home plate */}
                 <circle cx={CX} cy={CY} r={5} fill="white" stroke="#374151" strokeWidth={1} />
-                {/* Plays */}
+                {/* One dot per aggregated entry; radius scales with count */}
                 {plays.map((play, i) => {
-                    const loc = FIELD_LOCATIONS[play.field_location!];
+                    const loc = FIELD_LOCATIONS[play.field_location];
                     if (!loc) return null;
                     const a = loc.angle + jitter(i, 6);
                     const d = Math.max(0.1, Math.min(0.99, loc.depth + jitter(i + 1, 0.06)));
                     const { x, y } = toXY(a, d);
                     const color = play.contact_quality ? (QUALITY_COLOR[play.contact_quality] ?? '#6b7280') : '#6b7280';
                     const symbol = play.hit_result ? (RESULT_SYMBOL[play.hit_result] ?? 'X') : 'X';
+                    const r = Math.min(14, 6 + (play.count - 1) * 2);
                     return (
                         <g key={i}>
-                            <circle cx={x} cy={y} r={8} fill={color} opacity={0.75} />
+                            <circle cx={x} cy={y} r={r} fill={color} opacity={0.75} />
                             <text x={x} y={y + 3.5} fontSize={6} fontWeight="700" fill="white" textAnchor="middle">
                                 {symbol}
                             </text>

@@ -8,7 +8,7 @@ import {
     PitchResult,
     PitchCallZone,
     PitchLocationHeatMap,
-    SprayChart,
+    SprayChartData,
 } from '@pitch-tracker/shared';
 import HeatMapView from '../live/HeatMapView/HeatMapView';
 import SprayChartView from '../live/SprayChartView/SprayChartView';
@@ -157,7 +157,7 @@ function BatterRow({ batter, pitcherId, gameId }: BatterRowProps) {
     const [expanded, setExpanded] = useState(true);
     const [view, setView] = useState<BatterView>('pitches');
     const [heatmap, setHeatmap] = useState<PitchLocationHeatMap | null>(null);
-    const [sprayChart, setSprayChart] = useState<SprayChart | null>(null);
+    const [sprayChart, setSprayChart] = useState<SprayChartData[] | null>(null);
     const [chartLoading, setChartLoading] = useState(false);
     const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
 
@@ -250,7 +250,7 @@ function BatterRow({ batter, pitcherId, gameId }: BatterRowProps) {
                     {view === 'spray' && (
                         <View style={styles.chartContainer}>
                             {chartLoading && <Text style={styles.chartLoading}>Loading spray chart…</Text>}
-                            {!chartLoading && sprayChart && <SprayChartView sprayChart={sprayChart} />}
+                            {!chartLoading && sprayChart && <SprayChartView sprayData={sprayChart} />}
                             {!chartLoading && !sprayChart && <Text style={styles.chartLoading}>No spray chart data.</Text>}
                         </View>
                     )}

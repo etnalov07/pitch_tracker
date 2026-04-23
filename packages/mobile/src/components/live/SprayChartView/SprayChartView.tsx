@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import Svg, { Path, Circle, Line, Text as SvgText } from 'react-native-svg';
-import { SprayChart, FieldLocation, ContactQuality } from '@pitch-tracker/shared';
+import { SprayChartData, FieldLocation, ContactQuality } from '@pitch-tracker/shared';
 
 const SIZE = 220;
 const CX = SIZE / 2;
@@ -56,11 +56,11 @@ function arcPath(startAngle: number, endAngle: number, radius: number): string {
 }
 
 interface Props {
-    sprayChart: SprayChart;
+    sprayData: SprayChartData[];
 }
 
-export default function SprayChartView({ sprayChart }: Props) {
-    const plays = (sprayChart.plays ?? []).filter((p) => p.field_location);
+export default function SprayChartView({ sprayData }: Props) {
+    const plays = sprayData.filter((p) => p.field_location);
 
     return (
         <View style={styles.wrapper}>
@@ -91,18 +91,19 @@ export default function SprayChartView({ sprayChart }: Props) {
                 })()}
                 {/* Home plate */}
                 <Circle cx={CX} cy={CY} r={5} fill="white" stroke="#374151" strokeWidth={1} />
-                {/* Play dots */}
+                {/* One dot per aggregated entry; radius scales with count */}
                 {plays.map((play, i) => {
-                    const loc = FIELD_LOCATIONS[play.field_location!];
+                    const loc = FIELD_LOCATIONS[play.field_location];
                     if (!loc) return null;
-                    const jitterAngle = loc.angle + (Math.random() - 0.5) * 6;
-                    const jitterDepth = loc.depth + (Math.random() - 0.5) * 0.06;
+                    const jitterAngle = loc.angle + (Math.sin(i * 127.1) * 0.5) * 6;
+                    const jitterDepth = loc.depth + (Math.sin(i * 311.7) * 0.5) * 0.06;
                     const { x, y } = toXY(jitterAngle, Math.max(0.1, Math.min(0.99, jitterDepth)));
                     const color = play.contact_quality ? QUALITY_COLOR[play.contact_quality] : '#6b7280';
                     const symbol = play.hit_result ? (RESULT_SYMBOL[play.hit_result] ?? 'X') : 'X';
+                    const r = Math.min(14, 6 + (play.count - 1) * 2);
                     return (
                         <React.Fragment key={i}>
-                            <Circle cx={x} cy={y} r={7} fill={color} opacity={0.75} />
+                            <Circle cx={x} cy={y} r={r} fill={color} opacity={0.75} />
                             <SvgText x={x} y={y + 3.5} fontSize={6} fontWeight="700" fill="white" textAnchor="middle">
                                 {symbol}
                             </SvgText>
