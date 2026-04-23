@@ -1,7 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, Card, Divider } from 'react-native-paper';
-import { BatterBreakdown, BatterAtBatPitch, PitchType, PitchResult, PitchCallZone } from '@pitch-tracker/shared';
+import { Text, Card, Divider, SegmentedButtons } from 'react-native-paper';
+import {
+    BatterBreakdown,
+    BatterAtBatPitch,
+    PitchType,
+    PitchResult,
+    PitchCallZone,
+    PitchLocationHeatMap,
+    SprayChart,
+} from '@pitch-tracker/shared';
+import HeatMapView from '../live/HeatMapView/HeatMapView';
+import SprayChartView from '../live/SprayChartView/SprayChartView';
+import { analyticsApi } from '../../state/analytics/api/analyticsApi';
 
 const PITCH_ABBREV: Record<PitchType, string> = {
     fastball: 'FB',
@@ -134,13 +145,50 @@ function PitchDot({ pitch, bats }: PitchDotProps) {
     );
 }
 
+type BatterView = 'pitches' | 'heatmap' | 'spray';
+
 interface BatterRowProps {
     batter: BatterBreakdown;
+    pitcherId?: string;
+    gameId?: string;
 }
 
-function BatterRow({ batter }: BatterRowProps) {
+function BatterRow({ batter, pitcherId, gameId }: BatterRowProps) {
     const [expanded, setExpanded] = useState(true);
+    const [view, setView] = useState<BatterView>('pitches');
+    const [heatmap, setHeatmap] = useState<PitchLocationHeatMap | null>(null);
+    const [sprayChart, setSprayChart] = useState<SprayChart | null>(null);
+    const [chartLoading, setChartLoading] = useState(false);
     const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
+
+    const loadChart = useCallback(
+        async (nextView: BatterView) => {
+            if (nextView === 'pitches') return;
+            if (nextView === 'heatmap' && heatmap) return;
+            if (nextView === 'spray' && sprayChart) return;
+            setChartLoading(true);
+            try {
+                if (nextView === 'heatmap') {
+                    const data = await analyticsApi.getHeatMap(batter.batter_id, pitcherId);
+                    setHeatmap(data);
+                } else {
+                    const data = await analyticsApi.getSprayChart(batter.batter_id, gameId);
+                    setSprayChart(data);
+                }
+            } catch {
+                // leave previous data in place
+            } finally {
+                setChartLoading(false);
+            }
+        },
+        [batter.batter_id, pitcherId, gameId, heatmap, sprayChart]
+    );
+
+    const handleViewChange = (v: string) => {
+        const next = v as BatterView;
+        setView(next);
+        loadChart(next);
+    };
 
     return (
         <View style={styles.batterRow}>
@@ -157,24 +205,57 @@ function BatterRow({ batter }: BatterRowProps) {
                 <Text style={styles.expandChevron}>{expanded ? '▲' : '▽'}</Text>
             </TouchableOpacity>
 
-            {expanded &&
-                batter.at_bats.map((ab, abIdx) => (
-                    <View key={ab.at_bat_id} style={styles.atBatBlock}>
-                        <View style={styles.atBatHeader}>
-                            <Text style={styles.atBatInning}>{formatInning(ab.inning_number, ab.inning_half)}</Text>
-                            <Text style={styles.atBatResult}>
-                                {formatAtBatResult(ab.result, ab.fielded_by_position, ab.pitches)}
-                            </Text>
-                            <Text style={styles.atBatPitchCount}>{ab.pitches.length} pitches</Text>
-                        </View>
-                        <View style={styles.pitchRow}>
-                            {ab.pitches.map((pitch) => (
-                                <PitchDot key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
-                            ))}
-                        </View>
-                        {abIdx < batter.at_bats.length - 1 && <View style={styles.atBatDivider} />}
+            {expanded && (
+                <>
+                    <View style={styles.viewToggleRow}>
+                        <SegmentedButtons
+                            value={view}
+                            onValueChange={handleViewChange}
+                            buttons={[
+                                { value: 'pitches', label: 'Pitches', style: styles.segBtn },
+                                { value: 'heatmap', label: 'Heatmap', style: styles.segBtn },
+                                { value: 'spray', label: 'Spray', style: styles.segBtn },
+                            ]}
+                            style={styles.viewToggle}
+                        />
                     </View>
-                ))}
+
+                    {view === 'pitches' &&
+                        batter.at_bats.map((ab, abIdx) => (
+                            <View key={ab.at_bat_id} style={styles.atBatBlock}>
+                                <View style={styles.atBatHeader}>
+                                    <Text style={styles.atBatInning}>{formatInning(ab.inning_number, ab.inning_half)}</Text>
+                                    <Text style={styles.atBatResult}>
+                                        {formatAtBatResult(ab.result, ab.fielded_by_position, ab.pitches)}
+                                    </Text>
+                                    <Text style={styles.atBatPitchCount}>{ab.pitches.length} pitches</Text>
+                                </View>
+                                <View style={styles.pitchRow}>
+                                    {ab.pitches.map((pitch) => (
+                                        <PitchDot key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
+                                    ))}
+                                </View>
+                                {abIdx < batter.at_bats.length - 1 && <View style={styles.atBatDivider} />}
+                            </View>
+                        ))}
+
+                    {view === 'heatmap' && (
+                        <View style={styles.chartContainer}>
+                            {chartLoading && <Text style={styles.chartLoading}>Loading heatmap…</Text>}
+                            {!chartLoading && heatmap && <HeatMapView heatmap={heatmap} bats={batter.bats} />}
+                            {!chartLoading && !heatmap && <Text style={styles.chartLoading}>No heatmap data.</Text>}
+                        </View>
+                    )}
+
+                    {view === 'spray' && (
+                        <View style={styles.chartContainer}>
+                            {chartLoading && <Text style={styles.chartLoading}>Loading spray chart…</Text>}
+                            {!chartLoading && sprayChart && <SprayChartView sprayChart={sprayChart} />}
+                            {!chartLoading && !sprayChart && <Text style={styles.chartLoading}>No spray chart data.</Text>}
+                        </View>
+                    )}
+                </>
+            )}
         </View>
     );
 }
@@ -182,9 +263,11 @@ function BatterRow({ batter }: BatterRowProps) {
 interface Props {
     breakdown: BatterBreakdown[];
     title?: string;
+    pitcherId?: string;
+    gameId?: string;
 }
 
-export default function BatterBreakdownView({ breakdown, title = 'Batter Breakdown' }: Props) {
+export default function BatterBreakdownView({ breakdown, title = 'Batter Breakdown', pitcherId, gameId }: Props) {
     if (breakdown.length === 0) {
         return (
             <Card style={styles.card}>
@@ -234,7 +317,7 @@ export default function BatterBreakdownView({ breakdown, title = 'Batter Breakdo
                     .sort((a, b) => a.batting_order - b.batting_order)
                     .map((batter, idx) => (
                         <View key={batter.batter_id}>
-                            <BatterRow batter={batter} />
+                            <BatterRow batter={batter} pitcherId={pitcherId} gameId={gameId} />
                             {idx < breakdown.length - 1 && <Divider style={styles.batterDivider} />}
                         </View>
                     ))}
@@ -327,6 +410,16 @@ const styles = StyleSheet.create({
         fontSize: 11,
         color: '#9ca3af',
     },
+    viewToggleRow: {
+        paddingLeft: 38,
+        paddingBottom: 8,
+    },
+    viewToggle: {
+        height: 32,
+    },
+    segBtn: {
+        minWidth: 0,
+    },
     atBatBlock: {
         paddingLeft: 38,
         paddingBottom: 8,
@@ -414,5 +507,16 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         lineHeight: 11,
         opacity: 0.85,
+    },
+    chartContainer: {
+        paddingLeft: 38,
+        paddingBottom: 8,
+        alignItems: 'center',
+    },
+    chartLoading: {
+        fontSize: 12,
+        color: '#9ca3af',
+        fontStyle: 'italic',
+        marginTop: 16,
     },
 });

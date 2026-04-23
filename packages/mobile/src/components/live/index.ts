@@ -18,3 +18,5 @@ export type { CompletedAtBatEntry } from './PreviousAtBatsModal';
 export { PitcherTendenciesModal, HitterTendenciesModal, SituationalCallsRow } from './TendenciesModals';
 export { default as DoublePlayModal } from './DoublePlayModal';
 export { default as RunnerEventModal } from './RunnerEventModal';
+export { default as HeatMapView } from './HeatMapView/HeatMapView';
+export { default as SprayChartView } from './SprayChartView/SprayChartView';

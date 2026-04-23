@@ -179,9 +179,18 @@ export default function ViewerScreen() {
                         {breakdownLoading && oppBreakdown.length === 0 ? (
                             <Text style={styles.loadingText}>Loading batter breakdown…</Text>
                         ) : breakdownTab === 'opponent' || game.charting_mode !== 'both' ? (
-                            <BatterBreakdownView breakdown={oppBreakdown} title={`Opponent Lineup vs. ${pitcherName}`} />
+                            <BatterBreakdownView
+                                breakdown={oppBreakdown}
+                                title={`Opponent Lineup vs. ${pitcherName}`}
+                                pitcherId={pitcherId}
+                                gameId={id}
+                            />
                         ) : (
-                            <BatterBreakdownView breakdown={myTeamBreakdown} title={`Our Lineup vs. ${opponentPitcherName}`} />
+                            <BatterBreakdownView
+                                breakdown={myTeamBreakdown}
+                                title={`Our Lineup vs. ${opponentPitcherName}`}
+                                gameId={id}
+                            />
                         )}
                     </View>
                 )}
