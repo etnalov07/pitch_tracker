@@ -107,11 +107,15 @@ export function useLiveGameActions(state: LiveGameState) {
     const advanceInning = async (runs: number) => {
         if (!gameId || !game) return;
         try {
-            const currentHomeScore = game.home_score || 0;
-            const currentAwayScore = game.away_score || 0;
+            // Fetch fresh game state to prevent stale closure from overwriting scores
+            // already written during the half-inning (e.g. runner advancement → advanceInning(0))
+            const freshGame = await dispatch(fetchGameById(gameId)).unwrap();
+
+            const currentHomeScore = freshGame.home_score || 0;
+            const currentAwayScore = freshGame.away_score || 0;
             await gamesApi.updateScore(gameId, currentHomeScore, currentAwayScore + runs);
 
-            if (game.is_home_game === false || game.charting_mode === 'both') {
+            if (freshGame.is_home_game === false || freshGame.charting_mode === 'both') {
                 // Visitor game or both-team mode: advance 1 half to user's batting half
                 await gamesApi.advanceInning(gameId);
             } else {
@@ -121,12 +125,13 @@ export function useLiveGameActions(state: LiveGameState) {
             }
 
             setBaseRunners(clearBases());
-            dispatch(fetchGameById(gameId));
+            // Await so game.inning_half is current before batter setup and re-render
+            await dispatch(fetchGameById(gameId)).unwrap();
             const newInning = await gamesApi.getCurrentInning(gameId);
             setCurrentInning(newInning);
             setShowInningChange(false);
 
-            if (game.is_home_game !== false && game.charting_mode !== 'both') {
+            if (freshGame.is_home_game !== false && freshGame.charting_mode !== 'both') {
                 // Home game single-team mode: set up next opponent batter immediately
                 const firstBatter = getNextBatter(opponentLineup, currentBattingOrder);
                 if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
@@ -461,7 +466,8 @@ export function useLiveGameActions(state: LiveGameState) {
             // Clear base runners
             setBaseRunners(clearBases());
 
-            dispatch(fetchGameById(gameId));
+            // Await so game.inning_half is current before batter setup and re-render
+            await dispatch(fetchGameById(gameId)).unwrap();
 
             const newInning = await gamesApi.getCurrentInning(gameId);
             setCurrentInning(newInning);

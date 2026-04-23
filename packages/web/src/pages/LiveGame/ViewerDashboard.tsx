@@ -1,9 +1,10 @@
 import styled from '@emotion/styled';
-import { BatterBreakdown, Game, GamePitcherWithPlayer, PerformanceSummary } from '@pitch-tracker/shared';
+import { BatterBreakdown, Game, GamePitcherWithPlayer, OpposingPitcher, PerformanceSummary } from '@pitch-tracker/shared';
 import React, { useState, useEffect, useRef } from 'react';
 import CountBreakdownPanel from '../../components/live/CountBreakdownPanel';
 import PitcherStats from '../../components/live/PitcherStats';
 import { BatterBreakdownPanel, PerformanceSummaryCard } from '../../components/performanceSummary';
+import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { performanceSummaryService } from '../../services/performanceSummaryService';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { theme } from '../../styles/theme';
@@ -19,7 +20,9 @@ const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
 
 const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
     const [activeTab, setActiveTab] = useState<'stats' | 'counts' | 'breakdown' | 'summary'>('stats');
+    const [breakdownTab, setBreakdownTab] = useState<'opponent' | 'our_team'>('opponent');
     const [activePitcher, setActivePitcher] = useState<GamePitcherWithPlayer | null>(null);
+    const [currentOpposingPitcher, setCurrentOpposingPitcher] = useState<OpposingPitcher | null>(null);
     const [summary, setSummary] = useState<PerformanceSummary | null>(null);
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [regenerating, setRegenerating] = useState(false);
@@ -36,6 +39,12 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
             .then((pitchers) => {
                 const active = pitchers.find((p) => !p.inning_exited) ?? pitchers[pitchers.length - 1] ?? null;
                 setActivePitcher(active);
+            })
+            .catch(() => {});
+        opposingPitcherService
+            .getByGame(game.id)
+            .then((pitchers) => {
+                setCurrentOpposingPitcher(pitchers[pitchers.length - 1] ?? null);
             })
             .catch(() => {});
     }, [game.id, refreshTrigger]);
@@ -100,14 +109,13 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
     };
 
     const pitcherId = activePitcher?.player_id;
+    const pitcherName = activePitcher?.player
+        ? `${activePitcher.player.first_name} ${activePitcher.player.last_name}`
+        : 'Our Pitcher';
+    const opponentPitcherName = currentOpposingPitcher?.pitcher_name ?? 'Opponent Pitcher';
 
     const score = `${game.home_score} – ${game.away_score}`;
     const inningLabel = `${game.inning_half === 'top' ? '▲' : '▼'} ${game.current_inning}`;
-
-    const breakdownSections = [
-        { title: 'Opponent Lineup vs. Our Pitcher', batters: oppBreakdown ?? [] },
-        ...(game.charting_mode === 'both' ? [{ title: 'Our Lineup vs. Opponent Pitcher', batters: myTeamBreakdown ?? [] }] : []),
-    ];
 
     return (
         <Wrapper>
@@ -148,7 +156,27 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 )}
                 {activeTab === 'breakdown' && (
                     <BreakdownWrapper>
-                        <BatterBreakdownPanel sections={breakdownSections} loading={breakdownLoading} />
+                        {game.charting_mode === 'both' && (
+                            <BreakdownTabRow>
+                                <BreakdownTab active={breakdownTab === 'opponent'} onClick={() => setBreakdownTab('opponent')}>
+                                    Opponent Lineup
+                                </BreakdownTab>
+                                <BreakdownTab active={breakdownTab === 'our_team'} onClick={() => setBreakdownTab('our_team')}>
+                                    Our Lineup
+                                </BreakdownTab>
+                            </BreakdownTabRow>
+                        )}
+                        {breakdownTab === 'opponent' || game.charting_mode !== 'both' ? (
+                            <BatterBreakdownPanel
+                                sections={[{ title: `Opponent Lineup vs. ${pitcherName}`, batters: oppBreakdown ?? [] }]}
+                                loading={breakdownLoading}
+                            />
+                        ) : (
+                            <BatterBreakdownPanel
+                                sections={[{ title: `Our Lineup vs. ${opponentPitcherName}`, batters: myTeamBreakdown ?? [] }]}
+                                loading={breakdownLoading}
+                            />
+                        )}
                     </BreakdownWrapper>
                 )}
                 {activeTab === 'summary' && (
@@ -275,6 +303,31 @@ const Content = styled.div`
 const BreakdownWrapper = styled.div`
     max-width: 800px;
     margin: 0 auto;
+`;
+
+const BreakdownTabRow = styled.div`
+    display: flex;
+    border-bottom: 2px solid ${theme.colors.gray[200]};
+    margin-bottom: ${theme.spacing.lg};
+`;
+
+const BreakdownTab = styled.button<{ active: boolean }>`
+    padding: ${theme.spacing.sm} ${theme.spacing.lg};
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: ${theme.fontSize.sm};
+    font-weight: ${theme.fontWeight.medium};
+    color: ${({ active }) => (active ? theme.colors.primary[700] : theme.colors.gray[500])};
+    border-bottom: 2px solid ${({ active }) => (active ? theme.colors.primary[600] : 'transparent')};
+    margin-bottom: -2px;
+    transition:
+        color 0.15s,
+        border-color 0.15s;
+
+    &:hover {
+        color: ${theme.colors.primary[600]};
+    }
 `;
 
 const SummaryWrapper = styled.div`
