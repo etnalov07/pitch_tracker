@@ -171,7 +171,7 @@ function PitchCardItem({ pitch, bats }: { pitch: BatterAtBatPitch; bats?: string
     );
 }
 
-function BatterRow({ batter, pitcherId }: { batter: BatterBreakdown; pitcherId?: string }) {
+function BatterRow({ batter }: { batter: BatterBreakdown; pitcherId?: string }) {
     const [expanded, setExpanded] = useState(true);
     const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
 
