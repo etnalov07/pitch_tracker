@@ -1,5 +1,5 @@
 import api from '../../../services/api';
-import { HitterTendenciesLive, PitchLocationHeatMap, PitcherTendenciesLive, SprayChartData } from '@pitch-tracker/shared';
+import { HitterTendenciesLive, PitchLocationData, PitcherTendenciesLive, SprayChartData } from '@pitch-tracker/shared';
 
 export const analyticsApi = {
     getPitcherLiveTendencies: async (pitcherId: string, batterHand: 'L' | 'R'): Promise<PitcherTendenciesLive> => {
@@ -16,10 +16,10 @@ export const analyticsApi = {
         return response.data.tendencies;
     },
 
-    getHeatMap: async (batterId: string, pitcherId?: string): Promise<PitchLocationHeatMap> => {
+    getPitchLocations: async (batterId: string, pitcherId?: string): Promise<PitchLocationData[]> => {
         const params = pitcherId ? `?pitcherId=${pitcherId}` : '';
-        const response = await api.get<{ heatMap: PitchLocationHeatMap }>(`/analytics/batter/${batterId}/heat-map${params}`);
-        return response.data.heatMap;
+        const response = await api.get<{ pitches: PitchLocationData[] }>(`/analytics/batter/${batterId}/pitch-locations${params}`);
+        return response.data.pitches ?? [];
     },
 
     getSprayChart: async (batterId: string, gameId?: string): Promise<SprayChartData[]> => {

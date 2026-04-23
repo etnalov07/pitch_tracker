@@ -6,7 +6,7 @@ import {
     HitterTendenciesLive,
     PitchChart,
     PitcherTendenciesLive,
-    PitchLocationHeatMap,
+    PitchLocationData,
     SprayChartData,
     TeamSide,
 } from '../types';
@@ -24,11 +24,11 @@ export const analyticsService = {
         return response.data;
     },
 
-    // Get pitch location heat map
-    getHeatMap: async (batterId: string, pitcherId?: string): Promise<PitchLocationHeatMap> => {
+    // Get raw pitch locations for scatter plot (colored by type)
+    getPitchLocations: async (batterId: string, pitcherId?: string): Promise<PitchLocationData[]> => {
         const params = pitcherId ? `?pitcherId=${pitcherId}` : '';
-        const response = await api.get<{ heatMap: PitchLocationHeatMap }>(`/analytics/batter/${batterId}/heat-map${params}`);
-        return response.data.heatMap;
+        const response = await api.get<{ pitches: PitchLocationData[] }>(`/analytics/batter/${batterId}/pitch-locations${params}`);
+        return response.data.pitches ?? [];
     },
 
     // Get spray chart

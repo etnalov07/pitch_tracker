@@ -11,6 +11,7 @@ router.use(authenticateToken);
 // Batter analytics
 router.get('/batter/:batterId/history', analyticsController.getBatterHistory.bind(analyticsController));
 router.get('/batter/:batterId/heat-map', analyticsController.getBatterPitchHeatMap.bind(analyticsController));
+router.get('/batter/:batterId/pitch-locations', analyticsController.getBatterPitchLocations.bind(analyticsController));
 router.get('/batter/:batterId/spray-chart', analyticsController.getBatterSprayChart.bind(analyticsController));
 
 // Pitcher analytics

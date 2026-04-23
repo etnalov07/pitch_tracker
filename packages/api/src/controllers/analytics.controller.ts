@@ -29,6 +29,18 @@ export class AnalyticsController {
         }
     }
 
+    async getBatterPitchLocations(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { batterId } = req.params;
+            const { pitcherId } = req.query;
+            const pid = typeof pitcherId === 'string' ? pitcherId : undefined;
+            const pitches = await analyticsService.getBatterPitchLocations(batterId as string, pid);
+            res.json({ pitches });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async getBatterSprayChart(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { batterId } = req.params;

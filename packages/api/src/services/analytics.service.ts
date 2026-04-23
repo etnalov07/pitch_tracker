@@ -6,6 +6,7 @@ import type {
     HitterTendenciesLive,
     HitterZoneStat,
     PitchCallZone,
+    PitchLocationData,
     PitchLocationHeatMap,
     PitcherPitchTypeStat,
     PitcherTendenciesLive,
@@ -151,6 +152,30 @@ export class AnalyticsService {
         return { batter_id: batterId, pitcher_id: pitcherId, zones };
     }
 
+    // Raw pitch locations for a batter (scatter plot by pitch type)
+    async getBatterPitchLocations(batterId: string, pitcherId?: string): Promise<PitchLocationData[]> {
+        const params: (string | undefined)[] = [batterId];
+        const pitcherFilter = pitcherId ? ' AND pitcher_id = $2' : '';
+        if (pitcherId) params.push(pitcherId);
+
+        const result = await query(
+            `SELECT location_x, location_y, pitch_type, pitch_result, velocity
+             FROM pitches
+             WHERE batter_id = $1
+             AND location_x IS NOT NULL
+             AND location_y IS NOT NULL${pitcherFilter}`,
+            params
+        );
+
+        return result.rows.map((row) => ({
+            location_x: parseFloat(row.location_x),
+            location_y: parseFloat(row.location_y),
+            pitch_type: row.pitch_type,
+            pitch_result: row.pitch_result,
+            velocity: row.velocity != null ? parseFloat(row.velocity) : undefined,
+        }));
+    }
+
     // Spray chart for a batter
     async getBatterSprayChart(batterId: string, gameId?: string): Promise<any[]> {
         const gameFilter = gameId ? 'AND ab.game_id = $2' : '';
@@ -159,44 +184,29 @@ export class AnalyticsService {
 
         const queryText = `
       SELECT
-        p.field_location,
+        COALESCE(
+          p.field_location,
+          CASE p.fielded_by_position
+            WHEN 'P'  THEN 'infield_center'
+            WHEN 'C'  THEN 'infield_center'
+            WHEN '1B' THEN 'infield_right'
+            WHEN '2B' THEN 'infield_center'
+            WHEN '3B' THEN 'infield_left'
+            WHEN 'SS' THEN 'infield_left'
+            WHEN 'LF' THEN 'left_field_line'
+            WHEN 'CF' THEN 'center_field'
+            WHEN 'RF' THEN 'right_field_line'
+          END
+        ) AS field_location,
         p.contact_quality,
         p.hit_result,
         COUNT(*) AS count
       FROM plays p
       JOIN at_bats ab ON p.at_bat_id = ab.id
       WHERE ab.batter_id = $1
-      AND p.field_location IS NOT NULL
+      AND (p.field_location IS NOT NULL OR p.fielded_by_position IS NOT NULL)
       ${gameFilter}
-      GROUP BY p.field_location, p.contact_quality, p.hit_result
-
-      UNION ALL
-
-      SELECT
-        CASE ab.fielded_by_position
-          WHEN 'P'  THEN 'infield_center'
-          WHEN 'C'  THEN 'infield_center'
-          WHEN '1B' THEN 'infield_right'
-          WHEN '2B' THEN 'infield_center'
-          WHEN '3B' THEN 'infield_left'
-          WHEN 'SS' THEN 'infield_left'
-          WHEN 'LF' THEN 'left_field_line'
-          WHEN 'CF' THEN 'center_field'
-          WHEN 'RF' THEN 'right_field_line'
-        END AS field_location,
-        NULL AS contact_quality,
-        NULL AS hit_result,
-        COUNT(*) AS count
-      FROM at_bats ab
-      WHERE ab.batter_id = $1
-      AND ab.result IN ('groundout', 'flyout', 'lineout', 'popout', 'sacrifice_fly', 'force_out')
-      AND ab.fielded_by_position IS NOT NULL
-      AND NOT EXISTS (
-        SELECT 1 FROM plays p2
-        WHERE p2.at_bat_id = ab.id AND p2.field_location IS NOT NULL
-      )
-      ${gameFilter}
-      GROUP BY ab.fielded_by_position
+      GROUP BY 1, p.contact_quality, p.hit_result
     `;
 
         const result = await query(queryText, params);
