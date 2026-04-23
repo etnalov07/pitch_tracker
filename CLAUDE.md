@@ -30,7 +30,7 @@ After implementing a feature:
 - [ ] All entry points and UI flows are connected (buttons, navigation, setup flows exist)
 - [ ] All consumers of any changed shared types are updated (types/index.ts, service imports, runtime requires)
 - [ ] Platform parity verified — run `/parity-check` after any UI change to confirm web and mobile match (sizing, positioning, label logic, LHH/RHH mirroring)
-- [ ] Pre-commit checks pass (see Pre-Commit below)
+- [ ] Pre-commit checks pass — run `/check` to validate all changed packages (TypeScript, ESLint, tests)
 
 ## Common Pitfalls
 
