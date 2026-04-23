@@ -6,7 +6,11 @@
       "Bash(npm run:*)",
       "Bash(node dist/cli.js analyze-session --video-dir \"C:/Projects/pitch_tracker/videos/Summer creek\" --training-data ./temp/video_pitch_analysis.json --temp-dir ./temp)",
       "Bash(node dist/cli.js calibrate-velocity --input ./temp/session_analysis.json --calibration ./calibration.json)",
-      "Bash(node dist/cli.js generate-khs-excel --input ./temp/session_analysis.json --output \"C:/Projects/pitch_tracker/videos/Summer creek/SummerCreek_Analysis.xlsx\" --calibration ./calibration.json)"
+      "Bash(node dist/cli.js generate-khs-excel --input ./temp/session_analysis.json --output \"C:/Projects/pitch_tracker/videos/Summer creek/SummerCreek_Analysis.xlsx\" --calibration ./calibration.json)",
+      "Bash(grep -c \"\\\\.MOV$\")",
+      "Bash(node dist/cli.js analyze-session --video-dir C:/Projects/pitch_tracker/videos/Channelview --training-data ./temp/video_pitch_analysis.json --temp-dir ./temp)",
+      "Bash(node dist/cli.js generate-khs-excel --input ./temp/session_analysis.json --output C:/Projects/pitch_tracker/videos/Channelview_Analysis.xlsx --calibration ./calibration.json)",
+      "Bash(node dist/cli.js calibrate-status --calibration ./calibration.json)"
     ]
   }
 }
