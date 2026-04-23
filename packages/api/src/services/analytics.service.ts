@@ -153,28 +153,51 @@ export class AnalyticsService {
 
     // Spray chart for a batter
     async getBatterSprayChart(batterId: string, gameId?: string): Promise<any[]> {
-        let queryText = `
-      SELECT 
+        const gameFilter = gameId ? 'AND ab.game_id = $2' : '';
+        const params: any[] = [batterId];
+        if (gameId) params.push(gameId);
+
+        const queryText = `
+      SELECT
         p.field_location,
         p.contact_quality,
-        p.hit_direction,
-        p.hit_depth,
         p.hit_result,
-        p.contact_type,
-        COUNT(*) as count
+        COUNT(*) AS count
       FROM plays p
       JOIN at_bats ab ON p.at_bat_id = ab.id
       WHERE ab.batter_id = $1
+      AND p.field_location IS NOT NULL
+      ${gameFilter}
+      GROUP BY p.field_location, p.contact_quality, p.hit_result
+
+      UNION ALL
+
+      SELECT
+        CASE ab.fielded_by_position
+          WHEN 'P'  THEN 'infield_center'
+          WHEN 'C'  THEN 'infield_center'
+          WHEN '1B' THEN 'infield_right'
+          WHEN '2B' THEN 'infield_center'
+          WHEN '3B' THEN 'infield_left'
+          WHEN 'SS' THEN 'infield_left'
+          WHEN 'LF' THEN 'left_field_line'
+          WHEN 'CF' THEN 'center_field'
+          WHEN 'RF' THEN 'right_field_line'
+        END AS field_location,
+        NULL AS contact_quality,
+        NULL AS hit_result,
+        COUNT(*) AS count
+      FROM at_bats ab
+      WHERE ab.batter_id = $1
+      AND ab.result IN ('groundout', 'flyout', 'lineout', 'popout', 'sacrifice_fly', 'force_out')
+      AND ab.fielded_by_position IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM plays p2
+        WHERE p2.at_bat_id = ab.id AND p2.field_location IS NOT NULL
+      )
+      ${gameFilter}
+      GROUP BY ab.fielded_by_position
     `;
-
-        const params: any[] = [batterId];
-
-        if (gameId) {
-            queryText += ' AND ab.game_id = $2';
-            params.push(gameId);
-        }
-
-        queryText += ' GROUP BY p.field_location, p.contact_quality, p.hit_direction, p.hit_depth, p.hit_result, p.contact_type';
 
         const result = await query(queryText, params);
         return result.rows;
