@@ -206,7 +206,17 @@ export interface BaseRunners {
     third: boolean;
 }
 
-export type BaserunnerEventType = 'caught_stealing' | 'pickoff' | 'interference' | 'passed_runner' | 'appeal_out' | 'other';
+export type BaserunnerEventType =
+    | 'caught_stealing'
+    | 'pickoff'
+    | 'interference'
+    | 'passed_runner'
+    | 'appeal_out'
+    | 'other'
+    | 'stolen_base'
+    | 'wild_pitch'
+    | 'passed_ball'
+    | 'balk';
 
 export type RunnerBase = 'first' | 'second' | 'third';
 
@@ -217,6 +227,7 @@ export interface BaserunnerEvent {
     at_bat_id?: string;
     event_type: BaserunnerEventType;
     runner_base: RunnerBase;
+    runner_to_base?: RunnerBase | 'home' | null;
     out_recorded: boolean;
     outs_before: number;
     outs_after: number;

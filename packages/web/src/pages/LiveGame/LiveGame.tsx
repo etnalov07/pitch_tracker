@@ -14,10 +14,11 @@ import StrikeZone from '../../components/live/StrikeZone';
 import { useGameWebSocket } from '../../hooks/useGameWebSocket';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { theme } from '../../styles/theme';
-import BaserunnerOutModal from './BaserunnerOutModal';
 import DiamondModal from './DiamondModal';
+import DoublePlayModal from './DoublePlayModal';
 import InningChangeModal from './InningChangeModal';
 import RunnerAdvancementModal from './RunnerAdvancementModal';
+import RunnerEventModal from './RunnerEventModal';
 import {
     Container,
     LeftPanel,
@@ -144,13 +145,17 @@ const LiveGame: React.FC = () => {
         setShowHeatZones,
         heatZones,
         baseRunners,
-        showBaserunnerOutModal,
-        setShowBaserunnerOutModal,
+        showRunnerEventModal,
+        setShowRunnerEventModal,
+        runnerEventDefaultTab,
+        setRunnerEventDefaultTab,
         showRunnerAdvancementModal,
         setShowRunnerAdvancementModal,
         pendingHitResult,
         showDroppedThirdModal,
         setShowDroppedThirdModal,
+        showDoublePlayModal,
+        setShowDoublePlayModal,
         showTeamAtBat,
         teamAtBatRuns,
         setTeamAtBatRuns,
@@ -340,21 +345,42 @@ const LiveGame: React.FC = () => {
                             <BaseRunnerDisplay runners={baseRunners} size={50} />
                         </div>
                         {(baseRunners.first || baseRunners.second || baseRunners.third) && game.status === 'in_progress' && (
-                            <button
-                                onClick={() => setShowBaserunnerOutModal(true)}
-                                style={{
-                                    marginTop: '8px',
-                                    padding: '6px 12px',
-                                    fontSize: '12px',
-                                    background: theme.colors.red[50],
-                                    color: theme.colors.red[700],
-                                    border: `1px solid ${theme.colors.red[200]}`,
-                                    borderRadius: '6px',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                Record Runner Out
-                            </button>
+                            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                                <button
+                                    onClick={() => {
+                                        setRunnerEventDefaultTab('advance');
+                                        setShowRunnerEventModal(true);
+                                    }}
+                                    style={{
+                                        padding: '6px 10px',
+                                        fontSize: '11px',
+                                        background: theme.colors.green[50],
+                                        color: theme.colors.green[700],
+                                        border: `1px solid ${theme.colors.green[200]}`,
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    SB / WP / PB / BLK
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setRunnerEventDefaultTab('out');
+                                        setShowRunnerEventModal(true);
+                                    }}
+                                    style={{
+                                        padding: '6px 10px',
+                                        fontSize: '11px',
+                                        background: theme.colors.red[50],
+                                        color: theme.colors.red[700],
+                                        border: `1px solid ${theme.colors.red[200]}`,
+                                        borderRadius: '6px',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Runner Out
+                                </button>
+                            </div>
                         )}
                     </GameInfo>
                     <TeamInfo>
@@ -779,12 +805,24 @@ const LiveGame: React.FC = () => {
                 />
             )}
 
-            {showBaserunnerOutModal && (
-                <BaserunnerOutModal
-                    isOpen={showBaserunnerOutModal}
-                    onClose={() => setShowBaserunnerOutModal(false)}
+            {showDoublePlayModal && (
+                <DoublePlayModal
+                    isOpen={showDoublePlayModal}
+                    onClose={() => setShowDoublePlayModal(false)}
                     runners={baseRunners}
                     currentOuts={currentOuts}
+                    onConfirm={actions.handleDoublePlayConfirm}
+                />
+            )}
+
+            {showRunnerEventModal && (
+                <RunnerEventModal
+                    isOpen={showRunnerEventModal}
+                    onClose={() => setShowRunnerEventModal(false)}
+                    runners={baseRunners}
+                    currentOuts={currentOuts}
+                    defaultTab={runnerEventDefaultTab}
+                    onRecordAdvancement={actions.handleRecordAdvancement}
                     onRecordOut={(eventType, runnerBase) => actions.handleRecordBaserunnerOut(runnerBase, eventType)}
                 />
             )}

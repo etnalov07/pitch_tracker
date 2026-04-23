@@ -66,10 +66,11 @@ export function useLiveGameActions(state: LiveGameState) {
         setHitLocation,
         baseRunners,
         setBaseRunners,
-        setShowBaserunnerOutModal,
+        setShowRunnerEventModal,
         setShowRunnerAdvancementModal,
         setPendingHitResult,
         setShowDroppedThirdModal,
+        setShowDoublePlayModal,
         setShowTeamAtBat,
         teamAtBatRuns,
         setTeamAtBatRuns,
@@ -405,6 +406,8 @@ export function useLiveGameActions(state: LiveGameState) {
                 }
             }
             await handleEndAtBat(result, { rbi: suggestedRuns, runs_scored: suggestedRuns });
+        } else if (result === 'double_play' && hasRunnersOnBase) {
+            setShowDoublePlayModal(true);
         } else {
             await handleEndAtBat(result);
         }
@@ -552,10 +555,42 @@ export function useLiveGameActions(state: LiveGameState) {
                 setCurrentOuts(newOuts);
             }
 
-            setShowBaserunnerOutModal(false);
+            setShowRunnerEventModal(false);
         } catch (error) {
             console.error('Failed to record baserunner out:', error);
             alert('Failed to record baserunner out');
+        }
+    };
+
+    const handleRecordAdvancement = async (
+        eventType: 'stolen_base' | 'wild_pitch' | 'passed_ball' | 'balk',
+        fromBase: RunnerBase,
+        newRunners: BaseRunners,
+        runsScored: number,
+        runnerToBase?: RunnerBase | 'home'
+    ) => {
+        if (!gameId || !currentInning) return;
+        try {
+            await gamesApi.recordBaserunnerEvent({
+                game_id: gameId,
+                inning_id: currentInning.id,
+                at_bat_id: currentAtBat?.id,
+                event_type: eventType,
+                runner_base: fromBase,
+                runner_to_base: runnerToBase,
+                new_base_runners: newRunners,
+                outs_before: currentOuts,
+            } as any);
+            setBaseRunners(newRunners);
+            if (runsScored > 0 && game) {
+                const newAwayScore = (game.away_score || 0) + runsScored;
+                await gamesApi.updateScore(gameId, game.home_score || 0, newAwayScore);
+                dispatch(fetchGameById(gameId));
+            }
+            setShowRunnerEventModal(false);
+        } catch (error) {
+            console.error('Failed to record runner advancement:', error);
+            alert('Failed to record runner advancement');
         }
     };
 
@@ -670,6 +705,38 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
+    const handleDoublePlayConfirm = async (outRunners: RunnerBase[], batterReachesFirst: boolean) => {
+        if (!gameId || !currentInning) return;
+        try {
+            for (const runnerBase of outRunners) {
+                await gamesApi.recordBaserunnerEvent({
+                    game_id: gameId,
+                    inning_id: currentInning.id,
+                    at_bat_id: currentAtBat?.id,
+                    event_type: 'other',
+                    runner_base: runnerBase,
+                    outs_before: currentOuts,
+                });
+            }
+
+            const newRunners: BaseRunners = { ...baseRunners };
+            for (const base of outRunners) {
+                newRunners[base] = false;
+            }
+            if (batterReachesFirst) {
+                newRunners.first = true;
+            }
+
+            await gamesApi.updateBaseRunners(gameId, newRunners);
+            setBaseRunners(newRunners);
+            setShowDoublePlayModal(false);
+            await handleEndAtBat('double_play');
+        } catch (error) {
+            console.error('Failed to record double play:', error);
+            alert('Failed to record double play');
+        }
+    };
+
     const handleDroppedThird = (wasDropped: boolean) => {
         if (wasDropped) {
             setPendingHitResult('strikeout_dropped');
@@ -689,6 +756,7 @@ export function useLiveGameActions(state: LiveGameState) {
         handleTeamAtBatConfirm,
         handleRunnerAdvancementConfirm,
         handleRecordBaserunnerOut,
+        handleRecordAdvancement,
         handleStartAtBat,
         handlePitcherSelected,
         handleBatterSelected,
@@ -700,5 +768,6 @@ export function useLiveGameActions(state: LiveGameState) {
         handleTargetClear,
         handleToggleHomeAway,
         handleDroppedThird,
+        handleDoublePlayConfirm,
     };
 }

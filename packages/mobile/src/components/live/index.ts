@@ -16,3 +16,5 @@ export { default as TeamAtBatModal } from './TeamAtBatModal';
 export { default as PreviousAtBatsModal } from './PreviousAtBatsModal';
 export type { CompletedAtBatEntry } from './PreviousAtBatsModal';
 export { PitcherTendenciesModal, HitterTendenciesModal, SituationalCallsRow } from './TendenciesModals';
+export { default as DoublePlayModal } from './DoublePlayModal';
+export { default as RunnerEventModal } from './RunnerEventModal';

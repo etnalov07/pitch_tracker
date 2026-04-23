@@ -97,10 +97,12 @@ export function useLiveGameState() {
     const [baseRunners, setBaseRunners] = useState<BaseRunners>({ first: false, second: false, third: false });
 
     // Base runner modals
-    const [showBaserunnerOutModal, setShowBaserunnerOutModal] = useState(false);
+    const [showRunnerEventModal, setShowRunnerEventModal] = useState(false);
+    const [runnerEventDefaultTab, setRunnerEventDefaultTab] = useState<'advance' | 'out'>('advance');
     const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
     const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
     const [showDroppedThirdModal, setShowDroppedThirdModal] = useState(false);
+    const [showDoublePlayModal, setShowDoublePlayModal] = useState(false);
 
     // Pitch call state
     const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
@@ -287,14 +289,18 @@ export function useLiveGameState() {
         // Base runners
         baseRunners,
         setBaseRunners,
-        showBaserunnerOutModal,
-        setShowBaserunnerOutModal,
+        showRunnerEventModal,
+        setShowRunnerEventModal,
+        runnerEventDefaultTab,
+        setRunnerEventDefaultTab,
         showRunnerAdvancementModal,
         setShowRunnerAdvancementModal,
         pendingHitResult,
         setPendingHitResult,
         showDroppedThirdModal,
         setShowDroppedThirdModal,
+        showDoublePlayModal,
+        setShowDoublePlayModal,
         // Pitch call
         activeCall,
         setActiveCall,

@@ -125,9 +125,21 @@ export const getSuggestedAdvancement = (currentRunners: BaseRunners, result: str
             }
             break;
 
+        case 'balk':
+        case 'wild_pitch':
+        case 'passed_ball':
+            // All runners advance one base; runner on third scores
+            if (currentRunners.third) runs++;
+            if (currentRunners.second) newRunners.third = true;
+            if (currentRunners.first) newRunners.second = true;
+            break;
+
+        case 'stolen_base':
+            // Single runner advances — suggested positions are identical to current (caller selects which runner)
+            return { suggestedRunners: { ...currentRunners }, suggestedRuns: 0 };
+
         default:
-            // Outs (groundout, flyout, etc.) - runners typically stay in place
-            // Return current positions as suggested (user can adjust for errors, advancement on throw, etc.)
+            // Outs (groundout, flyout, etc.) — runners typically stay in place
             return { suggestedRunners: { ...currentRunners }, suggestedRuns: 0 };
     }
 

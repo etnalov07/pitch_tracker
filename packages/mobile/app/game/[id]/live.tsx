@@ -78,13 +78,13 @@ import {
     BatterSelectorModal,
     InningChangeModal,
     TeamAtBatModal,
-    BaserunnerOutModal,
-    PickoffModal,
     RunnerAdvancementModal,
     PreviousAtBatsModal,
     PitcherTendenciesModal,
     HitterTendenciesModal,
 } from '../../../src/components/live';
+import DoublePlayModal from '../../../src/components/live/DoublePlayModal';
+import RunnerEventModal from '../../../src/components/live/RunnerEventModal';
 import OpposingPitcherModal from '../../../src/components/live/OpposingPitcherModal';
 import CountBreakdownModal from '../../../src/components/live/CountBreakdownModal';
 import type { CompletedAtBatEntry } from '../../../src/components/live';
@@ -150,11 +150,11 @@ export default function LiveGameScreen() {
     const [inningChangeInfo, setInningChangeInfo] = useState<{ inning: number; half: string } | null>(null);
 
     // Base runner modals state
-    const [showBaserunnerOutModal, setShowBaserunnerOutModal] = useState(false);
-    const [preSelectedRunnerBase, setPreSelectedRunnerBase] = useState<RunnerBase | null>(null);
-    const [showPickoffModal, setShowPickoffModal] = useState(false);
+    const [showRunnerEventModal, setShowRunnerEventModal] = useState(false);
+    const [runnerEventDefaultTab, setRunnerEventDefaultTab] = useState<'advance' | 'out'>('advance');
     const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
     const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
+    const [showDoublePlayModal, setShowDoublePlayModal] = useState(false);
 
     // Team at bat modal state (visitor games)
     const [showTeamAtBat, setShowTeamAtBat] = useState(false);
@@ -905,6 +905,8 @@ export default function LiveGameScreen() {
                 dispatch(setBaseRunners(suggestedRunners));
                 if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: suggestedRunners }));
                 await handleEndAtBat(result, undefined, { rbi: suggestedRuns, runs_scored: suggestedRuns });
+            } else if (result === 'double_play' && hasRunnersOnBase) {
+                setShowDoublePlayModal(true);
             } else {
                 // Out result - just end at-bat
                 await handleEndAtBat(result);
@@ -1006,11 +1008,84 @@ export default function LiveGameScreen() {
         [id, currentInning, currentAtBat, currentOuts, game, dispatch, baseRunners, advanceInningWithRuns]
     );
 
+    const handleRecordAdvancement = useCallback(
+        async (
+            eventType: 'stolen_base' | 'wild_pitch' | 'passed_ball' | 'balk',
+            fromBase: RunnerBase,
+            newRunners: BaseRunners,
+            runsScored: number,
+            runnerToBase?: RunnerBase | 'home'
+        ) => {
+            if (!id || !currentInning) return;
+            try {
+                await dispatch(
+                    recordBaserunnerEvent({
+                        game_id: id,
+                        inning_id: currentInning.id,
+                        at_bat_id: currentAtBat?.id,
+                        event_type: eventType,
+                        runner_base: fromBase,
+                        runner_to_base: runnerToBase,
+                        new_base_runners: newRunners,
+                        outs_before: currentOuts,
+                    } as any)
+                ).unwrap();
+                dispatch(setBaseRunners(newRunners));
+                if (runsScored > 0 && game) {
+                    const newAwayScore = (game.away_score || 0) + runsScored;
+                    await gamesApi.updateScore(id, game.home_score || 0, newAwayScore);
+                    dispatch(fetchGameById(id));
+                }
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch {
+                Alert.alert('Error', 'Failed to record runner advancement');
+            }
+        },
+        [id, currentInning, currentAtBat, currentOuts, game, dispatch]
+    );
+
+    const handleDoublePlayConfirm = useCallback(
+        async (outRunners: RunnerBase[], batterReachesFirst: boolean) => {
+            if (!id || !currentInning) return;
+            try {
+                for (const runnerBase of outRunners) {
+                    await dispatch(
+                        recordBaserunnerEvent({
+                            game_id: id,
+                            inning_id: currentInning.id,
+                            at_bat_id: currentAtBat?.id,
+                            event_type: 'other',
+                            runner_base: runnerBase,
+                            outs_before: currentOuts,
+                        })
+                    ).unwrap();
+                }
+
+                const newRunners: BaseRunners = { ...baseRunners };
+                for (const base of outRunners) {
+                    newRunners[base] = false;
+                }
+                if (batterReachesFirst) {
+                    newRunners.first = true;
+                }
+
+                dispatch(setBaseRunners(newRunners));
+                dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
+                setShowDoublePlayModal(false);
+                await handleEndAtBat('double_play');
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            } catch {
+                Alert.alert('Error', 'Failed to record double play');
+            }
+        },
+        [id, currentInning, currentAtBat, currentOuts, baseRunners, dispatch, handleEndAtBat]
+    );
+
     const handleRunnerPress = useCallback(
         (base: RunnerBase) => {
             if (baseRunners[base]) {
-                setPreSelectedRunnerBase(base);
-                setShowBaserunnerOutModal(true);
+                setRunnerEventDefaultTab('out');
+                setShowRunnerEventModal(true);
             }
         },
         [baseRunners]
@@ -1364,23 +1439,21 @@ export default function LiveGameScreen() {
                 onConfirm={handleTeamAtBatConfirm}
                 isTablet={isTablet}
             />
-            <BaserunnerOutModal
-                visible={showBaserunnerOutModal}
-                onDismiss={() => {
-                    setShowBaserunnerOutModal(false);
-                    setPreSelectedRunnerBase(null);
-                }}
+            <RunnerEventModal
+                visible={showRunnerEventModal}
+                onDismiss={() => setShowRunnerEventModal(false)}
                 runners={baseRunners}
                 currentOuts={currentOuts}
+                defaultTab={runnerEventDefaultTab}
+                onRecordAdvancement={handleRecordAdvancement}
                 onRecordOut={handleRecordBaserunnerOut}
-                preSelectedBase={preSelectedRunnerBase}
             />
-            <PickoffModal
-                visible={showPickoffModal}
-                onDismiss={() => setShowPickoffModal(false)}
+            <DoublePlayModal
+                visible={showDoublePlayModal}
+                onDismiss={() => setShowDoublePlayModal(false)}
                 runners={baseRunners}
                 currentOuts={currentOuts}
-                onRecordPickoff={(runnerBase) => handleRecordBaserunnerOut('pickoff', runnerBase)}
+                onConfirm={handleDoublePlayConfirm}
             />
             <RunnerAdvancementModal
                 visible={showRunnerAdvancementModal}
@@ -1452,21 +1525,27 @@ export default function LiveGameScreen() {
             <View style={styles.runnerActionRow}>
                 <Button
                     mode="outlined"
-                    onPress={() => setShowBaserunnerOutModal(true)}
+                    onPress={() => {
+                        setRunnerEventDefaultTab('advance');
+                        setShowRunnerEventModal(true);
+                    }}
+                    style={styles.runnerOutButton}
+                    icon="run-fast"
+                    compact
+                >
+                    SB / WP / PB / BLK
+                </Button>
+                <Button
+                    mode="outlined"
+                    onPress={() => {
+                        setRunnerEventDefaultTab('out');
+                        setShowRunnerEventModal(true);
+                    }}
                     style={styles.runnerOutButton}
                     icon="account-remove"
                     compact
                 >
                     Runner Out
-                </Button>
-                <Button
-                    mode="outlined"
-                    onPress={() => setShowPickoffModal(true)}
-                    style={styles.runnerOutButton}
-                    icon="arrow-u-left-top"
-                    compact
-                >
-                    Pickoff
                 </Button>
             </View>
         );
