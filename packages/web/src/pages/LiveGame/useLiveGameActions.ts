@@ -11,6 +11,7 @@ import {
     PitchCallZone,
     PITCH_CALL_ZONE_COORDS,
     SituationalCallType,
+    getNextBatter,
 } from '@pitch-tracker/shared';
 import { pitchCallService } from '../../services/pitchCallService';
 import {
@@ -127,9 +128,8 @@ export function useLiveGameActions(state: LiveGameState) {
 
             if (game.is_home_game !== false && game.charting_mode !== 'both') {
                 // Home game single-team mode: set up next opponent batter immediately
-                const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
-                setCurrentBattingOrder(nextOrder);
-                const firstBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
+                const firstBatter = getNextBatter(opponentLineup, currentBattingOrder);
+                if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
                 if (firstBatter && newInning) {
                     setCurrentBatter(firstBatter);
                     await startAtBatForBatter(firstBatter, 0, newInning);
@@ -181,9 +181,8 @@ export function useLiveGameActions(state: LiveGameState) {
                     }
                 } else {
                     setCurrentOuts(newOutCount);
-                    const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
-                    setCurrentBattingOrder(nextOrder);
-                    const nextBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
+                    const nextBatter = getNextBatter(opponentLineup, currentBattingOrder);
+                    if (nextBatter) setCurrentBattingOrder(nextBatter.batting_order);
                     if (nextBatter) {
                         setCurrentBatter(nextBatter);
                         await startAtBatForBatter(nextBatter, newOutCount, currentInning);
@@ -192,9 +191,8 @@ export function useLiveGameActions(state: LiveGameState) {
                     }
                 }
             } else {
-                const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
-                setCurrentBattingOrder(nextOrder);
-                const nextBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
+                const nextBatter = getNextBatter(opponentLineup, currentBattingOrder);
+                if (nextBatter) setCurrentBattingOrder(nextBatter.batting_order);
                 if (nextBatter) {
                     setCurrentBatter(nextBatter);
                     await startAtBatForBatter(nextBatter, currentOuts, currentInning);
@@ -472,9 +470,8 @@ export function useLiveGameActions(state: LiveGameState) {
             setTeamAtBatRuns('0');
 
             // Set up next opponent batter
-            const nextOrder = currentBattingOrder >= 9 ? 1 : currentBattingOrder + 1;
-            setCurrentBattingOrder(nextOrder);
-            const firstBatter = opponentLineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id);
+            const firstBatter = getNextBatter(opponentLineup, currentBattingOrder);
+            if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
             if (firstBatter && newInning) {
                 setCurrentBatter(firstBatter);
                 await startAtBatForBatter(firstBatter, 0, newInning);
