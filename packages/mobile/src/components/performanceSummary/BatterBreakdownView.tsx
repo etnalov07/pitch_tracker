@@ -145,7 +145,7 @@ function PitchDot({ pitch, bats }: PitchDotProps) {
     );
 }
 
-type BatterView = 'pitches' | 'heatmap' | 'spray';
+type BatterView = 'pitches' | 'charts';
 
 interface BatterRowProps {
     batter: BatterBreakdown;
@@ -164,17 +164,15 @@ function BatterRow({ batter, pitcherId, gameId }: BatterRowProps) {
     const loadChart = useCallback(
         async (nextView: BatterView) => {
             if (nextView === 'pitches') return;
-            if (nextView === 'heatmap' && heatmap) return;
-            if (nextView === 'spray' && sprayChart) return;
+            const needHeatmap = !heatmap;
+            const needSpray = !sprayChart;
+            if (!needHeatmap && !needSpray) return;
             setChartLoading(true);
             try {
-                if (nextView === 'heatmap') {
-                    const data = await analyticsApi.getHeatMap(batter.batter_id, pitcherId);
-                    setHeatmap(data);
-                } else {
-                    const data = await analyticsApi.getSprayChart(batter.batter_id, gameId);
-                    setSprayChart(data);
-                }
+                await Promise.all([
+                    needHeatmap ? analyticsApi.getHeatMap(batter.batter_id, pitcherId).then(setHeatmap) : Promise.resolve(),
+                    needSpray ? analyticsApi.getSprayChart(batter.batter_id, gameId).then(setSprayChart) : Promise.resolve(),
+                ]);
             } catch {
                 // leave previous data in place
             } finally {
@@ -213,8 +211,7 @@ function BatterRow({ batter, pitcherId, gameId }: BatterRowProps) {
                             onValueChange={handleViewChange}
                             buttons={[
                                 { value: 'pitches', label: 'Pitches', style: styles.segBtn },
-                                { value: 'heatmap', label: 'Heatmap', style: styles.segBtn },
-                                { value: 'spray', label: 'Spray', style: styles.segBtn },
+                                { value: 'charts', label: 'Charts', style: styles.segBtn },
                             ]}
                             style={styles.viewToggle}
                         />
@@ -239,19 +236,24 @@ function BatterRow({ batter, pitcherId, gameId }: BatterRowProps) {
                             </View>
                         ))}
 
-                    {view === 'heatmap' && (
+                    {view === 'charts' && (
                         <View style={styles.chartContainer}>
-                            {chartLoading && <Text style={styles.chartLoading}>Loading heatmap…</Text>}
-                            {!chartLoading && heatmap && <HeatMapView heatmap={heatmap} bats={batter.bats} />}
-                            {!chartLoading && !heatmap && <Text style={styles.chartLoading}>No heatmap data.</Text>}
-                        </View>
-                    )}
-
-                    {view === 'spray' && (
-                        <View style={styles.chartContainer}>
-                            {chartLoading && <Text style={styles.chartLoading}>Loading spray chart…</Text>}
-                            {!chartLoading && sprayChart && <SprayChartView sprayData={sprayChart} />}
-                            {!chartLoading && !sprayChart && <Text style={styles.chartLoading}>No spray chart data.</Text>}
+                            {chartLoading && <Text style={styles.chartLoading}>Loading charts…</Text>}
+                            {!chartLoading && (
+                                <>
+                                    {heatmap ? (
+                                        <HeatMapView heatmap={heatmap} bats={batter.bats} />
+                                    ) : (
+                                        <Text style={styles.chartLoading}>No heatmap data.</Text>
+                                    )}
+                                    <View style={styles.chartDivider} />
+                                    {sprayChart ? (
+                                        <SprayChartView sprayData={sprayChart} />
+                                    ) : (
+                                        <Text style={styles.chartLoading}>No spray chart data.</Text>
+                                    )}
+                                </>
+                            )}
                         </View>
                     )}
                 </>
@@ -518,5 +520,12 @@ const styles = StyleSheet.create({
         color: '#9ca3af',
         fontStyle: 'italic',
         marginTop: 16,
+    },
+    chartDivider: {
+        height: 1,
+        backgroundColor: '#e5e7eb',
+        alignSelf: 'stretch' as const,
+        marginVertical: 8,
+        marginHorizontal: 16,
     },
 });

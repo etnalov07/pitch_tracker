@@ -25,6 +25,7 @@ import {
     BatterRowContainer,
     ChartContainer,
     ChartLoading,
+    ChartsRow,
     EmptyText,
     HintText,
     Legend,
@@ -186,7 +187,7 @@ function PitchCardItem({ pitch, bats }: { pitch: BatterAtBatPitch; bats?: string
     );
 }
 
-type BatterView = 'pitches' | 'heatmap' | 'spray';
+type BatterView = 'pitches' | 'charts';
 
 function BatterRow({ batter, pitcherId }: { batter: BatterBreakdown; pitcherId?: string }) {
     const [expanded, setExpanded] = useState(true);
@@ -199,15 +200,15 @@ function BatterRow({ batter, pitcherId }: { batter: BatterBreakdown; pitcherId?:
     const loadChart = useCallback(
         async (nextView: BatterView) => {
             if (nextView === 'pitches') return;
-            if (nextView === 'heatmap' && heatmap) return;
-            if (nextView === 'spray' && sprayChart) return;
+            const needHeatmap = !heatmap;
+            const needSpray = !sprayChart;
+            if (!needHeatmap && !needSpray) return;
             setChartLoading(true);
             try {
-                if (nextView === 'heatmap') {
-                    setHeatmap(await analyticsService.getHeatMap(batter.batter_id, pitcherId));
-                } else {
-                    setSprayChart(await analyticsService.getSprayChart(batter.batter_id));
-                }
+                await Promise.all([
+                    needHeatmap ? analyticsService.getHeatMap(batter.batter_id, pitcherId).then(setHeatmap) : Promise.resolve(),
+                    needSpray ? analyticsService.getSprayChart(batter.batter_id).then(setSprayChart) : Promise.resolve(),
+                ]);
             } catch {
                 // leave previous data in place
             } finally {
@@ -238,9 +239,9 @@ function BatterRow({ batter, pitcherId }: { batter: BatterBreakdown; pitcherId?:
             {expanded && (
                 <>
                     <ViewToggleRow>
-                        {(['pitches', 'heatmap', 'spray'] as BatterView[]).map((v) => (
+                        {(['pitches', 'charts'] as BatterView[]).map((v) => (
                             <ViewToggleBtn key={v} active={view === v} onClick={() => handleViewChange(v)}>
-                                {v.charAt(0).toUpperCase() + v.slice(1)}
+                                {v === 'pitches' ? 'Pitches' : 'Charts'}
                             </ViewToggleBtn>
                         ))}
                     </ViewToggleRow>
@@ -267,19 +268,23 @@ function BatterRow({ batter, pitcherId }: { batter: BatterBreakdown; pitcherId?:
                             </AtBatBlock>
                         ))}
 
-                    {view === 'heatmap' && (
+                    {view === 'charts' && (
                         <ChartContainer>
-                            {chartLoading && <ChartLoading>Loading heatmap…</ChartLoading>}
-                            {!chartLoading && heatmap && <BatterHeatMapView heatmap={heatmap} bats={batter.bats} />}
-                            {!chartLoading && !heatmap && <ChartLoading>No heatmap data.</ChartLoading>}
-                        </ChartContainer>
-                    )}
-
-                    {view === 'spray' && (
-                        <ChartContainer>
-                            {chartLoading && <ChartLoading>Loading spray chart…</ChartLoading>}
-                            {!chartLoading && sprayChart && <BatterSprayChartView sprayData={sprayChart} />}
-                            {!chartLoading && !sprayChart && <ChartLoading>No spray chart data.</ChartLoading>}
+                            {chartLoading && <ChartLoading>Loading charts…</ChartLoading>}
+                            {!chartLoading && (
+                                <ChartsRow>
+                                    {heatmap ? (
+                                        <BatterHeatMapView heatmap={heatmap} bats={batter.bats} />
+                                    ) : (
+                                        <ChartLoading>No heatmap data.</ChartLoading>
+                                    )}
+                                    {sprayChart ? (
+                                        <BatterSprayChartView sprayData={sprayChart} />
+                                    ) : (
+                                        <ChartLoading>No spray chart data.</ChartLoading>
+                                    )}
+                                </ChartsRow>
+                            )}
                         </ChartContainer>
                     )}
                 </>

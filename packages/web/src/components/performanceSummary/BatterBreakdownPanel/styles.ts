@@ -187,6 +187,15 @@ export const ChartContainer = styled.div({
     alignItems: 'center',
 });
 
+export const ChartsRow = styled.div({
+    display: 'flex',
+    flexWrap: 'wrap' as const,
+    gap: theme.spacing.lg,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    width: '100%',
+});
+
 export const ChartLoading = styled.p({
     fontSize: 12,
     color: theme.colors.gray[400],
