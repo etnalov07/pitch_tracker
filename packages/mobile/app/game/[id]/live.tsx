@@ -333,11 +333,16 @@ export default function LiveGameScreen() {
         async (runs: number) => {
             if (!id || !game) return;
             try {
-                const newAwayScore = (game.away_score || 0) + runs;
-                const homeScore = game.home_score || 0;
-                const isHomeGame = game.is_home_game !== false;
-                const totalInnings = game.total_innings ?? 7;
-                const isLastInningOrLater = game.current_inning >= totalInnings;
+                // Fetch fresh game state before computing scores — prevents stale closure
+                // from overwriting scores that were already written during the half-inning
+                // (e.g. runner advancement updated score, then the 3rd out fires this with runs=0)
+                const freshGame = await dispatch(fetchGameById(id)).unwrap();
+
+                const newAwayScore = (freshGame.away_score || 0) + runs;
+                const homeScore = freshGame.home_score || 0;
+                const isHomeGame = freshGame.is_home_game !== false;
+                const totalInnings = freshGame.total_innings ?? 7;
+                const isLastInningOrLater = freshGame.current_inning >= totalInnings;
 
                 await gamesApi.updateScore(id, homeScore, newAwayScore);
 
@@ -356,7 +361,7 @@ export default function LiveGameScreen() {
                     }
                 }
 
-                if (game.is_home_game === false || game.charting_mode === 'both') {
+                if (freshGame.is_home_game === false || freshGame.charting_mode === 'both') {
                     // Visitor game or both-team mode: advance 1 half to user's batting half
                     await gamesApi.advanceInning(id);
                 } else {
@@ -366,11 +371,12 @@ export default function LiveGameScreen() {
                 }
 
                 dispatch(setBaseRunners(clearBases()));
-                dispatch(fetchGameById(id));
+                // Await so game.inning_half is current before batter setup and re-render
+                await dispatch(fetchGameById(id)).unwrap();
                 const newInning = await gamesApi.getCurrentInning(id);
                 setShowInningChange(false);
 
-                if (game.is_home_game !== false && game.charting_mode !== 'both') {
+                if (freshGame.is_home_game !== false && freshGame.charting_mode !== 'both') {
                     // Home game single-team mode: set up next opponent batter immediately
                     const firstBatter = getNextBatter(activeBatters, currentBattingOrder, lineupSize);
                     if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
@@ -383,8 +389,7 @@ export default function LiveGameScreen() {
                         dispatch(fetchCurrentInning(id));
                     }
                 } else {
-                    // In 'both' mode or visitor games, game mode switches automatically on re-render.
-                    // Re-fetch opposing pitcher + my lineup so they auto-populate on the batting half.
+                    // Re-fetch opposing pitcher + my lineup so the new batting half auto-populates
                     await Promise.all([
                         dispatch(fetchOpposingPitchers(id))
                             .unwrap()
@@ -529,7 +534,8 @@ export default function LiveGameScreen() {
 
             // Clear base runners
             dispatch(setBaseRunners(clearBases()));
-            dispatch(fetchGameById(id));
+            // Await so game.inning_half is current before batter setup and re-render
+            await dispatch(fetchGameById(id)).unwrap();
             const newInning = await gamesApi.getCurrentInning(id);
 
             setShowTeamAtBat(false);
@@ -1878,35 +1884,6 @@ export default function LiveGameScreen() {
                 )}
                 {renderRunnerOutButton()}
                 {renderAtBatControls()}
-                {/* Tendencies buttons */}
-                {game.status === 'in_progress' && (currentPitcher || currentBatter) && (
-                    <View style={styles.tendenciesRow}>
-                        {currentPitcher && (
-                            <Button
-                                mode="outlined"
-                                compact
-                                onPress={() => setShowPitcherTendencies(true)}
-                                style={styles.tendencyBtn}
-                                labelStyle={styles.tendencyBtnLabel}
-                                icon="chart-bar"
-                            >
-                                Pitcher Tendencies
-                            </Button>
-                        )}
-                        {currentBatter && (
-                            <Button
-                                mode="outlined"
-                                compact
-                                onPress={() => setShowHitterTendencies(true)}
-                                style={[styles.tendencyBtn, styles.tendencyBtnHitter]}
-                                labelStyle={[styles.tendencyBtnLabel, styles.tendencyBtnLabelHitter]}
-                                icon="account-details"
-                            >
-                                Hitter Tendencies
-                            </Button>
-                        )}
-                    </View>
-                )}
                 {/* 1. Pitch Type */}
                 {!isReadOnly && (
                     <PitchTypeGrid

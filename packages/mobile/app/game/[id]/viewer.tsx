@@ -3,23 +3,31 @@ import { View, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Text, Button, useTheme, SegmentedButtons } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BatterBreakdown } from '@pitch-tracker/shared';
-import { useAppDispatch, useAppSelector, fetchCurrentGameState, fetchGamePitchers } from '../../../src/state';
+import {
+    useAppDispatch,
+    useAppSelector,
+    fetchCurrentGameState,
+    fetchGamePitchers,
+    fetchOpposingPitchers,
+} from '../../../src/state';
 import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
 import { BatterBreakdownView } from '../../../src/components/performanceSummary';
 import { performanceSummaryApi } from '../../../src/state/performanceSummary/api/performanceSummaryApi';
 import CountBreakdownModal from '../../../src/components/live/CountBreakdownModal';
 
 type ViewerTab = 'pitcher' | 'breakdown';
+type BreakdownTab = 'opponent' | 'our_team';
 
 export default function ViewerScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
-    const { selectedGame, currentGameState, gamePitchers } = useAppSelector((state) => state.games);
+    const { selectedGame, currentGameState, gamePitchers, opposingPitchers } = useAppSelector((state) => state.games);
     const game = currentGameState?.game || selectedGame;
 
     const [activeTab, setActiveTab] = useState<ViewerTab>('pitcher');
+    const [breakdownTab, setBreakdownTab] = useState<BreakdownTab>('opponent');
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [showCountBreakdown, setShowCountBreakdown] = useState(false);
     const [oppBreakdown, setOppBreakdown] = useState<BatterBreakdown[]>([]);
@@ -29,11 +37,14 @@ export default function ViewerScreen() {
     const activePitcher = gamePitchers.find((p) => !p.inning_exited);
     const pitcherId = activePitcher?.player_id;
     const pitcherName = activePitcher?.player ? `${activePitcher.player.first_name} ${activePitcher.player.last_name}` : 'Pitcher';
+    const currentOpposingPitcher = opposingPitchers[opposingPitchers.length - 1] ?? null;
+    const opponentPitcherName = currentOpposingPitcher?.pitcher_name ?? 'Opponent Pitcher';
 
     useEffect(() => {
         if (id) {
             dispatch(fetchCurrentGameState(id)).catch(() => {});
             dispatch(fetchGamePitchers(id));
+            dispatch(fetchOpposingPitchers(id));
         }
     }, [id, dispatch]);
 
@@ -154,17 +165,23 @@ export default function ViewerScreen() {
 
                 {activeTab === 'breakdown' && (
                     <View style={styles.breakdownContainer}>
+                        {game.charting_mode === 'both' && (
+                            <SegmentedButtons
+                                value={breakdownTab}
+                                onValueChange={(v) => setBreakdownTab(v as BreakdownTab)}
+                                buttons={[
+                                    { value: 'opponent', label: 'Opponent Lineup' },
+                                    { value: 'our_team', label: 'Our Lineup' },
+                                ]}
+                                style={styles.breakdownSegmented}
+                            />
+                        )}
                         {breakdownLoading && oppBreakdown.length === 0 ? (
                             <Text style={styles.loadingText}>Loading batter breakdown…</Text>
+                        ) : breakdownTab === 'opponent' || game.charting_mode !== 'both' ? (
+                            <BatterBreakdownView breakdown={oppBreakdown} title={`Opponent Lineup vs. ${pitcherName}`} />
                         ) : (
-                            <>
-                                <BatterBreakdownView breakdown={oppBreakdown} title="Opponent Lineup vs. Our Pitcher" />
-                                {game.charting_mode === 'both' && (
-                                    <View style={styles.secondSection}>
-                                        <BatterBreakdownView breakdown={myTeamBreakdown} title="Our Lineup vs. Opponent Pitcher" />
-                                    </View>
-                                )}
-                            </>
+                            <BatterBreakdownView breakdown={myTeamBreakdown} title={`Our Lineup vs. ${opponentPitcherName}`} />
                         )}
                     </View>
                 )}
@@ -239,6 +256,6 @@ const styles = StyleSheet.create({
     statLabel: { fontSize: 11, color: '#6b7280', marginTop: 4 },
     countBtn: { marginTop: 4 },
     breakdownContainer: { gap: 0 },
-    secondSection: { marginTop: 12 },
+    breakdownSegmented: { marginBottom: 12 },
     loadingText: { textAlign: 'center', color: '#9ca3af', marginTop: 32, fontSize: 14 },
 });
