@@ -158,6 +158,42 @@ export const PitchTextLine = styled.span<{ color: string; size?: number }>(({ co
     lineHeight: 1.2,
 }));
 
+export const ViewToggleRow = styled.div({
+    display: 'flex',
+    gap: 2,
+    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+    borderTop: `1px solid ${theme.colors.gray[100]}`,
+    backgroundColor: theme.colors.gray[50],
+});
+
+export const ViewToggleBtn = styled.button<{ active: boolean }>(({ active }) => ({
+    fontSize: 11,
+    fontWeight: active ? theme.fontWeight.semibold : theme.fontWeight.normal,
+    color: active ? theme.colors.primary[700] : theme.colors.gray[500],
+    background: active ? theme.colors.primary[50] : 'none',
+    border: `1px solid ${active ? theme.colors.primary[300] : theme.colors.gray[200]}`,
+    borderRadius: theme.borderRadius.sm,
+    padding: `2px ${theme.spacing.sm}`,
+    cursor: 'pointer',
+    transition: 'all 0.1s',
+    '&:hover': { borderColor: theme.colors.primary[300], color: theme.colors.primary[600] },
+}));
+
+export const ChartContainer = styled.div({
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    borderTop: `1px solid ${theme.colors.gray[100]}`,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+});
+
+export const ChartLoading = styled.p({
+    fontSize: 12,
+    color: theme.colors.gray[400],
+    fontStyle: 'italic',
+    padding: `${theme.spacing.lg} 0`,
+});
+
 export const MiniZoneGrid = styled.div({
     width: 27,
     height: 27,
