@@ -74,6 +74,22 @@ export const GenerateButton = styled.button<{ isLoading?: boolean }>((props) => 
     },
 }));
 
+export const ViewSummaryButton = styled.button({
+    background: 'none',
+    border: `1px solid ${theme.colors.primary[400]}`,
+    color: theme.colors.primary[700],
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
+    cursor: 'pointer',
+    fontWeight: theme.fontWeight.medium,
+    marginLeft: theme.spacing.xs,
+
+    '&:hover': {
+        background: theme.colors.primary[50],
+    },
+});
+
 export const EmptyState = styled.div({
     textAlign: 'center',
     padding: theme.spacing.xl,

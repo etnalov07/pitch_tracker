@@ -1,15 +1,24 @@
 import { PitcherGameLog } from '@pitch-tracker/shared';
 import React from 'react';
-import { Table, Th, Row, Td, ViewButton, GenerateButton, EmptyState } from './styles';
+import { Table, Th, Row, Td, ViewButton, GenerateButton, ViewSummaryButton, EmptyState } from './styles';
 
 interface GameLogTableProps {
     gameLogs: PitcherGameLog[];
     onGameSelect: (game: PitcherGameLog) => void;
     onGenerateSummary?: (gameId: string) => Promise<void>;
     generatingSummaryId?: string | null;
+    summaryGameIds?: Set<string>;
+    onViewSummary?: (gameId: string) => void;
 }
 
-const GameLogTable: React.FC<GameLogTableProps> = ({ gameLogs, onGameSelect, onGenerateSummary, generatingSummaryId }) => {
+const GameLogTable: React.FC<GameLogTableProps> = ({
+    gameLogs,
+    onGameSelect,
+    onGenerateSummary,
+    generatingSummaryId,
+    summaryGameIds,
+    onViewSummary,
+}) => {
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             month: 'short',
@@ -72,6 +81,16 @@ const GameLogTable: React.FC<GameLogTableProps> = ({ gameLogs, onGameSelect, onG
                                 >
                                     {generatingSummaryId === log.game_id ? 'Generating…' : 'Gen Summary'}
                                 </GenerateButton>
+                            )}
+                            {summaryGameIds?.has(log.game_id) && onViewSummary && (
+                                <ViewSummaryButton
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onViewSummary(log.game_id);
+                                    }}
+                                >
+                                    View Summary
+                                </ViewSummaryButton>
                             )}
                         </Td>
                     </Row>

@@ -4,7 +4,7 @@ import {
     BullpenSessionSummary,
     PerformanceSummary,
 } from '@pitch-tracker/shared';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import HeatZoneOverlay from '../../components/live/HeatZoneOverlay';
 import { PerformanceSummaryCard } from '../../components/performanceSummary';
@@ -86,6 +86,7 @@ const PitcherProfile: React.FC = () => {
     const [performanceSummaries, setPerformanceSummaries] = useState<PerformanceSummary[]>([]);
     const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
     const [generatingSummaryId, setGeneratingSummaryId] = useState<string | null>(null);
+    const summariesSectionRef = useRef<HTMLDivElement>(null);
 
     // Fetch heat zones for career stats (no gameId = all games, optional pitch type filter)
     const { zones: heatZones } = useHeatZones(pitcher_id, undefined, heatZonePitchType);
@@ -124,6 +125,12 @@ const PitcherProfile: React.FC = () => {
 
     const handleViewGame = (gameId: string) => {
         navigate(`/game/${gameId}`);
+    };
+
+    const summaryGameIds = new Set(performanceSummaries.filter((s) => s.source_type === 'game').map((s) => s.source_id));
+
+    const handleViewSummary = (_gameId: string) => {
+        summariesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 
     const handleGenerateSummary = async (gameId: string) => {
@@ -295,6 +302,8 @@ const PitcherProfile: React.FC = () => {
                         onGameSelect={handleGameSelect}
                         onGenerateSummary={handleGenerateSummary}
                         generatingSummaryId={generatingSummaryId}
+                        summaryGameIds={summaryGameIds}
+                        onViewSummary={handleViewSummary}
                     />
                 </GameLogsSection>
 
@@ -306,7 +315,7 @@ const PitcherProfile: React.FC = () => {
                 </GameLogsSection>
 
                 {performanceSummaries.length > 0 && (
-                    <GameLogsSection>
+                    <GameLogsSection ref={summariesSectionRef}>
                         <SectionHeader>
                             <SectionTitle>Performance Summaries</SectionTitle>
                         </SectionHeader>
