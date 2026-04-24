@@ -447,7 +447,6 @@ const LiveGame: React.FC = () => {
                                 >
                                     <option value="">Select batter</option>
                                     {myTeamLineup
-                                        .filter((p) => p.is_starter)
                                         .sort((a, b) => a.batting_order - b.batting_order)
                                         .map((p) => (
                                             <option key={p.id} value={p.id}>
@@ -680,6 +679,13 @@ const LiveGame: React.FC = () => {
                                             color={theme.colors.yellow[500]}
                                         >
                                             Foul
+                                        </ResultButton>
+                                        <ResultButton
+                                            active={pitchResult === 'hit_by_pitch'}
+                                            onClick={() => setPitchResult('hit_by_pitch')}
+                                            color={theme.colors.orange[500]}
+                                        >
+                                            HBP
                                         </ResultButton>
                                         <ResultButton
                                             active={pitchResult === 'in_play'}

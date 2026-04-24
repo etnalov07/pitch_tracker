@@ -32,7 +32,7 @@ export function useLiveGameActions(state: LiveGameState) {
     const {
         gameId,
         dispatch,
-        navigate,
+        navigate: _navigate,
         game,
         currentAtBat,
         pitches,
@@ -81,6 +81,19 @@ export function useLiveGameActions(state: LiveGameState) {
         setSendingCall,
         setLocalShakeCount,
     } = state;
+
+    const gameMode = deriveGameMode(game?.is_home_game ?? true, game?.inning_half ?? 'top');
+
+    const updateScoreForRuns = async (runsScored: number) => {
+        if (!gameId || runsScored <= 0) return;
+        const freshGame = await dispatch(fetchGameById(gameId)).unwrap();
+        if (gameMode === 'opp_pitcher') {
+            await gamesApi.updateScore(gameId, (freshGame.home_score || 0) + runsScored, freshGame.away_score || 0);
+        } else {
+            await gamesApi.updateScore(gameId, freshGame.home_score || 0, (freshGame.away_score || 0) + runsScored);
+        }
+        dispatch(fetchGameById(gameId));
+    };
 
     const startAtBatForBatter = async (batter: OpponentLineupPlayer, outs: number, inning: typeof currentInning) => {
         if (!gameId || !currentPitcher || !inning) return false;
@@ -333,7 +346,9 @@ export function useLiveGameActions(state: LiveGameState) {
             setVelocity('');
             setPitchResult('ball');
 
-            if (newBalls >= 4) {
+            if (pitchResult === 'hit_by_pitch') {
+                handleEndAtBat('hit_by_pitch');
+            } else if (newBalls >= 4) {
                 handleEndAtBat('walk');
             } else if (newStrikes >= 3) {
                 // MLB rule: batter can reach on an uncaught third strike only when 1st base
@@ -402,12 +417,7 @@ export function useLiveGameActions(state: LiveGameState) {
             if (gameId) {
                 await gamesApi.updateBaseRunners(gameId, suggestedRunners);
                 setBaseRunners(suggestedRunners);
-                // Runs scored while our team is pitching go to opponent (away_score)
-                if (suggestedRuns > 0 && game) {
-                    const newAwayScore = (game.away_score || 0) + suggestedRuns;
-                    await gamesApi.updateScore(gameId, game.home_score || 0, newAwayScore);
-                    dispatch(fetchGameById(gameId));
-                }
+                await updateScoreForRuns(suggestedRuns);
             }
             await handleEndAtBat(result, { rbi: suggestedRuns, runs_scored: suggestedRuns });
         } else if (result === 'double_play' && hasRunnersOnBase) {
@@ -498,12 +508,7 @@ export function useLiveGameActions(state: LiveGameState) {
             await gamesApi.updateBaseRunners(gameId, newRunners);
             setBaseRunners(newRunners);
 
-            // Runs scored while our team is pitching go to opponent (away_score)
-            if (runsScored > 0) {
-                const newAwayScore = (game.away_score || 0) + runsScored;
-                await gamesApi.updateScore(gameId, game.home_score || 0, newAwayScore);
-                dispatch(fetchGameById(gameId));
-            }
+            await updateScoreForRuns(runsScored);
 
             setShowRunnerAdvancementModal(false);
 
@@ -586,11 +591,7 @@ export function useLiveGameActions(state: LiveGameState) {
                 outs_before: currentOuts,
             } as Partial<BaserunnerEvent> & { new_base_runners?: BaseRunners });
             setBaseRunners(newRunners);
-            if (runsScored > 0 && game) {
-                const newAwayScore = (game.away_score || 0) + runsScored;
-                await gamesApi.updateScore(gameId, game.home_score || 0, newAwayScore);
-                dispatch(fetchGameById(gameId));
-            }
+            await updateScoreForRuns(runsScored);
             setShowRunnerEventModal(false);
         } catch (error) {
             console.error('Failed to record runner advancement:', error);
@@ -649,7 +650,8 @@ export function useLiveGameActions(state: LiveGameState) {
                 home_score: game.home_score || 0,
                 away_score: game.away_score || 0,
             });
-            navigate('/');
+            // Refresh game state — status becomes 'completed', which renders ViewerDashboard
+            await dispatch(fetchGameById(gameId));
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : 'Failed to end game');
         }

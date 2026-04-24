@@ -16,6 +16,7 @@ const RESULTS: { type: PitchResult; label: string; compactLabel: string; color: 
     { type: 'called_strike', label: 'Called\nStrike', compactLabel: 'Called', color: colors.green[500], textColor: '#ffffff' },
     { type: 'swinging_strike', label: 'Swinging\nStrike', compactLabel: 'Swing', color: colors.red[500], textColor: '#ffffff' },
     { type: 'foul', label: 'Foul', compactLabel: 'Foul', color: colors.yellow[500], textColor: colors.gray[800] },
+    { type: 'hit_by_pitch', label: 'HBP', compactLabel: 'HBP', color: '#f97316', textColor: '#ffffff' },
     { type: 'in_play', label: 'In Play', compactLabel: 'In Play', color: colors.primary[600], textColor: '#ffffff' },
 ];
 

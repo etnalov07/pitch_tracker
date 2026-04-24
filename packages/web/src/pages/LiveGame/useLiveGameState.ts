@@ -218,9 +218,12 @@ export function useLiveGameState() {
         }
     }, [currentPitcher?.player_id]);
 
-    // Filter pitch types: use pitcher's types if available, otherwise show all
+    // Filter pitch types: only apply pitcher's configured types when we are the pitcher.
+    // In opp_pitcher mode the opposing pitcher can throw anything.
     const availablePitchTypes =
-        pitcherPitchTypes.length > 0 ? ALL_PITCH_TYPES.filter((pt) => pitcherPitchTypes.includes(pt.value)) : ALL_PITCH_TYPES;
+        gameMode !== 'opp_pitcher' && pitcherPitchTypes.length > 0
+            ? ALL_PITCH_TYPES.filter((pt) => pitcherPitchTypes.includes(pt.value))
+            : ALL_PITCH_TYPES;
 
     return {
         // Router

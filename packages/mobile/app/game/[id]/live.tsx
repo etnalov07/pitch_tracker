@@ -303,6 +303,20 @@ export default function LiveGameScreen() {
     })();
     const strikes = Math.min(effectiveStrikes, 2);
 
+    const updateScoreForRuns = useCallback(
+        async (runsScored: number) => {
+            if (!id || runsScored <= 0) return;
+            const freshGame = await dispatch(fetchGameById(id)).unwrap();
+            if (gameMode === 'opp_pitcher') {
+                await gamesApi.updateScore(id, (freshGame.home_score || 0) + runsScored, freshGame.away_score || 0);
+            } else {
+                await gamesApi.updateScore(id, freshGame.home_score || 0, (freshGame.away_score || 0) + runsScored);
+            }
+            dispatch(fetchGameById(id));
+        },
+        [id, gameMode, dispatch]
+    );
+
     // Start at-bat for a specific batter
     const startAtBatForBatter = useCallback(
         async (batter: OpponentLineupPlayer, outs: number, inning: Inning | null): Promise<boolean> => {
@@ -595,7 +609,7 @@ export default function LiveGameScreen() {
                     try {
                         await gamesApi.endGame(id, { home_score: game.home_score || 0, away_score: game.away_score || 0 });
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        router.back();
+                        router.replace(`/game/${id}/viewer` as any);
                     } catch {
                         Alert.alert('Error', 'Failed to end game');
                     }
@@ -842,7 +856,8 @@ export default function LiveGameScreen() {
             setChangingCallId(null);
             setPendingShakeCount(0);
             if (result.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            if (newBalls >= 4) await handleEndAtBat('walk', finalPitch);
+            if (selectedResult === 'hit_by_pitch') await handleEndAtBat('hit_by_pitch', finalPitch);
+            else if (newBalls >= 4) await handleEndAtBat('walk', finalPitch);
             else if (newStrikes >= 3) {
                 // MLB rule: batter can reach on an uncaught third strike only when 1st base
                 // is unoccupied, OR when there are 2 outs. Prompt the user to distinguish.
@@ -908,6 +923,7 @@ export default function LiveGameScreen() {
                 const { suggestedRunners, suggestedRuns } = getSuggestedAdvancement(baseRunners, result);
                 dispatch(setBaseRunners(suggestedRunners));
                 if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: suggestedRunners }));
+                await updateScoreForRuns(suggestedRuns);
                 await handleEndAtBat(result, undefined, { rbi: suggestedRuns, runs_scored: suggestedRuns });
             } else if (result === 'double_play' && hasRunnersOnBase) {
                 setShowDoublePlayModal(true);
@@ -952,7 +968,7 @@ export default function LiveGameScreen() {
                 }
             }
         },
-        [handleEndAtBat, baseRunners, id, dispatch, currentAtBat, pitches]
+        [handleEndAtBat, baseRunners, id, dispatch, currentAtBat, pitches, updateScoreForRuns]
     );
 
     const handleRunnerAdvancementConfirm = useCallback(
@@ -960,18 +976,14 @@ export default function LiveGameScreen() {
             if (!pendingHitResult) return;
             dispatch(setBaseRunners(newRunners));
             if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
-            // Runs scored while our team is pitching go to opponent (away_score)
-            if (runsScored > 0 && game) {
-                await gamesApi.updateScore(id, game.home_score || 0, (game.away_score || 0) + runsScored);
-                dispatch(fetchGameById(id));
-            }
+            await updateScoreForRuns(runsScored);
             setShowRunnerAdvancementModal(false);
             // Credit the batter with an RBI for each run scored on the play (sac fly, hit, etc.).
             // Walks/HBPs also legitimately credit forced runs.
             await handleEndAtBat(pendingHitResult, undefined, { rbi: runsScored, runs_scored: runsScored });
             setPendingHitResult(null);
         },
-        [pendingHitResult, id, game, dispatch, handleEndAtBat]
+        [pendingHitResult, id, dispatch, handleEndAtBat, updateScoreForRuns]
     );
 
     const handleRecordBaserunnerOut = useCallback(
@@ -1035,17 +1047,13 @@ export default function LiveGameScreen() {
                     } as any)
                 ).unwrap();
                 dispatch(setBaseRunners(newRunners));
-                if (runsScored > 0 && game) {
-                    const newAwayScore = (game.away_score || 0) + runsScored;
-                    await gamesApi.updateScore(id, game.home_score || 0, newAwayScore);
-                    dispatch(fetchGameById(id));
-                }
+                await updateScoreForRuns(runsScored);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {
                 Alert.alert('Error', 'Failed to record runner advancement');
             }
         },
-        [id, currentInning, currentAtBat, currentOuts, game, dispatch]
+        [id, currentInning, currentAtBat, currentOuts, dispatch, updateScoreForRuns]
     );
 
     const handleDoublePlayConfirm = useCallback(
@@ -1396,7 +1404,6 @@ export default function LiveGameScreen() {
                         </Text>
                         <ScrollView>
                             {myTeamLineup
-                                .filter((p) => p.is_starter)
                                 .sort((a, b) => a.batting_order - b.batting_order)
                                 .map((p) => (
                                     <TouchableOpacity
@@ -1757,7 +1764,11 @@ export default function LiveGameScreen() {
                                     <PitchTypeGrid
                                         selectedType={selectedPitchType}
                                         onSelect={setSelectedPitchType}
-                                        availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
+                                        availablePitchTypes={
+                                            gameMode !== 'opp_pitcher' && pitcherPitchTypes.length > 0
+                                                ? pitcherPitchTypes
+                                                : undefined
+                                        }
                                         disabled={isLogging}
                                     />
                                 </View>
@@ -1889,7 +1900,9 @@ export default function LiveGameScreen() {
                     <PitchTypeGrid
                         selectedType={selectedPitchType}
                         onSelect={setSelectedPitchType}
-                        availablePitchTypes={pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined}
+                        availablePitchTypes={
+                            gameMode !== 'opp_pitcher' && pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined
+                        }
                         disabled={isLogging}
                         compact
                     />
