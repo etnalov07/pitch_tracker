@@ -60,13 +60,16 @@ const GameSetup: React.FC = () => {
     const [formData, setFormData] = useState({
         home_team_id: '',
         opponent_name: '',
+        scouting_home_team: '',
         is_home_game: true,
         lineup_size: 9,
-        charting_mode: 'our_pitcher' as 'our_pitcher' | 'opp_pitcher' | 'both',
+        charting_mode: 'our_pitcher' as 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting',
         game_date: new Date().toISOString().split('T')[0],
         game_time: '18:00',
         location: '',
     });
+
+    const isScoutingMode = formData.charting_mode === 'scouting';
 
     useEffect(() => {
         dispatch(fetchAllTeams());
@@ -97,7 +100,17 @@ const GameSetup: React.FC = () => {
             setError('Please select your team');
             return;
         }
-        if (!formData.opponent_name.trim()) {
+
+        if (isScoutingMode) {
+            if (!formData.opponent_name.trim()) {
+                setError('Please enter the away team name');
+                return;
+            }
+            if (!formData.scouting_home_team.trim()) {
+                setError('Please enter the home team name');
+                return;
+            }
+        } else if (!formData.opponent_name.trim()) {
             setError('Please enter the opponent team name');
             return;
         }
@@ -109,21 +122,26 @@ const GameSetup: React.FC = () => {
             const newGame = await dispatch(
                 createGame({
                     home_team_id: formData.home_team_id,
-                    opponent_name: formData.opponent_name.trim(),
+                    opponent_name: formData.opponent_name.trim() || undefined,
+                    scouting_home_team: isScoutingMode ? formData.scouting_home_team.trim() : undefined,
                     is_home_game: formData.is_home_game,
                     lineup_size: formData.lineup_size,
                     charting_mode: formData.charting_mode,
                     game_date: game_dateTime.toISOString(),
                     location: formData.location.trim() || undefined,
-                })
+                } as Parameters<typeof createGame>[0])
             ).unwrap();
 
             if (!newGame || !newGame.id) {
                 throw new Error('Failed to create game');
             }
 
-            // Navigate to my team lineup setup first
-            navigate(`/game/${newGame.id}/my-lineup`);
+            // Scouting mode skips the my-lineup step — go straight to the scouting opponent lineup setup
+            if (isScoutingMode) {
+                navigate(`/game/${newGame.id}/opp-lineup`);
+            } else {
+                navigate(`/game/${newGame.id}/my-lineup`);
+            }
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Failed to create game');
         } finally {
@@ -169,77 +187,7 @@ const GameSetup: React.FC = () => {
                             <TeamSelectionSection>
                                 <SectionTitle>Teams</SectionTitle>
 
-                                <TeamsRow>
-                                    <TeamSelectGroup>
-                                        <Label>Opponent</Label>
-                                        <Input
-                                            type="text"
-                                            name="opponent_name"
-                                            value={formData.opponent_name}
-                                            onChange={handleChange}
-                                            placeholder="Enter opponent team name..."
-                                        />
-                                        {formData.opponent_name && (
-                                            <SelectedTeamPreview>
-                                                <TeamBadge>{formData.opponent_name}</TeamBadge>
-                                            </SelectedTeamPreview>
-                                        )}
-                                    </TeamSelectGroup>
-
-                                    <VsText>@</VsText>
-
-                                    <TeamSelectGroup>
-                                        <Label>Your Team</Label>
-                                        {userTeams.length === 1 ? (
-                                            <>
-                                                <Input type="text" value={getTeamName(userTeams[0].id)} disabled />
-                                                <SelectedTeamPreview>
-                                                    <TeamBadge isHome>{getTeamName(userTeams[0].id)}</TeamBadge>
-                                                </SelectedTeamPreview>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <TeamSelect
-                                                    name="home_team_id"
-                                                    value={formData.home_team_id}
-                                                    onChange={handleChange}
-                                                >
-                                                    <option value="">Select your team...</option>
-                                                    {userTeams.map((team) => (
-                                                        <option key={team.id} value={team.id}>
-                                                            {team.city ? `${team.city} ` : ''}
-                                                            {team.name}
-                                                        </option>
-                                                    ))}
-                                                </TeamSelect>
-                                                {formData.home_team_id && (
-                                                    <SelectedTeamPreview>
-                                                        <TeamBadge isHome>{getTeamName(formData.home_team_id)}</TeamBadge>
-                                                    </SelectedTeamPreview>
-                                                )}
-                                            </>
-                                        )}
-                                    </TeamSelectGroup>
-                                </TeamsRow>
-
-                                <Label style={{ marginTop: '12px', marginBottom: '4px' }}>Your team is playing:</Label>
-                                <HomeAwayToggle>
-                                    <ToggleOption
-                                        type="button"
-                                        active={formData.is_home_game}
-                                        onClick={() => setFormData((prev) => ({ ...prev, is_home_game: true }))}
-                                    >
-                                        Home
-                                    </ToggleOption>
-                                    <ToggleOption
-                                        type="button"
-                                        active={!formData.is_home_game}
-                                        onClick={() => setFormData((prev) => ({ ...prev, is_home_game: false }))}
-                                    >
-                                        Away
-                                    </ToggleOption>
-                                </HomeAwayToggle>
-                                <Label style={{ marginTop: '12px', marginBottom: '4px' }}>Chart pitches for:</Label>
+                                <Label style={{ marginBottom: '4px' }}>Charting Mode</Label>
                                 <HomeAwayToggle>
                                     <ToggleOption
                                         type="button"
@@ -262,7 +210,135 @@ const GameSetup: React.FC = () => {
                                     >
                                         Opp Pitcher
                                     </ToggleOption>
+                                    <ToggleOption
+                                        type="button"
+                                        active={formData.charting_mode === 'scouting'}
+                                        onClick={() => setFormData((prev) => ({ ...prev, charting_mode: 'scouting' }))}
+                                    >
+                                        🔍 Scouting
+                                    </ToggleOption>
                                 </HomeAwayToggle>
+
+                                {isScoutingMode ? (
+                                    <>
+                                        <TeamsRow style={{ marginTop: '12px' }}>
+                                            <TeamSelectGroup>
+                                                <Label>Away Team</Label>
+                                                <Input
+                                                    type="text"
+                                                    name="opponent_name"
+                                                    value={formData.opponent_name}
+                                                    onChange={handleChange}
+                                                    placeholder="Away team name..."
+                                                />
+                                            </TeamSelectGroup>
+                                            <VsText>@</VsText>
+                                            <TeamSelectGroup>
+                                                <Label>Home Team</Label>
+                                                <Input
+                                                    type="text"
+                                                    name="scouting_home_team"
+                                                    value={formData.scouting_home_team}
+                                                    onChange={handleChange}
+                                                    placeholder="Home team name..."
+                                                />
+                                            </TeamSelectGroup>
+                                        </TeamsRow>
+                                        <FormGroup style={{ marginTop: '12px' }}>
+                                            <Label>Your Team (for this session)</Label>
+                                            {userTeams.length === 1 ? (
+                                                <Input type="text" value={getTeamName(userTeams[0].id)} disabled />
+                                            ) : (
+                                                <TeamSelect
+                                                    name="home_team_id"
+                                                    value={formData.home_team_id}
+                                                    onChange={handleChange}
+                                                >
+                                                    <option value="">Select your team...</option>
+                                                    {userTeams.map((team) => (
+                                                        <option key={team.id} value={team.id}>
+                                                            {team.city ? `${team.city} ` : ''}
+                                                            {team.name}
+                                                        </option>
+                                                    ))}
+                                                </TeamSelect>
+                                            )}
+                                        </FormGroup>
+                                    </>
+                                ) : (
+                                    <>
+                                        <TeamsRow style={{ marginTop: '12px' }}>
+                                            <TeamSelectGroup>
+                                                <Label>Opponent</Label>
+                                                <Input
+                                                    type="text"
+                                                    name="opponent_name"
+                                                    value={formData.opponent_name}
+                                                    onChange={handleChange}
+                                                    placeholder="Enter opponent team name..."
+                                                />
+                                                {formData.opponent_name && (
+                                                    <SelectedTeamPreview>
+                                                        <TeamBadge>{formData.opponent_name}</TeamBadge>
+                                                    </SelectedTeamPreview>
+                                                )}
+                                            </TeamSelectGroup>
+
+                                            <VsText>@</VsText>
+
+                                            <TeamSelectGroup>
+                                                <Label>Your Team</Label>
+                                                {userTeams.length === 1 ? (
+                                                    <>
+                                                        <Input type="text" value={getTeamName(userTeams[0].id)} disabled />
+                                                        <SelectedTeamPreview>
+                                                            <TeamBadge isHome>{getTeamName(userTeams[0].id)}</TeamBadge>
+                                                        </SelectedTeamPreview>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <TeamSelect
+                                                            name="home_team_id"
+                                                            value={formData.home_team_id}
+                                                            onChange={handleChange}
+                                                        >
+                                                            <option value="">Select your team...</option>
+                                                            {userTeams.map((team) => (
+                                                                <option key={team.id} value={team.id}>
+                                                                    {team.city ? `${team.city} ` : ''}
+                                                                    {team.name}
+                                                                </option>
+                                                            ))}
+                                                        </TeamSelect>
+                                                        {formData.home_team_id && (
+                                                            <SelectedTeamPreview>
+                                                                <TeamBadge isHome>{getTeamName(formData.home_team_id)}</TeamBadge>
+                                                            </SelectedTeamPreview>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </TeamSelectGroup>
+                                        </TeamsRow>
+
+                                        <Label style={{ marginTop: '12px', marginBottom: '4px' }}>Your team is playing:</Label>
+                                        <HomeAwayToggle>
+                                            <ToggleOption
+                                                type="button"
+                                                active={formData.is_home_game}
+                                                onClick={() => setFormData((prev) => ({ ...prev, is_home_game: true }))}
+                                            >
+                                                Home
+                                            </ToggleOption>
+                                            <ToggleOption
+                                                type="button"
+                                                active={!formData.is_home_game}
+                                                onClick={() => setFormData((prev) => ({ ...prev, is_home_game: false }))}
+                                            >
+                                                Away
+                                            </ToggleOption>
+                                        </HomeAwayToggle>
+                                    </>
+                                )}
                             </TeamSelectionSection>
 
                             <Divider />
@@ -328,7 +404,13 @@ const GameSetup: React.FC = () => {
                                 <GamePreview>
                                     <PreviewTitle>Game Preview</PreviewTitle>
                                     <PreviewMatchup>
-                                        {formData.is_home_game ? (
+                                        {isScoutingMode ? (
+                                            <>
+                                                <PreviewTeam>{formData.opponent_name || 'Away Team'}</PreviewTeam>
+                                                <PreviewAt>@</PreviewAt>
+                                                <PreviewTeam>{formData.scouting_home_team || 'Home Team'}</PreviewTeam>
+                                            </>
+                                        ) : formData.is_home_game ? (
                                             <>
                                                 <PreviewTeam>{formData.opponent_name}</PreviewTeam>
                                                 <PreviewAt>@</PreviewAt>
@@ -360,7 +442,7 @@ const GameSetup: React.FC = () => {
                                 <CancelButton type="button" onClick={() => navigate('/')}>
                                     Cancel
                                 </CancelButton>
-                                {formData.home_team_id && (
+                                {formData.home_team_id && !isScoutingMode && (
                                     <CancelButton
                                         type="button"
                                         onClick={() => navigate(`/teams/${formData.home_team_id}/scouting`)}
@@ -370,9 +452,14 @@ const GameSetup: React.FC = () => {
                                 )}
                                 <SubmitButton
                                     type="submit"
-                                    disabled={submitting || !formData.home_team_id || !formData.opponent_name.trim()}
+                                    disabled={
+                                        submitting ||
+                                        !formData.home_team_id ||
+                                        !formData.opponent_name.trim() ||
+                                        (isScoutingMode && !formData.scouting_home_team.trim())
+                                    }
                                 >
-                                    {submitting ? 'Creating...' : 'Continue to Lineup'}
+                                    {submitting ? 'Creating...' : isScoutingMode ? 'Start Scouting' : 'Continue to Lineup'}
                                 </SubmitButton>
                             </FormActions>
                         </Form>

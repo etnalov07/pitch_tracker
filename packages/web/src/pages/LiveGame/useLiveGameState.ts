@@ -137,11 +137,16 @@ export function useLiveGameState() {
         return deriveGameMode(game.is_home_game ?? true, game.inning_half);
     }, [game]);
 
+    const isScoutingMode = game?.charting_mode === 'scouting';
+    // In scouting TOP = away bats (home pitches), BOTTOM = home bats (away pitches)
+    const scoutingBattingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'away' : 'home') : null;
+    const scoutingPitchingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'home' : 'away') : null;
+
     // Auto-show TeamAtBat modal when user's team is batting (visitor games),
-    // but not when charting_mode is 'both' — in that mode we chart at-bats directly.
+    // but not when charting_mode is 'both' or 'scouting' — in those modes we chart at-bats directly.
     const isUserBatting = game && game.status === 'in_progress' && !game.is_home_game && game.inning_half === 'top';
     useEffect(() => {
-        if (isUserBatting && !showInningChange && game?.charting_mode !== 'both') {
+        if (isUserBatting && !showInningChange && game?.charting_mode !== 'both' && game?.charting_mode !== 'scouting') {
             setShowTeamAtBat(true);
         }
     }, [isUserBatting, game?.current_inning, game?.inning_half, game?.charting_mode, showInningChange]);
@@ -330,6 +335,9 @@ export function useLiveGameState() {
         showCountBreakdown,
         setShowCountBreakdown,
         gameMode,
+        isScoutingMode,
+        scoutingBattingSide,
+        scoutingPitchingSide,
         gameRole,
         setGameRole,
         // My team lineup

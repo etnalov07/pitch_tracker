@@ -31,9 +31,16 @@ interface BatterSelectorProps {
     currentBattingOrder?: number;
     onBatterSelected: (batter: OpponentLineupPlayer) => void;
     onClose: () => void;
+    teamSide?: 'home' | 'away';
 }
 
-const BatterSelector: React.FC<BatterSelectorProps> = ({ gameId, currentBattingOrder = 1, onBatterSelected, onClose }) => {
+const BatterSelector: React.FC<BatterSelectorProps> = ({
+    gameId,
+    currentBattingOrder = 1,
+    onBatterSelected,
+    onClose,
+    teamSide,
+}) => {
     const [lineup, setLineup] = useState<OpponentLineupPlayer[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
@@ -47,7 +54,8 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({ gameId, currentBattingO
         const fetchLineup = async () => {
             try {
                 const response = await api.get<{ lineup: OpponentLineupPlayer[] }>(`/opponent-lineup/game/${gameId}`);
-                setLineup(response.data.lineup || []);
+                const all = response.data.lineup || [];
+                setLineup(teamSide ? all.filter((p) => p.team_side === teamSide) : all);
             } catch (error) {
                 console.error('Failed to fetch lineup:', error);
             } finally {
@@ -55,7 +63,7 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({ gameId, currentBattingO
             }
         };
         fetchLineup();
-    }, [gameId]);
+    }, [gameId, teamSide]);
 
     const handleSelectBatter = (batter: OpponentLineupPlayer) => {
         if (batter.replaced_by_id) return; // Can't select subbed-out players

@@ -193,7 +193,7 @@ export interface PitcherGameLogsResponse {
 
 export type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 export type InningHalf = 'top' | 'bottom';
-export type ChartingMode = 'our_pitcher' | 'opp_pitcher' | 'both';
+export type ChartingMode = 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting';
 export type GameMode = 'our_pitcher' | 'opp_pitcher';
 export type TeamSide = 'our_team' | 'opponent';
 export type CountBucket = '1st_pitch' | 'ahead' | 'even' | 'behind';
@@ -258,6 +258,7 @@ export interface Game {
     base_runners?: BaseRunners;
     total_pitches?: number;
     shake_count?: number;
+    scouting_home_team?: string | null;
     created_by: string;
     created_at: string;
     updated_at?: string;
@@ -282,6 +283,7 @@ export interface OpponentLineupPlayer {
     is_starter: boolean;
     replaced_by_id?: string | null;
     inning_entered?: number | null;
+    team_side?: 'home' | 'away';
     created_at: string;
 }
 
@@ -1029,6 +1031,7 @@ export interface OpposingPitcher {
     pitcher_name: string;
     jersey_number?: number | null;
     throws: ThrowingHand;
+    team_side?: 'home' | 'away';
     created_at: string;
 }
 
@@ -1038,6 +1041,7 @@ export interface CreateOpposingPitcherParams {
     pitcher_name: string;
     jersey_number?: number | null;
     throws: ThrowingHand;
+    team_side?: 'home' | 'away';
 }
 
 // ============================================================================

@@ -194,6 +194,10 @@ export default function LiveGameScreen() {
 
     const game = currentGameState?.game || selectedGame;
     const gameMode: GameMode = game ? deriveGameMode(game.is_home_game ?? true, game.inning_half) : 'our_pitcher';
+    const isScoutingMode = game?.charting_mode === 'scouting';
+    // TOP = away bats (home pitches), BOTTOM = home bats (away pitches)
+    const scoutingBattingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'away' : 'home') : null;
+    const scoutingPitchingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'home' : 'away') : null;
 
     // Walkie-talkie state
     const [walkieTalkieActive, setWalkieTalkieActive] = useState(false);
@@ -210,7 +214,9 @@ export default function LiveGameScreen() {
         };
     }, [pitchCallingEnabled]);
 
-    const activeBatters = opponentLineup.filter((b) => !b.replaced_by_id).sort((a, b) => a.batting_order - b.batting_order);
+    const activeBatters = opponentLineup
+        .filter((b) => !b.replaced_by_id && (isScoutingMode ? b.team_side === scoutingBattingSide : true))
+        .sort((a, b) => a.batting_order - b.batting_order);
     const lineupSize = game?.lineup_size ?? 9;
 
     // Load game state on mount
@@ -276,10 +282,10 @@ export default function LiveGameScreen() {
     }, [currentPitcher?.player_id]);
 
     // Auto-show TeamAtBat modal when user's team is batting (visitor games),
-    // except when charting_mode is 'both' — in that mode we chart at-bats directly.
+    // except when charting_mode is 'both' or 'scouting' — in those modes we chart at-bats directly.
     const isUserBatting = game && game.status === 'in_progress' && !game.is_home_game && game.inning_half === 'top';
     useEffect(() => {
-        if (isUserBatting && !showInningChange && game?.charting_mode !== 'both') {
+        if (isUserBatting && !showInningChange && game?.charting_mode !== 'both' && game?.charting_mode !== 'scouting') {
             setShowTeamAtBat(true);
         }
     }, [isUserBatting, game?.current_inning, game?.inning_half, game?.charting_mode, showInningChange]);
@@ -307,27 +313,35 @@ export default function LiveGameScreen() {
         async (runsScored: number) => {
             if (!id || runsScored <= 0) return;
             const freshGame = await dispatch(fetchGameById(id)).unwrap();
-            if (gameMode === 'opp_pitcher') {
+            if (isScoutingMode) {
+                if (scoutingBattingSide === 'away') {
+                    await gamesApi.updateScore(id, freshGame.home_score || 0, (freshGame.away_score || 0) + runsScored);
+                } else {
+                    await gamesApi.updateScore(id, (freshGame.home_score || 0) + runsScored, freshGame.away_score || 0);
+                }
+            } else if (gameMode === 'opp_pitcher') {
                 await gamesApi.updateScore(id, (freshGame.home_score || 0) + runsScored, freshGame.away_score || 0);
             } else {
                 await gamesApi.updateScore(id, freshGame.home_score || 0, (freshGame.away_score || 0) + runsScored);
             }
             dispatch(fetchGameById(id));
         },
-        [id, gameMode, dispatch]
+        [id, gameMode, isScoutingMode, scoutingBattingSide, dispatch]
     );
 
     // Start at-bat for a specific batter
     const startAtBatForBatter = useCallback(
         async (batter: OpponentLineupPlayer, outs: number, inning: Inning | null): Promise<boolean> => {
-            if (!id || !currentPitcher || !inning) return false;
+            if (!id || !inning) return false;
+            if (!isScoutingMode && !currentPitcher) return false;
             try {
                 await dispatch(
                     createAtBat({
                         game_id: id,
                         inning_id: inning.id,
                         opponent_batter_id: batter.id,
-                        pitcher_id: currentPitcher.player_id,
+                        pitcher_id: isScoutingMode ? undefined : currentPitcher?.player_id,
+                        opposing_pitcher_id: isScoutingMode ? currentOpposingPitcher?.id : undefined,
                         batting_order: batter.batting_order,
                         balls: 0,
                         strikes: 0,
@@ -340,7 +354,7 @@ export default function LiveGameScreen() {
                 return false;
             }
         },
-        [id, currentPitcher, dispatch]
+        [id, currentPitcher, currentOpposingPitcher, isScoutingMode, dispatch]
     );
 
     const advanceInningWithRuns = useCallback(
@@ -349,49 +363,78 @@ export default function LiveGameScreen() {
             try {
                 // Fetch fresh game state before computing scores — prevents stale closure
                 // from overwriting scores that were already written during the half-inning
-                // (e.g. runner advancement updated score, then the 3rd out fires this with runs=0)
                 const freshGame = await dispatch(fetchGameById(id)).unwrap();
 
-                const newAwayScore = (freshGame.away_score || 0) + runs;
                 const homeScore = freshGame.home_score || 0;
+                const awayScore = freshGame.away_score || 0;
                 const isHomeGame = freshGame.is_home_game !== false;
                 const totalInnings = freshGame.total_innings ?? 7;
                 const isLastInningOrLater = freshGame.current_inning >= totalInnings;
 
-                await gamesApi.updateScore(id, homeScore, newAwayScore);
-
-                if (isLastInningOrLater) {
-                    if (isHomeGame && homeScore > newAwayScore) {
-                        await dispatch(endGame({ gameId: id, finalData: { home_score: homeScore, away_score: newAwayScore } }));
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        router.replace(`/game/${id}` as any);
-                        return;
+                if (isScoutingMode) {
+                    // Scouting: credit runs to the team that just batted
+                    if (scoutingBattingSide === 'away') {
+                        await gamesApi.updateScore(id, homeScore, awayScore + runs);
+                    } else {
+                        await gamesApi.updateScore(id, homeScore + runs, awayScore);
                     }
-                    if (!isHomeGame && homeScore !== newAwayScore) {
-                        await dispatch(endGame({ gameId: id, finalData: { home_score: homeScore, away_score: newAwayScore } }));
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        router.replace(`/game/${id}` as any);
-                        return;
-                    }
-                }
-
-                if (freshGame.is_home_game === false || freshGame.charting_mode === 'both') {
-                    // Visitor game or both-team mode: advance 1 half to user's batting half
                     await gamesApi.advanceInning(id);
                 } else {
-                    // Home game (single-team): skip user's batting half entirely (advance 2)
-                    await gamesApi.advanceInning(id);
-                    await gamesApi.advanceInning(id);
+                    const newAwayScore = awayScore + runs;
+                    await gamesApi.updateScore(id, homeScore, newAwayScore);
+
+                    if (isLastInningOrLater) {
+                        if (isHomeGame && homeScore > newAwayScore) {
+                            await dispatch(endGame({ gameId: id, finalData: { home_score: homeScore, away_score: newAwayScore } }));
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            router.replace(`/game/${id}` as any);
+                            return;
+                        }
+                        if (!isHomeGame && homeScore !== newAwayScore) {
+                            await dispatch(endGame({ gameId: id, finalData: { home_score: homeScore, away_score: newAwayScore } }));
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            router.replace(`/game/${id}` as any);
+                            return;
+                        }
+                    }
+
+                    if (freshGame.is_home_game === false || freshGame.charting_mode === 'both') {
+                        await gamesApi.advanceInning(id);
+                    } else {
+                        await gamesApi.advanceInning(id);
+                        await gamesApi.advanceInning(id);
+                    }
                 }
 
                 dispatch(setBaseRunners(clearBases()));
-                // Await so game.inning_half is current before batter setup and re-render
-                await dispatch(fetchGameById(id)).unwrap();
+                const updatedGame = await dispatch(fetchGameById(id)).unwrap();
                 const newInning = await gamesApi.getCurrentInning(id);
                 setShowInningChange(false);
 
-                if (freshGame.is_home_game !== false && freshGame.charting_mode !== 'both') {
-                    // Home game single-team mode: set up next opponent batter immediately
+                if (isScoutingMode) {
+                    // Switch batting team and pitcher to the new sides
+                    const newBattingSide = updatedGame.inning_half === 'top' ? 'away' : 'home';
+                    const newPitchingSide = updatedGame.inning_half === 'top' ? 'home' : 'away';
+                    const newBattingLineup = opponentLineup
+                        .filter((p) => p.team_side === newBattingSide && !p.replaced_by_id)
+                        .sort((a, b) => a.batting_order - b.batting_order);
+                    const firstBatter = newBattingLineup.find((p) => p.batting_order === 1) || newBattingLineup[0] || null;
+                    if (firstBatter) {
+                        setCurrentBattingOrder(firstBatter.batting_order);
+                        setCurrentBatter(firstBatter);
+                        if (newInning) await startAtBatForBatter(firstBatter, 0, newInning);
+                    } else {
+                        setCurrentBatter(null);
+                    }
+                    // Switch to the new pitching team's last pitcher
+                    const newPitchingPitchers = opposingPitchers.filter((p) => p.team_side === newPitchingSide);
+                    if (newPitchingPitchers.length > 0) {
+                        dispatch(setCurrentOpposingPitcher(newPitchingPitchers[newPitchingPitchers.length - 1]));
+                    } else {
+                        dispatch(setCurrentOpposingPitcher(null));
+                    }
+                    dispatch(fetchCurrentInning(id));
+                } else if (freshGame.is_home_game !== false && freshGame.charting_mode !== 'both') {
                     const firstBatter = getNextBatter(activeBatters, currentBattingOrder, lineupSize);
                     if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
                     if (firstBatter && newInning) {
@@ -403,7 +446,6 @@ export default function LiveGameScreen() {
                         dispatch(fetchCurrentInning(id));
                     }
                 } else {
-                    // Re-fetch opposing pitcher + my lineup so the new batting half auto-populates
                     await Promise.all([
                         dispatch(fetchOpposingPitchers(id))
                             .unwrap()
@@ -419,7 +461,20 @@ export default function LiveGameScreen() {
                 Alert.alert('Error', 'Failed to advance inning');
             }
         },
-        [id, game, currentBattingOrder, activeBatters, lineupSize, dispatch, startAtBatForBatter, router]
+        [
+            id,
+            game,
+            currentBattingOrder,
+            activeBatters,
+            lineupSize,
+            isScoutingMode,
+            scoutingBattingSide,
+            opponentLineup,
+            opposingPitchers,
+            dispatch,
+            startAtBatForBatter,
+            router,
+        ]
     );
 
     const handleEndAtBat = useCallback(
@@ -464,7 +519,7 @@ export default function LiveGameScreen() {
                     setShowInningChange(true);
                 } else {
                     if (outsFromPlay > 0) setCurrentOuts(newOutCount);
-                    if (gameMode === 'opp_pitcher') {
+                    if (!isScoutingMode && gameMode === 'opp_pitcher') {
                         // Advance to next batter in my team's lineup
                         const myStarters = myTeamLineup
                             .filter((p) => p.is_starter)
@@ -500,6 +555,7 @@ export default function LiveGameScreen() {
             pitches,
             currentBatter,
             gameMode,
+            isScoutingMode,
             currentMyBatter,
             myTeamLineup,
             dispatch,
@@ -623,7 +679,21 @@ export default function LiveGameScreen() {
     const handleStartAtBat = useCallback(async () => {
         if (!id || !currentInning) return;
         try {
-            if (gameMode === 'opp_pitcher') {
+            if (isScoutingMode) {
+                if (!currentOpposingPitcher || !currentBatter) return;
+                await dispatch(
+                    createAtBat({
+                        game_id: id,
+                        inning_id: currentInning.id,
+                        opponent_batter_id: currentBatter.id,
+                        opposing_pitcher_id: currentOpposingPitcher.id,
+                        batting_order: currentBatter.batting_order,
+                        balls: 0,
+                        strikes: 0,
+                        outs_before: currentOuts,
+                    })
+                ).unwrap();
+            } else if (gameMode === 'opp_pitcher') {
                 if (!currentOpposingPitcher || !currentMyBatter) return;
                 const batterId = currentMyBatter.player_id ?? currentMyBatter.player?.id;
                 if (!batterId) {
@@ -663,6 +733,7 @@ export default function LiveGameScreen() {
         }
     }, [
         gameMode,
+        isScoutingMode,
         currentPitcher,
         currentBatter,
         currentOpposingPitcher,
@@ -775,8 +846,12 @@ export default function LiveGameScreen() {
             Alert.alert('Missing Info', 'Please select pitch type, location, and result');
             return;
         }
-        if (gameMode === 'our_pitcher' && !currentPitcher) {
+        if (!isScoutingMode && gameMode === 'our_pitcher' && !currentPitcher) {
             Alert.alert('No Pitcher', 'Please select a pitcher first');
+            return;
+        }
+        if (isScoutingMode && (!currentOpposingPitcher || !currentBatter)) {
+            Alert.alert('No Pitcher/Batter', 'Please select a pitcher and batter first');
             return;
         }
         setIsLogging(true);
@@ -786,7 +861,7 @@ export default function LiveGameScreen() {
             const result = await logPitchOffline({
                 at_bat_id: currentAtBat?.id || '',
                 game_id: id!,
-                pitcher_id: gameMode === 'our_pitcher' ? currentPitcher?.player_id : undefined,
+                pitcher_id: !isScoutingMode && gameMode === 'our_pitcher' ? currentPitcher?.player_id : undefined,
                 pitch_type: selectedPitchType,
                 pitch_result: selectedResult,
                 location_x: pitchLocation.x,
@@ -795,11 +870,14 @@ export default function LiveGameScreen() {
                 target_location_y: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].y : undefined,
                 target_zone: targetZone ?? undefined,
                 velocity: veloNum && !isNaN(veloNum) ? veloNum : undefined,
-                batter_id: gameMode === 'opp_pitcher' ? (currentMyBatter?.player_id ?? currentMyBatter?.player?.id) : undefined,
-                opponent_batter_id: gameMode === 'our_pitcher' ? currentBatter?.id : undefined,
+                batter_id:
+                    !isScoutingMode && gameMode === 'opp_pitcher'
+                        ? (currentMyBatter?.player_id ?? currentMyBatter?.player?.id)
+                        : undefined,
+                opponent_batter_id: isScoutingMode || gameMode === 'our_pitcher' ? currentBatter?.id : undefined,
                 balls_before: balls,
                 strikes_before: strikes,
-                team_side: gameMode === 'our_pitcher' ? 'our_team' : 'opponent',
+                team_side: isScoutingMode ? 'opponent' : gameMode === 'our_pitcher' ? 'our_team' : 'opponent',
             });
             if (!result.success) {
                 Alert.alert('Error', 'Failed to log pitch');

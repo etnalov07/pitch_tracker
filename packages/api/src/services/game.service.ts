@@ -15,14 +15,17 @@ export class GameService {
             lineup_size,
             total_innings,
             charting_mode,
+            scouting_home_team,
         } = gameData;
 
         if (!home_team_id) {
             throw new Error('home_team_id is required');
         }
 
-        // Either away_team_id or opponent_name must be provided
-        if (!away_team_id && !opponent_name) {
+        const resolvedChartingMode = charting_mode ?? 'our_pitcher';
+
+        // Scouting mode: opponent_name holds the away team, scouting_home_team holds the home team
+        if (resolvedChartingMode !== 'scouting' && !away_team_id && !opponent_name) {
             throw new Error('Either away_team_id or opponent_name is required');
         }
 
@@ -32,12 +35,11 @@ export class GameService {
 
         const resolvedLineupSize = Math.min(Math.max(lineup_size ?? 9, 9), 15);
         const resolvedTotalInnings = Math.min(Math.max(total_innings ?? 7, 1), 20);
-        const resolvedChartingMode = charting_mode ?? 'our_pitcher';
 
         const gameId = uuidv4();
         const result = await query(
-            `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size, total_innings, charting_mode)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size, total_innings, charting_mode, scouting_home_team)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
             [
                 gameId,
@@ -52,6 +54,7 @@ export class GameService {
                 resolvedLineupSize,
                 resolvedTotalInnings,
                 resolvedChartingMode,
+                scouting_home_team ?? null,
             ]
         );
 

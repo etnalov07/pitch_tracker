@@ -43,10 +43,15 @@ const GameHeader: React.FC<GameHeaderProps> = ({
             {/* Top row: Score + Count inline */}
             <View style={styles.topRow}>
                 <View style={styles.teamScore}>
-                    {/* Left column = visiting team. home_team_id/home_score in DB always
-                        refer to the user's team; is_home_game only flips which side visits. */}
-                    <Text style={styles.teamLabel}>{game.is_home_game === false ? 'YOU' : 'OPP'}</Text>
-                    <Text style={styles.score}>{(game.is_home_game === false ? game.home_score : game.away_score) || 0}</Text>
+                    {/* Left column = visiting/away team */}
+                    <Text style={styles.teamLabel} numberOfLines={1}>
+                        {game.charting_mode === 'scouting'
+                            ? (game.opponent_name || 'AWAY').substring(0, 6).toUpperCase()
+                            : game.is_home_game === false
+                              ? 'YOU'
+                              : 'OPP'}
+                    </Text>
+                    <Text style={styles.score}>{game.away_score || 0}</Text>
                 </View>
                 <View style={styles.centerColumn}>
                     <View style={styles.statusRow}>
@@ -85,8 +90,14 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                 </View>
                 <View style={styles.teamScore}>
                     {/* Right column = home team */}
-                    <Text style={styles.teamLabel}>{game.is_home_game === false ? 'OPP' : 'YOU'}</Text>
-                    <Text style={styles.score}>{(game.is_home_game === false ? game.away_score : game.home_score) || 0}</Text>
+                    <Text style={styles.teamLabel} numberOfLines={1}>
+                        {game.charting_mode === 'scouting'
+                            ? (game.scouting_home_team || 'HOME').substring(0, 6).toUpperCase()
+                            : game.is_home_game === false
+                              ? 'OPP'
+                              : 'YOU'}
+                    </Text>
+                    <Text style={styles.score}>{game.home_score || 0}</Text>
                 </View>
                 {/* Base runners diamond */}
                 <View style={styles.diamondContainer}>

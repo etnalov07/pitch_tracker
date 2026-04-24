@@ -173,6 +173,9 @@ const LiveGame: React.FC = () => {
         showCountBreakdown,
         setShowCountBreakdown,
         gameMode,
+        isScoutingMode,
+        scoutingBattingSide,
+        scoutingPitchingSide,
         gameRole,
         setGameRole,
         setStatsRefreshTrigger,
@@ -215,7 +218,11 @@ const LiveGame: React.FC = () => {
         return <ViewerDashboard game={game} refreshTrigger={statsRefreshTrigger} onExit={() => navigate('/')} />;
     }
 
-    const needsSetup = gameMode === 'opp_pitcher' ? !currentOpposingPitcher : !currentPitcher || !currentBatter;
+    const needsSetup = isScoutingMode
+        ? !currentOpposingPitcher || !currentBatter
+        : gameMode === 'opp_pitcher'
+          ? !currentOpposingPitcher
+          : !currentPitcher || !currentBatter;
 
     const pitcherName = currentPitcher?.player
         ? `${currentPitcher.player.first_name} ${currentPitcher.player.last_name}`
@@ -234,12 +241,23 @@ const LiveGame: React.FC = () => {
                 {game.charting_mode !== 'our_pitcher' && gameId && (
                     <OpposingPitcherPanel
                         gameId={gameId}
-                        opposingPitchers={opposingPitchers}
+                        opposingPitchers={
+                            isScoutingMode ? opposingPitchers.filter((p) => p.team_side === scoutingPitchingSide) : opposingPitchers
+                        }
                         currentOpposingPitcher={currentOpposingPitcher}
                         onSelect={setCurrentOpposingPitcher}
-                        opponentName={game.opponent_name}
+                        opponentName={
+                            isScoutingMode
+                                ? scoutingPitchingSide === 'home'
+                                    ? game.scouting_home_team || 'Home Team'
+                                    : game.opponent_name || 'Away Team'
+                                : game.opponent_name
+                        }
                         onCreate={async (params) => {
-                            const pitcher = await opposingPitcherService.create(params);
+                            const pitcher = await opposingPitcherService.create({
+                                ...params,
+                                team_side: isScoutingMode ? (scoutingPitchingSide as 'home' | 'away') : undefined,
+                            });
                             setOpposingPitchers((prev) => [...prev, pitcher]);
                             setCurrentOpposingPitcher(pitcher);
                         }}
@@ -329,11 +347,36 @@ const LiveGame: React.FC = () => {
                 <GameHeader>
                     <TeamInfo>
                         <TeamName>
-                            {game.is_home_game === false ? game.home_team_name || 'Your Team' : game.opponent_name || 'Away Team'}
+                            {isScoutingMode
+                                ? game.opponent_name || 'Away Team'
+                                : game.is_home_game === false
+                                  ? game.home_team_name || 'Your Team'
+                                  : game.opponent_name || 'Away Team'}
                         </TeamName>
-                        <Score>{game.is_home_game === false ? game.home_score || 0 : game.away_score || 0}</Score>
+                        <Score>{game.away_score || 0}</Score>
+                        {isScoutingMode && (
+                            <div style={{ fontSize: '10px', color: theme.colors.gray[500], marginTop: '2px' }}>
+                                {scoutingBattingSide === 'away' ? '⚾ BATTING' : '🏟 PITCHING'}
+                            </div>
+                        )}
                     </TeamInfo>
                     <GameInfo>
+                        {isScoutingMode && (
+                            <div
+                                style={{
+                                    fontSize: '11px',
+                                    fontWeight: 700,
+                                    color: theme.colors.primary[600],
+                                    background: theme.colors.primary[50],
+                                    border: `1px solid ${theme.colors.primary[200]}`,
+                                    borderRadius: '4px',
+                                    padding: '2px 8px',
+                                    marginBottom: '4px',
+                                }}
+                            >
+                                🔍 SCOUTING
+                            </div>
+                        )}
                         <Inning>Inning {game.current_inning || 1}</Inning>
                         <InningHalf>{game.inning_half === 'top' ? '▲ Top' : '▼ Bottom'}</InningHalf>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px' }}>
@@ -385,17 +428,30 @@ const LiveGame: React.FC = () => {
                     </GameInfo>
                     <TeamInfo>
                         <TeamName>
-                            {game.is_home_game === false ? game.opponent_name || 'Home Team' : game.home_team_name || 'Your Team'}
+                            {isScoutingMode
+                                ? game.scouting_home_team || 'Home Team'
+                                : game.is_home_game === false
+                                  ? game.opponent_name || 'Home Team'
+                                  : game.home_team_name || 'Your Team'}
                         </TeamName>
-                        <Score>{game.is_home_game === false ? game.away_score || 0 : game.home_score || 0}</Score>
+                        <Score>{game.home_score || 0}</Score>
+                        {isScoutingMode && (
+                            <div style={{ fontSize: '10px', color: theme.colors.gray[500], marginTop: '2px' }}>
+                                {scoutingPitchingSide === 'home' ? '🏟 PITCHING' : '⚾ BATTING'}
+                            </div>
+                        )}
                     </TeamInfo>
                 </GameHeader>
 
                 <PlayersRow>
                     <PlayerDisplay>
                         <PlayerInfo>
-                            <PlayerLabel>Pitcher</PlayerLabel>
-                            {gameMode === 'opp_pitcher' ? (
+                            <PlayerLabel>
+                                {isScoutingMode
+                                    ? `Pitcher (${scoutingPitchingSide === 'home' ? game.scouting_home_team || 'Home' : game.opponent_name || 'Away'})`
+                                    : 'Pitcher'}
+                            </PlayerLabel>
+                            {isScoutingMode || gameMode === 'opp_pitcher' ? (
                                 currentOpposingPitcher ? (
                                     <PlayerName>{currentOpposingPitcher.pitcher_name}</PlayerName>
                                 ) : (
@@ -412,14 +468,14 @@ const LiveGame: React.FC = () => {
                                 <PlayerName style={{ color: theme.colors.gray[400] }}>Not selected</PlayerName>
                             )}
                         </PlayerInfo>
-                        {gameMode !== 'opp_pitcher' && (
+                        {!isScoutingMode && gameMode !== 'opp_pitcher' && (
                             <ChangeButton onClick={() => setShowPitcherSelector(true)}>
                                 {currentPitcher ? 'Change' : 'Select'}
                             </ChangeButton>
                         )}
                     </PlayerDisplay>
 
-                    {gameMode === 'opp_pitcher' ? (
+                    {!isScoutingMode && gameMode === 'opp_pitcher' ? (
                         <PlayerDisplay>
                             <PlayerInfo>
                                 <PlayerLabel>Our Batter</PlayerLabel>
@@ -462,7 +518,11 @@ const LiveGame: React.FC = () => {
                     ) : (
                         <PlayerDisplay>
                             <PlayerInfo>
-                                <PlayerLabel>Batter (#{currentBattingOrder})</PlayerLabel>
+                                <PlayerLabel>
+                                    {isScoutingMode
+                                        ? `Batter (${scoutingBattingSide === 'away' ? game.opponent_name || 'Away' : game.scouting_home_team || 'Home'}) #${currentBattingOrder}`
+                                        : `Batter (#${currentBattingOrder})`}
+                                </PlayerLabel>
                                 {currentBatter ? (
                                     <PlayerName>{currentBatter.player_name}</PlayerName>
                                 ) : (
@@ -479,18 +539,27 @@ const LiveGame: React.FC = () => {
                 {needsSetup && !currentAtBat && (
                     <SetupPrompt>
                         <SetupText>
-                            {!currentPitcher && gameMode === 'opp_pitcher'
-                                ? 'Select the opposing pitcher and your batter to start tracking.'
-                                : !currentPitcher && !currentBatter
-                                  ? 'Select your pitcher and the opponent batter to start tracking pitches.'
-                                  : !currentPitcher
-                                    ? 'Select your pitcher to continue.'
-                                    : 'Select the opponent batter to continue.'}
+                            {isScoutingMode
+                                ? !currentOpposingPitcher && !currentBatter
+                                    ? 'Select the pitcher and batter to start scouting.'
+                                    : !currentOpposingPitcher
+                                      ? 'Select the pitcher to continue.'
+                                      : 'Select the batter to continue.'
+                                : !currentPitcher && gameMode === 'opp_pitcher'
+                                  ? 'Select the opposing pitcher and your batter to start tracking.'
+                                  : !currentPitcher && !currentBatter
+                                    ? 'Select your pitcher and the opponent batter to start tracking pitches.'
+                                    : !currentPitcher
+                                      ? 'Select your pitcher to continue.'
+                                      : 'Select the opponent batter to continue.'}
                         </SetupText>
-                        {!currentBatter && gameMode !== 'opp_pitcher' && (
+                        {isScoutingMode && (
+                            <SetupButton onClick={() => navigate(`/game/${gameId}/opp-lineup`)}>Setup Scouting Lineups</SetupButton>
+                        )}
+                        {!isScoutingMode && !currentBatter && gameMode !== 'opp_pitcher' && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Opponent Lineup</SetupButton>
                         )}
-                        {game?.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0 && (
+                        {!isScoutingMode && game?.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0 && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/my-lineup?from=live`)}>
                                 Setup My Team Lineup
                             </SetupButton>
@@ -735,6 +804,7 @@ const LiveGame: React.FC = () => {
                     currentBattingOrder={currentBattingOrder}
                     onBatterSelected={actions.handleBatterSelected}
                     onClose={() => setShowBatterSelector(false)}
+                    teamSide={isScoutingMode ? (scoutingBattingSide as 'home' | 'away') : undefined}
                 />
             )}
 

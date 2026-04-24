@@ -18,13 +18,16 @@ export default function NewGameScreen() {
     const [selectedTeamId, setSelectedTeamId] = useState<string>('');
     const [isHomeGame, setIsHomeGame] = useState(true);
     const [opponentName, setOpponentName] = useState('');
+    const [scoutingHomeTeam, setScoutingHomeTeam] = useState('');
     const [lineupSize, setLineupSize] = useState('9');
     const [totalInnings, setTotalInnings] = useState('7');
-    const [chartingMode, setChartingMode] = useState<'our_pitcher' | 'opp_pitcher' | 'both'>('our_pitcher');
+    const [chartingMode, setChartingMode] = useState<'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting'>('our_pitcher');
     const [gameDate, setGameDate] = useState(new Date().toISOString().split('T')[0]);
     const [gameTime, setGameTime] = useState('18:00');
     const [location, setLocation] = useState('');
     const [creating, setCreating] = useState(false);
+
+    const isScoutingMode = chartingMode === 'scouting';
 
     useEffect(() => {
         dispatch(fetchAllTeams()).finally(() => setLoadingTeams(false));
@@ -55,7 +58,16 @@ export default function NewGameScreen() {
             Alert.alert('Missing Info', 'Please select your team');
             return;
         }
-        if (!opponentName.trim()) {
+        if (isScoutingMode) {
+            if (!opponentName.trim()) {
+                Alert.alert('Missing Info', 'Please enter the away team name');
+                return;
+            }
+            if (!scoutingHomeTeam.trim()) {
+                Alert.alert('Missing Info', 'Please enter the home team name');
+                return;
+            }
+        } else if (!opponentName.trim()) {
             Alert.alert('Missing Info', 'Please enter the opponent name');
             return;
         }
@@ -66,17 +78,22 @@ export default function NewGameScreen() {
             const newGame = await dispatch(
                 createGame({
                     home_team_id: selectedTeamId,
-                    opponent_name: opponentName.trim(),
+                    opponent_name: opponentName.trim() || undefined,
+                    scouting_home_team: isScoutingMode ? scoutingHomeTeam.trim() : undefined,
                     is_home_game: isHomeGame,
                     lineup_size: parseInt(lineupSize, 10),
                     total_innings: parseInt(totalInnings, 10),
                     charting_mode: chartingMode,
                     game_date: gameDateTime.toISOString(),
                     location: location.trim() || undefined,
-                })
+                } as Parameters<typeof createGame>[0])
             ).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            router.replace(`/game/${newGame.id}/my-lineup` as any);
+            if (isScoutingMode) {
+                router.replace(`/game/${newGame.id}/opp-lineup` as any);
+            } else {
+                router.replace(`/game/${newGame.id}/my-lineup` as any);
+            }
         } catch {
             Alert.alert('Error', 'Failed to create game');
         } finally {
@@ -134,22 +151,26 @@ export default function NewGameScreen() {
                             ))}
                         </View>
 
-                        {/* Home / Away */}
-                        <Text variant="labelLarge" style={styles.sectionLabel}>
-                            Your team is playing:
-                        </Text>
-                        <SegmentedButtons
-                            value={isHomeGame ? 'home' : 'away'}
-                            onValueChange={(value) => {
-                                Haptics.selectionAsync();
-                                setIsHomeGame(value === 'home');
-                            }}
-                            buttons={[
-                                { value: 'home', label: 'Home' },
-                                { value: 'away', label: 'Away' },
-                            ]}
-                            style={styles.segmented}
-                        />
+                        {/* Home / Away — hidden in scouting mode */}
+                        {!isScoutingMode && (
+                            <>
+                                <Text variant="labelLarge" style={styles.sectionLabel}>
+                                    Your team is playing:
+                                </Text>
+                                <SegmentedButtons
+                                    value={isHomeGame ? 'home' : 'away'}
+                                    onValueChange={(value) => {
+                                        Haptics.selectionAsync();
+                                        setIsHomeGame(value === 'home');
+                                    }}
+                                    buttons={[
+                                        { value: 'home', label: 'Home' },
+                                        { value: 'away', label: 'Away' },
+                                    ]}
+                                    style={styles.segmented}
+                                />
+                            </>
+                        )}
 
                         {/* Lineup Size */}
                         <Text variant="labelLarge" style={styles.sectionLabel}>
@@ -191,31 +212,53 @@ export default function NewGameScreen() {
 
                         {/* Charting Mode */}
                         <Text variant="labelLarge" style={styles.sectionLabel}>
-                            Chart pitches for:
+                            Charting Mode
                         </Text>
                         <SegmentedButtons
                             value={chartingMode}
                             onValueChange={(value) => {
                                 Haptics.selectionAsync();
-                                setChartingMode(value as 'our_pitcher' | 'opp_pitcher' | 'both');
+                                setChartingMode(value as 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting');
                             }}
                             buttons={[
-                                { value: 'our_pitcher', label: 'Our Pitcher' },
+                                { value: 'our_pitcher', label: 'Our P' },
                                 { value: 'both', label: 'Both' },
-                                { value: 'opp_pitcher', label: 'Opp Pitcher' },
+                                { value: 'opp_pitcher', label: 'Opp P' },
+                                { value: 'scouting', label: '🔍 Scout' },
                             ]}
                             style={styles.segmented}
                         />
 
-                        {/* Opponent */}
-                        <TextInput
-                            label="Opponent Name"
-                            value={opponentName}
-                            onChangeText={setOpponentName}
-                            mode="outlined"
-                            placeholder="e.g., Tigers, Eagles"
-                            style={styles.input}
-                        />
+                        {/* Team names — conditional based on scouting mode */}
+                        {isScoutingMode ? (
+                            <>
+                                <TextInput
+                                    label="Away Team"
+                                    value={opponentName}
+                                    onChangeText={setOpponentName}
+                                    mode="outlined"
+                                    placeholder="e.g., Eagles"
+                                    style={styles.input}
+                                />
+                                <TextInput
+                                    label="Home Team"
+                                    value={scoutingHomeTeam}
+                                    onChangeText={setScoutingHomeTeam}
+                                    mode="outlined"
+                                    placeholder="e.g., Tigers"
+                                    style={styles.input}
+                                />
+                            </>
+                        ) : (
+                            <TextInput
+                                label="Opponent Name"
+                                value={opponentName}
+                                onChangeText={setOpponentName}
+                                mode="outlined"
+                                placeholder="e.g., Tigers, Eagles"
+                                style={styles.input}
+                            />
+                        )}
 
                         {/* Date */}
                         <TextInput
@@ -251,13 +294,15 @@ export default function NewGameScreen() {
                         <Button
                             mode="contained"
                             onPress={handleCreate}
-                            disabled={!selectedTeamId || !opponentName.trim() || creating}
+                            disabled={
+                                !selectedTeamId || !opponentName.trim() || (isScoutingMode && !scoutingHomeTeam.trim()) || creating
+                            }
                             loading={creating}
                             style={styles.createButton}
                             contentStyle={styles.createButtonContent}
                             icon="baseball"
                         >
-                            Create Game
+                            {isScoutingMode ? 'Start Scouting' : 'Create Game'}
                         </Button>
                     </>
                 )}

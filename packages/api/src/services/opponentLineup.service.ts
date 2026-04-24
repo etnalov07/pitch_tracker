@@ -9,7 +9,7 @@ export class OpponentLineupService {
     }
 
     async createPlayer(gameId: string, playerData: Partial<OpponentLineupPlayer>): Promise<OpponentLineupPlayer> {
-        const { player_name, batting_order, position, bats = 'R', is_starter = true, inning_entered } = playerData;
+        const { player_name, batting_order, position, bats = 'R', is_starter = true, inning_entered, team_side } = playerData;
 
         if (!player_name || !batting_order) {
             throw new Error('player_name and batting_order are required');
@@ -22,10 +22,10 @@ export class OpponentLineupService {
 
         const id = uuidv4();
         const result = await query(
-            `INSERT INTO opponent_lineup (id, game_id, player_name, batting_order, position, bats, is_starter, inning_entered)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            `INSERT INTO opponent_lineup (id, game_id, player_name, batting_order, position, bats, is_starter, inning_entered, team_side)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
              RETURNING *`,
-            [id, gameId, player_name, batting_order, position, bats, is_starter, inning_entered]
+            [id, gameId, player_name, batting_order, position, bats, is_starter, inning_entered, team_side ?? null]
         );
 
         return result.rows[0];
