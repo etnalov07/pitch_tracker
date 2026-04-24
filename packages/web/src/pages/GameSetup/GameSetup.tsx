@@ -136,9 +136,9 @@ const GameSetup: React.FC = () => {
                 throw new Error('Failed to create game');
             }
 
-            // Scouting mode skips the my-lineup step — go straight to the scouting opponent lineup setup
+            // Scouting mode: go straight to the live game (add players inline during the game)
             if (isScoutingMode) {
-                navigate(`/game/${newGame.id}/opp-lineup`);
+                navigate(`/game/${newGame.id}`);
             } else {
                 navigate(`/game/${newGame.id}/my-lineup`);
             }

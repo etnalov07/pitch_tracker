@@ -554,7 +554,7 @@ const LiveGame: React.FC = () => {
                                       : 'Select the opponent batter to continue.'}
                         </SetupText>
                         {isScoutingMode && (
-                            <SetupButton onClick={() => navigate(`/game/${gameId}/opp-lineup`)}>Setup Scouting Lineups</SetupButton>
+                            <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Lineups</SetupButton>
                         )}
                         {!isScoutingMode && !currentBatter && gameMode !== 'opp_pitcher' && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Opponent Lineup</SetupButton>
