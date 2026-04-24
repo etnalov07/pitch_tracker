@@ -313,6 +313,42 @@
   - ~~Coaches can be assigned to one or more teams~~
 - ~~Useful for travel ball organizations managing multiple age groups or squads~~
 
+### 24) Revisit Charts — Heatmap & Batter Chart
+- Review and improve the existing heatmap and batter breakdown chart visualizations
+- **Heatmap**:
+  - Evaluate zone size, color gradient, and label readability
+  - Consider pitch-type filter on the live game heatmap (currently only on pitcher profile)
+  - Ensure LHH/RHH mirroring is consistent across web and mobile
+- **Batter Chart** (BatterBreakdownView):
+  - Revisit spray chart and pitch location heatmap per batter
+  - Improve expand/collapse UX and chart sizing on mobile
+  - Consider adding swings-and-misses overlay vs. called strikes
+- Verify parity between web and mobile chart rendering
+
+### 25) Pitcher Quick Reference Modal (Live Game)
+- Add a "Stats" button in the live game pitch chart UI for the current pitcher
+- Tapping/clicking opens a modal showing in-game stats for the current pitcher:
+  - **Total pitches** thrown this game
+  - **Per pitch type** breakdown table: Pitch Type | Count | Balls | Strikes | Strike %
+  - Optionally: avg velocity per pitch type if velocity data is present
+- Modal is read-only, informational — no edits, just a quick reference mid-game
+- Button placement: near the pitcher display row in the main panel
+- Both web and mobile
+
+### 26) Player Invite Email
+- Add email delivery for player team invitations (current flow only generates a copyable link)
+- Coach enters player's email address on the roster/invite screen
+- System sends an invite email containing:
+  - Team name and coach name
+  - Unique join link with expiration
+  - Brief instructions for creating an account
+- Backend: integrate email service (SendGrid or AWS SES)
+  - New env vars: `EMAIL_FROM`, `SENDGRID_API_KEY` or `AWS_SES_*`
+  - New service: `emailService.sendInvite(to, inviteToken, teamName, coachName)`
+- Track invite status on the roster page: **Pending** / **Accepted** / **Expired**
+- Resend button re-sends the email (generates a new token, invalidates old one)
+- Player receives email → clicks link → account creation or login → auto-joins team
+
 ### 22) Opponent Scouting Report
 - Allow coaches to create a scouting report for an upcoming opponent team before a game
 - **Scouting report contents**:
