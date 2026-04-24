@@ -182,28 +182,34 @@ export function useLiveGameState() {
                 .getRole(gameId)
                 .then(setGameRole)
                 .catch(() => {});
-            myTeamLineupService
-                .getByGame(gameId)
-                .then((lineup) => {
-                    setMyTeamLineup(lineup || []);
-                    if (lineup && lineup.length > 0) {
-                        const first = lineup.find((p) => p.batting_order === 1 && p.is_starter);
-                        if (first) setCurrentMyBatter((prev) => (prev ? prev : first));
-                    }
-                })
-                .catch(() => {});
         }
     }, [dispatch, gameId]);
 
-    // Load team roster when game team is known
+    // Load my team lineup — skip entirely in scouting mode (both teams are opponents)
+    // Guard game.id === gameId to avoid firing with stale Redux state from a previous game
     useEffect(() => {
-        if (game?.home_team_id) {
+        if (!game?.id || game.id !== gameId || game.charting_mode === 'scouting') return;
+        myTeamLineupService
+            .getByGame(game.id)
+            .then((lineup) => {
+                setMyTeamLineup(lineup || []);
+                if (lineup && lineup.length > 0) {
+                    const first = lineup.find((p) => p.batting_order === 1 && p.is_starter);
+                    if (first) setCurrentMyBatter((prev) => (prev ? prev : first));
+                }
+            })
+            .catch(() => {});
+    }, [game?.id, game?.charting_mode]);
+
+    // Load team roster when game team is known — skip in scouting mode
+    useEffect(() => {
+        if (game?.id === gameId && game?.home_team_id && game?.charting_mode !== 'scouting') {
             teamService
                 .getTeamRoster(game.home_team_id)
                 .then(setTeamRosterPlayers)
                 .catch(() => {});
         }
-    }, [game?.home_team_id]);
+    }, [game?.id, game?.home_team_id, game?.charting_mode, gameId]);
 
     // Load pitcher's pitch types when pitcher changes
     useEffect(() => {

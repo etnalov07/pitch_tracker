@@ -234,7 +234,6 @@ export default function LiveGameScreen() {
             dispatch(fetchCurrentInning(id));
             dispatch(fetchGamePitchers(id));
             dispatch(fetchOpponentLineup(id));
-            dispatch(fetchMyTeamLineup(id));
             dispatch(fetchBaseRunners(id));
             dispatch(fetchOpposingPitchers(id));
             gamesApi
@@ -244,12 +243,19 @@ export default function LiveGameScreen() {
         }
     }, [id, dispatch]);
 
+    // Load my team lineup only after game is known and only in non-scouting modes
     useEffect(() => {
-        if (game?.home_team_id) {
+        if (id && game?.id === id && game.charting_mode !== 'scouting') {
+            dispatch(fetchMyTeamLineup(id));
+        }
+    }, [dispatch, id, game?.id, game?.charting_mode]);
+
+    useEffect(() => {
+        if (game?.id === id && game?.home_team_id && game?.charting_mode !== 'scouting') {
             dispatch(fetchTeamPlayers(game.home_team_id));
             dispatch(fetchTeamPitcherRoster(game.home_team_id));
         }
-    }, [game?.home_team_id, dispatch]);
+    }, [game?.id, game?.home_team_id, game?.charting_mode, dispatch, id]);
 
     // Seed pitch count from game data on load (only once when game first loads)
     useEffect(() => {
@@ -1419,7 +1425,7 @@ export default function LiveGameScreen() {
                                   ? 'Select the opposing pitcher to begin'
                                   : 'Select your batter to begin'}
                         </Text>
-                        {myTeamLineup.length === 0 && (
+                        {myTeamLineup.length === 0 && !isScoutingMode && (
                             <Button
                                 mode="outlined"
                                 onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
@@ -1682,19 +1688,22 @@ export default function LiveGameScreen() {
                 <View style={styles.tabletContent}>
                     <View style={styles.statsPanel}>
                         {renderGameHeader()}
-                        {game.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0 && game.status === 'in_progress' && (
-                            <View style={styles.lineupBanner}>
-                                <Text style={styles.lineupBannerText}>My team lineup not set</Text>
-                                <Button
-                                    mode="contained"
-                                    compact
-                                    onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
-                                    style={styles.lineupBannerBtn}
-                                >
-                                    Set Lineup
-                                </Button>
-                            </View>
-                        )}
+                        {game.charting_mode !== 'our_pitcher' &&
+                            !isScoutingMode &&
+                            myTeamLineup.length === 0 &&
+                            game.status === 'in_progress' && (
+                                <View style={styles.lineupBanner}>
+                                    <Text style={styles.lineupBannerText}>My team lineup not set</Text>
+                                    <Button
+                                        mode="contained"
+                                        compact
+                                        onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
+                                        style={styles.lineupBannerBtn}
+                                    >
+                                        Set Lineup
+                                    </Button>
+                                </View>
+                            )}
                         {renderRunnerOutButton()}
                         {renderAtBatControls()}
                         {game.status === 'in_progress' && (currentPitcher || currentBatter) && (
@@ -1962,19 +1971,22 @@ export default function LiveGameScreen() {
             </View>
             <ScrollView style={styles.phoneContent} contentContainerStyle={styles.phoneContentInner}>
                 {renderGameHeader()}
-                {game.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0 && game.status === 'in_progress' && (
-                    <View style={styles.lineupBanner}>
-                        <Text style={styles.lineupBannerText}>My team lineup not set</Text>
-                        <Button
-                            mode="contained"
-                            compact
-                            onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
-                            style={styles.lineupBannerBtn}
-                        >
-                            Set Lineup
-                        </Button>
-                    </View>
-                )}
+                {game.charting_mode !== 'our_pitcher' &&
+                    !isScoutingMode &&
+                    myTeamLineup.length === 0 &&
+                    game.status === 'in_progress' && (
+                        <View style={styles.lineupBanner}>
+                            <Text style={styles.lineupBannerText}>My team lineup not set</Text>
+                            <Button
+                                mode="contained"
+                                compact
+                                onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
+                                style={styles.lineupBannerBtn}
+                            >
+                                Set Lineup
+                            </Button>
+                        </View>
+                    )}
                 {renderRunnerOutButton()}
                 {renderAtBatControls()}
                 {/* 1. Pitch Type */}

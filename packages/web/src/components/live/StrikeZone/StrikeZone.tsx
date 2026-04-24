@@ -99,36 +99,47 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         setSelectedLocation(null);
     }, [previousPitches.length]);
 
-    // Calculate coordinates from click event
-    const getCoordinatesFromEvent = (e: React.MouseEvent<SVGSVGElement>) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const svgX = ((e.clientX - rect.left) / rect.width) * 300;
-        const svgY = ((e.clientY - rect.top) / rect.height) * 300;
-
-        // Convert to 0-1 coordinates within strike zone
-        const zoneX = (svgX - 105) / 90;
-        const zoneY = (svgY - 100) / 132;
-
-        return { zoneX, zoneY };
+    // Calculate 0-1 strike zone coordinates from a client position
+    const clientToZoneCoords = (clientX: number, clientY: number, rect: DOMRect) => {
+        const svgX = ((clientX - rect.left) / rect.width) * 300;
+        const svgY = ((clientY - rect.top) / rect.height) * 300;
+        return { zoneX: (svgX - 105) / 90, zoneY: (svgY - 100) / 132 };
     };
 
-    // Only handle clicks for pitch location (target is handled by zone clicks)
-    const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
-        // If target zone is already set (or no target support), handle as pitch location
-        if (!onTargetZoneSelect || targetZone) {
-            const { zoneX, zoneY } = getCoordinatesFromEvent(e);
-            if (zoneX >= -0.3 && zoneX <= 1.3 && zoneY >= -0.3 && zoneY <= 1.3) {
-                setSelectedLocation({ x: zoneX, y: zoneY });
-                onLocationSelect(zoneX, zoneY);
-            }
+    const recordLocation = (zoneX: number, zoneY: number) => {
+        if (zoneX >= -0.3 && zoneX <= 1.3 && zoneY >= -0.3 && zoneY <= 1.3) {
+            setSelectedLocation({ x: zoneX, y: zoneY });
+            onLocationSelect(zoneX, zoneY);
         }
     };
 
-    const handleZoneClick = (zone: PitchCallZone, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (onTargetZoneSelect) {
+    // Mouse click — pitch location on SVG background
+    const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
+        if (!onTargetZoneSelect || targetZone) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const { zoneX, zoneY } = clientToZoneCoords(e.clientX, e.clientY, rect);
+            recordLocation(zoneX, zoneY);
+        }
+    };
+
+    // Touch end — pitch location (tablet/touchscreen browsers)
+    const handleTouchEnd = (e: React.TouchEvent<SVGSVGElement>) => {
+        if (!onTargetZoneSelect || targetZone) {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            const rect = e.currentTarget.getBoundingClientRect();
+            const { zoneX, zoneY } = clientToZoneCoords(touch.clientX, touch.clientY, rect);
+            recordLocation(zoneX, zoneY);
+        }
+    };
+
+    const handleZoneClick = (zone: PitchCallZone, e: React.MouseEvent | React.TouchEvent) => {
+        if (!targetZone && onTargetZoneSelect) {
+            e.stopPropagation();
+            if ('preventDefault' in e && e.type === 'touchend') (e as React.TouchEvent).preventDefault();
             onTargetZoneSelect(zone);
         }
+        // If targetZone already set, let event bubble to SVG for pitch location recording
     };
 
     const getPitchColor = (result: string): string => {
@@ -175,7 +186,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         <Container>
             <Title>Strike Zone</Title>
             <ZoneWrapper>
-                <MainSvg viewBox="0 0 300 300" onClick={handleClick}>
+                <MainSvg viewBox="0 0 300 300" onClick={handleClick} onTouchEnd={handleTouchEnd} style={{ touchAction: 'none' }}>
                     {/* Background */}
                     <rect x="0" y="0" width="300" height="300" fill="#f5f5f0" />
 
@@ -202,6 +213,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                 <g
                                     key={zone}
                                     onClick={(e) => handleZoneClick(zone, e)}
+                                    onTouchEnd={(e) => handleZoneClick(zone, e)}
                                     style={{ cursor: isTargetMode || isSelected ? 'pointer' : 'default' }}
                                 >
                                     <rect
@@ -241,6 +253,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                 <g
                                     key={zone}
                                     onClick={(e) => onTargetZoneSelect && handleZoneClick(zone, e)}
+                                    onTouchEnd={(e) => onTargetZoneSelect && handleZoneClick(zone, e)}
                                     style={{ cursor: onTargetZoneSelect && (isTargetMode || isSelected) ? 'pointer' : 'default' }}
                                 >
                                     <rect

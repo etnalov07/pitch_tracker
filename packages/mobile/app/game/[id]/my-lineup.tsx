@@ -44,6 +44,10 @@ export default function MyTeamLineupScreen() {
         dispatch(fetchGameById(id))
             .unwrap()
             .then(async (g) => {
+                if (g.charting_mode === 'scouting') {
+                    router.replace(`/game/${id}/live` as any);
+                    return;
+                }
                 setGame(g);
                 const size = g.lineup_size ?? 9;
                 setLineup(
@@ -58,7 +62,7 @@ export default function MyTeamLineupScreen() {
             })
             .catch(() => Alert.alert('Error', 'Failed to load game'))
             .finally(() => setLoading(false));
-    }, [dispatch, id]);
+    }, [dispatch, id, router]);
 
     const handleChange = (index: number, field: keyof LineupEntry, value: string) => {
         setLineup((prev) => {

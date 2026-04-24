@@ -62,6 +62,10 @@ const MyTeamLineup: React.FC = () => {
         if (!gameId) return;
         Promise.all([gamesApi.getGameById(gameId), null])
             .then(async ([g]) => {
+                if (g.charting_mode === 'scouting') {
+                    navigate(`/game/${gameId}`);
+                    return;
+                }
                 setGame(g);
                 const size = g.lineup_size ?? 9;
                 setLineup(
@@ -76,7 +80,7 @@ const MyTeamLineup: React.FC = () => {
             })
             .catch(() => setError('Failed to load game'))
             .finally(() => setLoading(false));
-    }, [gameId]);
+    }, [gameId, navigate]);
 
     const handlePlayerChange = (index: number, field: keyof LineupEntry, value: string) => {
         setLineup((prev) => {
