@@ -31,7 +31,7 @@ export class PerformanceSummaryController {
                     `SELECT p.pitcher_id, g.home_team_id as team_id
                      FROM pitches p
                      JOIN games g ON p.game_id = g.id
-                     WHERE p.game_id = $1
+                     WHERE p.game_id = $1 AND p.pitcher_id IS NOT NULL
                      GROUP BY p.pitcher_id, g.home_team_id
                      ORDER BY COUNT(*) DESC LIMIT 1`,
                     [sourceId]
