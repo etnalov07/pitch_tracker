@@ -187,16 +187,12 @@ export function useLiveGameActions(state: LiveGameState) {
             if (outsFromPlay > 0) {
                 if (newOutCount >= 3) {
                     setCurrentOuts(0);
-                    if (game?.charting_mode === 'both') {
-                        await advanceInning(0);
-                    } else {
-                        setTeamRunsScored('0');
-                        setInningChangeInfo({
-                            inning: game?.current_inning || 1,
-                            half: game?.inning_half || 'top',
-                        });
-                        setShowInningChange(true);
-                    }
+                    setTeamRunsScored('0');
+                    setInningChangeInfo({
+                        inning: game?.current_inning || 1,
+                        half: game?.inning_half || 'top',
+                    });
+                    setShowInningChange(true);
                 } else {
                     setCurrentOuts(newOutCount);
                     const nextBatter = getNextBatter(opponentLineup, currentBattingOrder);
@@ -550,16 +546,12 @@ export function useLiveGameActions(state: LiveGameState) {
             const newOuts = currentOuts + 1;
             if (newOuts >= 3) {
                 setCurrentOuts(0);
-                if (game?.charting_mode === 'both') {
-                    await advanceInning(0);
-                } else {
-                    setTeamRunsScored('0');
-                    setInningChangeInfo({
-                        inning: game?.current_inning || 1,
-                        half: game?.inning_half || 'top',
-                    });
-                    setShowInningChange(true);
-                }
+                setTeamRunsScored('0');
+                setInningChangeInfo({
+                    inning: game?.current_inning || 1,
+                    half: game?.inning_half || 'top',
+                });
+                setShowInningChange(true);
             } else {
                 setCurrentOuts(newOuts);
             }

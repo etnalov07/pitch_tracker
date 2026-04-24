@@ -259,7 +259,7 @@ const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading, pitcherId })
                     AB-Ending Pitch
                 </LegendItem>
             </Legend>
-            <HintText>Count · Type · Result · Vel · Loc</HintText>
+            <HintText>Count · Type · Result · Vel · Target</HintText>
             {sections.map((section) =>
                 section.batters.length === 0 ? null : (
                     <div key={section.title}>

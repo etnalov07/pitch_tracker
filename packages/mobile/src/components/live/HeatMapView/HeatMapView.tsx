@@ -36,8 +36,8 @@ const PITCH_TYPE_ABBREV: Record<string, string> = {
 // Scale from the 300×300 viewBox used by the live StrikeZone
 const SIZE = 200;
 const S = SIZE / 300;
-const toX = (lx: number) => (113 + lx * 75) * S;
-const toY = (ly: number) => (120 + ly * 110) * S;
+const toX = (lx: number) => (105 + lx * 90) * S;
+const toY = (ly: number) => (100 + ly * 132) * S;
 
 interface Props {
     pitches: PitchLocationData[];
@@ -55,29 +55,29 @@ export default function HeatMapView({ pitches, bats }: Props) {
                 <Rect x={0} y={0} width={SIZE} height={SIZE} fill="#f5f5f0" />
                 {/* Waste area */}
                 <Rect
-                    x={81 * S}
-                    y={85 * S}
-                    width={139 * S}
-                    height={185 * S}
+                    x={73 * S}
+                    y={65 * S}
+                    width={154 * S}
+                    height={202 * S}
                     fill="rgba(200,200,195,0.25)"
                     stroke="#b0b0a8"
                     strokeWidth={1}
                 />
                 {/* Strike zone */}
                 <Rect
-                    x={113 * S}
-                    y={120 * S}
-                    width={75 * S}
-                    height={110 * S}
+                    x={105 * S}
+                    y={100 * S}
+                    width={90 * S}
+                    height={132 * S}
                     fill="rgba(255,255,255,0.9)"
                     stroke="#374151"
                     strokeWidth={1.5}
                 />
                 {/* 3×3 grid lines */}
-                <Line x1={113 * S} y1={156.7 * S} x2={188 * S} y2={156.7 * S} stroke="#d1d5db" strokeWidth={0.5} />
-                <Line x1={113 * S} y1={193.4 * S} x2={188 * S} y2={193.4 * S} stroke="#d1d5db" strokeWidth={0.5} />
-                <Line x1={138 * S} y1={120 * S} x2={138 * S} y2={230 * S} stroke="#d1d5db" strokeWidth={0.5} />
-                <Line x1={163 * S} y1={120 * S} x2={163 * S} y2={230 * S} stroke="#d1d5db" strokeWidth={0.5} />
+                <Line x1={105 * S} y1={144 * S} x2={195 * S} y2={144 * S} stroke="#d1d5db" strokeWidth={0.5} />
+                <Line x1={105 * S} y1={188 * S} x2={195 * S} y2={188 * S} stroke="#d1d5db" strokeWidth={0.5} />
+                <Line x1={135 * S} y1={100 * S} x2={135 * S} y2={232 * S} stroke="#d1d5db" strokeWidth={0.5} />
+                <Line x1={165 * S} y1={100 * S} x2={165 * S} y2={232 * S} stroke="#d1d5db" strokeWidth={0.5} />
                 {/* Pitch dots */}
                 {located.map((p, i) => (
                     <Circle

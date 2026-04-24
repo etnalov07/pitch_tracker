@@ -85,6 +85,7 @@ const PitcherProfile: React.FC = () => {
     const [selectedBullpen, setSelectedBullpen] = useState<BullpenSessionSummary | null>(null);
     const [performanceSummaries, setPerformanceSummaries] = useState<PerformanceSummary[]>([]);
     const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+    const [generatingSummaryId, setGeneratingSummaryId] = useState<string | null>(null);
 
     // Fetch heat zones for career stats (no gameId = all games, optional pitch type filter)
     const { zones: heatZones } = useHeatZones(pitcher_id, undefined, heatZonePitchType);
@@ -123,6 +124,19 @@ const PitcherProfile: React.FC = () => {
 
     const handleViewGame = (gameId: string) => {
         navigate(`/game/${gameId}`);
+    };
+
+    const handleGenerateSummary = async (gameId: string) => {
+        setGeneratingSummaryId(gameId);
+        try {
+            const summary = await performanceSummaryService.getSummary('game', gameId);
+            setPerformanceSummaries((prev) => {
+                const exists = prev.some((s) => s.id === summary.id);
+                return exists ? prev.map((s) => (s.id === summary.id ? summary : s)) : [summary, ...prev];
+            });
+        } finally {
+            setGeneratingSummaryId(null);
+        }
     };
 
     if (loading) {
@@ -230,27 +244,27 @@ const PitcherProfile: React.FC = () => {
                         </PitchTypeFilter>
                     )}
                     <HeatZoneContent>
-                        <svg viewBox="0 0 300 280" style={{ width: '100%', maxWidth: '350px' }}>
+                        <svg viewBox="0 0 300 300" style={{ width: '100%', maxWidth: '350px' }}>
                             {/* Background */}
-                            <rect x="0" y="0" width="300" height="280" fill="#f5f5f0" />
-                            {/* Strike zone grid */}
-                            <g transform="translate(85, 30)">
-                                <rect x="0" y="0" width="130" height="150" fill="rgba(255,255,255,0.85)" />
+                            <rect x="0" y="0" width="300" height="300" fill="#f5f5f0" />
+                            {/* Strike zone grid — coordinates match HeatZoneOverlay constants */}
+                            <g transform="translate(105, 100)">
+                                <rect x="0" y="0" width="90" height="132" fill="rgba(255,255,255,0.85)" />
                                 {[0, 1, 2].map((row) =>
                                     [0, 1, 2].map((col) => (
                                         <rect
                                             key={`cell-${row}-${col}`}
-                                            x={col * (130 / 3)}
-                                            y={row * (150 / 3)}
-                                            width={130 / 3}
-                                            height={150 / 3}
+                                            x={col * 30}
+                                            y={row * 44}
+                                            width={30}
+                                            height={44}
                                             fill="rgba(230, 230, 225, 0.6)"
                                             stroke="#a0a0a0"
                                             strokeWidth="1"
                                         />
                                     ))
                                 )}
-                                <rect x="0" y="0" width="130" height="150" fill="none" stroke="#808080" strokeWidth="2" />
+                                <rect x="0" y="0" width="90" height="132" fill="none" stroke="#808080" strokeWidth="2" />
                             </g>
                             {/* Heat zone overlay */}
                             <HeatZoneOverlay zones={heatZones} visible={showHeatZones} />
@@ -276,7 +290,12 @@ const PitcherProfile: React.FC = () => {
                     <SectionHeader>
                         <SectionTitle>Game Logs</SectionTitle>
                     </SectionHeader>
-                    <GameLogTable gameLogs={profile.game_logs} onGameSelect={handleGameSelect} />
+                    <GameLogTable
+                        gameLogs={profile.game_logs}
+                        onGameSelect={handleGameSelect}
+                        onGenerateSummary={handleGenerateSummary}
+                        generatingSummaryId={generatingSummaryId}
+                    />
                 </GameLogsSection>
 
                 <GameLogsSection>

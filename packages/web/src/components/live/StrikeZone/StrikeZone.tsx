@@ -26,23 +26,23 @@ function getStrikeZoneGrid(effectiveSide: 'R' | 'L'): { zone: PitchCallZone; row
 }
 
 // Waste zone SVG positions — swap left/right for LHH
-// Strike zone is at (113, 120) with width 75, height 110
+// Strike zone is at (105, 100) with width 90, height 132
 // "in" zones are on the batter's side, "out" zones are away
 function getWasteZones(effectiveSide: 'R' | 'L') {
     const flip = effectiveSide === 'R';
-    const L = { x: 81, w: 32 }; // left position
-    const R = { x: 188, w: 32 }; // right position
+    const L = { x: 73, w: 32 }; // left position
+    const R = { x: 195, w: 32 }; // right position
     const inPos = flip ? R : L;
     const outPos = flip ? L : R;
     return [
-        { zone: 'W-high-in' as PitchCallZone, x: inPos.x, y: 85, w: inPos.w, h: 35, label: 'HI' },
-        { zone: 'W-high' as PitchCallZone, x: 126, y: 85, w: 50, h: 35, label: 'HIGH' },
-        { zone: 'W-high-out' as PitchCallZone, x: outPos.x, y: 85, w: outPos.w, h: 35, label: 'HO' },
-        { zone: 'W-in' as PitchCallZone, x: inPos.x, y: 120, w: inPos.w, h: 110, label: 'IN' },
-        { zone: 'W-out' as PitchCallZone, x: outPos.x, y: 120, w: outPos.w, h: 110, label: 'OUT' },
-        { zone: 'W-low-in' as PitchCallZone, x: inPos.x, y: 230, w: inPos.w, h: 35, label: 'LI' },
-        { zone: 'W-low' as PitchCallZone, x: 126, y: 230, w: 50, h: 35, label: 'LOW' },
-        { zone: 'W-low-out' as PitchCallZone, x: outPos.x, y: 230, w: outPos.w, h: 35, label: 'LO' },
+        { zone: 'W-high-in' as PitchCallZone, x: inPos.x, y: 65, w: inPos.w, h: 35, label: 'HI' },
+        { zone: 'W-high' as PitchCallZone, x: 125, y: 65, w: 50, h: 35, label: 'HIGH' },
+        { zone: 'W-high-out' as PitchCallZone, x: outPos.x, y: 65, w: outPos.w, h: 35, label: 'HO' },
+        { zone: 'W-in' as PitchCallZone, x: inPos.x, y: 100, w: inPos.w, h: 132, label: 'IN' },
+        { zone: 'W-out' as PitchCallZone, x: outPos.x, y: 100, w: outPos.w, h: 132, label: 'OUT' },
+        { zone: 'W-low-in' as PitchCallZone, x: inPos.x, y: 232, w: inPos.w, h: 35, label: 'LI' },
+        { zone: 'W-low' as PitchCallZone, x: 125, y: 232, w: 50, h: 35, label: 'LOW' },
+        { zone: 'W-low-out' as PitchCallZone, x: outPos.x, y: 232, w: outPos.w, h: 35, label: 'LO' },
     ];
 }
 
@@ -106,8 +106,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         const svgY = ((e.clientY - rect.top) / rect.height) * 300;
 
         // Convert to 0-1 coordinates within strike zone
-        const zoneX = (svgX - 113) / 75;
-        const zoneY = (svgY - 120) / 110;
+        const zoneX = (svgX - 105) / 90;
+        const zoneY = (svgY - 100) / 132;
 
         return { zoneX, zoneY };
     };
@@ -150,13 +150,13 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
     // Convert 0-1 coordinates to SVG coordinates for pitch markers
     const toSvgCoords = (x: number, y: number) => ({
-        x: 113 + x * 75,
-        y: 120 + y * 110,
+        x: 105 + x * 90,
+        y: 100 + y * 132,
     });
 
     // Determine batter position
     const effectiveSide = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
-    const batterX = effectiveSide === 'R' ? 245 : 55;
+    const batterX = effectiveSide === 'R' ? 253 : 47;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
 
     // Get batter-relative zone positions (physically mirrored for LHH)
@@ -164,8 +164,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     const wasteZones = getWasteZones(effectiveSide);
 
     // Zone cell dimensions
-    const cellW = 75 / 3;
-    const cellH = 110 / 3;
+    const cellW = 90 / 3;
+    const cellH = 132 / 3;
 
     // Colors
     const AMBER = '#F5A623';
@@ -230,9 +230,9 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         })}
 
                     {/* Strike zone - 3x3 grid */}
-                    <g transform="translate(113, 120)">
+                    <g transform="translate(105, 100)">
                         {/* Zone background */}
-                        <rect x="0" y="0" width="75" height="110" fill="rgba(255,255,255,0.85)" />
+                        <rect x="0" y="0" width="90" height="132" fill="rgba(255,255,255,0.85)" />
 
                         {/* Grid cells (clickable for target zone) */}
                         {strikeZoneGrid.map(({ zone, row, col }) => {
@@ -271,7 +271,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         })}
 
                         {/* Outer border */}
-                        <rect x="0" y="0" width="75" height="110" fill="none" stroke="#808080" strokeWidth="2" />
+                        <rect x="0" y="0" width="90" height="132" fill="none" stroke="#808080" strokeWidth="2" />
                     </g>
 
                     {/* Heat zone overlay */}
@@ -286,7 +286,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                 <circle
                                     cx={coords.x}
                                     cy={coords.y}
-                                    r="11"
+                                    r="13"
                                     fill={getPitchColor(pitch.pitch_result)}
                                     stroke="white"
                                     strokeWidth="2"
@@ -309,25 +309,25 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                         <circle
                                             cx={coords.x}
                                             cy={coords.y}
-                                            r="12"
+                                            r="14"
                                             fill="none"
                                             stroke={AMBER}
                                             strokeWidth="3"
                                             strokeDasharray="6,3"
                                         />
                                         <line
-                                            x1={coords.x - 6}
+                                            x1={coords.x - 7}
                                             y1={coords.y}
-                                            x2={coords.x + 6}
+                                            x2={coords.x + 7}
                                             y2={coords.y}
                                             stroke={AMBER}
                                             strokeWidth="2"
                                         />
                                         <line
                                             x1={coords.x}
-                                            y1={coords.y - 6}
+                                            y1={coords.y - 7}
                                             x2={coords.x}
-                                            y2={coords.y + 6}
+                                            y2={coords.y + 7}
                                             stroke={AMBER}
                                             strokeWidth="2"
                                         />
@@ -343,7 +343,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                             <circle
                                 cx={toSvgCoords(selectedLocation.x, selectedLocation.y).x}
                                 cy={toSvgCoords(selectedLocation.x, selectedLocation.y).y}
-                                r="12"
+                                r="14"
                                 fill={theme.colors.red[600]}
                                 stroke="white"
                                 strokeWidth="3"

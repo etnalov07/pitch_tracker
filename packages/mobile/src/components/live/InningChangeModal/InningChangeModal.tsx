@@ -9,6 +9,7 @@ interface InningChangeModalProps {
     onRunsChange: (value: string) => void;
     onConfirm: () => void;
     isTablet?: boolean;
+    showRunsInput?: boolean;
 }
 
 const InningChangeModal: React.FC<InningChangeModalProps> = ({
@@ -18,6 +19,7 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
     onRunsChange,
     onConfirm,
     isTablet,
+    showRunsInput = true,
 }) => {
     return (
         <Modal visible={visible} onDismiss={() => {}} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
@@ -28,16 +30,20 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
                 3 outs recorded.{'\n'}
                 {inningChangeInfo && `End of ${inningChangeInfo.half === 'top' ? 'Top' : 'Bottom'} ${inningChangeInfo.inning}`}
             </Text>
-            <Text style={styles.runsLabel}>Opponent runs scored this inning:</Text>
-            <TextInput
-                style={styles.runsInput}
-                value={teamRunsScored}
-                onChangeText={onRunsChange}
-                keyboardType="number-pad"
-                selectTextOnFocus
-            />
+            {showRunsInput && (
+                <>
+                    <Text style={styles.runsLabel}>Opponent runs scored this inning:</Text>
+                    <TextInput
+                        style={styles.runsInput}
+                        value={teamRunsScored}
+                        onChangeText={onRunsChange}
+                        keyboardType="number-pad"
+                        selectTextOnFocus
+                    />
+                </>
+            )}
             <Button mode="contained" onPress={onConfirm} style={styles.inningChangeButton}>
-                Next Inning
+                Next Half Inning
             </Button>
         </Modal>
     );

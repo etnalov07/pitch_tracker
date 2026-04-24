@@ -754,6 +754,7 @@ const LiveGame: React.FC = () => {
                     teamRunsScored={teamRunsScored}
                     onTeamRunsChange={setTeamRunsScored}
                     onConfirm={actions.handleInningChangeConfirm}
+                    showRunsInput={game?.charting_mode !== 'both'}
                 />
             )}
 

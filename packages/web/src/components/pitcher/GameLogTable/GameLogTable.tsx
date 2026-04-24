@@ -1,13 +1,15 @@
 import { PitcherGameLog } from '@pitch-tracker/shared';
 import React from 'react';
-import { Table, Th, Row, Td, ViewButton, EmptyState } from './styles';
+import { Table, Th, Row, Td, ViewButton, GenerateButton, EmptyState } from './styles';
 
 interface GameLogTableProps {
     gameLogs: PitcherGameLog[];
     onGameSelect: (game: PitcherGameLog) => void;
+    onGenerateSummary?: (gameId: string) => Promise<void>;
+    generatingSummaryId?: string | null;
 }
 
-const GameLogTable: React.FC<GameLogTableProps> = ({ gameLogs, onGameSelect }) => {
+const GameLogTable: React.FC<GameLogTableProps> = ({ gameLogs, onGameSelect, onGenerateSummary, generatingSummaryId }) => {
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
             month: 'short',
@@ -59,6 +61,18 @@ const GameLogTable: React.FC<GameLogTableProps> = ({ gameLogs, onGameSelect }) =
                             >
                                 View
                             </ViewButton>
+                            {onGenerateSummary && (
+                                <GenerateButton
+                                    isLoading={generatingSummaryId === log.game_id}
+                                    disabled={generatingSummaryId === log.game_id}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onGenerateSummary(log.game_id);
+                                    }}
+                                >
+                                    {generatingSummaryId === log.game_id ? 'Generating…' : 'Gen Summary'}
+                                </GenerateButton>
+                            )}
                         </Td>
                     </Row>
                 ))}

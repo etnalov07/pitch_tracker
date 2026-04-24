@@ -245,7 +245,7 @@ export default function BatterBreakdownView({ breakdown, title = 'Batter Breakdo
                     </View>
                 </View>
                 <Divider style={styles.divider} />
-                <Text style={styles.pitchDotHint}>Count · Type · Result · Vel · Loc</Text>
+                <Text style={styles.pitchDotHint}>Count · Type · Result · Vel · Target</Text>
                 {[...breakdown]
                     .sort((a, b) => a.batting_order - b.batting_order)
                     .map((batter, idx) => (

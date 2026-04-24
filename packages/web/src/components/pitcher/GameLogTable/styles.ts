@@ -57,6 +57,23 @@ export const ViewButton = styled.button({
     },
 });
 
+export const GenerateButton = styled.button<{ isLoading?: boolean }>((props) => ({
+    background: 'none',
+    border: `1px solid ${theme.colors.green[400]}`,
+    color: theme.colors.green[700],
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
+    cursor: props.isLoading ? 'not-allowed' : 'pointer',
+    fontWeight: theme.fontWeight.medium,
+    opacity: props.isLoading ? 0.6 : 1,
+    marginLeft: theme.spacing.xs,
+
+    '&:hover': {
+        background: props.isLoading ? 'none' : theme.colors.green[50],
+    },
+}));
+
 export const EmptyState = styled.div({
     textAlign: 'center',
     padding: theme.spacing.xl,

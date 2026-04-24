@@ -459,13 +459,9 @@ export default function LiveGameScreen() {
 
                 if (outsFromPlay > 0 && newOutCount >= 3) {
                     setCurrentOuts(0);
-                    if (game?.charting_mode === 'both') {
-                        await advanceInningWithRuns(0);
-                    } else {
-                        setTeamRunsScored('0');
-                        setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
-                        setShowInningChange(true);
-                    }
+                    setTeamRunsScored('0');
+                    setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
+                    setShowInningChange(true);
                 } else {
                     if (outsFromPlay > 0) setCurrentOuts(newOutCount);
                     if (gameMode === 'opp_pitcher') {
@@ -1008,13 +1004,9 @@ export default function LiveGameScreen() {
                 const newOuts = currentOuts + 1;
                 setCurrentOuts(newOuts);
                 if (newOuts >= 3) {
-                    if (game?.charting_mode === 'both') {
-                        await advanceInningWithRuns(0);
-                    } else {
-                        setTeamRunsScored('0');
-                        setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
-                        setShowInningChange(true);
-                    }
+                    setTeamRunsScored('0');
+                    setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
+                    setShowInningChange(true);
                 }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {
@@ -1440,6 +1432,7 @@ export default function LiveGameScreen() {
                 onRunsChange={setTeamRunsScored}
                 onConfirm={handleInningChangeConfirm}
                 isTablet={isTablet}
+                showRunsInput={game?.charting_mode !== 'both'}
             />
             <TeamAtBatModal
                 visible={showTeamAtBat}
