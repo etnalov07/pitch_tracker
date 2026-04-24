@@ -852,9 +852,20 @@ export default function LiveGameScreen() {
             setChangingCallId(null);
             setPendingShakeCount(0);
             if (result.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            if (selectedResult === 'hit_by_pitch') await handleEndAtBat('hit_by_pitch', finalPitch);
-            else if (newBalls >= 4) await handleEndAtBat('walk', finalPitch);
-            else if (newStrikes >= 3) {
+            if (selectedResult === 'hit_by_pitch' || newBalls >= 4) {
+                const endResult = selectedResult === 'hit_by_pitch' ? 'hit_by_pitch' : 'walk';
+                const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
+                if (hasRunnersOnBase) {
+                    setPendingHitResult(endResult);
+                    setShowRunnerAdvancementModal(true);
+                } else {
+                    const { suggestedRunners, suggestedRuns } = getSuggestedAdvancement(baseRunners, endResult);
+                    dispatch(setBaseRunners(suggestedRunners));
+                    if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: suggestedRunners }));
+                    await updateScoreForRuns(suggestedRuns);
+                    await handleEndAtBat(endResult, finalPitch, { rbi: suggestedRuns, runs_scored: suggestedRuns });
+                }
+            } else if (newStrikes >= 3) {
                 // MLB rule: batter can reach on an uncaught third strike only when 1st base
                 // is unoccupied, OR when there are 2 outs. Prompt the user to distinguish.
                 const canDropThird = !baseRunners.first || currentOuts >= 2;

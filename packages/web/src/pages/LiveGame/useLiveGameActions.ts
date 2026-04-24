@@ -342,10 +342,21 @@ export function useLiveGameActions(state: LiveGameState) {
             setVelocity('');
             setPitchResult('ball');
 
-            if (pitchResult === 'hit_by_pitch') {
-                handleEndAtBat('hit_by_pitch');
-            } else if (newBalls >= 4) {
-                handleEndAtBat('walk');
+            if (pitchResult === 'hit_by_pitch' || newBalls >= 4) {
+                const endResult = pitchResult === 'hit_by_pitch' ? 'hit_by_pitch' : 'walk';
+                const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
+                if (hasRunnersOnBase) {
+                    setPendingHitResult(endResult);
+                    setShowRunnerAdvancementModal(true);
+                } else {
+                    const { suggestedRunners, suggestedRuns } = getSuggestedAdvancement(baseRunners, endResult);
+                    if (gameId) {
+                        await gamesApi.updateBaseRunners(gameId, suggestedRunners);
+                        setBaseRunners(suggestedRunners);
+                        await updateScoreForRuns(suggestedRuns);
+                    }
+                    await handleEndAtBat(endResult, { rbi: suggestedRuns, runs_scored: suggestedRuns });
+                }
             } else if (newStrikes >= 3) {
                 // MLB rule: batter can reach on an uncaught third strike only when 1st base
                 // is unoccupied, OR when there are 2 outs. Prompt the scorer to distinguish.

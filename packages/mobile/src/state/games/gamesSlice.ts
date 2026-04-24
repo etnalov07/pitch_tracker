@@ -432,6 +432,10 @@ const gamesSlice = createSlice({
             .addCase(fetchGameById.fulfilled, (state, action) => {
                 state.loading = false;
                 state.selectedGame = action.payload;
+                // Keep currentGameState.game in sync so gameMode derived from it stays current
+                if (state.currentGameState?.game?.id === action.payload.id) {
+                    state.currentGameState = { ...state.currentGameState, game: action.payload };
+                }
             })
             .addCase(fetchGameById.rejected, (state, action) => {
                 state.loading = false;
