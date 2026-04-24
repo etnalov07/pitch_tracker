@@ -134,7 +134,19 @@ function formatInning(num: number, half: string): string {
 
 function getLocationLabel(zone?: PitchCallZone, bats?: string): string | null {
     if (!zone) return null;
-    if (zone.startsWith('W-')) return 'W';
+    if (zone.startsWith('W-')) {
+        const parts = zone.slice(2).split('-');
+        if (parts.length === 1) {
+            if (parts[0] === 'high') return 'High';
+            if (parts[0] === 'low') return 'Low';
+            if (parts[0] === 'in') return 'In';
+            if (parts[0] === 'out') return 'Out';
+        } else {
+            const v = parts[0] === 'high' ? 'Hi' : 'Lo';
+            const h = parts[1] === 'in' ? 'In' : 'Out';
+            return `${v}-${h}`;
+        }
+    }
     const col = parseInt(zone.split('-')[1]);
     if (isNaN(col)) return null;
     if (col === 1) return 'Mid';
