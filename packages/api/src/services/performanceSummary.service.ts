@@ -58,11 +58,19 @@ interface HistoricalBaseline {
 }
 
 export class PerformanceSummaryService {
-    async getSummary(sourceType: SummarySourceType, sourceId: string): Promise<PerformanceSummary | null> {
-        const result = await query('SELECT * FROM performance_summaries WHERE source_type = $1 AND source_id = $2', [
-            sourceType,
-            sourceId,
-        ]);
+    async getSummary(sourceType: SummarySourceType, sourceId: string, pitcherId?: string): Promise<PerformanceSummary | null> {
+        if (pitcherId) {
+            const result = await query(
+                'SELECT * FROM performance_summaries WHERE source_type = $1 AND source_id = $2 AND pitcher_id = $3',
+                [sourceType, sourceId, pitcherId]
+            );
+            if (result.rows.length === 0) return null;
+            return this.mapRow(result.rows[0]);
+        }
+        const result = await query(
+            'SELECT * FROM performance_summaries WHERE source_type = $1 AND source_id = $2 ORDER BY created_at DESC LIMIT 1',
+            [sourceType, sourceId]
+        );
         if (result.rows.length === 0) return null;
         return this.mapRow(result.rows[0]);
     }
@@ -90,7 +98,7 @@ export class PerformanceSummaryService {
         teamId: string
     ): Promise<PerformanceSummary> {
         // Check for existing summary
-        const existing = await this.getSummary(sourceType, sourceId);
+        const existing = await this.getSummary(sourceType, sourceId, pitcherId);
         if (existing) {
             return existing;
         }
@@ -156,7 +164,7 @@ export class PerformanceSummaryService {
             console.error('Failed to generate AI narrative:', err);
         });
 
-        const summary = await this.getSummary(sourceType, sourceId);
+        const summary = await this.getSummary(sourceType, sourceId, pitcherId);
         return { ...summary!, pitcher_name: pitcherName };
     }
 

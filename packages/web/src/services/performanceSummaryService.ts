@@ -2,8 +2,11 @@ import { PerformanceSummary, SummarySourceType, BatterBreakdown } from '@pitch-t
 import api from './api';
 
 export const performanceSummaryService = {
-    getSummary: async (sourceType: SummarySourceType, sourceId: string): Promise<PerformanceSummary> => {
-        const response = await api.get<{ summary: PerformanceSummary }>(`/performance-summaries/${sourceType}/${sourceId}`);
+    getSummary: async (sourceType: SummarySourceType, sourceId: string, pitcherId?: string): Promise<PerformanceSummary> => {
+        const params = pitcherId ? { pitcher_id: pitcherId } : undefined;
+        const response = await api.get<{ summary: PerformanceSummary }>(`/performance-summaries/${sourceType}/${sourceId}`, {
+            params,
+        });
         return response.data.summary;
     },
 

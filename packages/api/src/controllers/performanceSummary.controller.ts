@@ -14,8 +14,11 @@ export class PerformanceSummaryController {
                 return;
             }
 
+            // Caller may pass pitcher_id explicitly (e.g. from a pitcher profile page)
+            const queryPitcherId = req.query.pitcher_id as string | undefined;
+
             // Try to fetch existing summary
-            let summary = await performanceSummaryService.getSummary(sourceType, sourceId);
+            let summary = await performanceSummaryService.getSummary(sourceType, sourceId, queryPitcherId);
             if (summary) {
                 res.status(200).json({ summary });
                 return;
@@ -26,22 +29,33 @@ export class PerformanceSummaryController {
             let teamId: string;
 
             if (sourceType === 'game') {
-                // Find the primary pitcher for this game (most pitches thrown)
-                const result = await query(
-                    `SELECT p.pitcher_id, g.home_team_id as team_id
-                     FROM pitches p
-                     JOIN games g ON p.game_id = g.id
-                     WHERE p.game_id = $1 AND p.pitcher_id IS NOT NULL
-                     GROUP BY p.pitcher_id, g.home_team_id
-                     ORDER BY COUNT(*) DESC LIMIT 1`,
-                    [sourceId]
-                );
-                if (result.rows.length === 0) {
-                    res.status(404).json({ error: 'No pitches found for this game' });
-                    return;
+                if (queryPitcherId) {
+                    // Use the provided pitcher_id; get team from the game
+                    const result = await query('SELECT home_team_id FROM games WHERE id = $1', [sourceId]);
+                    if (result.rows.length === 0) {
+                        res.status(404).json({ error: 'Game not found' });
+                        return;
+                    }
+                    pitcherId = queryPitcherId;
+                    teamId = result.rows[0].home_team_id;
+                } else {
+                    // Fall back: find the pitcher with the most pitches in the game
+                    const result = await query(
+                        `SELECT p.pitcher_id, g.home_team_id as team_id
+                         FROM pitches p
+                         JOIN games g ON p.game_id = g.id
+                         WHERE p.game_id = $1 AND p.pitcher_id IS NOT NULL
+                         GROUP BY p.pitcher_id, g.home_team_id
+                         ORDER BY COUNT(*) DESC LIMIT 1`,
+                        [sourceId]
+                    );
+                    if (result.rows.length === 0) {
+                        res.status(404).json({ error: 'No pitches found for this game' });
+                        return;
+                    }
+                    pitcherId = result.rows[0].pitcher_id;
+                    teamId = result.rows[0].team_id;
                 }
-                pitcherId = result.rows[0].pitcher_id;
-                teamId = result.rows[0].team_id;
             } else {
                 const result = await query('SELECT pitcher_id, team_id FROM bullpen_sessions WHERE id = $1', [sourceId]);
                 if (result.rows.length === 0) {

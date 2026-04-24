@@ -136,7 +136,7 @@ const PitcherProfile: React.FC = () => {
     const handleGenerateSummary = async (gameId: string) => {
         setGeneratingSummaryId(gameId);
         try {
-            const summary = await performanceSummaryService.getSummary('game', gameId);
+            const summary = await performanceSummaryService.getSummary('game', gameId, pitcher_id);
             setPerformanceSummaries((prev) => {
                 const exists = prev.some((s) => s.id === summary.id);
                 return exists ? prev.map((s) => (s.id === summary.id ? summary : s)) : [summary, ...prev];
