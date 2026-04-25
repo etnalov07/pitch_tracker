@@ -83,7 +83,7 @@ export interface TeamWithPlayers extends Team {
 // Player Types
 // ============================================================================
 
-export type PlayerPosition = 'P' | 'C' | '1B' | '2B' | '3B' | 'SS' | 'LF' | 'CF' | 'RF' | 'DH' | 'UTIL';
+export type PlayerPosition = 'P' | 'C' | '1B' | '2B' | '3B' | 'SS' | 'LF' | 'CF' | 'RF' | 'OF' | 'INF' | 'MIF' | 'DH' | 'UTIL';
 
 export type HandednessType = 'R' | 'L' | 'S';
 

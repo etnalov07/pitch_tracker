@@ -3,6 +3,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { teamService } from '../../services/teamService';
 import { RosterImportRow } from '../../types';
+import { VALID_POSITIONS } from '../../utils/positions';
 import {
     DropZone,
     DropZoneSubtext,
@@ -35,7 +36,6 @@ import {
     SuccessBadge,
 } from './styles';
 
-const VALID_POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'UTIL'];
 const VALID_BATS = ['R', 'L', 'S'];
 const VALID_THROWS = ['R', 'L'];
 const FIELD_OPTIONS = [
