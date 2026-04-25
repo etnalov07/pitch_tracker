@@ -701,7 +701,11 @@ const LiveGame: React.FC = () => {
                                     heatZones={heatZones}
                                     showHeatZones={showHeatZones}
                                     batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
-                                    pitcherThrows={currentPitcher?.player?.throws as 'R' | 'L' | undefined}
+                                    pitcherThrows={
+                                        (isScoutingMode || gameMode === 'opp_pitcher'
+                                            ? currentOpposingPitcher?.throws
+                                            : currentPitcher?.player?.throws) as 'R' | 'L' | undefined
+                                    }
                                 />
                             </StrikeZoneContainer>
 

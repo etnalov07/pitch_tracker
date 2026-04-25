@@ -1382,16 +1382,16 @@ export default function LiveGameScreen() {
             pitchCount={totalPitchCount}
             onPitcherPress={
                 game.status === 'in_progress'
-                    ? gameMode === 'opp_pitcher'
+                    ? isScoutingMode || gameMode === 'opp_pitcher'
                         ? () => setShowOpposingPitcherModal(true)
                         : () => setPitcherModalVisible(true)
                     : undefined
             }
             onBatterPress={
                 game.status === 'in_progress'
-                    ? gameMode === 'opp_pitcher'
-                        ? () => setMyBatterModalVisible(true)
-                        : () => setBatterModalVisible(true)
+                    ? isScoutingMode || gameMode !== 'opp_pitcher'
+                        ? () => setBatterModalVisible(true)
+                        : () => setMyBatterModalVisible(true)
                     : undefined
             }
             onRunnerPress={game.status === 'in_progress' ? handleRunnerPress : undefined}
@@ -1781,12 +1781,12 @@ export default function LiveGameScreen() {
                             disabled={isReadOnly || isLogging}
                             colorBy={isReadOnly ? 'pitchType' : 'result'}
                             batterSide={
-                                gameMode === 'opp_pitcher'
+                                !isScoutingMode && gameMode === 'opp_pitcher'
                                     ? (currentMyBatter?.player?.bats as 'R' | 'L' | 'S' | undefined)
                                     : (currentBatter?.bats as 'R' | 'L' | 'S' | undefined)
                             }
                             pitcherThrows={
-                                gameMode === 'opp_pitcher'
+                                isScoutingMode || gameMode === 'opp_pitcher'
                                     ? (currentOpposingPitcher?.throws as 'R' | 'L' | undefined)
                                     : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
                             }
@@ -2016,12 +2016,12 @@ export default function LiveGameScreen() {
                     compact
                     colorBy={isReadOnly ? 'pitchType' : 'result'}
                     batterSide={
-                        gameMode === 'opp_pitcher'
+                        !isScoutingMode && gameMode === 'opp_pitcher'
                             ? (currentMyBatter?.player?.bats as 'R' | 'L' | 'S' | undefined)
                             : (currentBatter?.bats as 'R' | 'L' | 'S' | undefined)
                     }
                     pitcherThrows={
-                        gameMode === 'opp_pitcher'
+                        isScoutingMode || gameMode === 'opp_pitcher'
                             ? (currentOpposingPitcher?.throws as 'R' | 'L' | undefined)
                             : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
                     }
