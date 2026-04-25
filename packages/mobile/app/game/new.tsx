@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Alert, Platform } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { Text, Button, useTheme, IconButton, ActivityIndicator, TextInput, SegmentedButtons } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import * as Haptics from '../../src/utils/haptics';
-import { Team } from '@pitch-tracker/shared';
+import { OpponentTeam, Team } from '@pitch-tracker/shared';
 import { useAppDispatch, useAppSelector, fetchAllTeams, createGame } from '../../src/state';
+import { opponentsApi } from '../../src/state/opponents/api/opponentsApi';
 
 export default function NewGameScreen() {
     const router = useRouter();
@@ -18,6 +19,8 @@ export default function NewGameScreen() {
     const [selectedTeamId, setSelectedTeamId] = useState<string>('');
     const [isHomeGame, setIsHomeGame] = useState(true);
     const [opponentName, setOpponentName] = useState('');
+    const [opponentTeamId, setOpponentTeamId] = useState<string>('');
+    const [knownOpponents, setKnownOpponents] = useState<OpponentTeam[]>([]);
     const [scoutingHomeTeam, setScoutingHomeTeam] = useState('');
     const [lineupSize, setLineupSize] = useState('9');
     const [totalInnings, setTotalInnings] = useState('7');
@@ -53,6 +56,18 @@ export default function NewGameScreen() {
         }
     }, [selectedTeamId, userTeams]);
 
+    // Load known opponents when team is selected
+    useEffect(() => {
+        if (!selectedTeamId) {
+            setKnownOpponents([]);
+            return;
+        }
+        opponentsApi
+            .list(selectedTeamId)
+            .then(setKnownOpponents)
+            .catch(() => {});
+    }, [selectedTeamId]);
+
     const handleCreate = async () => {
         if (!selectedTeamId) {
             Alert.alert('Missing Info', 'Please select your team');
@@ -86,6 +101,7 @@ export default function NewGameScreen() {
                     charting_mode: chartingMode,
                     game_date: gameDateTime.toISOString(),
                     location: location.trim() || undefined,
+                    opponent_team_id: opponentTeamId || undefined,
                 } as Parameters<typeof createGame>[0])
             ).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -250,14 +266,46 @@ export default function NewGameScreen() {
                                 />
                             </>
                         ) : (
-                            <TextInput
-                                label="Opponent Name"
-                                value={opponentName}
-                                onChangeText={setOpponentName}
-                                mode="outlined"
-                                placeholder="e.g., Tigers, Eagles"
-                                style={styles.input}
-                            />
+                            <>
+                                <TextInput
+                                    label="Opponent Name"
+                                    value={opponentName}
+                                    onChangeText={(text) => {
+                                        setOpponentName(text);
+                                        setOpponentTeamId('');
+                                    }}
+                                    mode="outlined"
+                                    placeholder="e.g., Tigers, Eagles"
+                                    style={styles.input}
+                                />
+                                {knownOpponents.length > 0 && (
+                                    <View style={styles.chipGrid}>
+                                        {knownOpponents.map((opp) => (
+                                            <TouchableOpacity
+                                                key={opp.id}
+                                                onPress={() => {
+                                                    Haptics.selectionAsync();
+                                                    setOpponentName(opp.name);
+                                                    setOpponentTeamId(opp.id);
+                                                }}
+                                                style={[
+                                                    styles.opponentChip,
+                                                    opponentTeamId === opp.id && styles.opponentChipSelected,
+                                                ]}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.opponentChipText,
+                                                        opponentTeamId === opp.id && styles.opponentChipTextSelected,
+                                                    ]}
+                                                >
+                                                    {opp.name}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                )}
+                            </>
                         )}
 
                         {/* Date */}
@@ -345,6 +393,26 @@ const styles = StyleSheet.create({
     },
     input: {
         backgroundColor: '#ffffff',
+    },
+    opponentChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        backgroundColor: '#f9fafb',
+    },
+    opponentChipSelected: {
+        borderColor: '#2563eb',
+        backgroundColor: '#eff6ff',
+    },
+    opponentChipText: {
+        fontSize: 13,
+        color: '#374151',
+    },
+    opponentChipTextSelected: {
+        color: '#1d4ed8',
+        fontWeight: '600',
     },
     createButton: {
         marginTop: 8,

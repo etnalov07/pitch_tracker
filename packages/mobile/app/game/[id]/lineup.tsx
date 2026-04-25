@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { Text, Button, useTheme, IconButton, ActivityIndicator, TextInput, Menu, SegmentedButtons } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
-import { Game } from '@pitch-tracker/shared';
+import { BatterScoutingProfile, Game, OpponentPitcherProfile } from '@pitch-tracker/shared';
 import { useAppDispatch, fetchGameById, createOpponentLineup, createOpposingPitcher } from '../../../src/state';
+import { gamesApi } from '../../../src/state/games/api/gamesApi';
 
 const POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH'];
 
@@ -25,6 +26,8 @@ export default function LineupScreen() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [positionMenuIndex, setPositionMenuIndex] = useState<number | null>(null);
+    const [knownPitchers, setKnownPitchers] = useState<OpponentPitcherProfile[]>([]);
+    const [knownBatters, setKnownBatters] = useState<BatterScoutingProfile[]>([]);
 
     const [pitcherName, setPitcherName] = useState('');
     const [pitcherJersey, setPitcherJersey] = useState('');
@@ -54,6 +57,13 @@ export default function LineupScreen() {
                         bats: 'R' as const,
                     }))
                 );
+                gamesApi
+                    .getOpponentRoster(id)
+                    .then((roster) => {
+                        setKnownPitchers(roster.pitchers);
+                        setKnownBatters(roster.batters);
+                    })
+                    .catch(() => {});
             })
             .catch(() => {})
             .finally(() => setLoading(false));
@@ -62,7 +72,29 @@ export default function LineupScreen() {
     const handlePlayerChange = (index: number, field: keyof LineupEntry, value: string) => {
         setLineup((prev) => {
             const updated = [...prev];
-            updated[index] = { ...updated[index], [field]: value };
+            if (field === 'player_name') {
+                const known = knownBatters.find((b) => b.player_name === value);
+                updated[index] = {
+                    ...updated[index],
+                    player_name: value,
+                    bats: known ? (known.bats as 'R' | 'L' | 'S') : updated[index].bats,
+                };
+            } else {
+                updated[index] = { ...updated[index], [field]: value };
+            }
+            return updated;
+        });
+    };
+
+    const handleSelectKnownBatter = (batter: BatterScoutingProfile, index: number) => {
+        Haptics.selectionAsync();
+        setLineup((prev) => {
+            const updated = [...prev];
+            updated[index] = {
+                ...updated[index],
+                player_name: batter.player_name,
+                bats: batter.bats as 'R' | 'L' | 'S',
+            };
             return updated;
         });
     };
@@ -148,6 +180,24 @@ export default function LineupScreen() {
                             style={styles.nameInput}
                             dense
                         />
+                        {knownPitchers.length > 0 && (
+                            <View style={styles.chipRow}>
+                                {knownPitchers.map((p) => (
+                                    <TouchableOpacity
+                                        key={p.id}
+                                        onPress={() => {
+                                            Haptics.selectionAsync();
+                                            setPitcherName(p.pitcher_name);
+                                        }}
+                                        style={[styles.chip, pitcherName === p.pitcher_name && styles.chipSelected]}
+                                    >
+                                        <Text style={[styles.chipText, pitcherName === p.pitcher_name && styles.chipTextSelected]}>
+                                            {p.pitcher_name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
                         <View style={styles.pitcherBottomRow}>
                             <TextInput
                                 label="Jersey #"
@@ -212,6 +262,21 @@ export default function LineupScreen() {
                                     style={styles.nameInput}
                                     dense
                                 />
+                                {knownBatters.length > 0 && !entry.player_name && (
+                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+                                        <View style={styles.chipRow}>
+                                            {knownBatters.map((b) => (
+                                                <TouchableOpacity
+                                                    key={b.id}
+                                                    onPress={() => handleSelectKnownBatter(b, index)}
+                                                    style={styles.chip}
+                                                >
+                                                    <Text style={styles.chipText}>{b.player_name}</Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    </ScrollView>
+                                )}
 
                                 <View style={styles.bottomRow}>
                                     <Menu
@@ -388,6 +453,35 @@ const styles = StyleSheet.create({
     nameInput: {
         backgroundColor: '#ffffff',
         marginBottom: 4,
+    },
+    chipRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginBottom: 4,
+    },
+    chipScroll: {
+        marginBottom: 4,
+    },
+    chip: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        backgroundColor: '#f3f4f6',
+    },
+    chipSelected: {
+        borderColor: '#2563eb',
+        backgroundColor: '#eff6ff',
+    },
+    chipText: {
+        fontSize: 12,
+        color: '#374151',
+    },
+    chipTextSelected: {
+        color: '#1d4ed8',
+        fontWeight: '600',
     },
     bottomRow: {
         flexDirection: 'row',

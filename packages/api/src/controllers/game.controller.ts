@@ -170,6 +170,16 @@ export class GameController {
             next(error);
         }
     }
+
+    async getOpponentRoster(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const roster = await gameService.getOpponentRoster(id as string);
+            res.status(200).json(roster);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new GameController();

@@ -1,6 +1,7 @@
 import { query, transaction } from '../config/database';
 import { CreateOpposingPitcherParams, OpposingPitcher } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import opponentPitcherProfileService from './opponentPitcherProfile.service';
 
 export class OpposingPitcherService {
     async getByGame(gameId: string, teamSide?: 'home' | 'away'): Promise<OpposingPitcher[]> {
@@ -25,7 +26,25 @@ export class OpposingPitcherService {
                 [uuidv4(), game_id, team_name, pitcher_name, jersey_number ?? null, throws, team_side ?? null]
             );
         });
-        return result.rows[0];
+        const pitcher = result.rows[0];
+        this._maybeAutoLink(pitcher).catch(() => {});
+        return pitcher;
+    }
+
+    private async _maybeAutoLink(pitcher: OpposingPitcher): Promise<void> {
+        const gameRow = await query('SELECT home_team_id, opponent_team_id FROM games WHERE id = $1', [pitcher.game_id]);
+        const game = gameRow.rows[0];
+        if (!game?.opponent_team_id) return;
+
+        const profile = await opponentPitcherProfileService.findOrCreate(
+            game.opponent_team_id,
+            game.home_team_id,
+            pitcher.pitcher_name,
+            pitcher.throws ?? 'R',
+            pitcher.jersey_number
+        );
+        await opponentPitcherProfileService.linkOpposingPitcher(pitcher.id, profile.id);
+        await opponentPitcherProfileService.incrementGameCount(profile.id);
     }
 
     async delete(id: string): Promise<void> {

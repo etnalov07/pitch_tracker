@@ -21,5 +21,6 @@ router.get('/:id/innings', gameController.getGameInnings.bind(gameController));
 router.get('/:id/current-inning', gameController.getCurrentInning.bind(gameController));
 router.put('/:id/base-runners', gameController.updateBaseRunners.bind(gameController));
 router.get('/:id/base-runners', gameController.getBaseRunners.bind(gameController));
+router.get('/:id/opponent-roster', gameController.getOpponentRoster.bind(gameController));
 
 export default router;

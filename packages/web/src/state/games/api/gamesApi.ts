@@ -9,8 +9,10 @@ import {
     Inning,
     BaseRunners,
     BaserunnerEvent,
+    BatterScoutingProfile,
     GamePitcherWithPlayer,
     OpponentLineupPlayer,
+    OpponentPitcherProfile,
 } from '../../../types';
 
 interface GameState {
@@ -197,5 +199,14 @@ export const gamesApi = {
     getPitcherPitchTypes: async (playerId: string): Promise<string[]> => {
         const response = await api.get<{ pitch_types: string[] }>(`/players/${playerId}/pitch-types`);
         return response.data.pitch_types || [];
+    },
+
+    getOpponentRoster: async (
+        gameId: string
+    ): Promise<{ pitchers: OpponentPitcherProfile[]; batters: BatterScoutingProfile[] }> => {
+        const response = await api.get<{ pitchers: OpponentPitcherProfile[]; batters: BatterScoutingProfile[] }>(
+            `/games/${gameId}/opponent-roster`
+        );
+        return response.data;
     },
 };

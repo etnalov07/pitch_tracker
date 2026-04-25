@@ -1,6 +1,7 @@
 import { query, transaction } from '../config/database';
-import { Game, Inning, BaseRunners } from '../types';
+import { Game, Inning, BaseRunners, OpponentPitcherProfile, BatterScoutingProfile } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import opponentTeamService from './opponentTeam.service';
 
 export class GameService {
     async createGame(userId: string, gameData: Partial<Game>): Promise<Game> {
@@ -16,6 +17,7 @@ export class GameService {
             total_innings,
             charting_mode,
             scouting_home_team,
+            opponent_team_id,
         } = gameData;
 
         if (!home_team_id) {
@@ -38,8 +40,8 @@ export class GameService {
 
         const gameId = uuidv4();
         const result = await query(
-            `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size, total_innings, charting_mode, scouting_home_team)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size, total_innings, charting_mode, scouting_home_team, opponent_team_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
             [
                 gameId,
@@ -55,10 +57,30 @@ export class GameService {
                 resolvedTotalInnings,
                 resolvedChartingMode,
                 scouting_home_team ?? null,
+                opponent_team_id ?? null,
             ]
         );
 
-        return result.rows[0];
+        const game = result.rows[0];
+
+        if (opponent_team_id && game_date) {
+            opponentTeamService
+                .incrementGameCount(opponent_team_id, typeof game_date === 'string' ? game_date.slice(0, 10) : undefined)
+                .catch(() => {});
+        }
+
+        return game;
+    }
+
+    async getOpponentRoster(
+        gameId: string
+    ): Promise<{ pitchers: OpponentPitcherProfile[]; batters: BatterScoutingProfile[] }> {
+        const gameRow = await query('SELECT home_team_id, opponent_team_id FROM games WHERE id = $1', [gameId]);
+        const game = gameRow.rows[0];
+        if (!game?.opponent_team_id) return { pitchers: [], batters: [] };
+
+        const roster = await opponentTeamService.getWithRoster(game.opponent_team_id, game.home_team_id);
+        return { pitchers: roster?.pitchers ?? [], batters: roster?.batters ?? [] };
     }
 
     async getGameById(gameId: string): Promise<any> {

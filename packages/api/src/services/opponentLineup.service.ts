@@ -1,6 +1,7 @@
 import { query } from '../config/database';
 import { OpponentLineupPlayer } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import scoutingService from './scouting.service';
 
 export class OpponentLineupService {
     private async getGameLineupSize(gameId: string): Promise<number> {
@@ -28,7 +29,28 @@ export class OpponentLineupService {
             [id, gameId, player_name, batting_order, position, bats, is_starter, inning_entered, team_side ?? null]
         );
 
-        return result.rows[0];
+        const player = result.rows[0];
+        this._maybeAutoLinkBatter(player, gameId).catch(() => {});
+        return player;
+    }
+
+    private async _maybeAutoLinkBatter(player: OpponentLineupPlayer, gameId: string): Promise<void> {
+        const gameRow = await query('SELECT home_team_id, opponent_team_id, opponent_name FROM games WHERE id = $1', [gameId]);
+        const game = gameRow.rows[0];
+        if (!game?.opponent_team_id) return;
+        const profile = await scoutingService.getOrCreateProfile(
+            game.home_team_id,
+            game.opponent_name ?? '',
+            player.player_name,
+            player.bats ?? 'R'
+        );
+        if (!profile.opponent_team_id) {
+            await query('UPDATE batter_scouting_profiles SET opponent_team_id = $1 WHERE id = $2', [
+                game.opponent_team_id,
+                profile.id,
+            ]);
+        }
+        await scoutingService.linkLineupToProfile(player.id, profile.id);
     }
 
     async createLineup(gameId: string, players: Partial<OpponentLineupPlayer>[]): Promise<OpponentLineupPlayer[]> {

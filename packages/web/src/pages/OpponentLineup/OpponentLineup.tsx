@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { gamesApi } from '../../state/games/api/gamesApi';
-import { Game } from '../../types';
+import { BatterScoutingProfile, Game, OpponentPitcherProfile } from '../../types';
 import {
     Container,
     Header,
@@ -50,6 +50,8 @@ const OpponentLineup: React.FC = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [startingPitcherName, setStartingPitcherName] = useState('');
+    const [knownPitchers, setKnownPitchers] = useState<OpponentPitcherProfile[]>([]);
+    const [knownBatters, setKnownBatters] = useState<BatterScoutingProfile[]>([]);
 
     const [lineup, setLineup] = useState<LineupEntry[]>(
         Array.from({ length: 9 }, (_, i) => ({
@@ -75,6 +77,9 @@ const OpponentLineup: React.FC = () => {
                         bats: 'R' as const,
                     }))
                 );
+                const roster = await gamesApi.getOpponentRoster(gameId);
+                setKnownPitchers(roster.pitchers);
+                setKnownBatters(roster.batters);
             } catch {
                 setError('Failed to load game');
             } finally {
@@ -87,7 +92,16 @@ const OpponentLineup: React.FC = () => {
     const handlePlayerChange = (index: number, field: keyof LineupEntry, value: string) => {
         setLineup((prev) => {
             const updated = [...prev];
-            updated[index] = { ...updated[index], [field]: value };
+            if (field === 'player_name') {
+                const known = knownBatters.find((b) => b.player_name === value);
+                updated[index] = {
+                    ...updated[index],
+                    player_name: value,
+                    bats: known ? (known.bats as 'R' | 'L' | 'S') : updated[index].bats,
+                };
+            } else {
+                updated[index] = { ...updated[index], [field]: value };
+            }
             return updated;
         });
         setError('');
@@ -185,6 +199,20 @@ const OpponentLineup: React.FC = () => {
                     {error && <ErrorMessage>{error}</ErrorMessage>}
 
                     <form onSubmit={handleSubmit}>
+                        {knownPitchers.length > 0 && (
+                            <datalist id="known-pitchers-list">
+                                {knownPitchers.map((p) => (
+                                    <option key={p.id} value={p.pitcher_name} />
+                                ))}
+                            </datalist>
+                        )}
+                        {knownBatters.length > 0 && (
+                            <datalist id="known-batters-list">
+                                {knownBatters.map((b) => (
+                                    <option key={b.id} value={b.player_name} />
+                                ))}
+                            </datalist>
+                        )}
                         <SectionTitle>Starting Pitcher</SectionTitle>
                         <HelpText>Enter the opponent's starting pitcher name.</HelpText>
                         <Input
@@ -192,6 +220,7 @@ const OpponentLineup: React.FC = () => {
                             value={startingPitcherName}
                             onChange={(e) => setStartingPitcherName(e.target.value)}
                             placeholder="e.g. Smith"
+                            list="known-pitchers-list"
                             style={{ marginBottom: '24px' }}
                         />
 
@@ -222,6 +251,7 @@ const OpponentLineup: React.FC = () => {
                                                 value={entry.player_name}
                                                 onChange={(e) => handlePlayerChange(index, 'player_name', e.target.value)}
                                                 placeholder={`Batter ${entry.batting_order}`}
+                                                list={knownBatters.length > 0 ? 'known-batters-list' : undefined}
                                             />
                                         </Td>
                                         <Td>

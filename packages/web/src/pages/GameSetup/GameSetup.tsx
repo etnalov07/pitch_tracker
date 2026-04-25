@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { opponentTeamService } from '../../services/opponentTeamService';
 import { useAppDispatch, useAppSelector, fetchAllTeams, createGame } from '../../state';
+import { OpponentTeam } from '../../types';
 import {
     Container,
     Header,
@@ -56,6 +58,8 @@ const GameSetup: React.FC = () => {
 
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [opponents, setOpponents] = useState<OpponentTeam[]>([]);
+    const [opponentTeamId, setOpponentTeamId] = useState<string>('');
 
     const [formData, setFormData] = useState({
         home_team_id: '',
@@ -85,11 +89,32 @@ const GameSetup: React.FC = () => {
         }
     }, [userTeams, formData.home_team_id]);
 
+    // Load known opponents when team is selected
+    useEffect(() => {
+        if (!formData.home_team_id) {
+            setOpponents([]);
+            return;
+        }
+        opponentTeamService
+            .list(formData.home_team_id)
+            .then(setOpponents)
+            .catch(() => {});
+    }, [formData.home_team_id]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        if (e.target.name === 'opponent_name') {
+            setOpponentTeamId('');
+        }
         setFormData({
             ...formData,
             [e.target.name]: e.target.value,
         });
+        setError('');
+    };
+
+    const handleSelectKnownOpponent = (opponent: OpponentTeam) => {
+        setOpponentTeamId(opponent.id);
+        setFormData((prev) => ({ ...prev, opponent_name: opponent.name }));
         setError('');
     };
 
@@ -129,6 +154,7 @@ const GameSetup: React.FC = () => {
                     charting_mode: formData.charting_mode,
                     game_date: game_dateTime.toISOString(),
                     location: formData.location.trim() || undefined,
+                    opponent_team_id: opponentTeamId || undefined,
                 } as Parameters<typeof createGame>[0])
             ).unwrap();
 
@@ -276,7 +302,40 @@ const GameSetup: React.FC = () => {
                                                     value={formData.opponent_name}
                                                     onChange={handleChange}
                                                     placeholder="Enter opponent team name..."
+                                                    list="known-opponents-list"
                                                 />
+                                                {opponents.length > 0 && (
+                                                    <datalist id="known-opponents-list">
+                                                        {opponents.map((opp) => (
+                                                            <option key={opp.id} value={opp.name} />
+                                                        ))}
+                                                    </datalist>
+                                                )}
+                                                {opponents.length > 0 && (
+                                                    <div
+                                                        style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}
+                                                    >
+                                                        {opponents.map((opp) => (
+                                                            <button
+                                                                key={opp.id}
+                                                                type="button"
+                                                                onClick={() => handleSelectKnownOpponent(opp)}
+                                                                style={{
+                                                                    padding: '3px 10px',
+                                                                    borderRadius: '12px',
+                                                                    border: `1px solid ${opponentTeamId === opp.id ? '#2563eb' : '#ccc'}`,
+                                                                    background: opponentTeamId === opp.id ? '#eff6ff' : '#f5f5f5',
+                                                                    color: opponentTeamId === opp.id ? '#1d4ed8' : '#444',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '12px',
+                                                                    fontWeight: opponentTeamId === opp.id ? 600 : 400,
+                                                                }}
+                                                            >
+                                                                {opp.name}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
                                                 {formData.opponent_name && (
                                                     <SelectedTeamPreview>
                                                         <TeamBadge>{formData.opponent_name}</TeamBadge>
