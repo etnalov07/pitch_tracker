@@ -162,6 +162,11 @@ const Dashboard: React.FC = () => {
         return getTeamName(game.away_team_id);
     };
 
+    const getHomeTeamName = (game: (typeof games)[0]) => {
+        if (game.charting_mode === 'scouting') return game.scouting_home_team || 'Home Team';
+        return getTeamName(game.home_team_id);
+    };
+
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -227,9 +232,7 @@ const Dashboard: React.FC = () => {
                                     <GameTeams>
                                         <TeamRow>
                                             <TeamName>
-                                                {game.is_home_game === false
-                                                    ? getTeamName(game.home_team_id)
-                                                    : getOpponentName(game)}
+                                                {game.is_home_game === false ? getHomeTeamName(game) : getOpponentName(game)}
                                             </TeamName>
                                             <Score>
                                                 {game.is_home_game === false ? (game.home_score ?? 0) : (game.away_score ?? 0)}
@@ -237,9 +240,7 @@ const Dashboard: React.FC = () => {
                                         </TeamRow>
                                         <TeamRow>
                                             <TeamName>
-                                                {game.is_home_game === false
-                                                    ? getOpponentName(game)
-                                                    : getTeamName(game.home_team_id)}
+                                                {game.is_home_game === false ? getOpponentName(game) : getHomeTeamName(game)}
                                             </TeamName>
                                             <Score>
                                                 {game.is_home_game === false ? (game.away_score ?? 0) : (game.home_score ?? 0)}
@@ -283,8 +284,8 @@ const Dashboard: React.FC = () => {
                                             <GameDate>{formatDate(game.game_date)}</GameDate>
                                             <GameMatchup>
                                                 {game.is_home_game === false
-                                                    ? `${getTeamName(game.home_team_id)} @ ${getOpponentName(game)}`
-                                                    : `${getOpponentName(game)} @ ${getTeamName(game.home_team_id)}`}
+                                                    ? `${getHomeTeamName(game)} @ ${getOpponentName(game)}`
+                                                    : `${getOpponentName(game)} @ ${getHomeTeamName(game)}`}
                                             </GameMatchup>
                                             <GameLocation>{game.location || 'TBD'}</GameLocation>
                                             <GameStatusBadge color={getStatusColor(game.status)}>
@@ -308,8 +309,8 @@ const Dashboard: React.FC = () => {
                                             <GameDate>{formatDate(game.game_date)}</GameDate>
                                             <GameMatchup>
                                                 {game.is_home_game === false
-                                                    ? `${getTeamName(game.home_team_id)} @ ${getOpponentName(game)}`
-                                                    : `${getOpponentName(game)} @ ${getTeamName(game.home_team_id)}`}
+                                                    ? `${getHomeTeamName(game)} @ ${getOpponentName(game)}`
+                                                    : `${getOpponentName(game)} @ ${getHomeTeamName(game)}`}
                                             </GameMatchup>
                                             <GameScore>
                                                 {game.is_home_game === false

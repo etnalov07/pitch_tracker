@@ -26,7 +26,9 @@ const GameRow: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress 
                 <Card.Content style={styles.rowContent}>
                     <View style={styles.rowLeft}>
                         <Text style={styles.opponent}>
-                            {isHome ? 'vs' : '@'} {game.opponent_name || 'TBD'}
+                            {game.charting_mode === 'scouting'
+                                ? `${game.opponent_name || 'Away'} @ ${game.scouting_home_team || 'Home'}`
+                                : `${isHome ? 'vs' : '@'} ${game.opponent_name || 'TBD'}`}
                         </Text>
                         <Text style={styles.date}>{formatDate(game.game_date)}</Text>
                     </View>

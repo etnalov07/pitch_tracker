@@ -46,7 +46,9 @@ const GameCard: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress
                 <Card.Content>
                     <View style={styles.gameHeader}>
                         <Text variant="titleMedium" numberOfLines={1} style={styles.gameTitle}>
-                            {game.is_home_game === false ? '@' : 'vs'} {game.opponent_name || 'TBD'}
+                            {game.charting_mode === 'scouting'
+                                ? `${game.opponent_name || 'Away'} @ ${game.scouting_home_team || 'Home'}`
+                                : `${game.is_home_game === false ? '@' : 'vs'} ${game.opponent_name || 'TBD'}`}
                         </Text>
                         <Chip compact textStyle={{ fontSize: 10, color: '#fff' }} style={{ backgroundColor: getStatusColor() }}>
                             {getStatusLabel()}
@@ -163,7 +165,9 @@ export default function DashboardScreen() {
                                         <Card.Content>
                                             <View style={styles.gameHeader}>
                                                 <Text variant="titleMedium" numberOfLines={1} style={styles.gameTitle}>
-                                                    {game.is_home_game === false ? '@' : 'vs'} {game.opponent_name || 'TBD'}
+                                                    {game.charting_mode === 'scouting'
+                                                        ? `${game.opponent_name || 'Away'} @ ${game.scouting_home_team || 'Home'}`
+                                                        : `${game.is_home_game === false ? '@' : 'vs'} ${game.opponent_name || 'TBD'}`}
                                                 </Text>
                                                 <Text variant="bodySmall" style={styles.gameDate}>
                                                     {new Date(game.game_date).toLocaleDateString('en-US', {

@@ -70,6 +70,11 @@ const GameHistory: React.FC = () => {
         return getTeamName(game.away_team_id);
     };
 
+    const getHomeTeamName = (game: (typeof games)[0]) => {
+        if (game.charting_mode === 'scouting') return game.scouting_home_team || 'Home Team';
+        return getTeamName(game.home_team_id);
+    };
+
     const getStatusColor = (status: GameStatusType) => {
         switch (status) {
             case 'in_progress':
@@ -203,7 +208,7 @@ const GameHistory: React.FC = () => {
                                         <MatchupCell>
                                             {game.is_home_game === false ? (
                                                 <>
-                                                    <TeamText>{getTeamName(game.home_team_id)}</TeamText>
+                                                    <TeamText>{getHomeTeamName(game)}</TeamText>
                                                     <AtText>@</AtText>
                                                     <TeamText>{getOpponentName(game)}</TeamText>
                                                 </>
@@ -211,7 +216,7 @@ const GameHistory: React.FC = () => {
                                                 <>
                                                     <TeamText>{getOpponentName(game)}</TeamText>
                                                     <AtText>@</AtText>
-                                                    <TeamText>{getTeamName(game.home_team_id)}</TeamText>
+                                                    <TeamText>{getHomeTeamName(game)}</TeamText>
                                                 </>
                                             )}
                                         </MatchupCell>

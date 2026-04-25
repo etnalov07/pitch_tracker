@@ -163,9 +163,11 @@ export default function GameDetailScreen() {
                                 who bats top vs bottom — it does NOT swap the column meanings. */}
                             <View style={styles.teamScore}>
                                 <Text variant="titleMedium" style={styles.teamName}>
-                                    {game.is_home_game === false
-                                        ? game.home_team_name || 'Your Team'
-                                        : game.opponent_name || 'Away'}
+                                    {game.charting_mode === 'scouting'
+                                        ? game.opponent_name || 'Away'
+                                        : game.is_home_game === false
+                                          ? game.home_team_name || 'Your Team'
+                                          : game.opponent_name || 'Away'}
                                 </Text>
                                 <Text variant="displaySmall" style={[styles.score, { color: theme.colors.primary }]}>
                                     {game.is_home_game === false ? game.home_score : game.away_score}
@@ -178,9 +180,11 @@ export default function GameDetailScreen() {
 
                             <View style={styles.teamScore}>
                                 <Text variant="titleMedium" style={styles.teamName}>
-                                    {game.is_home_game === false
-                                        ? game.opponent_name || 'Away'
-                                        : game.home_team_name || 'Your Team'}
+                                    {game.charting_mode === 'scouting'
+                                        ? game.scouting_home_team || 'Home'
+                                        : game.is_home_game === false
+                                          ? game.opponent_name || 'Away'
+                                          : game.home_team_name || 'Your Team'}
                                 </Text>
                                 <Text variant="displaySmall" style={[styles.score, { color: theme.colors.primary }]}>
                                     {game.is_home_game === false ? game.away_score : game.home_score}
