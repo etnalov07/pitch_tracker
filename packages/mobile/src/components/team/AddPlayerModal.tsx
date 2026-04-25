@@ -6,7 +6,7 @@ import { useAppDispatch, addPlayer, updatePlayer, setPlayerPitchTypes } from '..
 import { PlayerWithPitchTypes, PlayerPosition, HandednessType, ThrowingHand } from '@pitch-tracker/shared';
 import { teamsApi } from '../../state/teams/api/teamsApi';
 
-const POSITIONS: PlayerPosition[] = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'UTIL'];
+const POSITIONS: PlayerPosition[] = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'OF', 'INF', 'MIF', 'DH', 'UTIL'];
 
 const PITCH_TYPES: { value: string; label: string }[] = [
     { value: 'fastball', label: 'Fastball' },

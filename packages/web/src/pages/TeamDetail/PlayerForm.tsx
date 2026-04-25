@@ -33,7 +33,7 @@ const PITCH_TYPES: { value: PitchType; label: string }[] = [
     { value: 'knuckleball', label: 'Knuckle' },
 ];
 
-const POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'UTIL'];
+const POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'OF', 'INF', 'MIF', 'DH', 'UTIL'];
 
 interface PlayerFormProps {
     state: TeamDetailState;
