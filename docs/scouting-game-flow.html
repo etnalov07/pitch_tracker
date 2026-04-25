@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scouting Game Flow — PitchChart</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    padding: 40px 32px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  /* ── Page header ─────────────────────────────────────── */
+  .page-header {
+    text-align: center;
+    margin-bottom: 36px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  .page-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.3px;
+  }
+  .page-header .subtitle {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+  .legend {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: #475569;
+  }
+  .legend-swatch {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+  }
+
+  /* ── Main layout: flow column + notes column ─────────── */
+  .flow-wrapper {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ── Step card ───────────────────────────────────────── */
+  .step {
+    display: grid;
+    grid-template-columns: 28px 240px 1fr;
+    gap: 0 12px;
+    align-items: start;
+    margin-bottom: 0;
+    position: relative;
+  }
+
+  /* vertical connector line */
+  .step:not(:last-child) .connector {
+    position: absolute;
+    left: 13px;
+    top: 28px;
+    bottom: -24px;
+    width: 2px;
+    background: #cbd5e1;
+  }
+
+  .step-number {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    color: #fff;
+    flex-shrink: 0;
+    margin-top: 6px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-box {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+
+  .step-box.highlight {
+    border-color: #3b82f6;
+    box-shadow: 0 1px 6px rgba(59,130,246,.15);
+  }
+
+  .step-title {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .step-subtitle {
+    font-size: 10px;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+
+  /* ── API pill ────────────────────────────────────────── */
+  .api-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+  .method-badge {
+    font-family: 'Fira Code', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: #fff;
+    flex-shrink: 0;
+    letter-spacing: 0.3px;
+  }
+  .method-post { background: #10b981; }
+  .method-get  { background: #3b82f6; }
+  .method-put  { background: #f59e0b; color: #1e293b; }
+  .method-delete { background: #ef4444; }
+
+  .endpoint {
+    font-family: 'Fira Code', monospace;
+    font-size: 10px;
+    color: #1d4ed8;
+    word-break: break-all;
+  }
+  .service-label {
+    font-family: 'Fira Code', monospace;
+    font-size: 9.5px;
+    color: #7c3aed;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  /* ── DB table section ────────────────────────────────── */
+  .db-section {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #e2e8f0;
+  }
+  .db-section-title {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #94a3b8;
+    margin-bottom: 5px;
+  }
+  .db-table {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .db-row {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .table-name {
+    font-family: 'Fira Code', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: #0f172a;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 1px 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .table-op {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .op-insert { background: #dcfce7; color: #166534; }
+  .op-update { background: #fef9c3; color: #713f12; }
+  .op-select { background: #dbeafe; color: #1e40af; }
+  .op-upsert { background: #f3e8ff; color: #5b21b6; }
+
+  .fields {
+    font-family: 'Fira Code', monospace;
+    font-size: 9.5px;
+    color: #475569;
+    flex: 1;
+  }
+  .field-key {
+    color: #0f172a;
+    font-weight: 500;
+  }
+
+  /* ── Detail panel (right column) ────────────────────── */
+  .step-detail {
+    padding: 12px 14px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    font-size: 10px;
+    color: #475569;
+  }
+  .step-detail h4 {
+    font-size: 11px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 6px;
+  }
+  .note-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .note-list li::before {
+    content: "→ ";
+    color: #94a3b8;
+  }
+
+  /* ── Arrow connector between steps ──────────────────── */
+  .arrow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0 6px 40px;
+  }
+  .arrow-line {
+    width: 2px;
+    height: 24px;
+    background: #cbd5e1;
+    margin-left: 13px;
+  }
+  .arrow-label {
+    font-size: 9px;
+    color: #94a3b8;
+    font-style: italic;
+    margin-left: 52px;
+  }
+
+  /* ── Loop container ──────────────────────────────────── */
+  .loop-wrapper {
+    margin: 8px 0;
+    border: 2px dashed #93c5fd;
+    border-radius: 12px;
+    padding: 16px 14px;
+    background: #f0f9ff;
+    position: relative;
+  }
+  .loop-label {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: #bfdbfe;
+    color: #1e40af;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .loop-wrapper .step {
+    grid-template-columns: 28px 260px 1fr;
+  }
+
+  /* ── Step colors ─────────────────────────────────────── */
+  .color-setup    { background: #3b82f6; }
+  .color-lineup   { background: #8b5cf6; }
+  .color-start    { background: #10b981; }
+  .color-pitch    { background: #f59e0b; }
+  .color-atbat    { background: #ef4444; }
+  .color-event    { background: #06b6d4; }
+  .color-inning   { background: #6366f1; }
+  .color-end      { background: #64748b; }
+  .color-summary  { background: #ec4899; }
+  .color-link     { background: #14b8a6; }
+
+  .border-setup   { border-left: 3px solid #3b82f6; }
+  .border-lineup  { border-left: 3px solid #8b5cf6; }
+  .border-start   { border-left: 3px solid #10b981; }
+  .border-pitch   { border-left: 3px solid #f59e0b; }
+  .border-atbat   { border-left: 3px solid #ef4444; }
+  .border-event   { border-left: 3px solid #06b6d4; }
+  .border-inning  { border-left: 3px solid #6366f1; }
+  .border-end     { border-left: 3px solid #64748b; }
+  .border-summary { border-left: 3px solid #ec4899; }
+  .border-link    { border-left: 3px solid #14b8a6; }
+
+  /* ── Scouting-specific callout ───────────────────────── */
+  .scouting-callout {
+    background: linear-gradient(135deg, #fdf4ff, #f0f9ff);
+    border: 1px solid #d8b4fe;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-top: 6px;
+    font-size: 9.5px;
+    color: #5b21b6;
+  }
+  .scouting-callout strong {
+    color: #4c1d95;
+  }
+
+  /* ── Two-column content within step ─────────────────── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* ── Spacer ──────────────────────────────────────────── */
+  .spacer { height: 16px; }
+
+  /* ── Page breaks for print ───────────────────────────── */
+  @media print {
+    body { padding: 20px; background: #fff; }
+    .loop-wrapper { break-inside: avoid; }
+    .step { break-inside: avoid; }
+  }
+
+  /* ── Section heading ─────────────────────────────────── */
+  .section-heading {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #64748b;
+    padding: 0 0 6px 40px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>PitchChart — Scouting Game Flow</h1>
+  <div class="subtitle">Full lifecycle: game creation → opponent lineup → live charting → end of game → scouting summary</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch" style="background:#3b82f6"></div> Game Setup</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#8b5cf6"></div> Lineup</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#10b981"></div> Game Start</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#ef4444"></div> At-Bat</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#f59e0b"></div> Pitch</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#06b6d4"></div> Baserunner Event</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#6366f1"></div> Inning Advance</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#ec4899"></div> Scouting Summary</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#14b8a6"></div> Auto-Link</div>
+  </div>
+</div>
+
+<div class="flow-wrapper">
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- STEP 1: GAME CREATION -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="step">
+    <div class="connector"></div>
+    <div class="step-number color-setup">1</div>
+    <div class="step-box border-setup">
+      <div class="step-title">Game Creation</div>
+      <div class="step-subtitle">User creates a new scouting game via web or mobile</div>
+
+      <div class="api-row">
+        <span class="method-badge method-post">POST</span>
+        <span class="endpoint">/bt-api/games</span>
+      </div>
+      <span class="service-label">gameService.createGame()</span>
+
+      <div class="db-section">
+        <div class="db-section-title">Database</div>
+        <div class="db-table">
+          <div class="db-row">
+            <span class="table-name">games</span>
+            <span class="table-op op-insert">INSERT</span>
+            <span class="fields">
+              <span class="field-key">charting_mode</span>='scouting',&nbsp;
+              <span class="field-key">opponent_name</span> (away team),&nbsp;
+              <span class="field-key">scouting_home_team</span> (home team name),&nbsp;
+              <span class="field-key">home_team_id</span> (linked user team),&nbsp;
+              <span class="field-key">opponent_team_id</span> (FK → opponent_teams, optional),&nbsp;
+              <span class="field-key">game_date</span>,&nbsp;
+              <span class="field-key">location</span>,&nbsp;
+              <span class="field-key">status</span>='scheduled',&nbsp;
+              <span class="field-key">total_innings</span>,&nbsp;
+              <span class="field-key">is_home_game</span>,&nbsp;
+              <span class="field-key">lineup_size</span>,&nbsp;
+              <span class="field-key">created_by</span> (FK → users)
+            </span>
+          </div>
+          <div class="db-row" style="margin-top:4px">
+            <span class="table-name">opponent_teams</span>
+            <span class="table-op op-update">UPDATE</span>
+            <span class="fields">
+              <span class="field-key">games_played</span>++,&nbsp;
+              <span class="field-key">last_game_date</span>=NOW()&nbsp;
+              (if opponent_team_id provided)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="scouting-callout">
+        <strong>Scouting-specific:</strong> Both teams are external opponents — <code>opponent_name</code> = away team,
+        <code>scouting_home_team</code> = home team. The user's own team (<code>home_team_id</code>) is used only
+        as the owning team for data organization, <em>not displayed as a participant</em>.
+      </div>
+    </div>
+    <div class="step-detail">
+      <h4>Key Inputs</h4>
+      <ul class="note-list">
+        <li><code>charting_mode: "scouting"</code></li>
+        <li><code>opponent_name</code>: away team free text</li>
+        <li><code>scouting_home_team</code>: home team free text</li>
+        <li><code>opponent_team_id</code>: UUID from opponent registry (auto-set if user picks known opponent)</li>
+        <li><code>home_team_id</code>: user's own team (org anchor)</li>
+        <li><code>is_home_game</code>: determines batting order convention</li>
+      </ul>
+    </div>
+  </div>
+  <div class="arrow-row"><div class="arrow-line"></div></div>
+  <div class="arrow-label">Game created with status = 'scheduled'</div>
+  <div class="spacer"></div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- STEP 2: OPPONENT LINEUP ENTRY -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="step">
+    <div class="connector"></div>
+    <div class="step-number color-lineup">2</div>
+    <div class="step-box border-lineup">
+      <div class="step-title">Opponent Lineup Entry</div>
+      <div class="step-subtitle">Enter batting order for one or both teams (home & away sides)</div>
+
+      <div class="two-col">
+        <div>
+          <div class="api-row">
+            <span class="method-badge method-post">POST</span>
+            <span class="endpoint">/bt-api/opponent-lineup/game/:gameId/bulk</span>
+          </div>
+          <span class="service-label">opponentLineupService.bulkCreatePlayers()</span>
+          <div class="api-row" style="margin-top:6px">
+            <span class="method-badge method-post">POST</span>
+            <span class="endpoint">/bt-api/opponent-lineup/game/:gameId</span>
+          </div>
+          <span class="service-label">opponentLineupService.createPlayer()</span>
+        </div>
+        <div>
+          <div class="api-row">
+            <span class="method-badge method-put">PUT</span>
+            <span class="endpoint">/bt-api/opponent-lineup/player/:id</span>
+          </div>
+          <span class="service-label">opponentLineupService.updatePlayer()</span>
+          <div class="api-row" style="margin-top:6px">
+            <span class="method-badge method-post">POST</span>
+            <span class="endpoint">/bt-api/opponent-lineup/player/:id/substitute</span>
+          </div>
+          <span class="service-label">opponentLineupService.substitutePlayer()</span>
+        </div>
+      </div>
+
+      <div class="db-section">
+        <div class="db-section-title">Database</div>
+        <div class="db-table">
+          <div class="db-row">
+            <span class="table-name">opponent_lineup</span>
+            <span class="table-op op-insert">INSERT</span>
+            <span class="fields">
+              <span class="field-key">game_id</span>,&nbsp;
+              <span class="field-key">player_name</span>,&nbsp;
+              <span class="field-key">batting_order</span>,&nbsp;
+              <span class="field-key">position</span>,&nbsp;
+              <span class="field-key">bats</span> (R/L/S),&nbsp;
+              <span class="field-key">team_side</span> (home/away),&nbsp;
+              <span class="field-key">is_starter</span>,&nbsp;
+              <span class="field-key">inning_entered</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="scouting-callout">
+        <strong>Auto-link (fire &amp; forget):</strong> After each player insert, <code>_maybeAutoLinkBatter()</code> runs async:
+        finds or creates a <code>batter_scouting_profiles</code> record, sets <code>opponent_team_id</code> if available,
+        and inserts a row in <code>opponent_lineup_profiles</code> linking this game appearance to the persistent profile.
+      </div>
+    </div>
+    <div class="step-detail">
+      <h4>Auto-Linking Chain</h4>
+      <ul class="note-list">
+        <li><code>batter_scouting_profiles</code>: GET or CREATE by (team_id, opponent_name, player_name)</li>
+        <li><code>opponent_lineup_profiles</code>: INSERT link (lineup_id → profile_id)</li>
+        <li><code>batter_scouting_profiles</code>: UPDATE opponent_team_id if null</li>
+        <li>Substitutions: old player gets <code>replaced_by_id</code> set; new player inserted with <code>is_starter=false</code></li>
+      </ul>
+      <h4 style="margin-top:10px">Pitcher Registration</h4>
+      <ul class="note-list">
+        <li><code>opposing_pitchers</code>: INSERT pitcher per game (pitcher_name, throws, team_side)</li>
+        <li>Auto-links to <code>opponent_pitcher_profiles</code> via <code>_maybeAutoLink()</code></li>
+        <li><code>opponent_pitcher_profiles</code>: GET or CREATE by (opponent_team_id, normalized_name)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="arrow-row"><div class="arrow-line"></div></div>
+  <div class="arrow-label">Lineup saved; scouting profiles created/linked in background</div>
+  <div class="spacer"></div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- STEP 3: GAME START -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="step">
+    <div class="connector"></div>
+    <div class="step-number color-start">3</div>
+    <div class="step-box border-start">
+      <div class="step-title">Game Start</div>
+      <div class="step-subtitle">User presses "Start Game" — transitions to live charting view</div>
+
+      <div class="api-row">
+        <span class="method-badge method-post">POST</span>
+        <span class="endpoint">/bt-api/games/:id/start</span>
+      </div>
+      <span class="service-label">gameService.startGame()</span>
+
+      <div class="db-section">
+        <div class="db-section-title">Database (transaction)</div>
+        <div class="db-table">
+          <div class="db-row">
+            <span class="table-name">games</span>
+            <span class="table-op op-update">UPDATE</span>
+            <span class="fields">
+              <span class="field-key">status</span>='in_progress',&nbsp;
+              <span class="field-key">current_inning</span>=1,&nbsp;
+              <span class="field-key">inning_half</span>='top'
+            </span>
+          </div>
+          <div class="db-row" style="margin-top:4px">
+            <span class="table-name">innings</span>
+            <span class="table-op op-insert">INSERT</span>
+            <span class="fields">
+              <span class="field-key">game_id</span>,&nbsp;
+              <span class="field-key">inning_number</span>=1,&nbsp;
+              <span class="field-key">half</span>='top',&nbsp;
+              <span class="field-key">batting_team_id</span>,&nbsp;
+              <span class="field-key">pitching_team_id</span>,&nbsp;
+              <span class="field-key">is_opponent_batting</span>=true
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="step-detail">
+      <h4>Notes</h4>
+      <ul class="note-list">
+        <li>In scouting mode, <code>is_opponent_batting</code> is always true (both teams are opponents)</li>
+        <li>First inning record created in same transaction</li>
+        <li>UI navigates to Live Charting screen</li>
+      </ul>
+    </div>
+  </div>
+  <div class="arrow-row"><div class="arrow-line"></div></div>
+  <div class="arrow-label">status → 'in_progress' · Inning 1 Top created</div>
+  <div class="spacer"></div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- REPEATING LOOP: Per-At-Bat / Per-Inning -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="loop-wrapper">
+    <div class="loop-label">Repeating — one iteration per at-bat (multiple innings)</div>
+
+    <!-- STEP 4: AT-BAT CREATION -->
+    <div class="step" style="margin-bottom:10px">
+      <div class="connector"></div>
+      <div class="step-number color-atbat">4</div>
+      <div class="step-box border-atbat">
+        <div class="step-title">At-Bat Creation</div>
+        <div class="step-subtitle">Select batter &amp; pitcher from opponent lineup; open at-bat</div>
+
+        <div class="api-row">
+          <span class="method-badge method-post">POST</span>
+          <span class="endpoint">/bt-api/at-bats</span>
+        </div>
+        <span class="service-label">atBatService.createAtBat()</span>
+
+        <div class="db-section">
+          <div class="db-section-title">Database</div>
+          <div class="db-table">
+            <div class="db-row">
+              <span class="table-name">at_bats</span>
+              <span class="table-op op-insert">INSERT</span>
+              <span class="fields">
+                <span class="field-key">game_id</span>,&nbsp;
+                <span class="field-key">inning_id</span>,&nbsp;
+                <span class="field-key">opponent_batter_id</span> (FK → opponent_lineup),&nbsp;
+                <span class="field-key">opposing_pitcher_id</span> (FK → opposing_pitchers),&nbsp;
+                <span class="field-key">batting_order</span>,&nbsp;
+                <span class="field-key">outs_before</span>,&nbsp;
+                <span class="field-key">balls</span>=0,&nbsp;
+                <span class="field-key">strikes</span>=0
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="scouting-callout">
+          <strong>Scouting mode:</strong> Uses <code>opponent_batter_id</code> and <code>opposing_pitcher_id</code>
+          (not the user's own team player IDs). Both are foreign keys into the opponent lineup tables.
+        </div>
+      </div>
+      <div class="step-detail">
+        <h4>Notes</h4>
+        <ul class="note-list">
+          <li>batter_id / pitcher_id (own team) are NULL in scouting mode</li>
+          <li>batting_order auto-advances based on previous at-bat</li>
+          <li>outs_before carries over from game state</li>
+        </ul>
+      </div>
+    </div>
+    <div class="arrow-label" style="padding-left:0; margin-bottom:8px">↓ At-bat open</div>
+
+    <!-- STEP 5: PITCH LOGGING (inner loop) -->
+    <div class="loop-wrapper" style="border-color:#fcd34d; background:#fffbeb; margin:8px 0">
+      <div class="loop-label" style="background:#fde68a; color:#78350f">Repeating — one iteration per pitch</div>
+
+      <div class="step">
+        <div class="connector"></div>
+        <div class="step-number color-pitch">5</div>
+        <div class="step-box border-pitch">
+          <div class="step-title">Pitch Logged</div>
+          <div class="step-subtitle">Chart each pitch: type, velocity, location, result</div>
+
+          <div class="api-row">
+            <span class="method-badge method-post">POST</span>
+            <span class="endpoint">/bt-api/pitches</span>
+          </div>
+          <span class="service-label">pitchService.logPitch()</span>
+
+          <div class="db-section">
+            <div class="db-section-title">Database (transaction)</div>
+            <div class="db-table">
+              <div class="db-row">
+                <span class="table-name">pitches</span>
+                <span class="table-op op-insert">INSERT</span>
+                <span class="fields">
+                  <span class="field-key">at_bat_id</span>,&nbsp;
+                  <span class="field-key">game_id</span>,&nbsp;
+                  <span class="field-key">opponent_batter_id</span>,&nbsp;
+                  <span class="field-key">pitch_number</span>,&nbsp;
+                  <span class="field-key">pitch_type</span> (FB/SL/CB/CH/…),&nbsp;
+                  <span class="field-key">velocity</span>,&nbsp;
+                  <span class="field-key">location_x</span>,&nbsp;
+                  <span class="field-key">location_y</span>,&nbsp;
+                  <span class="field-key">zone</span>,&nbsp;
+                  <span class="field-key">target_zone</span>,&nbsp;
+                  <span class="field-key">pitch_result</span> (ball/called_strike/swinging_strike/foul/in_play),&nbsp;
+                  <span class="field-key">balls_before</span>,&nbsp;
+                  <span class="field-key">strikes_before</span>,&nbsp;
+                  <span class="field-key">team_side</span>='opponent'
+                </span>
+              </div>
+              <div class="db-row" style="margin-top:4px">
+                <span class="table-name">at_bats</span>
+                <span class="table-op op-update">UPDATE</span>
+                <span class="fields">
+                  <span class="field-key">balls</span>,&nbsp;
+                  <span class="field-key">strikes</span>&nbsp;
+                  (recalculated from pitch_result)
+                </span>
+              </div>
+              <div class="db-row" style="margin-top:4px">
+                <span class="table-name">batter_tendencies</span>
+                <span class="table-op op-update">UPDATE</span>
+                <span class="fields">
+                  <span class="field-key">is_stale</span>=TRUE&nbsp;
+                  (invalidates cached tendencies for this batter)
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="scouting-callout">
+            <strong>Scouting mode:</strong> <code>team_side='opponent'</code> always. Pitcher auto-profile update
+            (<code>pitcher_pitch_types</code>) is skipped when <code>pitcher_id</code> is NULL (as it is in scouting).
+          </div>
+        </div>
+        <div class="step-detail">
+          <h4>Pitch Result → Count Logic</h4>
+          <ul class="note-list">
+            <li><code>ball</code> → balls++</li>
+            <li><code>called_strike / swinging_strike</code> → strikes++</li>
+            <li><code>foul</code> → strikes++ only if strikes &lt; 2</li>
+            <li><code>in_play</code> → no count change (at-bat ends next step)</li>
+          </ul>
+          <h4 style="margin-top:8px">Zone Encoding</h4>
+          <ul class="note-list">
+            <li>Zones 1–9: strike zone grid (3×3)</li>
+            <li>Zones 11–14: ball zones (up/down/in/out)</li>
+            <li>location_x/y: pixel coords (0–100 scale)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 6: AT-BAT END -->
+    <div class="spacer"></div>
+    <div class="step" style="margin-bottom:10px">
+      <div class="connector"></div>
+      <div class="step-number color-atbat">6</div>
+      <div class="step-box border-atbat">
+        <div class="step-title">At-Bat Completion</div>
+        <div class="step-subtitle">Record the at-bat result: out, hit, walk, HBP, etc.</div>
+
+        <div class="api-row">
+          <span class="method-badge method-post">POST</span>
+          <span class="endpoint">/bt-api/at-bats/:id/end</span>
+        </div>
+        <span class="service-label">atBatService.endAtBat()</span>
+
+        <div class="db-section">
+          <div class="db-section-title">Database</div>
+          <div class="db-table">
+            <div class="db-row">
+              <span class="table-name">at_bats</span>
+              <span class="table-op op-update">UPDATE</span>
+              <span class="fields">
+                <span class="field-key">result</span> (K/BB/HBP/single/double/triple/HR/…),&nbsp;
+                <span class="field-key">outs_after</span>,&nbsp;
+                <span class="field-key">rbi</span>,&nbsp;
+                <span class="field-key">runs_scored</span>,&nbsp;
+                <span class="field-key">ab_end_time</span>=NOW()
+              </span>
+            </div>
+            <div class="db-row" style="margin-top:4px">
+              <span class="table-name">games</span>
+              <span class="table-op op-update">UPDATE</span>
+              <span class="fields">
+                <span class="field-key">home_score</span> / <span class="field-key">away_score</span>&nbsp;
+                (if runs_scored &gt; 0),&nbsp;
+                <span class="field-key">base_runners</span> (JSONB, runners after play)
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-detail">
+        <h4>Result Types</h4>
+        <ul class="note-list">
+          <li>Strikeouts: K (swinging), Kc (called)</li>
+          <li>Hits: single, double, triple, HR</li>
+          <li>Outs: groundout, flyout, lineout, popout, FC, DP</li>
+          <li>Reaches: BB, IBB, HBP, error</li>
+        </ul>
+      </div>
+    </div>
+    <div class="arrow-label" style="padding-left:0; margin-bottom:8px">↓ Optional: baserunner events</div>
+
+    <!-- STEP 7: BASERUNNER EVENTS (optional) -->
+    <div class="step" style="margin-bottom:0">
+      <div class="step-number color-event">7</div>
+      <div class="step-box border-event">
+        <div class="step-title">Baserunner Events <span style="font-weight:400;color:#64748b">(optional)</span></div>
+        <div class="step-subtitle">Stolen bases, wild pitches, passed balls, balks, caught stealing, pickoffs</div>
+
+        <div class="api-row">
+          <span class="method-badge method-post">POST</span>
+          <span class="endpoint">/bt-api/baserunner-events</span>
+        </div>
+        <span class="service-label">baserunnerEventService.recordEvent()</span>
+
+        <div class="db-section">
+          <div class="db-section-title">Database (transaction)</div>
+          <div class="db-table">
+            <div class="db-row">
+              <span class="table-name">baserunner_events</span>
+              <span class="table-op op-insert">INSERT</span>
+              <span class="fields">
+                <span class="field-key">game_id</span>,&nbsp;
+                <span class="field-key">inning_id</span>,&nbsp;
+                <span class="field-key">at_bat_id</span>,&nbsp;
+                <span class="field-key">event_type</span> (stolen_base/wild_pitch/passed_ball/balk/caught_stealing/pickoff),&nbsp;
+                <span class="field-key">runner_base</span> (first/second/third),&nbsp;
+                <span class="field-key">runner_to_base</span>,&nbsp;
+                <span class="field-key">out_recorded</span>,&nbsp;
+                <span class="field-key">outs_before</span>,&nbsp;
+                <span class="field-key">outs_after</span>
+              </span>
+            </div>
+            <div class="db-row" style="margin-top:4px">
+              <span class="table-name">games</span>
+              <span class="table-op op-update">UPDATE</span>
+              <span class="fields">
+                <span class="field-key">base_runners</span> (JSONB)&nbsp;— move or remove runner
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-detail">
+        <h4>Advancement Events</h4>
+        <ul class="note-list">
+          <li>stolen_base, wild_pitch, passed_ball, balk → runner advances</li>
+          <li>base_runners JSONB updated: <code>{ first, second, third }</code></li>
+        </ul>
+        <h4 style="margin-top:8px">Out Events</h4>
+        <ul class="note-list">
+          <li>caught_stealing, pickoff → out_recorded=true, outs_after++</li>
+          <li>interference → runner awarded base</li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- end loop-wrapper -->
+
+  <div class="arrow-row"><div class="arrow-line"></div></div>
+  <div class="arrow-label">After 3 outs → advance inning</div>
+  <div class="spacer"></div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- STEP 8: INNING ADVANCEMENT -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="step">
+    <div class="connector"></div>
+    <div class="step-number color-inning">8</div>
+    <div class="step-box border-inning">
+      <div class="step-title">Inning Advancement</div>
+      <div class="step-subtitle">End of half-inning → flip sides or start new inning</div>
+
+      <div class="api-row">
+        <span class="method-badge method-post">POST</span>
+        <span class="endpoint">/bt-api/games/:id/advance-inning</span>
+      </div>
+      <span class="service-label">gameService.advanceInning()</span>
+
+      <div class="db-section">
+        <div class="db-section-title">Database (transaction)</div>
+        <div class="db-table">
+          <div class="db-row">
+            <span class="table-name">games</span>
+            <span class="table-op op-update">UPDATE</span>
+            <span class="fields">
+              <span class="field-key">inning_half</span> (top→bottom or bottom→top),&nbsp;
+              <span class="field-key">current_inning</span>++ (on bottom→top transition),&nbsp;
+              <span class="field-key">base_runners</span>={} (reset),&nbsp;
+              <span class="field-key">outs</span>=0 (reset)
+            </span>
+          </div>
+          <div class="db-row" style="margin-top:4px">
+            <span class="table-name">innings</span>
+            <span class="table-op op-insert">INSERT</span>
+            <span class="fields">
+              New half-inning record:&nbsp;
+              <span class="field-key">inning_number</span>,&nbsp;
+              <span class="field-key">half</span> (top/bottom),&nbsp;
+              <span class="field-key">batting_team_id</span>,&nbsp;
+              <span class="field-key">is_opponent_batting</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="step-detail">
+      <h4>Flow</h4>
+      <ul class="note-list">
+        <li>Top → Bottom: same inning number, teams swap</li>
+        <li>Bottom → Top: inning++ (e.g., end of 3rd → top of 4th)</li>
+        <li>base_runners JSONB reset to empty object</li>
+        <li>After final inning, use "End Game" instead</li>
+      </ul>
+    </div>
+  </div>
+  <div class="arrow-row"><div class="arrow-line"></div></div>
+  <div class="arrow-label">Repeat at-bat loop for new half-inning → after final out of final inning:</div>
+  <div class="spacer"></div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- STEP 9: GAME END -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="step">
+    <div class="connector"></div>
+    <div class="step-number color-end">9</div>
+    <div class="step-box border-end">
+      <div class="step-title">Game End</div>
+      <div class="step-subtitle">User ends the game — all charting complete</div>
+
+      <div class="api-row">
+        <span class="method-badge method-post">POST</span>
+        <span class="endpoint">/bt-api/games/:id/end</span>
+      </div>
+      <span class="service-label">gameService.endGame()</span>
+
+      <div class="db-section">
+        <div class="db-section-title">Database</div>
+        <div class="db-table">
+          <div class="db-row">
+            <span class="table-name">games</span>
+            <span class="table-op op-update">UPDATE</span>
+            <span class="fields">
+              <span class="field-key">status</span>='completed',&nbsp;
+              <span class="field-key">final_home_score</span>,&nbsp;
+              <span class="field-key">final_away_score</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="step-detail">
+      <h4>Notes</h4>
+      <ul class="note-list">
+        <li>Simple status transition — no cascade</li>
+        <li>Scores already maintained throughout game</li>
+        <li>Triggers downstream scouting summary (step 10)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="arrow-row"><div class="arrow-line"></div></div>
+  <div class="arrow-label">status → 'completed' · Post-game processing begins</div>
+  <div class="spacer"></div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- STEP 10: SCOUTING SUMMARY GENERATION -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="step">
+    <div class="connector"></div>
+    <div class="step-number color-summary">10</div>
+    <div class="step-box border-summary">
+      <div class="step-title">Scouting Summary Generation</div>
+      <div class="step-subtitle">Performance summary with AI-generated narrative for all charted batters/pitchers</div>
+
+      <div class="api-row">
+        <span class="method-badge method-post">POST</span>
+        <span class="endpoint">/bt-api/performance-summaries/generate</span>
+      </div>
+      <span class="service-label">performanceSummaryService.generateScoutingSummary()</span>
+
+      <div class="db-section">
+        <div class="db-section-title">Database</div>
+        <div class="db-table">
+          <div class="db-row">
+            <span class="table-name">performance_summaries</span>
+            <span class="table-op op-upsert">UPSERT</span>
+            <span class="fields">
+              <span class="field-key">source_type</span>='scouting',&nbsp;
+              <span class="field-key">source_id</span>=game_id,&nbsp;
+              <span class="field-key">pitcher_id</span>=NULL,&nbsp;
+              <span class="field-key">game_info</span> JSONB {opponent_name, scouting_home_team, game_date},&nbsp;
+              <span class="field-key">stats</span> JSONB (aggregated),&nbsp;
+              <span class="field-key">narrative</span> TEXT (AI-generated)
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="scouting-callout">
+        <strong>Unique constraint:</strong> One scouting summary per game (idx_performance_summaries_scouting WHERE source_type='scouting').
+        Generates AI narrative via Claude API summarizing pitch tendencies and at-bat patterns for all scouted players.
+      </div>
+    </div>
+    <div class="step-detail">
+      <h4>Summary Content</h4>
+      <ul class="note-list">
+        <li>Aggregates all pitches across all at-bats in game</li>
+        <li>Pitch mix by type, zone heat maps, count tendencies</li>
+        <li>Per-batter: total pitches seen, K/BB/hit outcomes</li>
+        <li>AI narrative: chase tendency, pitch selection patterns</li>
+      </ul>
+    </div>
+  </div>
+  <div class="arrow-row"><div class="arrow-line"></div></div>
+  <div class="spacer"></div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- STEP 11: TENDENCY CALCULATION -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="step">
+    <div class="connector"></div>
+    <div class="step-number color-link">11</div>
+    <div class="step-box border-link">
+      <div class="step-title">Batter Tendency Calculation</div>
+      <div class="step-subtitle">Recalculate per-batter analytics from all historical game data (triggered on demand or by stale flag)</div>
+
+      <div class="api-row">
+        <span class="method-badge method-post">POST</span>
+        <span class="endpoint">/bt-api/scouting/profiles/:profileId/calculate-tendencies</span>
+      </div>
+      <span class="service-label">scoutingService.calculateTendencies()</span>
+
+      <div class="db-section">
+        <div class="db-section-title">Database</div>
+        <div class="db-table">
+          <div class="db-row">
+            <span class="table-name">pitches</span>
+            <span class="table-op op-select">SELECT</span>
+            <span class="fields">
+              All pitches via: pitches → at_bats → opponent_lineup_profiles WHERE profile_id = ?
+            </span>
+          </div>
+          <div class="db-row" style="margin-top:4px">
+            <span class="table-name">batter_tendencies</span>
+            <span class="table-op op-upsert">UPSERT</span>
+            <span class="fields">
+              <span class="field-key">chase_rate</span>,&nbsp;
+              <span class="field-key">watch_rate</span>,&nbsp;
+              <span class="field-key">early_count_rate</span>,&nbsp;
+              <span class="field-key">first_pitch_take_rate</span>,&nbsp;
+              <span class="field-key">breaking_chase_rate</span>,&nbsp;
+              <span class="field-key">zone_tendencies</span> JSONB,&nbsp;
+              <span class="field-key">total_pitches_seen</span>,&nbsp;
+              <span class="field-key">total_at_bats</span>,&nbsp;
+              <span class="field-key">is_stale</span>=FALSE,&nbsp;
+              <span class="field-key">last_calculated_at</span>=NOW()
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="step-detail">
+      <h4>Calculated Metrics</h4>
+      <ul class="note-list">
+        <li><strong>Chase Rate</strong>: swings outside zone / pitches outside zone</li>
+        <li><strong>Watch Rate</strong>: takes inside zone / pitches inside zone</li>
+        <li><strong>Early Count Rate</strong>: swings on 0-0, 1-0 counts</li>
+        <li><strong>First Pitch Take Rate</strong>: takes on first pitch</li>
+        <li><strong>Breaking Chase Rate</strong>: chases on SL/CB/CH outside zone</li>
+        <li><strong>Zone Tendencies</strong>: swing/take/whiff rates per zone (1–9)</li>
+      </ul>
+      <h4 style="margin-top:8px">Auto-Detected Insights</h4>
+      <ul class="note-list">
+        <li>High confidence (&gt;35% chase) → "Chase outside pitch"</li>
+        <li>High confidence (&gt;40% breaking chase) → "Breaking ball weakness"</li>
+        <li>High confidence (&gt;50% early aggression) → "First-pitch hacker"</li>
+      </ul>
+    </div>
+  </div>
+  <div class="arrow-row"><div class="arrow-line"></div></div>
+  <div class="spacer"></div>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- STEP 12: OPPONENT TEAM REGISTRY UPDATE -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div class="step">
+    <div class="step-number color-link">12</div>
+    <div class="step-box border-link">
+      <div class="step-title">Opponent Team &amp; Pitcher Profile Updates</div>
+      <div class="step-subtitle">Persistent opponent intelligence updated after game completes</div>
+
+      <div class="two-col">
+        <div>
+          <div class="api-row">
+            <span class="method-badge method-get">GET</span>
+            <span class="endpoint">/bt-api/opponents/:teamId</span>
+          </div>
+          <span class="service-label">opponentTeamService.getTeam()</span>
+          <div class="api-row" style="margin-top:6px">
+            <span class="method-badge method-get">GET</span>
+            <span class="endpoint">/bt-api/opponents/:teamId/pitchers</span>
+          </div>
+          <span class="service-label">opponentTeamService.getPitchers()</span>
+        </div>
+        <div>
+          <div class="api-row">
+            <span class="method-badge method-get">GET</span>
+            <span class="endpoint">/bt-api/games/:id/opponent-roster</span>
+          </div>
+          <span class="service-label">gameService.getOpponentRoster()</span>
+          <div style="margin-top:8px; font-size:10px; color:#475569">
+            Returns known pitchers &amp; batters from this game's opponent team for autocomplete in future games
+          </div>
+        </div>
+      </div>
+
+      <div class="db-section">
+        <div class="db-section-title">Database (updated by prior auto-links)</div>
+        <div class="db-table">
+          <div class="db-row">
+            <span class="table-name">opponent_teams</span>
+            <span class="table-op op-select">SELECT</span>
+            <span class="fields">
+              <span class="field-key">name</span>,&nbsp;
+              <span class="field-key">normalized_name</span>,&nbsp;
+              <span class="field-key">games_played</span>,&nbsp;
+              <span class="field-key">last_game_date</span>
+            </span>
+          </div>
+          <div class="db-row" style="margin-top:4px">
+            <span class="table-name">opponent_pitcher_profiles</span>
+            <span class="table-op op-select">SELECT</span>
+            <span class="fields">
+              <span class="field-key">pitcher_name</span>,&nbsp;
+              <span class="field-key">throws</span>,&nbsp;
+              <span class="field-key">games_pitched</span>,&nbsp;
+              <span class="field-key">last_seen_date</span>
+            </span>
+          </div>
+          <div class="db-row" style="margin-top:4px">
+            <span class="table-name">batter_scouting_profiles</span>
+            <span class="table-op op-select">SELECT</span>
+            <span class="fields">
+              <span class="field-key">player_name</span>,&nbsp;
+              <span class="field-key">bats</span>,&nbsp;
+              <span class="field-key">opponent_team_id</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="step-detail">
+      <h4>Persistent Intelligence</h4>
+      <ul class="note-list">
+        <li>Opponent teams persist across seasons</li>
+        <li>Pitcher profiles accumulate games_pitched</li>
+        <li>Batter profiles accumulate total_at_bats</li>
+        <li>Tendencies available for pre-game scouting reports in future games</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- end flow-wrapper -->
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- DB SCHEMA REFERENCE -->
+<!-- ══════════════════════════════════════════════════ -->
+<div style="margin-top:40px; max-width:1100px; margin-left:auto; margin-right:auto;">
+  <div class="section-heading">Database Schema — Key Tables</div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:12px;">
+
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+      <div style="font-weight:700; font-size:11px; margin-bottom:8px; color:#0f172a; font-family:'Fira Code',monospace;">games</div>
+      <div style="font-family:'Fira Code',monospace; font-size:9px; line-height:1.8; color:#475569;">
+        id UUID PK<br>
+        <span style="color:#7c3aed">charting_mode VARCHAR</span> ← 'scouting'<br>
+        <span style="color:#7c3aed">scouting_home_team TEXT</span><br>
+        <span style="color:#7c3aed">opponent_team_id UUID FK</span><br>
+        home_team_id UUID FK → teams<br>
+        opponent_name TEXT<br>
+        status VARCHAR<br>
+        current_inning INT<br>
+        inning_half VARCHAR<br>
+        base_runners JSONB<br>
+        home_score INT<br>
+        away_score INT<br>
+        is_home_game BOOL<br>
+        created_by UUID FK → users
+      </div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+      <div style="font-weight:700; font-size:11px; margin-bottom:8px; color:#0f172a; font-family:'Fira Code',monospace;">opponent_lineup</div>
+      <div style="font-family:'Fira Code',monospace; font-size:9px; line-height:1.8; color:#475569;">
+        id UUID PK<br>
+        game_id UUID FK → games<br>
+        player_name TEXT<br>
+        batting_order INT<br>
+        position VARCHAR<br>
+        bats VARCHAR (R/L/S)<br>
+        <span style="color:#7c3aed">team_side VARCHAR</span> ← home/away<br>
+        is_starter BOOL<br>
+        inning_entered INT<br>
+        replaced_by_id UUID FK (self)
+      </div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+      <div style="font-weight:700; font-size:11px; margin-bottom:8px; color:#0f172a; font-family:'Fira Code',monospace;">pitches</div>
+      <div style="font-family:'Fira Code',monospace; font-size:9px; line-height:1.8; color:#475569;">
+        id UUID PK<br>
+        at_bat_id UUID FK → at_bats<br>
+        game_id UUID FK → games<br>
+        pitcher_id UUID FK (null in scouting)<br>
+        <span style="color:#7c3aed">opponent_batter_id UUID FK</span><br>
+        pitch_number INT<br>
+        pitch_type VARCHAR<br>
+        velocity INT<br>
+        location_x FLOAT<br>
+        location_y FLOAT<br>
+        zone INT<br>
+        pitch_result VARCHAR<br>
+        balls_before INT<br>
+        strikes_before INT<br>
+        <span style="color:#7c3aed">team_side VARCHAR</span> ← 'opponent'
+      </div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+      <div style="font-weight:700; font-size:11px; margin-bottom:8px; color:#0f172a; font-family:'Fira Code',monospace;">at_bats</div>
+      <div style="font-family:'Fira Code',monospace; font-size:9px; line-height:1.8; color:#475569;">
+        id UUID PK<br>
+        game_id UUID FK → games<br>
+        inning_id UUID FK → innings<br>
+        batter_id UUID FK (null in scouting)<br>
+        pitcher_id UUID FK (null in scouting)<br>
+        <span style="color:#7c3aed">opponent_batter_id UUID FK</span><br>
+        <span style="color:#7c3aed">opposing_pitcher_id UUID FK</span><br>
+        batting_order INT<br>
+        balls INT<br>
+        strikes INT<br>
+        result VARCHAR<br>
+        outs_before INT<br>
+        outs_after INT<br>
+        rbi INT<br>
+        runs_scored INT
+      </div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+      <div style="font-weight:700; font-size:11px; margin-bottom:8px; color:#0f172a; font-family:'Fira Code',monospace;">batter_scouting_profiles</div>
+      <div style="font-family:'Fira Code',monospace; font-size:9px; line-height:1.8; color:#475569;">
+        id UUID PK<br>
+        team_id UUID FK → teams<br>
+        player_name TEXT<br>
+        normalized_name TEXT<br>
+        opponent_team_name TEXT<br>
+        bats VARCHAR (R/L/S)<br>
+        <span style="color:#7c3aed">opponent_team_id UUID FK</span><br>
+        — linked via —<br>
+        opponent_lineup_profiles:<br>
+        &nbsp;&nbsp;opponent_lineup_id → profile_id
+      </div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+      <div style="font-weight:700; font-size:11px; margin-bottom:8px; color:#0f172a; font-family:'Fira Code',monospace;">batter_tendencies</div>
+      <div style="font-family:'Fira Code',monospace; font-size:9px; line-height:1.8; color:#475569;">
+        profile_id UUID PK FK<br>
+        total_pitches_seen INT<br>
+        total_at_bats INT<br>
+        chase_rate FLOAT<br>
+        watch_rate FLOAT<br>
+        early_count_rate FLOAT<br>
+        first_pitch_take_rate FLOAT<br>
+        breaking_chase_rate FLOAT<br>
+        zone_tendencies JSONB<br>
+        is_stale BOOL<br>
+        last_calculated_at TIMESTAMP
+      </div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+      <div style="font-weight:700; font-size:11px; margin-bottom:8px; color:#0f172a; font-family:'Fira Code',monospace;">opponent_teams</div>
+      <div style="font-family:'Fira Code',monospace; font-size:9px; line-height:1.8; color:#475569;">
+        id UUID PK<br>
+        team_id UUID FK (owner)<br>
+        name TEXT<br>
+        normalized_name TEXT<br>
+        city TEXT<br>
+        state TEXT<br>
+        level VARCHAR<br>
+        games_played INT<br>
+        last_game_date DATE
+      </div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+      <div style="font-weight:700; font-size:11px; margin-bottom:8px; color:#0f172a; font-family:'Fira Code',monospace;">opponent_pitcher_profiles</div>
+      <div style="font-family:'Fira Code',monospace; font-size:9px; line-height:1.8; color:#475569;">
+        id UUID PK<br>
+        opponent_team_id UUID FK<br>
+        pitcher_name TEXT<br>
+        normalized_name TEXT<br>
+        throws VARCHAR (L/R)<br>
+        games_pitched INT<br>
+        last_seen_date DATE<br>
+        — linked via —<br>
+        opposing_pitchers:<br>
+        &nbsp;&nbsp;profile_id UUID FK (nullable)
+      </div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+      <div style="font-weight:700; font-size:11px; margin-bottom:8px; color:#0f172a; font-family:'Fira Code',monospace;">performance_summaries</div>
+      <div style="font-family:'Fira Code',monospace; font-size:9px; line-height:1.8; color:#475569;">
+        id UUID PK<br>
+        source_type VARCHAR ← 'scouting'<br>
+        source_id UUID (game_id)<br>
+        pitcher_id UUID FK (NULL)<br>
+        game_info JSONB<br>
+        stats JSONB<br>
+        narrative TEXT (AI)<br>
+        created_at TIMESTAMP<br>
+        UNIQUE (source_type='scouting', source_id)
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- MIGRATION HISTORY -->
+<!-- ══════════════════════════════════════════════════ -->
+<div style="margin-top:32px; max-width:1100px; margin-left:auto; margin-right:auto;">
+  <div class="section-heading">Relevant Migrations</div>
+  <table style="width:100%; border-collapse:collapse; margin-top:12px; font-size:10px;">
+    <thead>
+      <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+        <th style="text-align:left; padding:8px 12px; font-weight:600; color:#475569; width:200px;">Migration</th>
+        <th style="text-align:left; padding:8px 12px; font-weight:600; color:#475569;">What It Added</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:8px 12px; font-family:'Fira Code',monospace; color:#1d4ed8;">015_opponent_scouting_reports.sql</td>
+        <td style="padding:8px 12px; color:#475569;">batter_scouting_profiles, opponent_lineup_profiles, batter_tendencies, batter_scouting_notes</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+        <td style="padding:8px 12px; font-family:'Fira Code',monospace; color:#1d4ed8;">023_baserunner_event_types.sql</td>
+        <td style="padding:8px 12px; color:#475569;">Extended baserunner_events with stolen_base, wild_pitch, passed_ball, balk event types</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:8px 12px; font-family:'Fira Code',monospace; color:#1d4ed8;">025_scouting_mode.sql</td>
+        <td style="padding:8px 12px; color:#475569;">games.charting_mode='scouting', games.scouting_home_team, opponent_lineup.team_side, opposing_pitchers.team_side</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f1f5f9; background:#fafafa;">
+        <td style="padding:8px 12px; font-family:'Fira Code',monospace; color:#1d4ed8;">026_scouting_summary.sql</td>
+        <td style="padding:8px 12px; color:#475569;">performance_summaries.source_type='scouting', pitcher_id nullable, unique index per scouting game</td>
+      </tr>
+      <tr style="border-bottom:1px solid #f1f5f9;">
+        <td style="padding:8px 12px; font-family:'Fira Code',monospace; color:#1d4ed8;">027_opponent_teams.sql</td>
+        <td style="padding:8px 12px; color:#475569;">opponent_teams registry, opponent_pitcher_profiles, opponent_pitcher_tendencies, games.opponent_team_id FK</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div style="margin-top:32px; text-align:center; font-size:9px; color:#94a3b8; padding-top:16px; border-top:1px solid #e2e8f0;">
+  PitchChart — Scouting Game Flow Diagram · Generated 2026-04-25 · Fields in <span style="color:#7c3aed">purple</span> are scouting-mode specific
+</div>
+
+</body>
+</html>

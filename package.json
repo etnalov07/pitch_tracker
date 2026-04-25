@@ -22,7 +22,11 @@
         "build:pitch-analyzer": "npm run build --workspace=@pitch-tracker/pitch-analyzer",
         "pitch-analyzer": "npm run start --workspace=@pitch-tracker/pitch-analyzer --",
         "lint": "npm run lint --workspaces --if-present",
-        "test": "npm run test --workspaces --if-present"
+        "test": "npm run test --workspaces --if-present",
+        "db:setup": "bash scripts/setup-local-db.sh",
+        "db:reset": "bash scripts/reset-local-db.sh",
+        "db:psql": "PGPASSWORD=localdev \"C:/Program Files/PostgreSQL/16/bin/psql\" -U bvolante -h localhost -d pitch_tracker_test",
+        "test:integration": "npm run test:integration --workspace=@pitch-tracker/api"
     },
     "devDependencies": {
         "typescript": "^5.9.3"

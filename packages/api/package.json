@@ -52,6 +52,7 @@
         "dev": "nodemon src/server.ts",
         "build": "tsc",
         "start": "node server.js",
-        "test": "jest"
+        "test": "jest",
+        "test:integration": "jest --config jest.config.integration.js --runInBand --forceExit"
     }
 }
