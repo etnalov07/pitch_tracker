@@ -14,7 +14,9 @@ import JoinTeam from './pages/JoinTeam/JoinTeam';
 import LiveGame from './pages/LiveGame/LiveGame';
 import Login from './pages/Login/Login';
 import MyTeamLineup from './pages/MyTeamLineup/MyTeamLineup';
+import OpponentDetail from './pages/OpponentDetail';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
+import Opponents from './pages/Opponents';
 import PitcherProfile from './pages/PitcherProfile';
 import ScoutingReport from './pages/ScoutingReport';
 import ScoutingReports from './pages/ScoutingReports';
@@ -144,6 +146,22 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <BullpenPlanEditor />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/teams/:team_id/opponents"
+                    element={
+                        <ProtectedRoute>
+                            <Opponents />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/teams/:team_id/opponents/:id"
+                    element={
+                        <ProtectedRoute>
+                            <OpponentDetail />
                         </ProtectedRoute>
                     }
                 />

@@ -16,6 +16,8 @@ import gameRoutes from './routes/game.routes';
 import inviteRoutes from './routes/invite.routes';
 import joinRequestRoutes from './routes/joinRequest.routes';
 import opponentLineupRoutes from './routes/opponentLineup.routes';
+import opponentPitcherProfileRoutes from './routes/opponentPitcherProfile.routes';
+import opponentTeamRoutes from './routes/opponentTeam.routes';
 import opposingPitcherRoutes from './routes/opposingPitcher.routes';
 import gameRoleRoutes from './routes/gameRole.routes';
 import myTeamLineupRoutes from './routes/myTeamLineup.routes';
@@ -93,6 +95,7 @@ app.use('/bt-api/games', gameRoutes);
 app.use('/bt-api/invites', inviteRoutes);
 app.use('/bt-api/join-requests', joinRequestRoutes);
 app.use('/bt-api/opponent-lineup', opponentLineupRoutes);
+app.use('/bt-api/opponent-pitcher-profiles', opponentPitcherProfileRoutes);
 app.use('/bt-api/opposing-pitchers', opposingPitcherRoutes);
 app.use('/bt-api', gameRoleRoutes);
 app.use('/bt-api/my-team-lineup', myTeamLineupRoutes);
@@ -106,6 +109,7 @@ app.use('/bt-api/plays', playRoutes);
 app.use('/bt-api/scouting-reports', scoutingReportRoutes);
 app.use('/bt-api/teams', teamRoutes);
 app.use('/bt-api/teams', teamMemberRoutes);
+app.use('/bt-api/teams/:teamId/opponents', opponentTeamRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

@@ -259,6 +259,7 @@ export interface Game {
     total_pitches?: number;
     shake_count?: number;
     scouting_home_team?: string | null;
+    opponent_team_id?: string | null;
     created_by: string;
     created_at: string;
     updated_at?: string;
@@ -542,6 +543,7 @@ export interface BatterScoutingProfile {
     id: string;
     team_id: string;
     opponent_team_name: string;
+    opponent_team_id?: string | null;
     player_name: string;
     normalized_name: string;
     bats: HandednessType;
@@ -1032,6 +1034,7 @@ export interface OpposingPitcher {
     jersey_number?: number | null;
     throws: ThrowingHand;
     team_side?: 'home' | 'away';
+    profile_id?: string | null;
     created_at: string;
 }
 
@@ -1427,4 +1430,68 @@ export interface ScoutingReportInput {
     steal_frequency?: TeamTendencyFrequency | null;
     bunt_frequency?: TeamTendencyFrequency | null;
     hit_and_run_frequency?: TeamTendencyFrequency | null;
+}
+
+// ============================================================================
+// Opponent Intelligence Types
+// ============================================================================
+
+export interface OpponentTeam {
+    id: string;
+    team_id: string;
+    name: string;
+    normalized_name: string;
+    city?: string | null;
+    state?: string | null;
+    level?: string | null;
+    notes?: string | null;
+    games_played: number;
+    last_game_date?: string | null;
+    created_at: string;
+    updated_at?: string;
+}
+
+export interface CreateOpponentTeamParams {
+    name: string;
+    city?: string | null;
+    state?: string | null;
+    level?: string | null;
+    notes?: string | null;
+}
+
+export interface OpponentPitcherProfile {
+    id: string;
+    opponent_team_id: string;
+    team_id: string;
+    pitcher_name: string;
+    normalized_name: string;
+    jersey_number?: number | null;
+    throws: ThrowingHand;
+    games_pitched: number;
+    last_seen_date?: string | null;
+    created_at: string;
+    updated_at?: string;
+}
+
+export interface OpponentPitcherTendencies {
+    id: string;
+    profile_id: string;
+    total_pitches: number;
+    total_at_bats: number;
+    strike_percentage: number | null;
+    first_pitch_strike_pct: number | null;
+    fastball_pct: number | null;
+    offspeed_pct: number | null;
+    breaking_pct: number | null;
+    early_count_fastball_pct: number | null;
+    two_strike_offspeed_pct: number | null;
+    pitch_mix: Record<string, { count: number; pct: number; strike_pct: number }>;
+    zone_tendencies: Record<string, { count: number; strike_pct: number }>;
+    last_calculated_at: string | null;
+    is_stale: boolean;
+}
+
+export interface OpponentTeamWithRoster extends OpponentTeam {
+    pitchers: OpponentPitcherProfile[];
+    batters: BatterScoutingProfile[];
 }

@@ -122,6 +122,14 @@ export {
 export { initializeSettings, setPitchCallingEnabled, setVelocityEnabled } from './settings/settingsSlice';
 
 export {
+    fetchOpponents,
+    fetchOpponentById,
+    createOpponent,
+    clearOpponentsError,
+    clearSelectedOpponent,
+} from './opponents/opponentsSlice';
+
+export {
     createBullpenSession,
     fetchBullpenSession,
     fetchBullpenSessions,

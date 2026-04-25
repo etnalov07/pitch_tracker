@@ -181,6 +181,19 @@ export default function TeamDetailScreen() {
                         Scouting Reports
                     </Button>
 
+                    <Button
+                        mode="outlined"
+                        icon="account-group"
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            router.push(`/team/${id}/opponents` as any);
+                        }}
+                        style={styles.bullpenButton}
+                        contentStyle={styles.bullpenButtonContent}
+                    >
+                        Opponent Teams
+                    </Button>
+
                     {renderRosterTable('Pitchers', pitchers)}
                     {renderRosterTable('Position Players', fieldPlayers)}
 
