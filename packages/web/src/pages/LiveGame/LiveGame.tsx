@@ -224,6 +224,15 @@ const LiveGame: React.FC = () => {
           ? !currentOpposingPitcher
           : !currentPitcher || !currentBatter;
 
+    // Single-team scouting: true when the current half is NOT the focus team's pitching half
+    const scoutingFocus = game?.scouting_focus;
+    const shouldSkipHalf =
+        isScoutingMode &&
+        game?.status === 'in_progress' &&
+        scoutingFocus &&
+        scoutingFocus !== 'both' &&
+        ((scoutingFocus === 'home' && game.inning_half === 'bottom') || (scoutingFocus === 'away' && game.inning_half === 'top'));
+
     const pitcherName = currentPitcher?.player
         ? `${currentPitcher.player.first_name} ${currentPitcher.player.last_name}`
         : undefined;
@@ -387,44 +396,46 @@ const LiveGame: React.FC = () => {
                             </OutsContainer>
                             <BaseRunnerDisplay runners={baseRunners} size={50} />
                         </div>
-                        {(baseRunners.first || baseRunners.second || baseRunners.third) && game.status === 'in_progress' && (
-                            <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
-                                <button
-                                    onClick={() => {
-                                        setRunnerEventDefaultTab('advance');
-                                        setShowRunnerEventModal(true);
-                                    }}
-                                    style={{
-                                        padding: '6px 10px',
-                                        fontSize: '11px',
-                                        background: theme.colors.green[50],
-                                        color: theme.colors.green[700],
-                                        border: `1px solid ${theme.colors.green[200]}`,
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    SB / WP / PB / BLK
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setRunnerEventDefaultTab('out');
-                                        setShowRunnerEventModal(true);
-                                    }}
-                                    style={{
-                                        padding: '6px 10px',
-                                        fontSize: '11px',
-                                        background: theme.colors.red[50],
-                                        color: theme.colors.red[700],
-                                        border: `1px solid ${theme.colors.red[200]}`,
-                                        borderRadius: '6px',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    Runner Out
-                                </button>
-                            </div>
-                        )}
+                        {!isScoutingMode &&
+                            (baseRunners.first || baseRunners.second || baseRunners.third) &&
+                            game.status === 'in_progress' && (
+                                <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                                    <button
+                                        onClick={() => {
+                                            setRunnerEventDefaultTab('advance');
+                                            setShowRunnerEventModal(true);
+                                        }}
+                                        style={{
+                                            padding: '6px 10px',
+                                            fontSize: '11px',
+                                            background: theme.colors.green[50],
+                                            color: theme.colors.green[700],
+                                            border: `1px solid ${theme.colors.green[200]}`,
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        SB / WP / PB / BLK
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setRunnerEventDefaultTab('out');
+                                            setShowRunnerEventModal(true);
+                                        }}
+                                        style={{
+                                            padding: '6px 10px',
+                                            fontSize: '11px',
+                                            background: theme.colors.red[50],
+                                            color: theme.colors.red[700],
+                                            border: `1px solid ${theme.colors.red[200]}`,
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        Runner Out
+                                    </button>
+                                </div>
+                            )}
                     </GameInfo>
                     <TeamInfo>
                         <TeamName>
@@ -576,42 +587,44 @@ const LiveGame: React.FC = () => {
                             </CountValue>
                         </CountDisplay>
 
-                        <StepIndicator>
-                            <Step completed={!!pitchType} active={!pitchType}>
-                                <StepNumber completed={!!pitchType} active={!pitchType}>
-                                    {pitchType ? '✓' : '1'}
-                                </StepNumber>
-                                <StepLabel active={!pitchType}>Type</StepLabel>
-                            </Step>
-                            <StepConnector completed={!!pitchType} />
-                            <Step completed={!!targetZone} active={!!pitchType && !targetZone}>
-                                <StepNumber completed={!!targetZone} active={!!pitchType && !targetZone}>
-                                    {targetZone ? '✓' : '2'}
-                                </StepNumber>
-                                <StepLabel active={!!pitchType && !targetZone}>Target</StepLabel>
-                            </Step>
-                            <StepConnector completed={!!targetZone} />
-                            <Step completed={!!activeCall} active={!!targetZone && !activeCall}>
-                                <StepNumber completed={!!activeCall} active={!!targetZone && !activeCall}>
-                                    {activeCall ? '✓' : '3'}
-                                </StepNumber>
-                                <StepLabel active={!!targetZone && !activeCall}>Send</StepLabel>
-                            </Step>
-                            <StepConnector completed={!!activeCall} />
-                            <Step completed={!!pitchLocation} active={!!activeCall && !pitchLocation}>
-                                <StepNumber completed={!!pitchLocation} active={!!activeCall && !pitchLocation}>
-                                    {pitchLocation ? '✓' : '4'}
-                                </StepNumber>
-                                <StepLabel active={!!activeCall && !pitchLocation}>Location</StepLabel>
-                            </Step>
-                            <StepConnector completed={!!pitchLocation} />
-                            <Step completed={!!pitchResult} active={!!pitchLocation}>
-                                <StepNumber completed={!!pitchResult} active={!!pitchLocation}>
-                                    {pitchResult ? '✓' : '5'}
-                                </StepNumber>
-                                <StepLabel active={!!pitchLocation}>Result</StepLabel>
-                            </Step>
-                        </StepIndicator>
+                        {!isScoutingMode && (
+                            <StepIndicator>
+                                <Step completed={!!pitchType} active={!pitchType}>
+                                    <StepNumber completed={!!pitchType} active={!pitchType}>
+                                        {pitchType ? '✓' : '1'}
+                                    </StepNumber>
+                                    <StepLabel active={!pitchType}>Type</StepLabel>
+                                </Step>
+                                <StepConnector completed={!!pitchType} />
+                                <Step completed={!!targetZone} active={!!pitchType && !targetZone}>
+                                    <StepNumber completed={!!targetZone} active={!!pitchType && !targetZone}>
+                                        {targetZone ? '✓' : '2'}
+                                    </StepNumber>
+                                    <StepLabel active={!!pitchType && !targetZone}>Target</StepLabel>
+                                </Step>
+                                <StepConnector completed={!!targetZone} />
+                                <Step completed={!!activeCall} active={!!targetZone && !activeCall}>
+                                    <StepNumber completed={!!activeCall} active={!!targetZone && !activeCall}>
+                                        {activeCall ? '✓' : '3'}
+                                    </StepNumber>
+                                    <StepLabel active={!!targetZone && !activeCall}>Send</StepLabel>
+                                </Step>
+                                <StepConnector completed={!!activeCall} />
+                                <Step completed={!!pitchLocation} active={!!activeCall && !pitchLocation}>
+                                    <StepNumber completed={!!pitchLocation} active={!!activeCall && !pitchLocation}>
+                                        {pitchLocation ? '✓' : '4'}
+                                    </StepNumber>
+                                    <StepLabel active={!!activeCall && !pitchLocation}>Location</StepLabel>
+                                </Step>
+                                <StepConnector completed={!!pitchLocation} />
+                                <Step completed={!!pitchResult} active={!!pitchLocation}>
+                                    <StepNumber completed={!!pitchResult} active={!!pitchLocation}>
+                                        {pitchResult ? '✓' : '5'}
+                                    </StepNumber>
+                                    <StepLabel active={!!pitchLocation}>Result</StepLabel>
+                                </Step>
+                            </StepIndicator>
+                        )}
 
                         <PitchTypeSelector>
                             <PitchTypeSelectorTitle>Step 1: Select Pitch Type</PitchTypeSelectorTitle>
@@ -624,8 +637,8 @@ const LiveGame: React.FC = () => {
                             </PitchTypeGrid>
                         </PitchTypeSelector>
 
-                        {/* Send Call button - appears after type + zone selected */}
-                        {targetZone && !activeCall && (
+                        {/* Send Call button - appears after type + zone selected (not in scouting mode) */}
+                        {!isScoutingMode && targetZone && !activeCall && (
                             <div
                                 style={{
                                     display: 'flex',
@@ -646,8 +659,8 @@ const LiveGame: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Active call badge */}
-                        {activeCall && (
+                        {/* Active call badge (not in scouting mode) */}
+                        {!isScoutingMode && activeCall && (
                             <div
                                 style={{
                                     display: 'flex',
@@ -667,31 +680,35 @@ const LiveGame: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Situational calls row */}
-                        <SituationalCallsRow
-                            gameId={game.id}
-                            teamId={game.home_team_id || ''}
-                            pitcherId={currentPitcher?.player_id}
-                            opponentBatterId={currentBatter?.id}
-                            inning={game.current_inning}
-                            shakeCount={(game.shake_count ?? 0) + localShakeCount}
-                            disabled={game.status !== 'in_progress'}
-                            onCallSent={actions.handleSituationalCall}
-                        />
+                        {/* Situational calls row (not in scouting mode) */}
+                        {!isScoutingMode && (
+                            <SituationalCallsRow
+                                gameId={game.id}
+                                teamId={game.home_team_id || ''}
+                                pitcherId={currentPitcher?.player_id}
+                                opponentBatterId={currentBatter?.id}
+                                inning={game.current_inning}
+                                shakeCount={(game.shake_count ?? 0) + localShakeCount}
+                                disabled={game.status !== 'in_progress'}
+                                onCallSent={actions.handleSituationalCall}
+                            />
+                        )}
 
                         <StrikeZoneRow>
                             <StrikeZoneContainer>
-                                <HeatZoneToggleContainer>
-                                    <HeatZoneToggleLabel>{showHeatZones ? 'Hide' : 'Show'} Heat Zones</HeatZoneToggleLabel>
-                                    <ToggleSwitch>
-                                        <ToggleSwitchInput
-                                            type="checkbox"
-                                            checked={showHeatZones}
-                                            onChange={() => setShowHeatZones(!showHeatZones)}
-                                        />
-                                        <ToggleSwitchSlider />
-                                    </ToggleSwitch>
-                                </HeatZoneToggleContainer>
+                                {!isScoutingMode && (
+                                    <HeatZoneToggleContainer>
+                                        <HeatZoneToggleLabel>{showHeatZones ? 'Hide' : 'Show'} Heat Zones</HeatZoneToggleLabel>
+                                        <ToggleSwitch>
+                                            <ToggleSwitchInput
+                                                type="checkbox"
+                                                checked={showHeatZones}
+                                                onChange={() => setShowHeatZones(!showHeatZones)}
+                                            />
+                                            <ToggleSwitchSlider />
+                                        </ToggleSwitch>
+                                    </HeatZoneToggleContainer>
+                                )}
                                 <StrikeZone
                                     onLocationSelect={actions.handleLocationSelect}
                                     onTargetZoneSelect={actions.handleTargetZoneSelect}
@@ -782,6 +799,14 @@ const LiveGame: React.FC = () => {
                             </PitchForm>
                         </StrikeZoneRow>
                     </>
+                ) : shouldSkipHalf ? (
+                    <NoAtBatContainer>
+                        <NoAtBatText>
+                            {scoutingFocus === 'home' ? game.scouting_home_team || 'Home' : game.opponent_name || 'Away'} team
+                            batting — not charting this half.
+                        </NoAtBatText>
+                        <StartAtBatButton onClick={actions.handleSkipHalf}>Skip to Next Half →</StartAtBatButton>
+                    </NoAtBatContainer>
                 ) : (
                     <NoAtBatContainer>
                         <NoAtBatText>No active at-bat</NoAtBatText>
@@ -828,7 +853,7 @@ const LiveGame: React.FC = () => {
                     teamRunsScored={teamRunsScored}
                     onTeamRunsChange={setTeamRunsScored}
                     onConfirm={actions.handleInningChangeConfirm}
-                    showRunsInput={game?.charting_mode !== 'both'}
+                    showRunsInput={game?.scouting_focus === 'home' || game?.scouting_focus === 'away'}
                 />
             )}
 

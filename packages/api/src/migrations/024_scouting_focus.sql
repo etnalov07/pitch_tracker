@@ -1,0 +1,1 @@
+ALTER TABLE games ADD COLUMN IF NOT EXISTS scouting_focus VARCHAR(8) DEFAULT 'both';

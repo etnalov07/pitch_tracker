@@ -169,7 +169,21 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                                 </BreakdownTab>
                             </BreakdownTabRow>
                         )}
-                        {breakdownTab === 'opponent' || game.charting_mode !== 'both' ? (
+                        {isScoutingMode ? (
+                            <BatterBreakdownPanel
+                                sections={[
+                                    {
+                                        title: `${game.opponent_name || 'Away Team'} Lineup`,
+                                        batters: (oppBreakdown ?? []).filter((b) => b.team_side === 'away'),
+                                    },
+                                    {
+                                        title: `${game.scouting_home_team || 'Home Team'} Lineup`,
+                                        batters: (oppBreakdown ?? []).filter((b) => b.team_side === 'home'),
+                                    },
+                                ]}
+                                loading={breakdownLoading}
+                            />
+                        ) : breakdownTab === 'opponent' || game.charting_mode !== 'both' ? (
                             <BatterBreakdownPanel
                                 sections={[{ title: `Opponent Lineup vs. ${pitcherName}`, batters: oppBreakdown ?? [] }]}
                                 loading={breakdownLoading}

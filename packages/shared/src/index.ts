@@ -259,6 +259,7 @@ export interface Game {
     total_pitches?: number;
     shake_count?: number;
     scouting_home_team?: string | null;
+    scouting_focus?: 'both' | 'home' | 'away';
     opponent_team_id?: string | null;
     created_by: string;
     created_at: string;
@@ -1019,6 +1020,7 @@ export interface BatterBreakdown {
     batting_order: number;
     bats: HandednessType;
     position?: string;
+    team_side?: 'home' | 'away';
     at_bats: BatterAtBatSummary[];
 }
 

@@ -805,6 +805,11 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
+    const handleSkipHalf = async () => {
+        if (!gameId || !game) return;
+        await advanceInning(0);
+    };
+
     return {
         handleSendCall,
         handleSituationalCall,
@@ -828,5 +833,6 @@ export function useLiveGameActions(state: LiveGameState) {
         handleToggleHomeAway,
         handleDroppedThird,
         handleDoublePlayConfirm,
+        handleSkipHalf,
     };
 }
