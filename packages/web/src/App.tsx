@@ -18,6 +18,7 @@ import OpponentDetail from './pages/OpponentDetail';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
 import Opponents from './pages/Opponents';
 import PitcherProfile from './pages/PitcherProfile';
+import ScoutingLineup from './pages/ScoutingLineup';
 import ScoutingReport from './pages/ScoutingReport';
 import ScoutingReports from './pages/ScoutingReports';
 import TeamDetail from './pages/TeamDetail/TeamDetail';
@@ -58,6 +59,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <LiveGame />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/game/:gameId/scouting-lineup"
+                    element={
+                        <ProtectedRoute>
+                            <ScoutingLineup />
                         </ProtectedRoute>
                     }
                 />

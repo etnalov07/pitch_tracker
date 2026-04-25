@@ -181,6 +181,7 @@ export const gamesApi = {
             position?: string;
             bats: 'R' | 'L' | 'S';
             is_starter: boolean;
+            team_side?: 'home' | 'away';
         }[]
     ): Promise<OpponentLineupPlayer[]> => {
         const response = await api.post<{ lineup: OpponentLineupPlayer[] }>(`/opponent-lineup/game/${gameId}/bulk`, {

@@ -106,7 +106,7 @@ export default function NewGameScreen() {
             ).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             if (isScoutingMode) {
-                router.replace(`/game/${newGame.id}/live` as any);
+                router.replace(`/game/${newGame.id}/scouting-lineup` as any);
             } else {
                 router.replace(`/game/${newGame.id}/my-lineup` as any);
             }

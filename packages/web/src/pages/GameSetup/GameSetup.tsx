@@ -162,9 +162,8 @@ const GameSetup: React.FC = () => {
                 throw new Error('Failed to create game');
             }
 
-            // Scouting mode: go straight to the live game (add players inline during the game)
             if (isScoutingMode) {
-                navigate(`/game/${newGame.id}`);
+                navigate(`/game/${newGame.id}/scouting-lineup`);
             } else {
                 navigate(`/game/${newGame.id}/my-lineup`);
             }
