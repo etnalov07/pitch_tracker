@@ -146,8 +146,8 @@ export class PlayerService {
                 try {
                     const player_id = uuidv4();
                     const { rows: inserted } = await client.query(
-                        `INSERT INTO players (id, team_id, first_name, last_name, jersey_number, primary_position, bats, throws)
-                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                        `INSERT INTO players (id, team_id, first_name, last_name, jersey_number, primary_position, secondary_position, bats, throws)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                          RETURNING *`,
                         [
                             player_id,
@@ -156,6 +156,7 @@ export class PlayerService {
                             row.last_name.trim(),
                             row.jersey_number ?? null,
                             row.primary_position,
+                            row.secondary_position ?? null,
                             row.bats,
                             row.throws,
                         ]

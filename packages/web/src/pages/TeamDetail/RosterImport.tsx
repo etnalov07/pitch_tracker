@@ -44,12 +44,22 @@ const FIELD_OPTIONS = [
     { value: 'last_name', label: 'Last Name *' },
     { value: 'jersey_number', label: 'Jersey #' },
     { value: 'primary_position', label: 'Position *' },
+    { value: 'secondary_position', label: 'Secondary Position' },
     { value: 'bats', label: 'Bats *' },
     { value: 'throws', label: 'Throws *' },
     { value: 'pitch_types', label: 'Pitch Types' },
 ];
 
-type FieldKey = 'first_name' | 'last_name' | 'jersey_number' | 'primary_position' | 'bats' | 'throws' | 'pitch_types' | '';
+type FieldKey =
+    | 'first_name'
+    | 'last_name'
+    | 'jersey_number'
+    | 'primary_position'
+    | 'secondary_position'
+    | 'bats'
+    | 'throws'
+    | 'pitch_types'
+    | '';
 
 type ImportStep = 'upload' | 'map' | 'preview' | 'done';
 
@@ -93,6 +103,8 @@ function autoMap(headers: string[]): Record<string, FieldKey> {
         if (lower.includes('first') || lower === 'fname') mapping[h] = 'first_name';
         else if (lower.includes('last') || lower === 'lname') mapping[h] = 'last_name';
         else if (lower.includes('jersey') || lower === 'number' || lower === 'num' || lower === '#') mapping[h] = 'jersey_number';
+        else if (lower.includes('secondary') || lower === 'secpos' || lower === 'pos2' || lower === 'altpos')
+            mapping[h] = 'secondary_position';
         else if (lower.includes('position') || lower === 'pos') mapping[h] = 'primary_position';
         else if (lower === 'bats' || lower === 'bat' || lower === 'hitting') mapping[h] = 'bats';
         else if (lower === 'throws' || lower === 'throw' || lower === 'pitchinghand' || lower === 'hand') mapping[h] = 'throws';
@@ -207,6 +219,7 @@ const RosterImport: React.FC<Props> = ({ teamId, onClose, onImported }) => {
                 else if (field === 'last_name') row.last_name = val;
                 else if (field === 'jersey_number') row.jersey_number = val ? parseInt(val, 10) || undefined : undefined;
                 else if (field === 'primary_position') row.primary_position = normalizePosition(val);
+                else if (field === 'secondary_position') row.secondary_position = val ? normalizePosition(val) : undefined;
                 else if (field === 'bats') row.bats = normalizeBats(val);
                 else if (field === 'throws') row.throws = normalizeThrows(val);
                 else if (field === 'pitch_types') row.pitch_types = val ? parsePitchTypes(val) : [];
@@ -294,7 +307,7 @@ const RosterImport: React.FC<Props> = ({ teamId, onClose, onImported }) => {
                             <div style={{ marginTop: '16px', fontSize: '13px', color: '#6b7280' }}>
                                 <strong>Required columns:</strong> First Name, Last Name, Position, Bats, Throws
                                 <br />
-                                <strong>Optional:</strong> Jersey #, Pitch Types (for pitchers, comma-separated)
+                                <strong>Optional:</strong> Jersey #, Secondary Position, Pitch Types (for pitchers, comma-separated)
                             </div>
                         </>
                     )}
@@ -383,6 +396,7 @@ const RosterImport: React.FC<Props> = ({ teamId, onClose, onImported }) => {
                                             <PreviewTh>Last</PreviewTh>
                                             <PreviewTh>Jersey</PreviewTh>
                                             <PreviewTh>Pos</PreviewTh>
+                                            <PreviewTh>Sec Pos</PreviewTh>
                                             <PreviewTh>Bats</PreviewTh>
                                             <PreviewTh>Throws</PreviewTh>
                                             <PreviewTh>Pitch Types</PreviewTh>
@@ -400,6 +414,14 @@ const RosterImport: React.FC<Props> = ({ teamId, onClose, onImported }) => {
                                                     <PreviewTd>{row.jersey_number ?? '—'}</PreviewTd>
                                                     <PreviewTd hasError={!VALID_POSITIONS.includes(row.primary_position)}>
                                                         {row.primary_position}
+                                                    </PreviewTd>
+                                                    <PreviewTd
+                                                        hasError={
+                                                            !!row.secondary_position &&
+                                                            !VALID_POSITIONS.includes(row.secondary_position)
+                                                        }
+                                                    >
+                                                        {row.secondary_position || '—'}
                                                     </PreviewTd>
                                                     <PreviewTd hasError={!VALID_BATS.includes(row.bats)}>{row.bats}</PreviewTd>
                                                     <PreviewTd hasError={!VALID_THROWS.includes(row.throws)}>

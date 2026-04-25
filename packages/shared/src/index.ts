@@ -1125,6 +1125,7 @@ export interface RosterImportRow {
     last_name: string;
     jersey_number?: number;
     primary_position: string;
+    secondary_position?: string;
     bats: string;
     throws: string;
     pitch_types?: string[];
