@@ -934,7 +934,7 @@ export interface SeasonCallAnalytics {
 // Performance Summary
 // ============================================================================
 
-export type SummarySourceType = 'game' | 'bullpen';
+export type SummarySourceType = 'game' | 'bullpen' | 'scouting';
 export type MetricRating = 'highlight' | 'concern' | 'neutral';
 
 export interface PerformanceMetric {

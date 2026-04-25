@@ -66,15 +66,18 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
             .finally(() => setBreakdownLoading(false));
     }, [activeTab, game.id, game.charting_mode, refreshTrigger]);
 
+    const isScoutingMode = game.charting_mode === 'scouting';
+    const summarySourceType = isScoutingMode ? 'scouting' : 'game';
+
     useEffect(() => {
         if (activeTab !== 'summary' || summary) return;
         setSummaryLoading(true);
         performanceSummaryService
-            .getSummary('game', game.id)
+            .getSummary(summarySourceType, game.id)
             .then((s) => setSummary(s))
             .catch(() => {})
             .finally(() => setSummaryLoading(false));
-    }, [activeTab, game.id, summary]);
+    }, [activeTab, game.id, summary, summarySourceType]);
 
     // Poll until narrative arrives
     useEffect(() => {
@@ -87,21 +90,21 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
         pollTimerRef.current = setTimeout(() => {
             pollAttemptsRef.current += 1;
             performanceSummaryService
-                .getSummary('game', game.id)
+                .getSummary(summarySourceType, game.id)
                 .then((s) => setSummary(s))
                 .catch(() => {});
         }, NARRATIVE_POLL_INTERVAL_MS);
         return () => {
             if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
         };
-    }, [summary, game.id]);
+    }, [summary, game.id, summarySourceType]);
 
     const handleRegenerate = async () => {
         if (!summary) return;
         setRegenerating(true);
         try {
             await performanceSummaryService.regenerateNarrative(summary.id);
-            const updated = await performanceSummaryService.getSummary('game', game.id);
+            const updated = await performanceSummaryService.getSummary(summarySourceType, game.id);
             setSummary(updated);
         } finally {
             setRegenerating(false);
@@ -142,7 +145,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 </Tab>
                 {game.status === 'completed' && (
                     <Tab active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>
-                        Performance Summary
+                        {isScoutingMode ? 'Scouting Report' : 'Performance Summary'}
                     </Tab>
                 )}
             </TabRow>

@@ -13,7 +13,14 @@ import {
     clearPerformanceSummary,
 } from '../../../src/state';
 import { PerformanceSummaryView } from '../../../src/components/performanceSummary';
-import { PerformanceSummary, BatterBreakdown, PitchType, PitchResult, PitchCallZone } from '@pitch-tracker/shared';
+import {
+    PerformanceSummary,
+    BatterBreakdown,
+    PitchType,
+    PitchResult,
+    PitchCallZone,
+    SummarySourceType,
+} from '@pitch-tracker/shared';
 
 const NARRATIVE_POLL_INTERVAL_MS = 3000;
 const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
@@ -204,7 +211,7 @@ function buildBatterBreakdownHtml(breakdown: BatterBreakdown[]): string {
 </div>`;
 }
 
-function buildSummaryHtml(summary: PerformanceSummary, batterBreakdown: BatterBreakdown[]): string {
+function buildSummaryHtml(summary: PerformanceSummary, batterBreakdown: BatterBreakdown[], isScoutingMode = false): string {
     const pitchRows = summary.pitch_type_breakdown
         .sort((a, b) => b.count - a.count)
         .map(
@@ -249,6 +256,11 @@ function buildSummaryHtml(summary: PerformanceSummary, batterBreakdown: BatterBr
             : '',
     ].join('');
 
+    const reportTitle = isScoutingMode ? 'Scouting Report' : 'Performance Summary';
+    const narrativeTitle = isScoutingMode ? 'Scout Summary' : 'Coach Summary';
+    const highlightsTitle = isScoutingMode ? 'Key Observations' : 'Highlights';
+    const concernsTitle = isScoutingMode ? 'Matchup Concerns' : 'Areas to Improve';
+
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -285,13 +297,13 @@ function buildSummaryHtml(summary: PerformanceSummary, batterBreakdown: BatterBr
 </style>
 </head>
 <body>
-<h1>Performance Summary</h1>
+<h1>${reportTitle}</h1>
 <div class="subtitle">Generated ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
 
 ${
     summary.narrative
         ? `<div class="section">
-  <div class="section-title">Coach Summary</div>
+  <div class="section-title">${narrativeTitle}</div>
   <div class="section-body"><p class="narrative">${summary.narrative}</p></div>
 </div>`
         : ''
@@ -327,7 +339,7 @@ ${
 ${
     highlights
         ? `<div class="section highlights">
-  <div class="section-title">Highlights</div>
+  <div class="section-title">${highlightsTitle}</div>
   <div class="section-body"><ul>${highlights}</ul></div>
 </div>`
         : ''
@@ -336,7 +348,7 @@ ${
 ${
     concerns
         ? `<div class="section concerns">
-  <div class="section-title">Areas to Improve</div>
+  <div class="section-title">${concernsTitle}</div>
   <div class="section-body"><ul>${concerns}</ul></div>
 </div>`
         : ''
@@ -360,17 +372,21 @@ export default function GamePerformanceSummaryScreen() {
     const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const { currentSummary, batterBreakdown, loading, error } = useAppSelector((state) => state.performanceSummary);
+    const selectedGame = useAppSelector((state) => state.games.selectedGame);
+    const isScoutingMode = selectedGame?.charting_mode === 'scouting';
+    const sourceType: SummarySourceType = isScoutingMode ? 'scouting' : 'game';
+    const screenTitle = isScoutingMode ? 'Scouting Report' : 'Performance Summary';
 
     useEffect(() => {
         if (id) {
-            dispatch(fetchPerformanceSummary({ sourceType: 'game', sourceId: id }));
-            dispatch(fetchBatterBreakdown(id));
+            dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }));
+            if (!isScoutingMode) dispatch(fetchBatterBreakdown(id));
         }
         return () => {
             dispatch(clearPerformanceSummary());
             if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
         };
-    }, [id, dispatch]);
+    }, [id, sourceType, dispatch]);
 
     // Poll until narrative arrives when it's initially absent
     useEffect(() => {
@@ -382,18 +398,18 @@ export default function GamePerformanceSummaryScreen() {
         if (pollAttemptsRef.current >= NARRATIVE_POLL_MAX_ATTEMPTS) return;
         pollTimerRef.current = setTimeout(() => {
             pollAttemptsRef.current += 1;
-            if (id) dispatch(fetchPerformanceSummary({ sourceType: 'game', sourceId: id }));
+            if (id) dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }));
         }, NARRATIVE_POLL_INTERVAL_MS);
         return () => {
             if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
         };
-    }, [currentSummary, id, dispatch]);
+    }, [currentSummary, id, sourceType, dispatch]);
 
     const handleRegenerate = async () => {
         if (!currentSummary) return;
         setRegenerating(true);
         await dispatch(regenerateNarrative(currentSummary.id));
-        if (id) await dispatch(fetchPerformanceSummary({ sourceType: 'game', sourceId: id }));
+        if (id) await dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }));
         setRegenerating(false);
     };
 
@@ -401,11 +417,11 @@ export default function GamePerformanceSummaryScreen() {
         if (!currentSummary) return;
         setExporting(true);
         try {
-            const html = buildSummaryHtml(currentSummary, batterBreakdown);
+            const html = buildSummaryHtml(currentSummary, batterBreakdown, isScoutingMode);
             const { uri } = await Print.printToFileAsync({ html, base64: false });
             const canShare = await Sharing.isAvailableAsync();
             if (canShare) {
-                await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Export Performance Summary' });
+                await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Export ${screenTitle}` });
             } else {
                 Alert.alert('Sharing not available', 'PDF saved to: ' + uri);
             }
@@ -421,7 +437,7 @@ export default function GamePerformanceSummaryScreen() {
             <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 <View style={styles.header}>
                     <IconButton icon="arrow-left" onPress={() => router.back()} />
-                    <Text variant="titleLarge">Performance Summary</Text>
+                    <Text variant="titleLarge">{screenTitle}</Text>
                     <View style={{ width: 48 }} />
                 </View>
                 <View style={styles.centered}>
@@ -436,12 +452,14 @@ export default function GamePerformanceSummaryScreen() {
             <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 <View style={styles.header}>
                     <IconButton icon="arrow-left" onPress={() => router.back()} />
-                    <Text variant="titleLarge">Performance Summary</Text>
+                    <Text variant="titleLarge">{screenTitle}</Text>
                     <View style={{ width: 48 }} />
                 </View>
                 <View style={styles.centered}>
                     <Text variant="bodyLarge" style={{ color: '#6b7280', textAlign: 'center', marginBottom: 8 }}>
-                        {error ? 'Failed to load summary' : 'No performance summary available for this game.'}
+                        {error
+                            ? 'Failed to load summary'
+                            : `No ${isScoutingMode ? 'scouting report' : 'performance summary'} available.`}
                     </Text>
                     {error && (
                         <Text variant="bodySmall" style={{ color: '#ef4444', textAlign: 'center', marginBottom: 16 }}>
@@ -450,7 +468,7 @@ export default function GamePerformanceSummaryScreen() {
                     )}
                     <IconButton
                         icon="refresh"
-                        onPress={() => id && dispatch(fetchPerformanceSummary({ sourceType: 'game', sourceId: id }))}
+                        onPress={() => id && dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }))}
                     />
                 </View>
             </SafeAreaView>
@@ -461,7 +479,7 @@ export default function GamePerformanceSummaryScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <View style={styles.header}>
                 <IconButton icon="arrow-left" onPress={() => router.back()} />
-                <Text variant="titleLarge">Performance Summary</Text>
+                <Text variant="titleLarge">{screenTitle}</Text>
                 <IconButton icon="export-variant" onPress={handleExport} disabled={exporting} />
             </View>
             {exporting && (
@@ -472,9 +490,10 @@ export default function GamePerformanceSummaryScreen() {
             )}
             <PerformanceSummaryView
                 summary={currentSummary}
-                batterBreakdown={batterBreakdown}
+                batterBreakdown={isScoutingMode ? [] : batterBreakdown}
                 onRegenerate={handleRegenerate}
                 regenerating={regenerating}
+                isScoutingMode={isScoutingMode}
             />
         </SafeAreaView>
     );

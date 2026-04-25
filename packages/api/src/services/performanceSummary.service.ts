@@ -50,6 +50,43 @@ interface RawStats {
     }[];
 }
 
+interface ScoutingPitcherStats {
+    pitcher_id: string;
+    pitcher_name: string;
+    throws: string;
+    team_side: string;
+    team_name: string;
+    total_pitches: number;
+    pitch_mix: {
+        pitch_type: string;
+        count: number;
+        strike_pct: number;
+        early_count_pct: number;
+        two_strike_pct: number;
+    }[];
+}
+
+interface ScoutingTeamStats {
+    team_name: string;
+    team_side: 'home' | 'away';
+    total_abs: number;
+    k_pct: number | null;
+    bb_pct: number | null;
+    lhh_count: number;
+    rhh_count: number;
+    pull_pct: number | null;
+    groundball_pct: number | null;
+}
+
+interface ScoutingRawStats {
+    game_info: { opponent_name: string; scouting_home_team: string; game_date: string };
+    pitchers: ScoutingPitcherStats[];
+    teams: ScoutingTeamStats[];
+    total_pitches: number;
+    total_strikes: number;
+    total_balls: number;
+}
+
 interface HistoricalBaseline {
     strike_percentage: { avg: number; stddev: number } | null;
     target_accuracy: { avg: number; stddev: number } | null;
@@ -94,9 +131,14 @@ export class PerformanceSummaryService {
     async generateSummary(
         sourceType: SummarySourceType,
         sourceId: string,
-        pitcherId: string,
+        pitcherId: string | undefined,
         teamId: string
     ): Promise<PerformanceSummary> {
+        // Scouting summaries: whole-game analysis of opposing tendencies
+        if (sourceType === 'scouting') {
+            return this.generateScoutingSummary(sourceId, teamId);
+        }
+
         // Check for existing summary
         const existing = await this.getSummary(sourceType, sourceId, pitcherId);
         if (existing) {
@@ -109,10 +151,10 @@ export class PerformanceSummaryService {
 
         // Gather stats based on source type
         const stats =
-            sourceType === 'game' ? await this.gatherGameStats(sourceId, pitcherId) : await this.gatherBullpenStats(sourceId);
+            sourceType === 'game' ? await this.gatherGameStats(sourceId, pitcherId!) : await this.gatherBullpenStats(sourceId);
 
         // Get historical baseline
-        const baseline = await this.getHistoricalBaseline(pitcherId, sourceType);
+        const baseline = await this.getHistoricalBaseline(pitcherId!, sourceType);
 
         // Evaluate metrics
         const metrics = this.evaluateMetrics(stats, baseline, sourceType);
@@ -414,6 +456,431 @@ export class PerformanceSummaryService {
                 velocities: s.velocities,
             })),
         };
+    }
+
+    // ========================================================================
+    // Scouting Summary
+    // ========================================================================
+
+    private async generateScoutingSummary(gameId: string, teamId: string): Promise<PerformanceSummary> {
+        const existing = await this.getSummary('scouting', gameId);
+        if (existing) return existing;
+
+        const stats = await this.gatherScoutingStats(gameId);
+        const { highlights, concerns } = this.buildScoutingHighlightsAndConcerns(stats);
+
+        const summaryId = await transaction(async (client) => {
+            const result = await client.query(
+                `INSERT INTO performance_summaries
+                    (source_type, source_id, pitcher_id, team_id,
+                     total_pitches, strikes, balls, strike_percentage, target_accuracy_percentage,
+                     batters_faced, innings_pitched, runs_allowed, hits_allowed,
+                     intensity, plan_name,
+                     metrics, pitch_type_breakdown, highlights, concerns)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+                 RETURNING id`,
+                [
+                    'scouting',
+                    gameId,
+                    null,
+                    teamId,
+                    stats.total_pitches,
+                    stats.total_strikes,
+                    stats.total_balls,
+                    stats.total_pitches > 0 ? Math.round((stats.total_strikes / stats.total_pitches) * 100) : 0,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    JSON.stringify([]),
+                    JSON.stringify([]),
+                    JSON.stringify(highlights),
+                    JSON.stringify(concerns),
+                ]
+            );
+            return result.rows[0].id;
+        });
+
+        this.generateScoutingNarrative(summaryId, stats, highlights, concerns).catch((err) => {
+            console.error('Failed to generate scouting AI narrative:', err);
+        });
+
+        const summary = await this.getSummary('scouting', gameId);
+        return summary!;
+    }
+
+    private async gatherScoutingStats(gameId: string): Promise<ScoutingRawStats> {
+        const gameResult = await query(`SELECT opponent_name, scouting_home_team, game_date FROM games WHERE id = $1`, [gameId]);
+        const gameRow = gameResult.rows[0] || {};
+
+        // Pitch mix per opposing pitcher with count state breakdowns
+        const pitchResult = await query(
+            `SELECT
+                op.id AS pitcher_id,
+                op.pitcher_name,
+                op.throws,
+                COALESCE(op.team_side, 'away') AS team_side,
+                op.team_name,
+                p.pitch_type,
+                COUNT(*) AS pitch_count,
+                COUNT(CASE WHEN p.pitch_result != 'ball' THEN 1 END) AS strikes,
+                COUNT(CASE WHEN p.balls_before <= 1 AND p.strikes_before <= 1 THEN 1 END) AS early_count_pitches,
+                COUNT(CASE WHEN p.strikes_before = 2 THEN 1 END) AS two_strike_pitches
+             FROM pitches p
+             JOIN at_bats ab ON p.at_bat_id = ab.id
+             JOIN opposing_pitchers op ON ab.opposing_pitcher_id = op.id
+             WHERE p.game_id = $1
+             GROUP BY op.id, op.pitcher_name, op.throws, op.team_side, op.team_name, p.pitch_type
+             ORDER BY op.pitcher_name, pitch_count DESC`,
+            [gameId]
+        );
+
+        // Aggregate by pitcher
+        const pitcherMap = new Map<string, ScoutingPitcherStats>();
+        let totalPitches = 0;
+        let totalStrikes = 0;
+        let totalBalls = 0;
+
+        for (const row of pitchResult.rows) {
+            const pid = row.pitcher_id;
+            if (!pitcherMap.has(pid)) {
+                pitcherMap.set(pid, {
+                    pitcher_id: pid,
+                    pitcher_name: row.pitcher_name,
+                    throws: row.throws?.trim(),
+                    team_side: row.team_side,
+                    team_name: row.team_name,
+                    total_pitches: 0,
+                    pitch_mix: [],
+                });
+            }
+            const pitcher = pitcherMap.get(pid)!;
+            const count = parseInt(row.pitch_count) || 0;
+            const strikes = parseInt(row.strikes) || 0;
+            pitcher.total_pitches += count;
+            totalPitches += count;
+            totalStrikes += strikes;
+            totalBalls += count - strikes;
+            pitcher.pitch_mix.push({
+                pitch_type: row.pitch_type,
+                count,
+                strike_pct: count > 0 ? Math.round((strikes / count) * 100) : 0,
+                early_count_pct: count > 0 ? Math.round((parseInt(row.early_count_pitches) / count) * 100) : 0,
+                two_strike_pct: count > 0 ? Math.round((parseInt(row.two_strike_pitches) / count) * 100) : 0,
+            });
+        }
+
+        // Batting result tendencies per team
+        const battingResult = await query(
+            `SELECT
+                COALESCE(ol.team_side, 'away') AS team_side,
+                ol.bats,
+                ab.result,
+                COUNT(*) AS cnt
+             FROM at_bats ab
+             JOIN opponent_lineup ol ON ab.opponent_batter_id = ol.id
+             WHERE ab.game_id = $1 AND ab.result IS NOT NULL
+             GROUP BY ol.team_side, ol.bats, ab.result`,
+            [gameId]
+        );
+
+        // Hit direction tendencies per team
+        const hitResult = await query(
+            `SELECT
+                COALESCE(ol.team_side, 'away') AS team_side,
+                pl.hit_direction,
+                pl.contact_type,
+                COUNT(*) AS cnt
+             FROM plays pl
+             JOIN at_bats ab ON pl.at_bat_id = ab.id
+             JOIN opponent_lineup ol ON ab.opponent_batter_id = ol.id
+             WHERE ab.game_id = $1
+             GROUP BY ol.team_side, pl.hit_direction, pl.contact_type`,
+            [gameId]
+        );
+
+        // Team names from opposing_pitchers (most common per side)
+        const teamNameResult = await query(
+            `SELECT team_side, team_name, COUNT(*) AS cnt
+             FROM opposing_pitchers WHERE game_id = $1 AND team_side IS NOT NULL
+             GROUP BY team_side, team_name ORDER BY cnt DESC`,
+            [gameId]
+        );
+        const teamNames: Record<string, string> = {};
+        for (const r of teamNameResult.rows) {
+            if (!teamNames[r.team_side]) teamNames[r.team_side] = r.team_name;
+        }
+        if (!teamNames['home']) teamNames['home'] = gameRow.scouting_home_team || 'Home Team';
+        if (!teamNames['away']) teamNames['away'] = gameRow.opponent_name || 'Away Team';
+
+        // Build team batting stats
+        const teamStatsMap = new Map<string, ScoutingTeamStats>();
+        for (const side of ['home', 'away'] as const) {
+            teamStatsMap.set(side, {
+                team_name: teamNames[side] || side,
+                team_side: side,
+                total_abs: 0,
+                k_pct: null,
+                bb_pct: null,
+                lhh_count: 0,
+                rhh_count: 0,
+                pull_pct: null,
+                groundball_pct: null,
+            });
+        }
+
+        // Aggregate batting results
+        const teamAbCounts: Record<string, { total: number; ks: number; bbs: number }> = {};
+        const teamHandedness: Record<string, { L: number; R: number; S: number }> = {};
+        for (const row of battingResult.rows) {
+            const side = row.team_side as string;
+            if (!teamAbCounts[side]) teamAbCounts[side] = { total: 0, ks: 0, bbs: 0 };
+            if (!teamHandedness[side]) teamHandedness[side] = { L: 0, R: 0, S: 0 };
+            const cnt = parseInt(row.cnt) || 0;
+            teamAbCounts[side].total += cnt;
+            if (row.result === 'strikeout') teamAbCounts[side].ks += cnt;
+            if (row.result === 'walk' || row.result === 'hit_by_pitch') teamAbCounts[side].bbs += cnt;
+            const bats = row.bats as string;
+            if (bats === 'L' || bats === 'R' || bats === 'S') teamHandedness[side][bats] += cnt;
+        }
+
+        // Aggregate hit directions
+        const hitDir: Record<string, { pull: number; center: number; opposite: number; total: number }> = {};
+        const contactTypes: Record<string, { gb: number; fb: number; ld: number; total: number }> = {};
+        for (const row of hitResult.rows) {
+            const side = row.team_side as string;
+            if (!hitDir[side]) hitDir[side] = { pull: 0, center: 0, opposite: 0, total: 0 };
+            if (!contactTypes[side]) contactTypes[side] = { gb: 0, fb: 0, ld: 0, total: 0 };
+            const cnt = parseInt(row.cnt) || 0;
+            if (row.hit_direction) {
+                hitDir[side].total += cnt;
+                if (row.hit_direction === 'pull') hitDir[side].pull += cnt;
+                else if (row.hit_direction === 'center') hitDir[side].center += cnt;
+                else if (row.hit_direction === 'opposite') hitDir[side].opposite += cnt;
+            }
+            if (row.contact_type) {
+                contactTypes[side].total += cnt;
+                if (row.contact_type === 'ground_ball') contactTypes[side].gb += cnt;
+                else if (row.contact_type === 'fly_ball') contactTypes[side].fb += cnt;
+                else if (row.contact_type === 'line_drive') contactTypes[side].ld += cnt;
+            }
+        }
+
+        for (const side of ['home', 'away'] as const) {
+            const ts = teamStatsMap.get(side)!;
+            const abc = teamAbCounts[side];
+            if (abc) {
+                ts.total_abs = abc.total;
+                ts.k_pct = abc.total > 0 ? Math.round((abc.ks / abc.total) * 100) : null;
+                ts.bb_pct = abc.total > 0 ? Math.round((abc.bbs / abc.total) * 100) : null;
+            }
+            const hand = teamHandedness[side];
+            if (hand) {
+                ts.lhh_count = hand.L + hand.S;
+                ts.rhh_count = hand.R + hand.S;
+            }
+            const hd = hitDir[side];
+            if (hd && hd.total >= 3) {
+                ts.pull_pct = Math.round((hd.pull / hd.total) * 100);
+            }
+            const ct = contactTypes[side];
+            if (ct && ct.total >= 3) {
+                ts.groundball_pct = Math.round((ct.gb / ct.total) * 100);
+            }
+        }
+
+        return {
+            game_info: {
+                opponent_name: gameRow.opponent_name || 'Away Team',
+                scouting_home_team: gameRow.scouting_home_team || 'Home Team',
+                game_date: gameRow.game_date,
+            },
+            pitchers: Array.from(pitcherMap.values()),
+            teams: Array.from(teamStatsMap.values()),
+            total_pitches: totalPitches,
+            total_strikes: totalStrikes,
+            total_balls: totalBalls,
+        };
+    }
+
+    private buildScoutingHighlightsAndConcerns(stats: ScoutingRawStats): { highlights: string[]; concerns: string[] } {
+        const highlights: string[] = [];
+        const concerns: string[] = [];
+
+        for (const pitcher of stats.pitchers) {
+            if (pitcher.total_pitches < 5) continue;
+            const topPitch = pitcher.pitch_mix[0];
+            if (!topPitch) continue;
+
+            const topPct = Math.round((topPitch.count / pitcher.total_pitches) * 100);
+            const isFastball = ['4-seam', '2-seam', 'sinker', 'cutter', 'fastball', 'fb'].includes(
+                topPitch.pitch_type.toLowerCase()
+            );
+
+            if (topPct >= 60) {
+                highlights.push(
+                    `${pitcher.pitcher_name} (${pitcher.team_name}): relies heavily on ${topPitch.pitch_type} — ${topPct}% of pitches`
+                );
+            }
+
+            // Offspeed usage early in count
+            const offspeedEarlyPitches = pitcher.pitch_mix
+                .filter((pt) => !['4-seam', '2-seam', 'sinker', 'cutter', 'fastball', 'fb'].includes(pt.pitch_type.toLowerCase()))
+                .reduce((sum, pt) => sum + Math.round((pt.early_count_pct / 100) * pt.count), 0);
+            const totalEarlyPitches = pitcher.pitch_mix.reduce(
+                (sum, pt) => sum + Math.round((pt.early_count_pct / 100) * pt.count),
+                0
+            );
+            if (totalEarlyPitches >= 5) {
+                const offspeedEarlyPct = Math.round((offspeedEarlyPitches / totalEarlyPitches) * 100);
+                if (offspeedEarlyPct >= 35) {
+                    highlights.push(
+                        `${pitcher.pitcher_name} (${pitcher.team_name}): uses offspeed ${offspeedEarlyPct}% of early-count pitches — catches hitters off guard`
+                    );
+                } else if (isFastball && offspeedEarlyPct <= 15 && topPct >= 50) {
+                    concerns.push(
+                        `${pitcher.pitcher_name} (${pitcher.team_name}): fastball-heavy early in count (${100 - offspeedEarlyPct}% heaters) — predictable attack`
+                    );
+                }
+            }
+
+            // Pitch variety
+            if (pitcher.pitch_mix.length === 1) {
+                concerns.push(
+                    `${pitcher.pitcher_name} (${pitcher.team_name}): one-pitch pitcher — only throws ${topPitch.pitch_type}`
+                );
+            } else if (pitcher.pitch_mix.length >= 4) {
+                highlights.push(
+                    `${pitcher.pitcher_name} (${pitcher.team_name}): diverse arsenal — ${pitcher.pitch_mix.length} pitch types`
+                );
+            }
+
+            // Low strike rate on any pitch type used frequently
+            for (const pt of pitcher.pitch_mix) {
+                if (pt.count >= 5 && pt.strike_pct < 45) {
+                    concerns.push(
+                        `${pitcher.pitcher_name} (${pitcher.team_name}): poor command of ${pt.pitch_type} — ${pt.strike_pct}% strikes`
+                    );
+                }
+            }
+        }
+
+        for (const team of stats.teams) {
+            if (team.total_abs < 3) continue;
+
+            // K rate
+            if (team.k_pct !== null && team.k_pct >= 35) {
+                highlights.push(`${team.team_name} offense: high strikeout rate (${team.k_pct}%) — attack with strikes early`);
+            } else if (team.k_pct !== null && team.k_pct <= 15) {
+                concerns.push(
+                    `${team.team_name} offense: low strikeout rate (${team.k_pct}%) — disciplined lineup, hard to put away`
+                );
+            }
+
+            // Pull tendency
+            if (team.pull_pct !== null && team.pull_pct >= 60) {
+                highlights.push(
+                    `${team.team_name} hitters: strong pull tendency (${team.pull_pct}% pull contact) — pitch away and shift defense`
+                );
+            }
+
+            // Groundball tendency
+            if (team.groundball_pct !== null) {
+                if (team.groundball_pct >= 60) {
+                    highlights.push(`${team.team_name}: ground ball-heavy (${team.groundball_pct}%) — pitch down in the zone`);
+                } else if (team.groundball_pct <= 25) {
+                    concerns.push(`${team.team_name}: fly ball-heavy — elevation in zone increases extra-base hit risk`);
+                }
+            }
+
+            // LHH/RHH split
+            const totalBatters = team.lhh_count + team.rhh_count;
+            if (totalBatters >= 3) {
+                const lhhPct = Math.round((team.lhh_count / totalBatters) * 100);
+                if (lhhPct >= 60) {
+                    highlights.push(`${team.team_name}: majority left-handed lineup (${lhhPct}% LHH)`);
+                } else if (lhhPct <= 20) {
+                    highlights.push(`${team.team_name}: right-hand dominated lineup (${100 - lhhPct}% RHH)`);
+                }
+            }
+        }
+
+        if (highlights.length === 0 && stats.total_pitches > 0) {
+            highlights.push(`Scouting data collected: ${stats.total_pitches} total pitches charted`);
+        }
+
+        return { highlights, concerns };
+    }
+
+    private async generateScoutingNarrative(
+        summaryId: string,
+        stats: ScoutingRawStats,
+        highlights: string[],
+        concerns: string[]
+    ): Promise<void> {
+        const apiKey = process.env.ANTHROPIC_API_KEY;
+        if (!apiKey) return;
+
+        try {
+            const Anthropic = (await import('@anthropic-ai/sdk')).default;
+            const client = new Anthropic({ apiKey });
+
+            const pitcherLines = stats.pitchers
+                .filter((p) => p.total_pitches >= 5)
+                .map((p) => {
+                    const topTwo = p.pitch_mix
+                        .slice(0, 2)
+                        .map((pt) => `${pt.pitch_type} (${Math.round((pt.count / p.total_pitches) * 100)}%)`);
+                    return `${p.pitcher_name} (${p.team_name}, ${p.throws === 'L' ? 'LHP' : 'RHP'}): ${p.total_pitches} pitches, arsenal: ${topTwo.join(', ')}`;
+                })
+                .join('\n');
+
+            const teamLines = stats.teams
+                .filter((t) => t.total_abs >= 3)
+                .map(
+                    (t) =>
+                        `${t.team_name}: ${t.total_abs} AB, K%=${t.k_pct ?? 'N/A'}%, BB%=${t.bb_pct ?? 'N/A'}%, pull%=${t.pull_pct ?? 'N/A'}%, GB%=${t.groundball_pct ?? 'N/A'}%`
+                )
+                .join('\n');
+
+            const userPrompt = `Scouting report — game between ${stats.game_info.scouting_home_team} (home) and ${stats.game_info.opponent_name} (away).
+
+Pitchers scouted:
+${pitcherLines || 'No pitcher data'}
+
+Team offensive tendencies:
+${teamLines || 'No batting data'}
+
+Key observations:
+${highlights.map((h) => `- ${h}`).join('\n')}
+
+Matchup concerns:
+${concerns.length > 0 ? concerns.map((c) => `- ${c}`).join('\n') : '- None identified'}
+
+Write a 3-5 sentence scouting report summary.`;
+
+            const response = await client.messages.create({
+                model: 'claude-haiku-4-5-20251001',
+                max_tokens: 400,
+                system: `You are an experienced baseball scout writing a concise scouting report for a coaching staff.
+Focus on actionable insights: how opposing pitchers attack hitters (pitch selection by count, primary offerings, command), and offensive tendencies (pull rates, contact patterns, handedness split, disciplined vs. free-swinging).
+Do not mention "my team" — describe both teams as the scouted subjects. Write in a direct, professional tone. No bullet points — natural paragraphs only. 3-5 sentences.`,
+                messages: [{ role: 'user', content: userPrompt }],
+            });
+
+            const narrative = response.content[0].type === 'text' ? response.content[0].text : null;
+            if (narrative) {
+                await query(
+                    'UPDATE performance_summaries SET narrative = $1, narrative_generated_at = NOW(), updated_at = NOW() WHERE id = $2',
+                    [narrative, summaryId]
+                );
+            }
+        } catch (err) {
+            console.error('Scouting AI narrative generation failed:', err);
+        }
     }
 
     // ========================================================================

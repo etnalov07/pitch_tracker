@@ -15,16 +15,21 @@ interface Props {
     batterBreakdown?: BatterBreakdown[];
     onRegenerate?: () => void;
     regenerating?: boolean;
+    isScoutingMode?: boolean;
 }
 
-export default function PerformanceSummaryView({ summary, batterBreakdown, onRegenerate, regenerating }: Props) {
+export default function PerformanceSummaryView({ summary, batterBreakdown, onRegenerate, regenerating, isScoutingMode }: Props) {
+    const narrativeTitle = isScoutingMode ? 'Scout Summary' : 'Coach Summary';
+    const highlightsTitle = isScoutingMode ? 'Key Observations' : 'Highlights';
+    const concernsTitle = isScoutingMode ? 'Matchup Concerns' : 'Areas to Improve';
+
     return (
         <ScrollView contentContainerStyle={styles.content}>
             {/* AI Narrative */}
             <Card style={styles.card}>
                 <Card.Content>
                     <Text variant="titleMedium" style={styles.sectionTitle}>
-                        Coach Summary
+                        {narrativeTitle}
                     </Text>
                     <Divider style={styles.divider} />
                     {summary.narrative ? (
@@ -153,12 +158,12 @@ export default function PerformanceSummaryView({ summary, batterBreakdown, onReg
                 </Card>
             )}
 
-            {/* Highlights */}
+            {/* Highlights / Key Observations */}
             {summary.highlights.length > 0 && (
                 <Card style={styles.card}>
                     <Card.Content>
                         <Text variant="titleMedium" style={[styles.sectionTitle, { color: '#16a34a' }]}>
-                            Highlights
+                            {highlightsTitle}
                         </Text>
                         <Divider style={styles.divider} />
                         {summary.highlights.map((h, i) => (
@@ -170,12 +175,12 @@ export default function PerformanceSummaryView({ summary, batterBreakdown, onReg
                 </Card>
             )}
 
-            {/* Concerns */}
+            {/* Concerns / Matchup Concerns */}
             {summary.concerns.length > 0 && (
                 <Card style={styles.card}>
                     <Card.Content>
                         <Text variant="titleMedium" style={[styles.sectionTitle, { color: '#dc2626' }]}>
-                            Areas to Improve
+                            {concernsTitle}
                         </Text>
                         <Divider style={styles.divider} />
                         {summary.concerns.map((c, i) => (

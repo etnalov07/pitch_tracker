@@ -9,8 +9,8 @@ export class PerformanceSummaryController {
             const sourceType = req.params.sourceType as string;
             const sourceId = req.params.sourceId as string;
 
-            if (sourceType !== 'game' && sourceType !== 'bullpen') {
-                res.status(400).json({ error: 'sourceType must be "game" or "bullpen"' });
+            if (sourceType !== 'game' && sourceType !== 'bullpen' && sourceType !== 'scouting') {
+                res.status(400).json({ error: 'sourceType must be "game", "bullpen", or "scouting"' });
                 return;
             }
 
@@ -24,13 +24,24 @@ export class PerformanceSummaryController {
                 return;
             }
 
+            // Scouting summaries cover the whole game — no pitcher_id needed
+            if (sourceType === 'scouting') {
+                const result = await query('SELECT home_team_id FROM games WHERE id = $1', [sourceId]);
+                if (result.rows.length === 0) {
+                    res.status(404).json({ error: 'Game not found' });
+                    return;
+                }
+                summary = await performanceSummaryService.generateSummary(sourceType, sourceId, undefined, result.rows[0].home_team_id);
+                res.status(200).json({ summary });
+                return;
+            }
+
             // Need to generate — resolve pitcher_id and team_id from the source
             let pitcherId: string;
             let teamId: string;
 
             if (sourceType === 'game') {
                 if (queryPitcherId) {
-                    // Use the provided pitcher_id; get team from the game
                     const result = await query('SELECT home_team_id FROM games WHERE id = $1', [sourceId]);
                     if (result.rows.length === 0) {
                         res.status(404).json({ error: 'Game not found' });
@@ -39,7 +50,6 @@ export class PerformanceSummaryController {
                     pitcherId = queryPitcherId;
                     teamId = result.rows[0].home_team_id;
                 } else {
-                    // Fall back: find the pitcher with the most pitches in the game
                     const result = await query(
                         `SELECT p.pitcher_id, g.home_team_id as team_id
                          FROM pitches p

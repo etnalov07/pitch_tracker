@@ -241,6 +241,7 @@ const formatPitchType = (type: string): string => {
 
 const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regenerating }) => {
     const [batterBreakdown, setBatterBreakdown] = useState<BatterBreakdown[] | null>(null);
+    const isScoutingMode = summary.source_type === 'scouting';
 
     useEffect(() => {
         if (summary.source_type !== 'game') return;
@@ -252,7 +253,7 @@ const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regene
     return (
         <Card>
             {/* AI Narrative */}
-            <SectionTitle>Coach Summary</SectionTitle>
+            <SectionTitle>{isScoutingMode ? 'Scout Summary' : 'Coach Summary'}</SectionTitle>
             {summary.narrative ? (
                 <NarrativeBox>{summary.narrative}</NarrativeBox>
             ) : (
@@ -352,10 +353,10 @@ const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regene
                 </>
             )}
 
-            {/* Highlights */}
+            {/* Highlights / Key Observations */}
             {summary.highlights.length > 0 && (
                 <>
-                    <SectionTitle style={{ color: '#16a34a' }}>Highlights</SectionTitle>
+                    <SectionTitle style={{ color: '#16a34a' }}>{isScoutingMode ? 'Key Observations' : 'Highlights'}</SectionTitle>
                     <HighlightsList>
                         {summary.highlights.map((h, i) => (
                             <HighlightItem key={i}>{h}</HighlightItem>
@@ -364,10 +365,12 @@ const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regene
                 </>
             )}
 
-            {/* Concerns */}
+            {/* Concerns / Matchup Concerns */}
             {summary.concerns.length > 0 && (
                 <>
-                    <SectionTitle style={{ color: '#dc2626' }}>Areas to Improve</SectionTitle>
+                    <SectionTitle style={{ color: '#dc2626' }}>
+                        {isScoutingMode ? 'Matchup Concerns' : 'Areas to Improve'}
+                    </SectionTitle>
                     <HighlightsList>
                         {summary.concerns.map((c, i) => (
                             <ConcernItem key={i}>{c}</ConcernItem>
