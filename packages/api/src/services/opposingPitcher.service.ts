@@ -47,6 +47,21 @@ export class OpposingPitcherService {
         await opponentPitcherProfileService.incrementGameCount(profile.id);
     }
 
+    async update(id: string, params: Partial<CreateOpposingPitcherParams>): Promise<OpposingPitcher> {
+        const { pitcher_name, jersey_number, throws, team_name } = params;
+        const result = await query(
+            `UPDATE opposing_pitchers
+             SET pitcher_name = COALESCE($1, pitcher_name),
+                 jersey_number = $2,
+                 throws = COALESCE($3, throws),
+                 team_name = COALESCE($4, team_name)
+             WHERE id = $5
+             RETURNING *`,
+            [pitcher_name ?? null, jersey_number !== undefined ? jersey_number : null, throws ?? null, team_name ?? null, id]
+        );
+        return result.rows[0];
+    }
+
     async delete(id: string): Promise<void> {
         await query('DELETE FROM opposing_pitchers WHERE id = $1', [id]);
     }

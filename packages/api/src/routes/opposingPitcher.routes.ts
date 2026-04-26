@@ -8,6 +8,7 @@ router.use(authenticateToken);
 
 router.get('/game/:gameId', opposingPitcherController.getByGame.bind(opposingPitcherController));
 router.post('/', opposingPitcherController.create.bind(opposingPitcherController));
+router.put('/:id', opposingPitcherController.update.bind(opposingPitcherController));
 router.delete('/:id', opposingPitcherController.delete.bind(opposingPitcherController));
 
 export default router;

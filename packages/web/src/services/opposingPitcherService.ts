@@ -12,6 +12,11 @@ export const opposingPitcherService = {
         return response.data.pitcher;
     },
 
+    update: async (id: string, params: Partial<CreateOpposingPitcherParams>): Promise<OpposingPitcher> => {
+        const response = await api.put<{ pitcher: OpposingPitcher }>(`/opposing-pitchers/${id}`, params);
+        return response.data.pitcher;
+    },
+
     delete: async (id: string): Promise<void> => {
         await api.delete(`/opposing-pitchers/${id}`);
     },

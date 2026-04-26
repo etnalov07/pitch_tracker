@@ -231,6 +231,11 @@ export const gamesApi = {
         return response.data.pitcher;
     },
 
+    updateOpposingPitcher: async (id: string, params: Partial<CreateOpposingPitcherParams>): Promise<OpposingPitcher> => {
+        const response = await api.put<{ pitcher: OpposingPitcher }>(`/opposing-pitchers/${id}`, params);
+        return response.data.pitcher;
+    },
+
     deleteOpposingPitcher: async (id: string): Promise<void> => {
         await api.delete(`/opposing-pitchers/${id}`);
     },

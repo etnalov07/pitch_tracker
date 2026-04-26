@@ -35,6 +35,16 @@ export class OpposingPitcherController {
         }
     }
 
+    async update(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const id = req.params.id as string;
+            const pitcher = await opposingPitcherService.update(id, req.body);
+            res.json({ pitcher });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async delete(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const id = req.params.id as string;

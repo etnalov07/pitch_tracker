@@ -21,6 +21,27 @@ export class OpponentLineupService {
             throw new Error(`batting_order must be between 1 and ${lineupSize}`);
         }
 
+        if (is_starter) {
+            const existing = await query(
+                `SELECT id FROM opponent_lineup
+                 WHERE game_id = $1 AND batting_order = $2 AND team_side IS NOT DISTINCT FROM $3
+                   AND is_starter = true AND replaced_by_id IS NULL`,
+                [gameId, batting_order, team_side ?? null]
+            );
+            if (existing.rows.length > 0) {
+                const updated = await query(
+                    `UPDATE opponent_lineup
+                     SET player_name = $1, position = $2, bats = $3
+                     WHERE id = $4
+                     RETURNING *`,
+                    [player_name, position ?? null, bats, existing.rows[0].id]
+                );
+                const player = updated.rows[0];
+                this._maybeAutoLinkBatter(player, gameId).catch(() => {});
+                return player;
+            }
+        }
+
         const id = uuidv4();
         const result = await query(
             `INSERT INTO opponent_lineup (id, game_id, player_name, batting_order, position, bats, is_starter, inning_entered, team_side)
