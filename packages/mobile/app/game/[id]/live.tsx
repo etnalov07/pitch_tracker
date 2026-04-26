@@ -198,6 +198,13 @@ export default function LiveGameScreen() {
     // TOP = away bats (home pitches), BOTTOM = home bats (away pitches)
     const scoutingBattingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'away' : 'home') : null;
     const scoutingPitchingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'home' : 'away') : null;
+    const scoutingFocus = game?.scouting_focus;
+    const shouldSkipHalf =
+        isScoutingMode &&
+        game?.status === 'in_progress' &&
+        scoutingFocus &&
+        scoutingFocus !== 'both' &&
+        ((scoutingFocus === 'home' && game?.inning_half === 'bottom') || (scoutingFocus === 'away' && game?.inning_half === 'top'));
 
     // Walkie-talkie state
     const [walkieTalkieActive, setWalkieTalkieActive] = useState(false);
@@ -573,6 +580,10 @@ export default function LiveGameScreen() {
     const handleInningChangeConfirm = useCallback(async () => {
         await advanceInningWithRuns(parseInt(teamRunsScored, 10) || 0);
     }, [advanceInningWithRuns, teamRunsScored]);
+
+    const handleSkipHalf = useCallback(async () => {
+        await advanceInningWithRuns(0);
+    }, [advanceInningWithRuns]);
 
     const handleTeamAtBatConfirm = useCallback(async () => {
         if (!id || !game) return;
@@ -1401,6 +1412,17 @@ export default function LiveGameScreen() {
 
     const renderAtBatControls = () => {
         if (game.status !== 'in_progress') return null;
+        if (shouldSkipHalf) {
+            const battingTeamName = scoutingFocus === 'home' ? game.scouting_home_team || 'Home' : game.opponent_name || 'Away';
+            return (
+                <View style={styles.selectPrompt}>
+                    <Text style={styles.selectPromptText}>{battingTeamName} batting — not charting this half.</Text>
+                    <Button mode="contained" onPress={handleSkipHalf} style={{ marginTop: 8 }} icon="skip-next">
+                        Skip to Next Half
+                    </Button>
+                </View>
+            );
+        }
         if (canStartAtBat) {
             return (
                 <Button
@@ -1527,7 +1549,7 @@ export default function LiveGameScreen() {
                 onRunsChange={setTeamRunsScored}
                 onConfirm={handleInningChangeConfirm}
                 isTablet={isTablet}
-                showRunsInput={game?.charting_mode !== 'both'}
+                showRunsInput={game?.scouting_focus === 'home' || game?.scouting_focus === 'away'}
             />
             <TeamAtBatModal
                 visible={showTeamAtBat}
@@ -1619,7 +1641,7 @@ export default function LiveGameScreen() {
     const hasPreviousAtBats = previousAtBatsForCurrentBatter.length > 0;
 
     const renderRunnerOutButton = () => {
-        if (game.status !== 'in_progress' || !hasRunnersOnBase) return null;
+        if (isScoutingMode || game.status !== 'in_progress' || !hasRunnersOnBase) return null;
         return (
             <View style={styles.runnerActionRow}>
                 <Button
@@ -1793,33 +1815,40 @@ export default function LiveGameScreen() {
                         />
                         {renderPitchBreakdown()}
                         {/* Send Call (optional, setting-gated) */}
-                        {!isReadOnly && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
-                            <View style={[styles.callRow, { marginTop: 8 }]}>
-                                <Button
-                                    mode="contained"
-                                    onPress={handleSendCall}
-                                    loading={sendingCall}
-                                    disabled={sendingCall}
-                                    style={styles.sendCallButton}
-                                    labelStyle={{ color: '#0A1628', fontWeight: '800', letterSpacing: 0.5 }}
-                                >
-                                    {sendingCall
-                                        ? 'SENDING...'
-                                        : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
-                                </Button>
-                                <Pressable
-                                    style={[styles.talkHoldButton, walkieTalkieActive && styles.talkHoldButtonActive]}
-                                    onPressIn={handleTalkPressIn}
-                                    onPressOut={handleTalkPressOut}
-                                >
-                                    <Text style={[styles.talkHoldIcon, walkieTalkieActive && styles.talkHoldIconActive]}>🎙</Text>
-                                    <Text style={[styles.talkHoldLabel, walkieTalkieActive && styles.talkHoldLabelActive]}>
-                                        {walkieTalkieActive ? 'TALKING...' : 'Hold to Talk'}
-                                    </Text>
-                                </Pressable>
-                            </View>
-                        )}
-                        {!isReadOnly && pitchCallingEnabled && activeCall && (
+                        {!isReadOnly &&
+                            !isScoutingMode &&
+                            pitchCallingEnabled &&
+                            selectedPitchType &&
+                            targetZone &&
+                            !activeCall && (
+                                <View style={[styles.callRow, { marginTop: 8 }]}>
+                                    <Button
+                                        mode="contained"
+                                        onPress={handleSendCall}
+                                        loading={sendingCall}
+                                        disabled={sendingCall}
+                                        style={styles.sendCallButton}
+                                        labelStyle={{ color: '#0A1628', fontWeight: '800', letterSpacing: 0.5 }}
+                                    >
+                                        {sendingCall
+                                            ? 'SENDING...'
+                                            : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
+                                    </Button>
+                                    <Pressable
+                                        style={[styles.talkHoldButton, walkieTalkieActive && styles.talkHoldButtonActive]}
+                                        onPressIn={handleTalkPressIn}
+                                        onPressOut={handleTalkPressOut}
+                                    >
+                                        <Text style={[styles.talkHoldIcon, walkieTalkieActive && styles.talkHoldIconActive]}>
+                                            🎙
+                                        </Text>
+                                        <Text style={[styles.talkHoldLabel, walkieTalkieActive && styles.talkHoldLabelActive]}>
+                                            {walkieTalkieActive ? 'TALKING...' : 'Hold to Talk'}
+                                        </Text>
+                                    </Pressable>
+                                </View>
+                            )}
+                        {!isReadOnly && !isScoutingMode && pitchCallingEnabled && activeCall && (
                             <View style={styles.callBadge}>
                                 <Text style={styles.callBadgeText}>
                                     Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
@@ -1872,7 +1901,7 @@ export default function LiveGameScreen() {
                                 </View>
                             </View>
                         )}
-                        {!isReadOnly && pitchCallingEnabled && (
+                        {!isReadOnly && !isScoutingMode && pitchCallingEnabled && (
                             <View style={styles.shakeRow}>
                                 <TouchableOpacity onPress={handleShake} style={styles.shakeBtn} activeOpacity={0.7}>
                                     <Text style={styles.shakeBtnText}>SHAKE</Text>
@@ -2028,7 +2057,7 @@ export default function LiveGameScreen() {
                 />
                 {renderPitchBreakdown()}
                 {/* 3. Pitch Calling (optional, setting-gated) */}
-                {!isReadOnly && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
+                {!isReadOnly && !isScoutingMode && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
                     <View style={styles.callRow}>
                         <Button
                             mode="contained"
@@ -2054,7 +2083,7 @@ export default function LiveGameScreen() {
                         </Pressable>
                     </View>
                 )}
-                {!isReadOnly && pitchCallingEnabled && activeCall && (
+                {!isReadOnly && !isScoutingMode && pitchCallingEnabled && activeCall && (
                     <View style={styles.callBadge}>
                         <Text style={styles.callBadgeText}>
                             Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
@@ -2085,7 +2114,7 @@ export default function LiveGameScreen() {
                     </View>
                 )}
                 {/* 3b. Shake button */}
-                {!isReadOnly && pitchCallingEnabled && (
+                {!isReadOnly && !isScoutingMode && pitchCallingEnabled && (
                     <View style={styles.shakeRow}>
                         <TouchableOpacity onPress={handleShake} style={styles.shakeBtn} activeOpacity={0.7}>
                             <Text style={styles.shakeBtnText}>SHAKE</Text>

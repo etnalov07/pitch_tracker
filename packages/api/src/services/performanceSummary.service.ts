@@ -1116,6 +1116,7 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
                 ol.batting_order,
                 ol.bats,
                 ol.position,
+                ol.team_side,
                 ab.id AS at_bat_id,
                 ab.result AS at_bat_result,
                 ab.created_at AS ab_created_at,
@@ -1158,6 +1159,7 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
                     batting_order: row.batting_order,
                     bats: row.bats,
                     position: row.position || undefined,
+                    team_side: row.team_side || undefined,
                     at_bats: [],
                 });
             }

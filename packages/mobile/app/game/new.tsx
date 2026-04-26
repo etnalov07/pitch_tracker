@@ -25,6 +25,7 @@ export default function NewGameScreen() {
     const [lineupSize, setLineupSize] = useState('9');
     const [totalInnings, setTotalInnings] = useState('7');
     const [chartingMode, setChartingMode] = useState<'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting'>('our_pitcher');
+    const [scoutingFocus, setScoutingFocus] = useState<'both' | 'home' | 'away'>('both');
     const [gameDate, setGameDate] = useState(new Date().toISOString().split('T')[0]);
     const [gameTime, setGameTime] = useState('18:00');
     const [location, setLocation] = useState('');
@@ -99,13 +100,16 @@ export default function NewGameScreen() {
                     lineup_size: parseInt(lineupSize, 10),
                     total_innings: parseInt(totalInnings, 10),
                     charting_mode: chartingMode,
+                    scouting_focus: isScoutingMode ? scoutingFocus : undefined,
                     game_date: gameDateTime.toISOString(),
                     location: location.trim() || undefined,
                     opponent_team_id: opponentTeamId || undefined,
                 } as Parameters<typeof createGame>[0])
             ).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            if (isScoutingMode) {
+            if (isScoutingMode && scoutingFocus === 'both') {
+                router.replace(`/game/${newGame.id}/scouting-lineup` as any);
+            } else if (isScoutingMode) {
                 router.replace(`/game/${newGame.id}/live` as any);
             } else {
                 router.replace(`/game/${newGame.id}/my-lineup` as any);
@@ -244,6 +248,28 @@ export default function NewGameScreen() {
                             ]}
                             style={styles.segmented}
                         />
+
+                        {/* Scout Focus — shown only in scouting mode */}
+                        {isScoutingMode && (
+                            <>
+                                <Text variant="labelLarge" style={styles.sectionLabel}>
+                                    Scout Which Team
+                                </Text>
+                                <SegmentedButtons
+                                    value={scoutingFocus}
+                                    onValueChange={(value) => {
+                                        Haptics.selectionAsync();
+                                        setScoutingFocus(value as 'both' | 'home' | 'away');
+                                    }}
+                                    buttons={[
+                                        { value: 'both', label: 'Both' },
+                                        { value: 'away', label: 'Away Pitcher' },
+                                        { value: 'home', label: 'Home Pitcher' },
+                                    ]}
+                                    style={styles.segmented}
+                                />
+                            </>
+                        )}
 
                         {/* Team names — conditional based on scouting mode */}
                         {isScoutingMode ? (

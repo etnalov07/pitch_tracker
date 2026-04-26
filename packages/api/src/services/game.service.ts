@@ -17,6 +17,7 @@ export class GameService {
             total_innings,
             charting_mode,
             scouting_home_team,
+            scouting_focus,
             opponent_team_id,
         } = gameData;
 
@@ -40,8 +41,8 @@ export class GameService {
 
         const gameId = uuidv4();
         const result = await query(
-            `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size, total_innings, charting_mode, scouting_home_team, opponent_team_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size, total_innings, charting_mode, scouting_home_team, scouting_focus, opponent_team_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
        RETURNING *`,
             [
                 gameId,
@@ -57,6 +58,7 @@ export class GameService {
                 resolvedTotalInnings,
                 resolvedChartingMode,
                 scouting_home_team ?? null,
+                scouting_focus ?? 'both',
                 opponent_team_id ?? null,
             ]
         );
@@ -72,9 +74,7 @@ export class GameService {
         return game;
     }
 
-    async getOpponentRoster(
-        gameId: string
-    ): Promise<{ pitchers: OpponentPitcherProfile[]; batters: BatterScoutingProfile[] }> {
+    async getOpponentRoster(gameId: string): Promise<{ pitchers: OpponentPitcherProfile[]; batters: BatterScoutingProfile[] }> {
         const gameRow = await query('SELECT home_team_id, opponent_team_id FROM games WHERE id = $1', [gameId]);
         const game = gameRow.rows[0];
         if (!game?.opponent_team_id) return { pitchers: [], batters: [] };

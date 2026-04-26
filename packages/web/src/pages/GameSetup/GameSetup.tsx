@@ -68,6 +68,7 @@ const GameSetup: React.FC = () => {
         is_home_game: true,
         lineup_size: 9,
         charting_mode: 'our_pitcher' as 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting',
+        scouting_focus: 'both' as 'both' | 'home' | 'away',
         game_date: new Date().toISOString().split('T')[0],
         game_time: '18:00',
         location: '',
@@ -152,6 +153,7 @@ const GameSetup: React.FC = () => {
                     is_home_game: formData.is_home_game,
                     lineup_size: formData.lineup_size,
                     charting_mode: formData.charting_mode,
+                    scouting_focus: isScoutingMode ? formData.scouting_focus : undefined,
                     game_date: game_dateTime.toISOString(),
                     location: formData.location.trim() || undefined,
                     opponent_team_id: opponentTeamId || undefined,
@@ -162,8 +164,9 @@ const GameSetup: React.FC = () => {
                 throw new Error('Failed to create game');
             }
 
-            // Scouting mode: go straight to the live game (add players inline during the game)
-            if (isScoutingMode) {
+            if (isScoutingMode && formData.scouting_focus === 'both') {
+                navigate(`/game/${newGame.id}/scouting-lineup`);
+            } else if (isScoutingMode) {
                 navigate(`/game/${newGame.id}`);
             } else {
                 navigate(`/game/${newGame.id}/my-lineup`);
@@ -247,6 +250,30 @@ const GameSetup: React.FC = () => {
 
                                 {isScoutingMode ? (
                                     <>
+                                        <Label style={{ marginTop: '12px', marginBottom: '4px' }}>Scout Which Team</Label>
+                                        <HomeAwayToggle>
+                                            <ToggleOption
+                                                type="button"
+                                                active={formData.scouting_focus === 'both'}
+                                                onClick={() => setFormData((prev) => ({ ...prev, scouting_focus: 'both' }))}
+                                            >
+                                                Both Teams
+                                            </ToggleOption>
+                                            <ToggleOption
+                                                type="button"
+                                                active={formData.scouting_focus === 'away'}
+                                                onClick={() => setFormData((prev) => ({ ...prev, scouting_focus: 'away' }))}
+                                            >
+                                                Away Pitcher
+                                            </ToggleOption>
+                                            <ToggleOption
+                                                type="button"
+                                                active={formData.scouting_focus === 'home'}
+                                                onClick={() => setFormData((prev) => ({ ...prev, scouting_focus: 'home' }))}
+                                            >
+                                                Home Pitcher
+                                            </ToggleOption>
+                                        </HomeAwayToggle>
                                         <TeamsRow style={{ marginTop: '12px' }}>
                                             <TeamSelectGroup>
                                                 <Label>Away Team</Label>
