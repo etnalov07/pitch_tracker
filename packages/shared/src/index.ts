@@ -1497,3 +1497,78 @@ export interface OpponentTeamWithRoster extends OpponentTeam {
     pitchers: OpponentPitcherProfile[];
     batters: BatterScoutingProfile[];
 }
+
+// ============================================================================
+// Scouting Lineup Utilities
+// ============================================================================
+
+export const SCOUTING_POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'PH'];
+
+export interface ScoutingLineupEntry {
+    player_name: string;
+    batting_order: number;
+    position: string;
+    bats: 'R' | 'L' | 'S';
+}
+
+export interface ScoutingLineupPayloadPlayer {
+    player_name: string;
+    batting_order: number;
+    position?: string;
+    bats: 'R' | 'L' | 'S';
+    is_starter: true;
+    team_side: 'home' | 'away';
+}
+
+export interface ScoutingPitcherPayload {
+    game_id: string;
+    pitcher_name: string;
+    jersey_number: number | null;
+    throws: 'R' | 'L';
+    team_name: string;
+    team_side: 'home' | 'away';
+}
+
+export function buildScoutingLineupPayload(
+    entries: ScoutingLineupEntry[],
+    teamSide: 'home' | 'away'
+): ScoutingLineupPayloadPlayer[] {
+    return entries
+        .filter((e) => e.player_name.trim() !== '')
+        .map((e) => ({
+            player_name: e.player_name.trim(),
+            batting_order: e.batting_order,
+            position: e.position || undefined,
+            bats: e.bats,
+            is_starter: true as const,
+            team_side: teamSide,
+        }));
+}
+
+export function buildScoutingPitcherPayload(
+    gameId: string,
+    name: string,
+    jersey: number | null,
+    throws: 'R' | 'L',
+    teamName: string,
+    teamSide: 'home' | 'away'
+): ScoutingPitcherPayload | null {
+    if (!name.trim()) return null;
+    return {
+        game_id: gameId,
+        pitcher_name: name.trim(),
+        jersey_number: jersey,
+        throws,
+        team_name: teamName,
+        team_side: teamSide,
+    };
+}
+
+export function emptyScoutingLineup(size: number): ScoutingLineupEntry[] {
+    return Array.from({ length: size }, (_, i) => ({
+        player_name: '',
+        batting_order: i + 1,
+        position: '',
+        bats: 'R' as const,
+    }));
+}

@@ -20,7 +20,10 @@ describe('OpponentLineup Routes - /bt-api/opponent-lineup', () => {
 
         it('adds a player to opponent lineup', async () => {
             const mockPlayer = { id: 'test-ol-id', player_name: 'John Doe', batting_order: 1, game_id: 'g1' };
-            mockQuery.mockResolvedValueOnce({ rows: [mockPlayer] } as any);
+            mockQuery
+                .mockResolvedValueOnce({ rows: [{ lineup_size: 9 }] } as any) // getGameLineupSize
+                .mockResolvedValueOnce({ rows: [] } as any) // existence check
+                .mockResolvedValueOnce({ rows: [mockPlayer] } as any); // INSERT
 
             const res = await getAgent()
                 .post('/bt-api/opponent-lineup/game/g1')
@@ -62,10 +65,16 @@ describe('OpponentLineup Routes - /bt-api/opponent-lineup', () => {
                 { player_name: 'Player 2', batting_order: 2, position: 'SS' },
             ];
 
-            // createLineup calls createPlayer for each player, each does a query
+            // Per player: getGameLineupSize → existence check → INSERT → _maybeAutoLinkBatter SELECT game
+            // The autoLink fire-and-forget races with p2; give it a null-opponent result so it exits early
             mockQuery
-                .mockResolvedValueOnce({ rows: [{ id: 'ol-0', ...players[0], game_id: 'g1' }] } as any)
-                .mockResolvedValueOnce({ rows: [{ id: 'ol-1', ...players[1], game_id: 'g1' }] } as any);
+                .mockResolvedValueOnce({ rows: [{ lineup_size: 9 }] } as any) // p1 getGameLineupSize
+                .mockResolvedValueOnce({ rows: [] } as any) // p1 existence check
+                .mockResolvedValueOnce({ rows: [{ id: 'ol-0', ...players[0], game_id: 'g1' }] } as any) // p1 INSERT
+                .mockResolvedValueOnce({ rows: [{ opponent_team_id: null }] } as any) // p1 autoLink (exits early)
+                .mockResolvedValueOnce({ rows: [{ lineup_size: 9 }] } as any) // p2 getGameLineupSize
+                .mockResolvedValueOnce({ rows: [] } as any) // p2 existence check
+                .mockResolvedValueOnce({ rows: [{ id: 'ol-1', ...players[1], game_id: 'g1' }] } as any); // p2 INSERT
 
             const res = await getAgent()
                 .post('/bt-api/opponent-lineup/game/g1/bulk')
