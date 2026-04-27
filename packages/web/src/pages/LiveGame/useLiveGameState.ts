@@ -192,7 +192,7 @@ export function useLiveGameState() {
                 }
             })
             .catch(() => {});
-    }, [game?.id, game?.charting_mode]);
+    }, [game?.id, game?.charting_mode, gameId]);
 
     // Load team roster when game team is known — skip in scouting mode
     useEffect(() => {
