@@ -10,6 +10,10 @@ on:
             - '.github/workflows/deploy-api.yml'
     workflow_dispatch:
 
+concurrency:
+    group: ftp-namecheap
+    cancel-in-progress: false
+
 jobs:
     build-and-deploy:
         runs-on: ubuntu-latest
