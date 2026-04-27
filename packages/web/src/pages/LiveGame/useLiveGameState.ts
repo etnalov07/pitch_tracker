@@ -1,17 +1,9 @@
-import {
-    deriveGameMode,
-    GameMode,
-    GameRole,
-    MyTeamLineupPlayer,
-    OpposingPitcher,
-    PitchCall,
-    PitchCallZone,
-    Player,
-} from '@pitch-tracker/shared';
+import { deriveGameMode, GameMode, GameRole, MyTeamLineupPlayer, OpposingPitcher, Player } from '@pitch-tracker/shared';
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
 import useHeatZones from '../../hooks/useHeatZones';
+import { useSettings } from '../../hooks/useSettings';
 import { gameRoleService } from '../../services/gameRoleService';
 import { myTeamLineupService } from '../../services/myTeamLineupService';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
@@ -19,6 +11,7 @@ import { teamService } from '../../services/teamService';
 import { useAppDispatch, useAppSelector, fetchGameById } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import {
+    PitchCallZone,
     PitchType,
     PitchResult,
     OpponentLineupPlayer,
@@ -38,6 +31,7 @@ export const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
     { value: 'changeup', label: 'Changeup' },
     { value: 'splitter', label: 'Splitter' },
     { value: 'knuckleball', label: 'Knuckleball' },
+    { value: 'screwball', label: 'Screwball' },
     { value: 'other', label: 'Other' },
 ];
 
@@ -48,12 +42,18 @@ export function useLiveGameState() {
 
     const { selectedGame: game, currentAtBat, pitches, loading } = useAppSelector((state) => state.games);
 
+    // App-level settings (persisted to localStorage)
+    const { settings, updateSetting } = useSettings();
+
     // Pitch form state
     const [pitchLocation, setPitchLocation] = useState<{ x: number; y: number } | null>(null);
     const [targetZone, setTargetZone] = useState<PitchCallZone | null>(null);
     const [pitchType, setPitchType] = useState<PitchType>('fastball');
     const [velocity, setVelocity] = useState<string>('');
     const [pitchResult, setPitchResult] = useState<PitchResult>('ball');
+
+    // Active pitch call ID — set when a call is sent, cleared after pitch is logged
+    const [activeCallId, setActiveCallId] = useState<string | null>(null);
 
     // Current pitcher and batter
     const [currentPitcher, setCurrentPitcher] = useState<GamePitcherWithPlayer | null>(null);
@@ -104,16 +104,9 @@ export function useLiveGameState() {
     const [showDroppedThirdModal, setShowDroppedThirdModal] = useState(false);
     const [showDoublePlayModal, setShowDoublePlayModal] = useState(false);
 
-    // Pitch call state
-    const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
-    const [sendingCall, setSendingCall] = useState(false);
-
     // Tendencies panels
     const [showPitcherTendencies, setShowPitcherTendencies] = useState(false);
     const [showHitterTendencies, setShowHitterTendencies] = useState(false);
-
-    // Local shake count (mirrors game.shake_count, incremented optimistically)
-    const [localShakeCount, setLocalShakeCount] = useState(0);
 
     // Team at bat modal (visitor games)
     const [showTeamAtBat, setShowTeamAtBat] = useState(false);
@@ -231,10 +224,13 @@ export function useLiveGameState() {
 
     // Filter pitch types: only apply pitcher's configured types when we are the pitcher.
     // In opp_pitcher mode the opposing pitcher can throw anything.
-    const availablePitchTypes =
+    // Fallback to ALL_PITCH_TYPES if the filter produces nothing (e.g., a type stored in
+    // pitcher_pitch_types that isn't yet present in ALL_PITCH_TYPES would otherwise blank out the selector).
+    const filteredPitchTypes =
         gameMode !== 'opp_pitcher' && pitcherPitchTypes.length > 0
             ? ALL_PITCH_TYPES.filter((pt) => pitcherPitchTypes.includes(pt.value))
             : ALL_PITCH_TYPES;
+    const availablePitchTypes = filteredPitchTypes.length > 0 ? filteredPitchTypes : ALL_PITCH_TYPES;
 
     return {
         // Router
@@ -246,6 +242,9 @@ export function useLiveGameState() {
         currentAtBat,
         pitches,
         loading,
+        // Settings
+        settings,
+        updateSetting,
         // Pitch form
         pitchLocation,
         setPitchLocation,
@@ -257,6 +256,9 @@ export function useLiveGameState() {
         setVelocity,
         pitchResult,
         setPitchResult,
+        // Pitch call
+        activeCallId,
+        setActiveCallId,
         // Players
         currentPitcher,
         setCurrentPitcher,
@@ -315,19 +317,11 @@ export function useLiveGameState() {
         setShowDroppedThirdModal,
         showDoublePlayModal,
         setShowDoublePlayModal,
-        // Pitch call
-        activeCall,
-        setActiveCall,
-        sendingCall,
-        setSendingCall,
         // Tendencies panels
         showPitcherTendencies,
         setShowPitcherTendencies,
         showHitterTendencies,
         setShowHitterTendencies,
-        // Shake count
-        localShakeCount,
-        setLocalShakeCount,
         // Team at bat (visitor games)
         showTeamAtBat,
         setShowTeamAtBat,

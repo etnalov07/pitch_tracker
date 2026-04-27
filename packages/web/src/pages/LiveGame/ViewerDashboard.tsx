@@ -3,6 +3,7 @@ import { BatterBreakdown, Game, GamePitcherWithPlayer, OpposingPitcher, Performa
 import React, { useState, useEffect, useRef } from 'react';
 import CountBreakdownPanel from '../../components/live/CountBreakdownPanel';
 import PitcherStats from '../../components/live/PitcherStats';
+import ViewerTendenciesTab from '../../components/live/ViewerTendenciesTab';
 import { BatterBreakdownPanel, PerformanceSummaryCard } from '../../components/performanceSummary';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { performanceSummaryService } from '../../services/performanceSummaryService';
@@ -19,7 +20,7 @@ const NARRATIVE_POLL_INTERVAL_MS = 3000;
 const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
 
 const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
-    const [activeTab, setActiveTab] = useState<'stats' | 'counts' | 'breakdown' | 'summary'>('stats');
+    const [activeTab, setActiveTab] = useState<'stats' | 'counts' | 'breakdown' | 'tendencies' | 'summary'>('stats');
     const [breakdownTab, setBreakdownTab] = useState<'opponent' | 'our_team'>('opponent');
     const [activePitcher, setActivePitcher] = useState<GamePitcherWithPlayer | null>(null);
     const [currentOpposingPitcher, setCurrentOpposingPitcher] = useState<OpposingPitcher | null>(null);
@@ -55,7 +56,9 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
         if (!breakdownFetchedRef.current) setBreakdownLoading(true);
         Promise.all([
             performanceSummaryService.getBatterBreakdown(game.id),
-            game.charting_mode === 'both' ? performanceSummaryService.getMyTeamBatterBreakdown(game.id) : Promise.resolve([]),
+            game.charting_mode === 'both' || game.charting_mode === 'opp_pitcher'
+                ? performanceSummaryService.getMyTeamBatterBreakdown(game.id)
+                : Promise.resolve([]),
         ])
             .then(([opp, mine]) => {
                 setOppBreakdown(opp);
@@ -143,6 +146,9 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 <Tab active={activeTab === 'breakdown'} onClick={() => setActiveTab('breakdown')}>
                     Batter Breakdown
                 </Tab>
+                <Tab active={activeTab === 'tendencies'} onClick={() => setActiveTab('tendencies')}>
+                    Tendencies
+                </Tab>
                 {game.status === 'completed' && (
                     <Tab active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>
                         {isScoutingMode ? 'Scouting Report' : 'Performance Summary'}
@@ -183,6 +189,11 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                                 ]}
                                 loading={breakdownLoading}
                             />
+                        ) : game.charting_mode === 'opp_pitcher' ? (
+                            <BatterBreakdownPanel
+                                sections={[{ title: `Our Lineup vs. ${opponentPitcherName}`, batters: myTeamBreakdown ?? [] }]}
+                                loading={breakdownLoading}
+                            />
                         ) : breakdownTab === 'opponent' || game.charting_mode !== 'both' ? (
                             <BatterBreakdownPanel
                                 sections={[{ title: `Opponent Lineup vs. ${pitcherName}`, batters: oppBreakdown ?? [] }]}
@@ -196,6 +207,14 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                             />
                         )}
                     </BreakdownWrapper>
+                )}
+                {activeTab === 'tendencies' && (
+                    <ViewerTendenciesTab
+                        game={game}
+                        activePitcher={activePitcher}
+                        currentOpposingPitcher={currentOpposingPitcher}
+                        refreshTrigger={refreshTrigger}
+                    />
                 )}
                 {activeTab === 'summary' && (
                     <SummaryWrapper>

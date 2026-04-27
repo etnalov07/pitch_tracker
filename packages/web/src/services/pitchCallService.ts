@@ -48,6 +48,11 @@ export const pitchCallService = {
         return response.data.call;
     },
 
+    /** Link a logged pitch to the call and record its outcome. */
+    linkPitch: async (callId: string, pitchId: string, result: PitchCallResult): Promise<void> => {
+        await api.put(`/pitch-calls/${callId}/result`, { result, pitch_id: pitchId });
+    },
+
     getActiveCall: async (gameId: string): Promise<PitchCall | null> => {
         try {
             const response = await api.get<{ call: PitchCall }>(`/pitch-calls/game/${gameId}/active`);

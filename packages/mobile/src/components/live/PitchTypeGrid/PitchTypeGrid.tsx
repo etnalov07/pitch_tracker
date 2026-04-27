@@ -23,6 +23,8 @@ const ALL_PITCH_TYPES: { type: PitchType; label: string; abbrev: string }[] = [
     { type: 'changeup', label: 'Changeup', abbrev: 'CH' },
     { type: 'splitter', label: 'Splitter', abbrev: 'SP' },
     { type: 'knuckleball', label: 'Knuckleball', abbrev: 'KN' },
+    { type: 'screwball', label: 'Screwball', abbrev: 'SC' },
+    { type: 'other', label: 'Other', abbrev: 'OT' },
 ];
 
 const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
@@ -32,8 +34,11 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
     disabled = false,
     compact = false,
 }) => {
-    // Filter to only available pitch types if provided, otherwise show all
-    const pitchTypes = availablePitchTypes ? ALL_PITCH_TYPES.filter((p) => availablePitchTypes.includes(p.type)) : ALL_PITCH_TYPES;
+    // Filter to only available pitch types if provided, otherwise show all.
+    // Fallback to ALL_PITCH_TYPES if the filter produces nothing (guards against a type stored in
+    // pitcher_pitch_types that isn't yet in ALL_PITCH_TYPES blanking out the selector).
+    const filtered = availablePitchTypes ? ALL_PITCH_TYPES.filter((p) => availablePitchTypes.includes(p.type)) : ALL_PITCH_TYPES;
+    const pitchTypes = filtered.length > 0 ? filtered : ALL_PITCH_TYPES;
 
     const handleSelect = (type: PitchType) => {
         if (disabled) return;
