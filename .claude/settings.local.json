@@ -113,7 +113,17 @@
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U postgres -l 2>&1; exit 0)",
       "PowerShell(& \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" --version)",
       "Bash(bash *)",
-      "Bash(PGPASSWORD=localdev /c/Program Files/PostgreSQL/16/bin/psql *)"
+      "Bash(PGPASSWORD=localdev /c/Program Files/PostgreSQL/16/bin/psql *)",
+      "Bash(sort -t- -k2 -n)",
+      "Bash(npx react-scripts *)",
+      "Bash(CI=true npm test *)",
+      "Bash(find packages/api -name \"*.ts\" -type f ! -path \"*/node_modules/*\" -exec grep -l \"target_zone\" {} \\\\;)",
+      "Bash(PGPASSWORD=localdev psql *)",
+      "PowerShell(cd C:\\\\Projects\\\\pitch_tracker; $env:GH_TOKEN = $null; [System.Environment]::GetEnvironmentVariable\\(\"GITHUB_TOKEN\", \"User\"\\); [System.Environment]::GetEnvironmentVariable\\(\"GH_TOKEN\", \"User\"\\))",
+      "PowerShell(cd C:\\\\Projects\\\\pitch_tracker; git stash; git checkout HEAD~1 -- packages/api/src/services/pitch.service.ts packages/api/src/services/atBat.service.ts; cd packages/api; npx jest --no-coverage --testPathPattern=\"pitch.routes|atBat.service|auth.routes|gamePitcher.routes|player.routes\" 2>&1 | Select-String \"Tests:|Test Suites:|PASS|FAIL\" | Select-Object -Last 10)",
+      "PowerShell(cd C:\\\\Projects\\\\pitch_tracker; git stash pop; git diff HEAD~1 HEAD -- packages/api/src/services/pitch.service.ts packages/api/src/services/atBat.service.ts 2>&1 | Select-String \"^\\\\+\" | Select-Object -First 30)",
+      "PowerShell(cd C:\\\\Projects\\\\pitch_tracker; git checkout -- .claude/settings.local.json; git stash pop; git diff HEAD~1 HEAD -- packages/api/src/services/pitch.service.ts packages/api/src/services/atBat.service.ts 2>&1)",
+      "PowerShell(cd C:\\\\Projects\\\\pitch_tracker; git diff HEAD~1 HEAD -- packages/api/src/services/pitch.service.ts packages/api/src/services/atBat.service.ts)"
     ]
   },
   "hooks": {

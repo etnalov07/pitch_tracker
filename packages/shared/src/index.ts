@@ -736,15 +736,53 @@ export type PitchCallZone =
     | 'W-low-in'
     | 'W-low-out';
 
-export type PitchCallAbbrev = 'FB' | 'CB' | 'CH' | 'SL' | 'CT' | '2S';
+export type PitchCallAbbrev = 'FB' | '4S' | '2S' | 'CT' | 'SI' | 'SL' | 'CB' | 'CH' | 'SP' | 'KN' | 'SC' | 'OT';
 
 export const PITCH_CALL_LABELS: Record<PitchCallAbbrev, string> = {
     FB: 'Fastball',
+    '4S': '4-Seam',
+    '2S': '2-Seam',
+    CT: 'Cutter',
+    SI: 'Sinker',
+    SL: 'Slider',
     CB: 'Curveball',
     CH: 'Changeup',
-    SL: 'Slider',
-    CT: 'Cutter',
-    '2S': 'Two-Seam',
+    SP: 'Splitter',
+    KN: 'Knuckleball',
+    SC: 'Screwball',
+    OT: 'Other',
+};
+
+/** Map every PitchType to its PitchCallAbbrev for display / call transmission */
+export const PITCH_TYPE_TO_ABBREV: Record<PitchType, PitchCallAbbrev> = {
+    fastball: 'FB',
+    '4-seam': '4S',
+    '2-seam': '2S',
+    cutter: 'CT',
+    sinker: 'SI',
+    slider: 'SL',
+    curveball: 'CB',
+    changeup: 'CH',
+    splitter: 'SP',
+    knuckleball: 'KN',
+    screwball: 'SC',
+    other: 'OT',
+};
+
+/** Reverse map: PitchCallAbbrev → PitchType */
+export const ABBREV_TO_PITCH_TYPE: Record<PitchCallAbbrev, PitchType> = {
+    FB: 'fastball',
+    '4S': '4-seam',
+    '2S': '2-seam',
+    CT: 'cutter',
+    SI: 'sinker',
+    SL: 'slider',
+    CB: 'curveball',
+    CH: 'changeup',
+    SP: 'splitter',
+    KN: 'knuckleball',
+    SC: 'screwball',
+    OT: 'other',
 };
 
 export const PITCH_CALL_ZONE_LABELS: Record<PitchCallZone, string> = {
@@ -1055,7 +1093,7 @@ export interface CreateOpposingPitcherParams {
 
 export type GameRole = 'charter' | 'viewer';
 
-export type WsMessageType = 'pitch_logged' | 'at_bat_ended' | 'inning_changed' | 'runners_updated';
+export type WsMessageType = 'pitch_logged' | 'at_bat_ended' | 'inning_changed' | 'runners_updated' | 'pitch_call';
 
 export interface WsMessage {
     type: WsMessageType;

@@ -1,4 +1,4 @@
-import { PITCH_CALL_ZONE_LABELS } from '@pitch-tracker/shared';
+import { ABBREV_TO_PITCH_TYPE, PitchCallZone, PitchType } from '@pitch-tracker/shared';
 import React from 'react';
 import BatterSelector from '../../components/game/BatterSelector';
 import PitcherSelector from '../../components/game/PitcherSelector';
@@ -9,7 +9,6 @@ import HitterTendenciesPanel from '../../components/live/HitterTendenciesPanel';
 import OpposingPitcherPanel from '../../components/live/OpposingPitcherPanel';
 import PitcherStats from '../../components/live/PitcherStats';
 import PitcherTendenciesPanel from '../../components/live/PitcherTendenciesPanel';
-import SituationalCallsRow from '../../components/live/SituationalCallsRow';
 import StrikeZone from '../../components/live/StrikeZone';
 import { useGameWebSocket } from '../../hooks/useGameWebSocket';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
@@ -74,11 +73,6 @@ import {
     ToggleSwitch,
     ToggleSwitchInput,
     ToggleSwitchSlider,
-    StepIndicator,
-    Step,
-    StepNumber,
-    StepLabel,
-    StepConnector,
     PitchTypeSelector,
     PitchTypeSelectorTitle,
     PitchTypeGrid,
@@ -105,6 +99,7 @@ import ViewerDashboard from './ViewerDashboard';
 const LiveGame: React.FC = () => {
     const state = useLiveGameState();
     const actions = useLiveGameActions(state);
+    const [showSettingsPanel, setShowSettingsPanel] = React.useState(false);
 
     const {
         gameId,
@@ -159,13 +154,10 @@ const LiveGame: React.FC = () => {
         showTeamAtBat,
         teamAtBatRuns,
         setTeamAtBatRuns,
-        activeCall,
-        sendingCall,
         showPitcherTendencies,
         setShowPitcherTendencies,
         showHitterTendencies,
         setShowHitterTendencies,
-        localShakeCount,
         opposingPitchers,
         setOpposingPitchers,
         currentOpposingPitcher,
@@ -182,13 +174,31 @@ const LiveGame: React.FC = () => {
         myTeamLineup,
         currentMyBatter,
         setCurrentMyBatter,
+        settings,
+        updateSetting,
+        activeCallId,
+        setTargetZone,
+        setActiveCallId,
     } = state;
+
+    // Pull out settings flags for readability
+    const { showVelocity, pitchCallEnabled } = settings;
 
     useGameWebSocket(gameId ?? null, {
         pitch_logged: () => setStatsRefreshTrigger((prev) => prev + 1),
         at_bat_ended: () => setStatsRefreshTrigger((prev) => prev + 1),
         inning_changed: () => setStatsRefreshTrigger((prev) => prev + 1),
         runners_updated: () => setStatsRefreshTrigger((prev) => prev + 1),
+        // Incoming pitch call — pre-fill pitch type + target zone on a second device (e.g. catcher tablet)
+        pitch_call: (payload) => {
+            const { pitch_type, zone, id } = payload as { pitch_type?: string; zone?: string; id?: string };
+            if (pitch_type) {
+                const mapped = ABBREV_TO_PITCH_TYPE[pitch_type as keyof typeof ABBREV_TO_PITCH_TYPE] as PitchType | undefined;
+                if (mapped) setPitchType(mapped);
+            }
+            if (zone) setTargetZone(zone as PitchCallZone);
+            if (id) setActiveCallId(id);
+        },
     });
 
     if (loading) {
@@ -342,6 +352,75 @@ const LiveGame: React.FC = () => {
                                 📋 Scouting
                             </SwapButton>
                         )}
+                        {/* Settings gear — opens a small panel to toggle velocity + pitch calls */}
+                        <div style={{ position: 'relative' }}>
+                            <SwapButton title="Settings" onClick={() => setShowSettingsPanel((v) => !v)}>
+                                ⚙ Settings
+                            </SwapButton>
+                            {showSettingsPanel && (
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: '110%',
+                                        right: 0,
+                                        background: 'white',
+                                        border: `1px solid ${theme.colors.gray[200]}`,
+                                        borderRadius: '10px',
+                                        boxShadow: theme.shadows.md,
+                                        padding: '14px 18px',
+                                        minWidth: '220px',
+                                        zIndex: 200,
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontWeight: 700,
+                                            fontSize: '13px',
+                                            color: theme.colors.gray[700],
+                                            marginBottom: '12px',
+                                        }}
+                                    >
+                                        Chart Settings
+                                    </div>
+                                    {[
+                                        {
+                                            key: 'showVelocity' as const,
+                                            label: 'Record velocity',
+                                            sub: 'Adds a velocity field after location',
+                                        },
+                                        {
+                                            key: 'pitchCallEnabled' as const,
+                                            label: 'Pitch call transmission',
+                                            sub: 'Send calls to catcher before each pitch',
+                                        },
+                                    ].map(({ key, label, sub }) => (
+                                        <label
+                                            key={key}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                gap: '10px',
+                                                marginBottom: '10px',
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={settings[key]}
+                                                onChange={(e) => updateSetting(key, e.target.checked)}
+                                                style={{ marginTop: '2px', cursor: 'pointer' }}
+                                            />
+                                            <div>
+                                                <div style={{ fontSize: '13px', fontWeight: 600, color: theme.colors.gray[800] }}>
+                                                    {label}
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: theme.colors.gray[500] }}>{sub}</div>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                         {game.status === 'in_progress' && <EndGameButton onClick={actions.handleEndGame}>End Game</EndGameButton>}
                     </TopBarRight>
                 </TopBar>
@@ -587,45 +666,6 @@ const LiveGame: React.FC = () => {
                             </CountValue>
                         </CountDisplay>
 
-                        {!isScoutingMode && (
-                            <StepIndicator>
-                                <Step completed={!!pitchType} active={!pitchType}>
-                                    <StepNumber completed={!!pitchType} active={!pitchType}>
-                                        {pitchType ? '✓' : '1'}
-                                    </StepNumber>
-                                    <StepLabel active={!pitchType}>Type</StepLabel>
-                                </Step>
-                                <StepConnector completed={!!pitchType} />
-                                <Step completed={!!targetZone} active={!!pitchType && !targetZone}>
-                                    <StepNumber completed={!!targetZone} active={!!pitchType && !targetZone}>
-                                        {targetZone ? '✓' : '2'}
-                                    </StepNumber>
-                                    <StepLabel active={!!pitchType && !targetZone}>Target</StepLabel>
-                                </Step>
-                                <StepConnector completed={!!targetZone} />
-                                <Step completed={!!activeCall} active={!!targetZone && !activeCall}>
-                                    <StepNumber completed={!!activeCall} active={!!targetZone && !activeCall}>
-                                        {activeCall ? '✓' : '3'}
-                                    </StepNumber>
-                                    <StepLabel active={!!targetZone && !activeCall}>Send</StepLabel>
-                                </Step>
-                                <StepConnector completed={!!activeCall} />
-                                <Step completed={!!pitchLocation} active={!!activeCall && !pitchLocation}>
-                                    <StepNumber completed={!!pitchLocation} active={!!activeCall && !pitchLocation}>
-                                        {pitchLocation ? '✓' : '4'}
-                                    </StepNumber>
-                                    <StepLabel active={!!activeCall && !pitchLocation}>Location</StepLabel>
-                                </Step>
-                                <StepConnector completed={!!pitchLocation} />
-                                <Step completed={!!pitchResult} active={!!pitchLocation}>
-                                    <StepNumber completed={!!pitchResult} active={!!pitchLocation}>
-                                        {pitchResult ? '✓' : '5'}
-                                    </StepNumber>
-                                    <StepLabel active={!!pitchLocation}>Result</StepLabel>
-                                </Step>
-                            </StepIndicator>
-                        )}
-
                         <PitchTypeSelector>
                             <PitchTypeSelectorTitle>Step 1: Select Pitch Type</PitchTypeSelectorTitle>
                             <PitchTypeGrid>
@@ -635,64 +675,35 @@ const LiveGame: React.FC = () => {
                                     </PitchTypeButton>
                                 ))}
                             </PitchTypeGrid>
+
+                            {/* Send Call button — visible when pitch calling is enabled */}
+                            {pitchCallEnabled && (
+                                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <button
+                                        onClick={actions.handleSendCall}
+                                        disabled={!targetZone}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px 16px',
+                                            background: targetZone
+                                                ? activeCallId
+                                                    ? theme.colors.green[600]
+                                                    : theme.colors.primary[600]
+                                                : theme.colors.gray[200],
+                                            color: targetZone ? 'white' : theme.colors.gray[400],
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            fontWeight: 700,
+                                            fontSize: '14px',
+                                            cursor: targetZone ? 'pointer' : 'not-allowed',
+                                            transition: 'background 0.15s',
+                                        }}
+                                    >
+                                        {activeCallId ? '✓ Call Sent' : `📡 Send Call${targetZone ? '' : ' (set target first)'}`}
+                                    </button>
+                                </div>
+                            )}
                         </PitchTypeSelector>
-
-                        {/* Send Call button - appears after type + zone selected (not in scouting mode) */}
-                        {!isScoutingMode && targetZone && !activeCall && (
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '12px',
-                                    padding: '10px 16px',
-                                    background: '#F5A623',
-                                    borderRadius: '8px',
-                                    cursor: sendingCall ? 'wait' : 'pointer',
-                                    opacity: sendingCall ? 0.6 : 1,
-                                }}
-                                onClick={sendingCall ? undefined : actions.handleSendCall}
-                            >
-                                <span style={{ fontSize: '15px', fontWeight: 700, color: '#0A1628' }}>
-                                    {sendingCall ? 'SENDING...' : `SEND CALL: ${pitchType} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
-                                </span>
-                            </div>
-                        )}
-
-                        {/* Active call badge (not in scouting mode) */}
-                        {!isScoutingMode && activeCall && (
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    padding: '8px 16px',
-                                    background: theme.colors.green[50],
-                                    border: `1px solid ${theme.colors.green[300]}`,
-                                    borderRadius: '8px',
-                                }}
-                            >
-                                <span style={{ fontSize: '13px', fontWeight: 600, color: theme.colors.green[700] }}>
-                                    Call Sent: {activeCall.pitch_type} →{' '}
-                                    {activeCall.zone ? PITCH_CALL_ZONE_LABELS[activeCall.zone] : ''}
-                                </span>
-                            </div>
-                        )}
-
-                        {/* Situational calls row (not in scouting mode) */}
-                        {!isScoutingMode && (
-                            <SituationalCallsRow
-                                gameId={game.id}
-                                teamId={game.home_team_id || ''}
-                                pitcherId={currentPitcher?.player_id}
-                                opponentBatterId={currentBatter?.id}
-                                inning={game.current_inning}
-                                shakeCount={(game.shake_count ?? 0) + localShakeCount}
-                                disabled={game.status !== 'in_progress'}
-                                onCallSent={actions.handleSituationalCall}
-                            />
-                        )}
 
                         <StrikeZoneRow>
                             <StrikeZoneContainer>
@@ -727,20 +738,22 @@ const LiveGame: React.FC = () => {
                             </StrikeZoneContainer>
 
                             <PitchForm>
-                                <FormGroup>
-                                    <Label>Step 4: Velocity (mph) - Optional</Label>
-                                    <Input
-                                        type="number"
-                                        value={velocity}
-                                        onChange={(e) => setVelocity(e.target.value)}
-                                        placeholder="85"
-                                        min="0"
-                                        max="120"
-                                    />
-                                </FormGroup>
+                                {showVelocity && (
+                                    <FormGroup>
+                                        <Label>Step 3: Velocity (mph)</Label>
+                                        <Input
+                                            type="number"
+                                            value={velocity}
+                                            onChange={(e) => setVelocity(e.target.value)}
+                                            placeholder="85"
+                                            min="0"
+                                            max="120"
+                                        />
+                                    </FormGroup>
+                                )}
 
                                 <FormGroup>
-                                    <Label>Step 5: Result</Label>
+                                    <Label>{showVelocity ? 'Step 4' : 'Step 3'}: Result</Label>
                                     <ResultButtons>
                                         <ResultButton
                                             active={pitchResult === 'ball'}

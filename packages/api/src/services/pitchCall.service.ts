@@ -106,6 +106,18 @@ export class PitchCallService {
             return result.rows[0];
         });
 
+        // Broadcast to WebSocket clients so viewers/catchers receive the call live
+        await query('SELECT pg_notify($1, $2)', [
+            `game_${call.game_id}`,
+            JSON.stringify({
+                type: 'pitch_call',
+                id: call.id,
+                game_id: call.game_id,
+                pitch_type: call.pitch_type,
+                zone: call.zone,
+            }),
+        ]);
+
         return call;
     }
 

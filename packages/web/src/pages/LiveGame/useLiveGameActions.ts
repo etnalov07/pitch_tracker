@@ -3,14 +3,14 @@ import {
     BaserunnerEvent,
     BaserunnerEventType,
     ContactType,
+    PitchCallResult,
+    PitchCallZone,
+    PITCH_TYPE_TO_ABBREV,
     PlayerPosition,
     deriveGameMode,
     RunnerBase,
     getSuggestedAdvancement,
     clearBases,
-    PitchCallZone,
-    PITCH_CALL_ZONE_COORDS,
-    SituationalCallType,
     getNextBatter,
 } from '@pitch-tracker/shared';
 import { pitchCallService } from '../../services/pitchCallService';
@@ -25,7 +25,7 @@ import {
     toggleHomeAway,
 } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
-import { OpponentLineupPlayer, GamePitcherWithPlayer, getOutsForResult } from '../../types';
+import { MyTeamLineupPlayer, OpponentLineupPlayer, GamePitcherWithPlayer, getOutsForResult } from '../../types';
 import { LiveGameState } from './useLiveGameState';
 
 export function useLiveGameActions(state: LiveGameState) {
@@ -76,16 +76,45 @@ export function useLiveGameActions(state: LiveGameState) {
         setShowTeamAtBat,
         teamAtBatRuns,
         setTeamAtBatRuns,
-        activeCall,
-        setActiveCall,
-        setSendingCall,
-        setLocalShakeCount,
+        activeCallId,
+        setActiveCallId,
     } = state;
 
     const gameMode = deriveGameMode(game?.is_home_game ?? true, game?.inning_half ?? 'top');
     const isScoutingMode = game?.charting_mode === 'scouting';
     // TOP = away team batting (away scores); BOTTOM = home team batting (home scores)
     const scoutingBattingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'away' : 'home') : null;
+
+    /** Map a PitchResult to the coarser PitchCallResult used in pitch_calls */
+    const toPitchCallResult = (result: string): PitchCallResult => {
+        if (result === 'called_strike' || result === 'swinging_strike') return 'strike';
+        if (result === 'foul') return 'foul';
+        if (result === 'in_play') return 'in_play';
+        return 'ball';
+    };
+
+    /** Send a pitch call to the catcher / linked devices via the API (which broadcasts via WebSocket). */
+    const handleSendCall = async () => {
+        if (!gameId || !game?.home_team_id || !targetZone) return;
+        const abbrev = PITCH_TYPE_TO_ABBREV[pitchType];
+        try {
+            const call = await pitchCallService.createCall({
+                game_id: gameId,
+                team_id: game.home_team_id,
+                pitch_type: abbrev,
+                zone: targetZone,
+                category: 'pitch',
+                at_bat_id: currentAtBat?.id,
+                pitcher_id: currentPitcher?.player_id,
+                inning: game.current_inning,
+                balls_before: currentAtBat?.balls ?? 0,
+                strikes_before: currentAtBat?.strikes ?? 0,
+            });
+            setActiveCallId(call.id);
+        } catch (error) {
+            console.error('Failed to send pitch call:', error);
+        }
+    };
 
     const updateScoreForRuns = async (runsScored: number) => {
         if (!gameId || runsScored <= 0) return;
@@ -125,6 +154,29 @@ export function useLiveGameActions(state: LiveGameState) {
             return true;
         } catch (error) {
             console.error('Failed to start at-bat:', error);
+            return false;
+        }
+    };
+
+    // Start an at-bat with our team's batter vs. the opposing pitcher (opp_pitcher / both modes)
+    const startAtBatForMyTeamBatter = async (batter: MyTeamLineupPlayer, outs: number, inning: typeof currentInning) => {
+        if (!gameId || !inning || !state.currentOpposingPitcher) return false;
+
+        try {
+            await dispatch(
+                createAtBat({
+                    game_id: gameId,
+                    inning_id: inning.id,
+                    batter_id: batter.player_id,
+                    opposing_pitcher_id: state.currentOpposingPitcher.id,
+                    balls: 0,
+                    strikes: 0,
+                    outs_before: outs,
+                })
+            ).unwrap();
+            return true;
+        } catch (error) {
+            console.error('Failed to start at-bat for my team batter:', error);
             return false;
         }
     };
@@ -227,10 +279,34 @@ export function useLiveGameActions(state: LiveGameState) {
             dispatch(setCurrentAtBat(null));
             dispatch(clearPitches());
 
-            // In scouting mode, only use the current batting team's lineup
-            const activeLineup = isScoutingMode
-                ? opponentLineup.filter((p) => p.team_side === scoutingBattingSide && !p.replaced_by_id)
-                : opponentLineup;
+            const isOppPitcherMode = !isScoutingMode && gameMode === 'opp_pitcher';
+
+            // Helper: advance to the next batter and start their at-bat
+            const advanceToNextBatter = async (outsForNextAtBat: number) => {
+                if (isOppPitcherMode) {
+                    const nextBatter = getNextBatter(state.myTeamLineup, currentBattingOrder);
+                    if (nextBatter) {
+                        setCurrentBattingOrder(nextBatter.batting_order);
+                        state.setCurrentMyBatter(nextBatter);
+                        await startAtBatForMyTeamBatter(nextBatter, outsForNextAtBat, currentInning);
+                    } else {
+                        state.setCurrentMyBatter(null);
+                    }
+                } else {
+                    // In scouting mode, only use the current batting team's lineup
+                    const activeLineup = isScoutingMode
+                        ? opponentLineup.filter((p) => p.team_side === scoutingBattingSide && !p.replaced_by_id)
+                        : opponentLineup;
+                    const nextBatter = getNextBatter(activeLineup, currentBattingOrder);
+                    if (nextBatter) {
+                        setCurrentBattingOrder(nextBatter.batting_order);
+                        setCurrentBatter(nextBatter);
+                        await startAtBatForBatter(nextBatter, outsForNextAtBat, currentInning);
+                    } else {
+                        setCurrentBatter(null);
+                    }
+                }
+            };
 
             if (outsFromPlay > 0) {
                 if (newOutCount >= 3) {
@@ -243,70 +319,13 @@ export function useLiveGameActions(state: LiveGameState) {
                     setShowInningChange(true);
                 } else {
                     setCurrentOuts(newOutCount);
-                    const nextBatter = getNextBatter(activeLineup, currentBattingOrder);
-                    if (nextBatter) setCurrentBattingOrder(nextBatter.batting_order);
-                    if (nextBatter) {
-                        setCurrentBatter(nextBatter);
-                        await startAtBatForBatter(nextBatter, newOutCount, currentInning);
-                    } else {
-                        setCurrentBatter(null);
-                    }
+                    await advanceToNextBatter(newOutCount);
                 }
             } else {
-                const nextBatter = getNextBatter(activeLineup, currentBattingOrder);
-                if (nextBatter) setCurrentBattingOrder(nextBatter.batting_order);
-                if (nextBatter) {
-                    setCurrentBatter(nextBatter);
-                    await startAtBatForBatter(nextBatter, currentOuts, currentInning);
-                } else {
-                    setCurrentBatter(null);
-                }
+                await advanceToNextBatter(currentOuts);
             }
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : 'Failed to end at-bat');
-        }
-    };
-
-    // Map PitchType to PitchCallAbbrev for the call record
-    const toPitchCallAbbrev = (pt: string): import('@pitch-tracker/shared').PitchCallAbbrev => {
-        const map: Record<string, import('@pitch-tracker/shared').PitchCallAbbrev> = {
-            fastball: 'FB',
-            '4-seam': 'FB',
-            '2-seam': '2S',
-            cutter: 'CT',
-            sinker: '2S',
-            slider: 'SL',
-            curveball: 'CB',
-            changeup: 'CH',
-            splitter: 'CH',
-            knuckleball: 'CB',
-            other: 'FB',
-        };
-        return map[pt] || 'FB';
-    };
-
-    const handleSendCall = async () => {
-        if (!targetZone || !gameId || !game) return;
-
-        setSendingCall(true);
-        try {
-            const call = await pitchCallService.createCall({
-                game_id: gameId,
-                team_id: game.home_team_id || '',
-                pitch_type: toPitchCallAbbrev(state.pitchType),
-                zone: targetZone,
-                at_bat_id: currentAtBat?.id,
-                pitcher_id: currentPitcher?.player_id,
-                opponent_batter_id: currentBatter?.id,
-                inning: game.current_inning,
-                balls_before: currentAtBat?.balls,
-                strikes_before: currentAtBat?.strikes,
-            });
-            setActiveCall(call);
-        } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : 'Failed to send pitch call');
-        } finally {
-            setSendingCall(false);
         }
     };
 
@@ -316,29 +335,28 @@ export function useLiveGameActions(state: LiveGameState) {
             return;
         }
 
-        const pitcherReady = isScoutingMode ? !!state.currentOpposingPitcher : !!currentPitcher;
-        if (!pitcherReady || !currentBatter) {
+        const isOppPitcherMode = !isScoutingMode && gameMode === 'opp_pitcher';
+        const pitcherReady = isScoutingMode || isOppPitcherMode ? !!state.currentOpposingPitcher : !!currentPitcher;
+        const batterReady = isOppPitcherMode ? !!state.currentMyBatter : !!currentBatter;
+        if (!pitcherReady || !batterReady) {
             alert('Pitcher and batter must be selected');
             return;
         }
 
         try {
-            const targetCoords = targetZone ? PITCH_CALL_ZONE_COORDS[targetZone] : null;
-
-            await dispatch(
+            const loggedPitch = await dispatch(
                 logPitch({
                     at_bat_id: currentAtBat.id,
                     game_id: gameId!,
-                    pitcher_id: isScoutingMode ? undefined : currentPitcher?.player_id,
-                    opponent_batter_id: currentBatter!.id,
+                    pitcher_id: isScoutingMode || isOppPitcherMode ? undefined : currentPitcher?.player_id,
+                    opponent_batter_id: isOppPitcherMode ? undefined : currentBatter!.id,
+                    batter_id: isOppPitcherMode ? state.currentMyBatter?.player_id : undefined,
                     pitch_number: pitches.length + 1,
                     pitch_type: pitchType,
                     velocity: velocity ? parseFloat(velocity) : undefined,
                     location_x: pitchLocation.x,
                     location_y: pitchLocation.y,
-                    target_location_x: targetCoords?.x,
-                    target_location_y: targetCoords?.y,
-                    target_zone: targetZone || undefined,
+                    target_zone: targetZone ?? undefined,
                     pitch_result: pitchResult,
                     balls_before: currentAtBat.balls,
                     strikes_before: currentAtBat.strikes,
@@ -370,28 +388,22 @@ export function useLiveGameActions(state: LiveGameState) {
 
             setStatsRefreshTrigger((prev: number) => prev + 1);
 
-            // Log result on the active pitch call if one exists
-            if (activeCall) {
-                const callResult =
-                    pitchResult === 'called_strike' || pitchResult === 'swinging_strike'
-                        ? 'strike'
-                        : pitchResult === 'hit_by_pitch'
-                          ? 'ball'
-                          : (pitchResult as 'ball' | 'foul' | 'in_play');
-                try {
-                    await pitchCallService.logResult(activeCall.id, callResult);
-                } catch {
-                    // Non-critical — pitch was already logged
-                }
-                setActiveCall(null);
-            }
-
             setPitchLocation(null);
             setTargetZone(null);
             setVelocity('');
             setPitchResult('ball');
 
-            if (pitchResult === 'hit_by_pitch' || newBalls >= 4) {
+            // Link the logged pitch back to the outstanding call (fire-and-forget — non-critical)
+            if (activeCallId && loggedPitch?.id) {
+                pitchCallService.linkPitch(activeCallId, loggedPitch.id, toPitchCallResult(pitchResult)).catch(() => {});
+                setActiveCallId(null);
+            }
+
+            if (pitchResult === 'in_play') {
+                // Pitch is now saved — auto-open diamond so the user records hit location & at-bat result.
+                // Without this, pitchResult resets to 'ball' and the button disappears before it can be clicked.
+                setShowDiamondModal(true);
+            } else if (pitchResult === 'hit_by_pitch' || newBalls >= 4) {
                 const endResult = pitchResult === 'hit_by_pitch' ? 'hit_by_pitch' : 'walk';
                 const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
                 if (hasRunnersOnBase) {
@@ -448,7 +460,6 @@ export function useLiveGameActions(state: LiveGameState) {
 
         setShowDiamondModal(false);
         setHitLocation(null);
-        setTargetZone(null);
         setPitchLocation(null);
 
         // For hits with runners on base, show runner advancement modal
@@ -652,8 +663,11 @@ export function useLiveGameActions(state: LiveGameState) {
     };
 
     const handleStartAtBat = async () => {
-        const pitcherReady = isScoutingMode ? !!state.currentOpposingPitcher : !!currentPitcher;
-        if (!gameId || !pitcherReady || !currentBatter) {
+        const isOppPitcherMode = !isScoutingMode && gameMode === 'opp_pitcher';
+        const pitcherReady = isScoutingMode || isOppPitcherMode ? !!state.currentOpposingPitcher : !!currentPitcher;
+        const batterReady = isOppPitcherMode ? !!state.currentMyBatter : !!currentBatter;
+
+        if (!gameId || !pitcherReady || !batterReady) {
             alert('Please select both a pitcher and a batter first');
             return;
         }
@@ -663,9 +677,16 @@ export function useLiveGameActions(state: LiveGameState) {
             return;
         }
 
-        const success = await startAtBatForBatter(currentBatter, currentOuts, currentInning);
-        if (!success) {
-            alert('Failed to start at-bat');
+        if (isOppPitcherMode) {
+            const success = await startAtBatForMyTeamBatter(state.currentMyBatter!, currentOuts, currentInning);
+            if (!success) {
+                alert('Failed to start at-bat');
+            }
+        } else {
+            const success = await startAtBatForBatter(currentBatter!, currentOuts, currentInning);
+            if (!success) {
+                alert('Failed to start at-bat');
+            }
         }
     };
 
@@ -745,25 +766,6 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
-    const handleSituationalCall = async (type: SituationalCallType) => {
-        if (!gameId || !game) return;
-        try {
-            await pitchCallService.createSituationalCall({
-                game_id: gameId,
-                team_id: game.home_team_id || '',
-                situational_type: type,
-                pitcher_id: state.currentPitcher?.player_id,
-                at_bat_id: currentAtBat?.id,
-                inning: game.current_inning,
-            });
-            if (type === 'shake') {
-                setLocalShakeCount((prev) => prev + 1);
-            }
-        } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : 'Failed to record situational call');
-        }
-    };
-
     const handleDoublePlayConfirm = async (outRunners: RunnerBase[], batterReachesFirst: boolean) => {
         if (!gameId || !currentInning) return;
         try {
@@ -811,8 +813,6 @@ export function useLiveGameActions(state: LiveGameState) {
     };
 
     return {
-        handleSendCall,
-        handleSituationalCall,
         handleLogPitch,
         handleEndAtBat,
         handleDiamondResult,
@@ -834,5 +834,6 @@ export function useLiveGameActions(state: LiveGameState) {
         handleDroppedThird,
         handleDoublePlayConfirm,
         handleSkipHalf,
+        handleSendCall,
     };
 }

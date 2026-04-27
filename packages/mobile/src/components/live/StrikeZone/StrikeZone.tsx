@@ -229,10 +229,14 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         }
 
         // Pitch location mode (target already set or no target support)
+        // Snap to zone center for relaxed, zone-based location tracking
         if (zoneX >= -0.3 && zoneX <= 1.3 && zoneY >= -0.3 && zoneY <= 1.3) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setSelectedLocation({ x: zoneX, y: zoneY });
-            onLocationSelect(zoneX, zoneY);
+            const tappedZone = findTappedZone(svgX, svgY);
+            const finalX = tappedZone ? PITCH_CALL_ZONE_COORDS[tappedZone].x : zoneX;
+            const finalY = tappedZone ? PITCH_CALL_ZONE_COORDS[tappedZone].y : zoneY;
+            setSelectedLocation({ x: finalX, y: finalY });
+            onLocationSelect(finalX, finalY);
         }
     };
 

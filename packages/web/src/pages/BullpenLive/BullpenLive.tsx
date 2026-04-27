@@ -73,6 +73,7 @@ const ALL_PITCH_TYPES: { value: PitchType; label: string }[] = [
     { value: 'changeup', label: 'Change' },
     { value: 'splitter', label: 'Splitter' },
     { value: 'knuckleball', label: 'Knuckle' },
+    { value: 'screwball', label: 'Screwball' },
     { value: 'other', label: 'Other' },
 ];
 

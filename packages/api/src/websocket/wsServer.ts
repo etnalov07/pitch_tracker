@@ -78,13 +78,18 @@ function setupPgListen(): void {
     pgListenClient.on('notification', (msg) => {
         if (!msg.payload || !msg.channel.startsWith('game_')) return;
         try {
-            const data = JSON.parse(msg.payload) as { type: WsMessageType; id: string; game_id: string };
-            const message: WsMessage = {
-                type: data.type,
-                game_id: data.game_id,
-                payload: { id: data.id },
+            const { type, id, game_id, ...rest } = JSON.parse(msg.payload) as {
+                type: WsMessageType;
+                id: string;
+                game_id: string;
+                [key: string]: unknown;
             };
-            broadcast(data.game_id, message);
+            const message: WsMessage = {
+                type,
+                game_id,
+                payload: { id, ...rest },
+            };
+            broadcast(game_id, message);
         } catch {
             // ignore malformed payloads
         }

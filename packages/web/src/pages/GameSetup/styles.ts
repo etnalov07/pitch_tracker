@@ -44,7 +44,7 @@ export const Title = styled.h1({
 });
 
 export const Content = styled.main({
-    maxWidth: '800px',
+    maxWidth: '640px',
     margin: '0 auto',
     padding: theme.spacing.xl,
 });
@@ -62,6 +62,71 @@ export const Form = styled.form({
     gap: theme.spacing.xl,
 });
 
+// ─── Stepper ──────────────────────────────────────────────────────────────────
+
+export const StepperContainer = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: `${theme.spacing.xl} 0 ${theme.spacing.lg}`,
+    gap: 0,
+});
+
+export const StepItem = styled.div({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    position: 'relative',
+});
+
+export const StepDot = styled.div<{ status: 'completed' | 'active' | 'pending' }>((props) => ({
+    width: 32,
+    height: 32,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    transition: 'all 0.2s ease',
+    ...(props.status === 'completed' && {
+        background: theme.colors.primary[600],
+        color: 'white',
+        border: `2px solid ${theme.colors.primary[600]}`,
+    }),
+    ...(props.status === 'active' && {
+        background: 'white',
+        color: theme.colors.primary[700],
+        border: `2px solid ${theme.colors.primary[600]}`,
+        boxShadow: `0 0 0 4px ${theme.colors.primary[100]}`,
+    }),
+    ...(props.status === 'pending' && {
+        background: theme.colors.gray[100],
+        color: theme.colors.gray[400],
+        border: `2px solid ${theme.colors.gray[300]}`,
+    }),
+}));
+
+export const StepLabel = styled.div<{ active?: boolean }>((props) => ({
+    fontSize: '11px',
+    fontWeight: props.active ? theme.fontWeight.semibold : theme.fontWeight.normal,
+    color: props.active ? theme.colors.primary[700] : theme.colors.gray[400],
+    whiteSpace: 'nowrap',
+    textAlign: 'center',
+}));
+
+export const StepConnector = styled.div<{ completed?: boolean }>((props) => ({
+    flex: 1,
+    height: 2,
+    minWidth: 48,
+    marginBottom: 20,
+    background: props.completed ? theme.colors.primary[400] : theme.colors.gray[200],
+    transition: 'background 0.2s ease',
+}));
+
+// ─── Section titles ────────────────────────────────────────────────────────────
+
 export const TeamSelectionSection = styled.div({});
 
 export const GameDetailsSection = styled.div({
@@ -76,6 +141,14 @@ export const SectionTitle = styled.h2({
     color: theme.colors.gray[800],
     margin: `0 0 ${theme.spacing.lg} 0`,
 });
+
+export const SectionSubtitle = styled.p({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[500],
+    margin: `-${theme.spacing.md} 0 ${theme.spacing.lg}`,
+});
+
+// ─── Teams ─────────────────────────────────────────────────────────────────────
 
 export const TeamsRow = styled.div({
     display: 'grid',
@@ -163,6 +236,48 @@ export const ToggleOption = styled.button<{ active?: boolean }>((props) => ({
     },
 }));
 
+// ─── Charting mode cards ───────────────────────────────────────────────────────
+
+export const ModeGrid = styled.div({
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+});
+
+export const ModeCard = styled.button<{ active?: boolean }>((props) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: theme.spacing.xs,
+    padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+    borderRadius: theme.borderRadius.lg,
+    border: `2px solid ${props.active ? theme.colors.primary[500] : theme.colors.gray[200]}`,
+    background: props.active ? theme.colors.primary[50] : 'white',
+    cursor: 'pointer',
+    textAlign: 'left',
+    transition: 'all 0.15s ease',
+
+    '&:hover': {
+        borderColor: theme.colors.primary[400],
+        background: props.active ? theme.colors.primary[50] : theme.colors.gray[50],
+    },
+}));
+
+export const ModeCardTitle = styled.div<{ active?: boolean }>((props) => ({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: props.active ? theme.colors.primary[700] : theme.colors.gray[800],
+}));
+
+export const ModeCardDesc = styled.div({
+    fontSize: '11px',
+    color: theme.colors.gray[500],
+    lineHeight: 1.4,
+});
+
+// ─── Form fields ───────────────────────────────────────────────────────────────
+
 export const Divider = styled.hr({
     border: 'none',
     borderTop: `1px solid ${theme.colors.gray[200]}`,
@@ -193,6 +308,8 @@ export const Input = styled.input({
         boxShadow: `0 0 0 3px ${theme.colors.primary[100]}`,
     },
 });
+
+// ─── Preview / confirm ─────────────────────────────────────────────────────────
 
 export const GamePreview = styled.div({
     background: `linear-gradient(135deg, ${theme.colors.primary[50]} 0%, ${theme.colors.primary[100]} 100%)`,
@@ -233,11 +350,63 @@ export const PreviewAt = styled.span({
 export const PreviewDetails = styled.div({
     fontSize: theme.fontSize.sm,
     color: theme.colors.gray[600],
+    marginBottom: theme.spacing.sm,
 });
+
+export const PreviewBadge = styled.span({
+    display: 'inline-block',
+    padding: `2px ${theme.spacing.sm}`,
+    background: theme.colors.primary[100],
+    color: theme.colors.primary[700],
+    borderRadius: theme.borderRadius.full,
+    fontSize: '11px',
+    fontWeight: theme.fontWeight.semibold,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+});
+
+export const ConfirmDetailsList = styled.div({
+    marginTop: theme.spacing.lg,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.sm,
+    textAlign: 'left',
+    background: 'white',
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.lg,
+    border: `1px solid ${theme.colors.primary[200]}`,
+});
+
+export const ConfirmDetailRow = styled.div({
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[700],
+    paddingBottom: theme.spacing.sm,
+    borderBottom: `1px solid ${theme.colors.gray[100]}`,
+
+    '&:last-of-type': {
+        borderBottom: 'none',
+        paddingBottom: 0,
+    },
+});
+
+export const ConfirmDetailKey = styled.span({
+    color: theme.colors.gray[500],
+    fontWeight: theme.fontWeight.medium,
+});
+
+export const ConfirmDetailValue = styled.span({
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[800],
+    textAlign: 'right',
+});
+
+// ─── Actions ───────────────────────────────────────────────────────────────────
 
 export const FormActions = styled.div({
     display: 'flex',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     gap: theme.spacing.md,
     paddingTop: theme.spacing.lg,
     borderTop: `1px solid ${theme.colors.gray[200]}`,
@@ -257,11 +426,11 @@ export const CancelButton = styled.button({
     },
 });
 
-export const SubmitButton = styled.button({
+export const NextButton = styled.button({
     backgroundColor: theme.colors.primary[600],
     color: 'white',
     border: 'none',
-    padding: `${theme.spacing.md} ${theme.spacing.xl}`,
+    padding: `${theme.spacing.md} ${theme.spacing['2xl']}`,
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.base,
     fontWeight: theme.fontWeight.semibold,
@@ -269,6 +438,27 @@ export const SubmitButton = styled.button({
 
     '&:hover:not(:disabled)': {
         backgroundColor: theme.colors.primary[700],
+    },
+
+    '&:disabled': {
+        opacity: 0.6,
+        cursor: 'not-allowed',
+    },
+});
+
+export const SubmitButton = styled.button({
+    backgroundColor: theme.colors.green[600],
+    color: 'white',
+    border: 'none',
+    padding: `${theme.spacing.md} ${theme.spacing['2xl']}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.bold,
+    cursor: 'pointer',
+    letterSpacing: '0.02em',
+
+    '&:hover:not(:disabled)': {
+        backgroundColor: theme.colors.green[700],
     },
 
     '&:disabled': {

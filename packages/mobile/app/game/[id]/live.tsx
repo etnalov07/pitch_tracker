@@ -12,6 +12,8 @@ import {
     PitchCallZone,
     PITCH_CALL_ZONE_LABELS,
     PITCH_CALL_ZONE_COORDS,
+    PITCH_TYPE_TO_ABBREV,
+    ABBREV_TO_PITCH_TYPE,
     Player,
     GamePitcherWithPlayer,
     OpponentLineupPlayer,
@@ -761,23 +763,8 @@ export default function LiveGameScreen() {
         dispatch,
     ]);
 
-    // Map PitchType to PitchCallAbbrev
-    const toPitchCallAbbrev = (pt: string): PitchCallAbbrev => {
-        const map: Record<string, PitchCallAbbrev> = {
-            fastball: 'FB',
-            '4-seam': 'FB',
-            '2-seam': '2S',
-            cutter: 'CT',
-            sinker: '2S',
-            slider: 'SL',
-            curveball: 'CB',
-            changeup: 'CH',
-            splitter: 'CH',
-            knuckleball: 'CB',
-            other: 'FB',
-        };
-        return map[pt] || 'FB';
-    };
+    // Map PitchType to PitchCallAbbrev using the shared canonical mapping
+    const toPitchCallAbbrev = (pt: PitchType): PitchCallAbbrev => PITCH_TYPE_TO_ABBREV[pt] ?? 'FB';
 
     const handleSendCall = async () => {
         if (!selectedPitchType || !targetZone || !id || !game) return;
@@ -1230,6 +1217,20 @@ export default function LiveGameScreen() {
         at_bat_ended: () => setStatsRefreshTrigger((prev) => prev + 1),
         inning_changed: () => setStatsRefreshTrigger((prev) => prev + 1),
         runners_updated: () => setStatsRefreshTrigger((prev) => prev + 1),
+        // Coach sends a pitch call → pre-fill pitch type + target zone on receiver devices (catcher, etc.)
+        pitch_call: (payload) => {
+            const abbrev = payload.pitch_type as PitchCallAbbrev;
+            const zone = payload.zone as PitchCallZone;
+            if (abbrev && ABBREV_TO_PITCH_TYPE[abbrev]) {
+                setSelectedPitchType(ABBREV_TO_PITCH_TYPE[abbrev]);
+            }
+            if (zone && PITCH_CALL_ZONE_COORDS[zone]) {
+                setTargetZone(zone);
+                // Pre-fill location to zone center so receiver only needs to pick result → Log Pitch
+                const zc = PITCH_CALL_ZONE_COORDS[zone];
+                setPitchLocation({ x: zc.x, y: zc.y });
+            }
+        },
     });
 
     if (gameStateLoading || loading) {
