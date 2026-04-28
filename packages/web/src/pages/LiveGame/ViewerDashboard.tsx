@@ -188,22 +188,26 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                                     },
                                 ]}
                                 loading={breakdownLoading}
+                                gameId={game.id}
                             />
                         ) : game.charting_mode === 'opp_pitcher' ? (
                             <BatterBreakdownPanel
                                 sections={[{ title: `Our Lineup vs. ${opponentPitcherName}`, batters: myTeamBreakdown ?? [] }]}
                                 loading={breakdownLoading}
+                                gameId={game.id}
                             />
                         ) : breakdownTab === 'opponent' || game.charting_mode !== 'both' ? (
                             <BatterBreakdownPanel
                                 sections={[{ title: `Opponent Lineup vs. ${pitcherName}`, batters: oppBreakdown ?? [] }]}
                                 loading={breakdownLoading}
                                 pitcherId={pitcherId}
+                                gameId={game.id}
                             />
                         ) : (
                             <BatterBreakdownPanel
                                 sections={[{ title: `Our Lineup vs. ${opponentPitcherName}`, batters: myTeamBreakdown ?? [] }]}
                                 loading={breakdownLoading}
+                                gameId={game.id}
                             />
                         )}
                     </BreakdownWrapper>

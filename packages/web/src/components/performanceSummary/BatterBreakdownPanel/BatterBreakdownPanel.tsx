@@ -1,5 +1,16 @@
-import { BatterBreakdown, BatterAtBatPitch, PitchCallZone, PitchResult, PitchType } from '@pitch-tracker/shared';
-import React, { useState } from 'react';
+import {
+    BatterAtBatPitch,
+    BatterBreakdown,
+    PitchCallZone,
+    PitchLocationData,
+    PitchResult,
+    PitchType,
+    SprayChartData,
+} from '@pitch-tracker/shared';
+import React, { useCallback, useState } from 'react';
+import { analyticsService } from '../../../services/analyticsService';
+import BatterHeatMapView from './BatterHeatMapView';
+import BatterSprayChartView from './BatterSprayChartView';
 import {
     AtBatBlock,
     AtBatHeaderRow,
@@ -12,6 +23,9 @@ import {
     BatterNameText,
     BatterOrderBadge,
     BatterRowContainer,
+    ChartContainer,
+    ChartLoading,
+    ChartsRow,
     EmptyText,
     HintText,
     Legend,
@@ -21,6 +35,8 @@ import {
     PitchSequence,
     PitchTextLine,
     SectionHeader,
+    ViewToggleBtn,
+    ViewToggleRow,
     Wrapper,
 } from './styles';
 
@@ -183,9 +199,43 @@ function PitchCardItem({ pitch, bats }: { pitch: BatterAtBatPitch; bats?: string
     );
 }
 
-function BatterRow({ batter }: { batter: BatterBreakdown; pitcherId?: string }) {
+type BatterView = 'pitches' | 'charts';
+
+function BatterRow({ batter, pitcherId, gameId }: { batter: BatterBreakdown; pitcherId?: string; gameId?: string }) {
     const [expanded, setExpanded] = useState(true);
+    const [view, setView] = useState<BatterView>('pitches');
+    const [pitchLocations, setPitchLocations] = useState<PitchLocationData[] | null>(null);
+    const [sprayChart, setSprayChart] = useState<SprayChartData[] | null>(null);
+    const [chartLoading, setChartLoading] = useState(false);
     const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
+
+    const loadChart = useCallback(
+        async (nextView: BatterView) => {
+            if (nextView === 'pitches') return;
+            const needLocations = !pitchLocations;
+            const needSpray = !sprayChart;
+            if (!needLocations && !needSpray) return;
+            setChartLoading(true);
+            try {
+                await Promise.all([
+                    needLocations
+                        ? analyticsService.getPitchLocations(batter.batter_id, pitcherId).then(setPitchLocations)
+                        : Promise.resolve(),
+                    needSpray ? analyticsService.getSprayChart(batter.batter_id, gameId).then(setSprayChart) : Promise.resolve(),
+                ]);
+            } catch {
+                // leave previous data in place
+            } finally {
+                setChartLoading(false);
+            }
+        },
+        [batter.batter_id, pitcherId, gameId, pitchLocations, sprayChart]
+    );
+
+    const handleViewChange = (next: BatterView) => {
+        setView(next);
+        loadChart(next);
+    };
 
     return (
         <BatterRowContainer>
@@ -200,21 +250,59 @@ function BatterRow({ batter }: { batter: BatterBreakdown; pitcherId?: string }) 
                 <span style={{ fontSize: 11, color: '#9ca3af' }}>{expanded ? '▲' : '▽'}</span>
             </BatterHeader>
 
-            {expanded &&
-                batter.at_bats.map((ab) => (
-                    <AtBatBlock key={ab.at_bat_id}>
-                        <AtBatHeaderRow>
-                            <AtBatInningLabel>{formatInning(ab.inning_number, ab.inning_half)}</AtBatInningLabel>
-                            <AtBatResultLabel>{formatAtBatResult(ab.result, ab.fielded_by_position, ab.pitches)}</AtBatResultLabel>
-                            <span style={{ fontSize: 11, color: '#9ca3af' }}>{ab.pitches.length} pitches</span>
-                        </AtBatHeaderRow>
-                        <PitchSequence>
-                            {ab.pitches.map((pitch) => (
-                                <PitchCardItem key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
-                            ))}
-                        </PitchSequence>
-                    </AtBatBlock>
-                ))}
+            {expanded && (
+                <>
+                    <ViewToggleRow>
+                        {(['pitches', 'charts'] as BatterView[]).map((v) => (
+                            <ViewToggleBtn key={v} active={view === v} onClick={() => handleViewChange(v)}>
+                                {v === 'pitches' ? 'Pitches' : 'Charts'}
+                            </ViewToggleBtn>
+                        ))}
+                    </ViewToggleRow>
+
+                    {view === 'pitches' &&
+                        batter.at_bats.map((ab) => (
+                            <AtBatBlock key={ab.at_bat_id}>
+                                <AtBatHeaderRow>
+                                    <AtBatInningLabel>{formatInning(ab.inning_number, ab.inning_half)}</AtBatInningLabel>
+                                    <AtBatResultLabel>
+                                        {formatAtBatResult(ab.result, ab.fielded_by_position, ab.pitches)}
+                                    </AtBatResultLabel>
+                                    <span style={{ fontSize: 11, color: '#9ca3af' }}>{ab.pitches.length} pitches</span>
+                                </AtBatHeaderRow>
+                                <PitchSequence>
+                                    {ab.pitches.map((pitch) => (
+                                        <PitchCardItem
+                                            key={`${ab.at_bat_id}-${pitch.pitch_number}`}
+                                            pitch={pitch}
+                                            bats={batter.bats}
+                                        />
+                                    ))}
+                                </PitchSequence>
+                            </AtBatBlock>
+                        ))}
+
+                    {view === 'charts' && (
+                        <ChartContainer>
+                            {chartLoading && <ChartLoading>Loading charts…</ChartLoading>}
+                            {!chartLoading && (
+                                <ChartsRow>
+                                    {pitchLocations ? (
+                                        <BatterHeatMapView pitches={pitchLocations} bats={batter.bats} />
+                                    ) : (
+                                        <ChartLoading>No pitch location data.</ChartLoading>
+                                    )}
+                                    {sprayChart ? (
+                                        <BatterSprayChartView sprayData={sprayChart} />
+                                    ) : (
+                                        <ChartLoading>No spray chart data.</ChartLoading>
+                                    )}
+                                </ChartsRow>
+                            )}
+                        </ChartContainer>
+                    )}
+                </>
+            )}
         </BatterRowContainer>
     );
 }
@@ -228,9 +316,10 @@ interface Props {
     sections: Section[];
     loading?: boolean;
     pitcherId?: string;
+    gameId?: string;
 }
 
-const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading, pitcherId }) => {
+const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading, pitcherId, gameId }) => {
     if (loading) {
         return <EmptyText>Loading batter breakdown…</EmptyText>;
     }
@@ -268,7 +357,7 @@ const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading, pitcherId })
                             {[...section.batters]
                                 .sort((a, b) => a.batting_order - b.batting_order)
                                 .map((batter) => (
-                                    <BatterRow key={batter.batter_id} batter={batter} pitcherId={pitcherId} />
+                                    <BatterRow key={batter.batter_id} batter={batter} pitcherId={pitcherId} gameId={gameId} />
                                 ))}
                         </BatterList>
                     </div>

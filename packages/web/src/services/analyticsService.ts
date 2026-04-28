@@ -32,8 +32,9 @@ export const analyticsService = {
     },
 
     // Get spray chart
-    getSprayChart: async (batterId: string): Promise<SprayChartData[]> => {
-        const response = await api.get<{ sprayChart: SprayChartData[] }>(`/analytics/batter/${batterId}/spray-chart`);
+    getSprayChart: async (batterId: string, gameId?: string): Promise<SprayChartData[]> => {
+        const params = gameId ? `?game_id=${gameId}` : '';
+        const response = await api.get<{ sprayChart: SprayChartData[] }>(`/analytics/batter/${batterId}/spray-chart${params}`);
         return response.data.sprayChart ?? [];
     },
 

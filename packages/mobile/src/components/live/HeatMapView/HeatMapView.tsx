@@ -33,10 +33,10 @@ const PITCH_TYPE_ABBREV: Record<string, string> = {
     other: 'OT',
 };
 
-// Scale from the 300×300 viewBox used by the live StrikeZone
+// Scale from the 300×300 viewBox used by the live StrikeZone.
+// toX is defined inside the component so it can mirror for LHH.
 const SIZE = 200;
 const S = SIZE / 300;
-const toX = (lx: number) => (105 + lx * 90) * S;
 const toY = (ly: number) => (100 + ly * 132) * S;
 
 interface Props {
@@ -45,6 +45,7 @@ interface Props {
 }
 
 export default function HeatMapView({ pitches, bats }: Props) {
+    const toX = (lx: number) => (bats === 'L' ? (195 - lx * 90) * S : (105 + lx * 90) * S);
     const located = pitches.filter((p) => p.location_x != null && p.location_y != null);
     const typesPresent = [...new Set(located.map((p) => p.pitch_type))];
 

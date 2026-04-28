@@ -1,7 +1,18 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, Card, Divider } from 'react-native-paper';
-import { BatterBreakdown, BatterAtBatPitch, PitchType, PitchResult, PitchCallZone } from '@pitch-tracker/shared';
+import { Text, Card, Divider, SegmentedButtons } from 'react-native-paper';
+import {
+    BatterAtBatPitch,
+    BatterBreakdown,
+    PitchCallZone,
+    PitchLocationData,
+    PitchResult,
+    PitchType,
+    SprayChartData,
+} from '@pitch-tracker/shared';
+import { analyticsApi } from '../../state/analytics/api/analyticsApi';
+import HeatMapView from '../live/HeatMapView/HeatMapView';
+import SprayChartView from '../live/SprayChartView/SprayChartView';
 
 const PITCH_ABBREV: Record<PitchType, string> = {
     fastball: 'FB',
@@ -152,9 +163,44 @@ interface BatterRowProps {
     gameId?: string;
 }
 
-function BatterRow({ batter }: BatterRowProps) {
+type BatterView = 'pitches' | 'charts';
+
+function BatterRow({ batter, pitcherId, gameId }: BatterRowProps) {
     const [expanded, setExpanded] = useState(true);
+    const [view, setView] = useState<BatterView>('pitches');
+    const [pitchLocations, setPitchLocations] = useState<PitchLocationData[] | null>(null);
+    const [sprayChart, setSprayChart] = useState<SprayChartData[] | null>(null);
+    const [chartLoading, setChartLoading] = useState(false);
     const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
+
+    const loadChart = useCallback(
+        async (nextView: BatterView) => {
+            if (nextView === 'pitches') return;
+            const needLocations = !pitchLocations;
+            const needSpray = !sprayChart;
+            if (!needLocations && !needSpray) return;
+            setChartLoading(true);
+            try {
+                await Promise.all([
+                    needLocations
+                        ? analyticsApi.getPitchLocations(batter.batter_id, pitcherId).then(setPitchLocations)
+                        : Promise.resolve(),
+                    needSpray ? analyticsApi.getSprayChart(batter.batter_id, gameId).then(setSprayChart) : Promise.resolve(),
+                ]);
+            } catch {
+                // leave previous data in place
+            } finally {
+                setChartLoading(false);
+            }
+        },
+        [batter.batter_id, pitcherId, gameId, pitchLocations, sprayChart]
+    );
+
+    const handleViewChange = (v: string) => {
+        const next = v as BatterView;
+        setView(next);
+        loadChart(next);
+    };
 
     return (
         <View style={styles.batterRow}>
@@ -171,24 +217,61 @@ function BatterRow({ batter }: BatterRowProps) {
                 <Text style={styles.expandChevron}>{expanded ? '▲' : '▽'}</Text>
             </TouchableOpacity>
 
-            {expanded &&
-                batter.at_bats.map((ab, abIdx) => (
-                    <View key={ab.at_bat_id} style={styles.atBatBlock}>
-                        <View style={styles.atBatHeader}>
-                            <Text style={styles.atBatInning}>{formatInning(ab.inning_number, ab.inning_half)}</Text>
-                            <Text style={styles.atBatResult}>
-                                {formatAtBatResult(ab.result, ab.fielded_by_position, ab.pitches)}
-                            </Text>
-                            <Text style={styles.atBatPitchCount}>{ab.pitches.length} pitches</Text>
-                        </View>
-                        <View style={styles.pitchRow}>
-                            {ab.pitches.map((pitch) => (
-                                <PitchDot key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
-                            ))}
-                        </View>
-                        {abIdx < batter.at_bats.length - 1 && <View style={styles.atBatDivider} />}
+            {expanded && (
+                <>
+                    <View style={styles.viewToggleRow}>
+                        <SegmentedButtons
+                            value={view}
+                            onValueChange={handleViewChange}
+                            buttons={[
+                                { value: 'pitches', label: 'Pitches', style: styles.segBtn },
+                                { value: 'charts', label: 'Charts', style: styles.segBtn },
+                            ]}
+                            style={styles.viewToggle}
+                        />
                     </View>
-                ))}
+
+                    {view === 'pitches' &&
+                        batter.at_bats.map((ab, abIdx) => (
+                            <View key={ab.at_bat_id} style={styles.atBatBlock}>
+                                <View style={styles.atBatHeader}>
+                                    <Text style={styles.atBatInning}>{formatInning(ab.inning_number, ab.inning_half)}</Text>
+                                    <Text style={styles.atBatResult}>
+                                        {formatAtBatResult(ab.result, ab.fielded_by_position, ab.pitches)}
+                                    </Text>
+                                    <Text style={styles.atBatPitchCount}>{ab.pitches.length} pitches</Text>
+                                </View>
+                                <View style={styles.pitchRow}>
+                                    {ab.pitches.map((pitch) => (
+                                        <PitchDot key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
+                                    ))}
+                                </View>
+                                {abIdx < batter.at_bats.length - 1 && <View style={styles.atBatDivider} />}
+                            </View>
+                        ))}
+
+                    {view === 'charts' && (
+                        <View style={styles.chartContainer}>
+                            {chartLoading && <Text style={styles.chartLoading}>Loading charts…</Text>}
+                            {!chartLoading && (
+                                <>
+                                    {pitchLocations ? (
+                                        <HeatMapView pitches={pitchLocations} bats={batter.bats} />
+                                    ) : (
+                                        <Text style={styles.chartLoading}>No pitch location data.</Text>
+                                    )}
+                                    <View style={styles.chartDivider} />
+                                    {sprayChart ? (
+                                        <SprayChartView sprayData={sprayChart} />
+                                    ) : (
+                                        <Text style={styles.chartLoading}>No spray chart data.</Text>
+                                    )}
+                                </>
+                            )}
+                        </View>
+                    )}
+                </>
+            )}
         </View>
     );
 }
