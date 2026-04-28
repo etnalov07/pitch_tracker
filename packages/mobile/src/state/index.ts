@@ -113,6 +113,7 @@ export {
 export {
     fetchPerformanceSummary,
     fetchPitcherSummaries,
+    fetchGamePitcherSummaries,
     regenerateNarrative,
     fetchBatterBreakdown,
     clearPerformanceSummary,

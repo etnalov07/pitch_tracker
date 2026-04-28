@@ -112,6 +112,25 @@ export class PerformanceSummaryService {
         return this.mapRow(result.rows[0]);
     }
 
+    async getAllGamePitcherSummaries(gameId: string, teamId: string): Promise<PerformanceSummary[]> {
+        const pitcherResult = await query(
+            `SELECT p.pitcher_id, pl.first_name || ' ' || pl.last_name AS pitcher_name, MIN(p.created_at) AS first_pitch_at
+             FROM pitches p
+             JOIN players pl ON p.pitcher_id = pl.id
+             WHERE p.game_id = $1 AND p.pitcher_id IS NOT NULL AND p.team_side = 'our_team'
+             GROUP BY p.pitcher_id, pl.first_name, pl.last_name
+             ORDER BY first_pitch_at ASC`,
+            [gameId]
+        );
+
+        const summaries: PerformanceSummary[] = [];
+        for (const row of pitcherResult.rows) {
+            const summary = await this.generateSummary('game', gameId, row.pitcher_id, teamId);
+            summaries.push(summary);
+        }
+        return summaries;
+    }
+
     async getSummariesByPitcher(
         pitcherId: string,
         limit = 20,

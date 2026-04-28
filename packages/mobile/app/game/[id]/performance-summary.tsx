@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, StyleSheet, SafeAreaView, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, useTheme, IconButton, ActivityIndicator } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Print from 'expo-print';
@@ -8,6 +8,7 @@ import {
     useAppDispatch,
     useAppSelector,
     fetchPerformanceSummary,
+    fetchGamePitcherSummaries,
     fetchBatterBreakdown,
     regenerateNarrative,
     clearPerformanceSummary,
@@ -368,19 +369,30 @@ export default function GamePerformanceSummaryScreen() {
     const dispatch = useAppDispatch();
     const [regenerating, setRegenerating] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const [activePitcherIdx, setActivePitcherIdx] = useState(0);
     const pollAttemptsRef = useRef(0);
     const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const { currentSummary, batterBreakdown, loading, error } = useAppSelector((state) => state.performanceSummary);
+    const { currentSummary, gamePitcherSummaries, batterBreakdown, loading, error } = useAppSelector(
+        (state) => state.performanceSummary
+    );
     const selectedGame = useAppSelector((state) => state.games.selectedGame);
     const isScoutingMode = selectedGame?.charting_mode === 'scouting';
     const sourceType: SummarySourceType = isScoutingMode ? 'scouting' : 'game';
     const screenTitle = isScoutingMode ? 'Scouting Report' : 'Performance Summary';
 
+    const activeSummary: PerformanceSummary | null = isScoutingMode
+        ? currentSummary
+        : (gamePitcherSummaries[activePitcherIdx] ?? null);
+
     useEffect(() => {
         if (id) {
-            dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }));
-            if (!isScoutingMode) dispatch(fetchBatterBreakdown(id));
+            if (isScoutingMode) {
+                dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }));
+            } else {
+                dispatch(fetchGamePitcherSummaries(id));
+                dispatch(fetchBatterBreakdown(id));
+            }
         }
         return () => {
             dispatch(clearPerformanceSummary());
@@ -390,7 +402,7 @@ export default function GamePerformanceSummaryScreen() {
 
     // Poll until narrative arrives when it's initially absent
     useEffect(() => {
-        if (!currentSummary || currentSummary.narrative) {
+        if (!activeSummary || activeSummary.narrative) {
             pollAttemptsRef.current = 0;
             if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
             return;
@@ -398,26 +410,38 @@ export default function GamePerformanceSummaryScreen() {
         if (pollAttemptsRef.current >= NARRATIVE_POLL_MAX_ATTEMPTS) return;
         pollTimerRef.current = setTimeout(() => {
             pollAttemptsRef.current += 1;
-            if (id) dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }));
+            if (id) {
+                if (isScoutingMode) {
+                    dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }));
+                } else {
+                    dispatch(fetchGamePitcherSummaries(id));
+                }
+            }
         }, NARRATIVE_POLL_INTERVAL_MS);
         return () => {
             if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
         };
-    }, [currentSummary, id, sourceType, dispatch]);
+    }, [activeSummary, id, sourceType, dispatch]);
 
     const handleRegenerate = async () => {
-        if (!currentSummary) return;
+        if (!activeSummary) return;
         setRegenerating(true);
-        await dispatch(regenerateNarrative(currentSummary.id));
-        if (id) await dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }));
+        await dispatch(regenerateNarrative(activeSummary.id));
+        if (id) {
+            if (isScoutingMode) {
+                await dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }));
+            } else {
+                await dispatch(fetchGamePitcherSummaries(id));
+            }
+        }
         setRegenerating(false);
     };
 
     const handleExport = async () => {
-        if (!currentSummary) return;
+        if (!activeSummary) return;
         setExporting(true);
         try {
-            const html = buildSummaryHtml(currentSummary, batterBreakdown, isScoutingMode);
+            const html = buildSummaryHtml(activeSummary, batterBreakdown, isScoutingMode);
             const { uri } = await Print.printToFileAsync({ html, base64: false });
             const canShare = await Sharing.isAvailableAsync();
             if (canShare) {
@@ -432,7 +456,9 @@ export default function GamePerformanceSummaryScreen() {
         }
     };
 
-    if (loading && !currentSummary) {
+    const hasMultiplePitchers = !isScoutingMode && gamePitcherSummaries.length > 1;
+
+    if (loading && !activeSummary) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 <View style={styles.header}>
@@ -447,7 +473,7 @@ export default function GamePerformanceSummaryScreen() {
         );
     }
 
-    if (!currentSummary) {
+    if (!activeSummary) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 <View style={styles.header}>
@@ -468,7 +494,14 @@ export default function GamePerformanceSummaryScreen() {
                     )}
                     <IconButton
                         icon="refresh"
-                        onPress={() => id && dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }))}
+                        onPress={() => {
+                            if (!id) return;
+                            if (isScoutingMode) {
+                                dispatch(fetchPerformanceSummary({ sourceType, sourceId: id }));
+                            } else {
+                                dispatch(fetchGamePitcherSummaries(id));
+                            }
+                        }}
                     />
                 </View>
             </SafeAreaView>
@@ -488,8 +521,33 @@ export default function GamePerformanceSummaryScreen() {
                     <Text style={styles.exportingText}>Generating PDF…</Text>
                 </View>
             )}
+            {hasMultiplePitchers && (
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.pitcherTabBar}
+                    contentContainerStyle={styles.pitcherTabContent}
+                >
+                    {gamePitcherSummaries.map((s, idx) => {
+                        const active = idx === activePitcherIdx;
+                        const firstName = s.pitcher_name.split(' ')[0];
+                        return (
+                            <TouchableOpacity
+                                key={s.pitcher_id}
+                                style={[styles.pitcherTab, active && styles.pitcherTabActive]}
+                                onPress={() => setActivePitcherIdx(idx)}
+                            >
+                                <Text style={[styles.pitcherTabText, active && styles.pitcherTabTextActive]}>{firstName}</Text>
+                                <Text style={[styles.pitcherTabPitches, active && styles.pitcherTabPitchesActive]}>
+                                    {s.total_pitches}P
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+            )}
             <PerformanceSummaryView
-                summary={currentSummary}
+                summary={activeSummary}
                 batterBreakdown={isScoutingMode ? [] : batterBreakdown}
                 onRegenerate={handleRegenerate}
                 regenerating={regenerating}
@@ -526,5 +584,46 @@ const styles = StyleSheet.create({
     exportingText: {
         color: '#ffffff',
         fontSize: 13,
+    },
+    pitcherTabBar: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+        backgroundColor: '#f9fafb',
+        flexGrow: 0,
+    },
+    pitcherTabContent: {
+        flexDirection: 'row',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        gap: 8,
+    },
+    pitcherTab: {
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        backgroundColor: '#ffffff',
+    },
+    pitcherTabActive: {
+        backgroundColor: '#1e3a5f',
+        borderColor: '#1e3a5f',
+    },
+    pitcherTabText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: '#374151',
+    },
+    pitcherTabTextActive: {
+        color: '#ffffff',
+    },
+    pitcherTabPitches: {
+        fontSize: 10,
+        color: '#9ca3af',
+        marginTop: 1,
+    },
+    pitcherTabPitchesActive: {
+        color: '#93c5fd',
     },
 });

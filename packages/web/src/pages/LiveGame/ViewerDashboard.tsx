@@ -24,7 +24,8 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
     const [breakdownTab, setBreakdownTab] = useState<'opponent' | 'our_team'>('opponent');
     const [activePitcher, setActivePitcher] = useState<GamePitcherWithPlayer | null>(null);
     const [currentOpposingPitcher, setCurrentOpposingPitcher] = useState<OpposingPitcher | null>(null);
-    const [summary, setSummary] = useState<PerformanceSummary | null>(null);
+    const [pitcherSummaries, setPitcherSummaries] = useState<PerformanceSummary[]>([]);
+    const [activePitcherIdx, setActivePitcherIdx] = useState(0);
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [regenerating, setRegenerating] = useState(false);
     const [oppBreakdown, setOppBreakdown] = useState<BatterBreakdown[] | null>(null);
@@ -73,18 +74,25 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
     const summarySourceType = isScoutingMode ? 'scouting' : 'game';
 
     useEffect(() => {
-        if (activeTab !== 'summary' || summary) return;
+        if (activeTab !== 'summary' || pitcherSummaries.length > 0) return;
         setSummaryLoading(true);
-        performanceSummaryService
-            .getSummary(summarySourceType, game.id)
-            .then((s) => setSummary(s))
+        const fetch = isScoutingMode
+            ? performanceSummaryService.getSummary(summarySourceType, game.id).then((s) => (s ? [s] : []))
+            : performanceSummaryService.getGamePitcherSummaries(game.id);
+        fetch
+            .then((s) => {
+                setPitcherSummaries(s);
+                setActivePitcherIdx(0);
+            })
             .catch(() => {})
             .finally(() => setSummaryLoading(false));
-    }, [activeTab, game.id, summary, summarySourceType]);
+    }, [activeTab, game.id, pitcherSummaries.length, summarySourceType, isScoutingMode]);
 
-    // Poll until narrative arrives
+    const activeSummary = pitcherSummaries[activePitcherIdx] ?? null;
+
+    // Poll until narrative arrives on the active summary
     useEffect(() => {
-        if (!summary || summary.narrative) {
+        if (!activeSummary || activeSummary.narrative) {
             pollAttemptsRef.current = 0;
             if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
             return;
@@ -92,23 +100,25 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
         if (pollAttemptsRef.current >= NARRATIVE_POLL_MAX_ATTEMPTS) return;
         pollTimerRef.current = setTimeout(() => {
             pollAttemptsRef.current += 1;
-            performanceSummaryService
-                .getSummary(summarySourceType, game.id)
-                .then((s) => setSummary(s))
-                .catch(() => {});
+            const fetch = isScoutingMode
+                ? performanceSummaryService.getSummary(summarySourceType, game.id).then((s) => (s ? [s] : []))
+                : performanceSummaryService.getGamePitcherSummaries(game.id);
+            fetch.then((s) => setPitcherSummaries(s)).catch(() => {});
         }, NARRATIVE_POLL_INTERVAL_MS);
         return () => {
             if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
         };
-    }, [summary, game.id, summarySourceType]);
+    }, [activeSummary, game.id, summarySourceType, isScoutingMode]);
 
     const handleRegenerate = async () => {
-        if (!summary) return;
+        if (!activeSummary) return;
         setRegenerating(true);
         try {
-            await performanceSummaryService.regenerateNarrative(summary.id);
-            const updated = await performanceSummaryService.getSummary(summarySourceType, game.id);
-            setSummary(updated);
+            await performanceSummaryService.regenerateNarrative(activeSummary.id);
+            const updated = isScoutingMode
+                ? performanceSummaryService.getSummary(summarySourceType, game.id).then((s) => (s ? [s] : []))
+                : performanceSummaryService.getGamePitcherSummaries(game.id);
+            updated.then((s) => setPitcherSummaries(s)).catch(() => {});
         } finally {
             setRegenerating(false);
         }
@@ -223,9 +233,24 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 {activeTab === 'summary' && (
                     <SummaryWrapper>
                         {summaryLoading && <LoadingText>Loading performance summary…</LoadingText>}
-                        {!summaryLoading && !summary && <LoadingText>No performance data available for this game.</LoadingText>}
-                        {summary && (
-                            <PerformanceSummaryCard summary={summary} onRegenerate={handleRegenerate} regenerating={regenerating} />
+                        {!summaryLoading && pitcherSummaries.length === 0 && (
+                            <LoadingText>No performance data available for this game.</LoadingText>
+                        )}
+                        {pitcherSummaries.length > 1 && (
+                            <PitcherTabRow>
+                                {pitcherSummaries.map((s, i) => (
+                                    <PitcherTab key={s.id} active={i === activePitcherIdx} onClick={() => setActivePitcherIdx(i)}>
+                                        {s.pitcher_name}
+                                    </PitcherTab>
+                                ))}
+                            </PitcherTabRow>
+                        )}
+                        {activeSummary && (
+                            <PerformanceSummaryCard
+                                summary={activeSummary}
+                                onRegenerate={handleRegenerate}
+                                regenerating={regenerating}
+                            />
                         )}
                     </SummaryWrapper>
                 )}
@@ -374,6 +399,33 @@ const BreakdownTab = styled.button<{ active: boolean }>`
 const SummaryWrapper = styled.div`
     max-width: 800px;
     margin: 0 auto;
+`;
+
+const PitcherTabRow = styled.div`
+    display: flex;
+    border-bottom: 2px solid ${theme.colors.gray[200]};
+    margin-bottom: ${theme.spacing.lg};
+    gap: 2px;
+`;
+
+const PitcherTab = styled.button<{ active: boolean }>`
+    padding: ${theme.spacing.xs} ${theme.spacing.md};
+    border: none;
+    background: ${({ active }) => (active ? theme.colors.primary[50] : 'none')};
+    cursor: pointer;
+    font-size: ${theme.fontSize.sm};
+    font-weight: ${({ active }) => (active ? theme.fontWeight.semibold : theme.fontWeight.normal)};
+    color: ${({ active }) => (active ? theme.colors.primary[700] : theme.colors.gray[500])};
+    border-bottom: 2px solid ${({ active }) => (active ? theme.colors.primary[600] : 'transparent')};
+    margin-bottom: -2px;
+    border-radius: ${theme.borderRadius.sm} ${theme.borderRadius.sm} 0 0;
+    transition:
+        color 0.15s,
+        border-color 0.15s;
+
+    &:hover {
+        color: ${theme.colors.primary[600]};
+    }
 `;
 
 const LoadingText = styled.p`

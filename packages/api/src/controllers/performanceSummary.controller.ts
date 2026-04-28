@@ -31,7 +31,12 @@ export class PerformanceSummaryController {
                     res.status(404).json({ error: 'Game not found' });
                     return;
                 }
-                summary = await performanceSummaryService.generateSummary(sourceType, sourceId, undefined, result.rows[0].home_team_id);
+                summary = await performanceSummaryService.generateSummary(
+                    sourceType,
+                    sourceId,
+                    undefined,
+                    result.rows[0].home_team_id
+                );
                 res.status(200).json({ summary });
                 return;
             }
@@ -78,6 +83,22 @@ export class PerformanceSummaryController {
 
             summary = await performanceSummaryService.generateSummary(sourceType, sourceId, pitcherId, teamId);
             res.status(200).json({ summary });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getGamePitcherSummaries(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const gameId = req.params.gameId as string;
+            const gameResult = await query('SELECT home_team_id FROM games WHERE id = $1', [gameId]);
+            if (gameResult.rows.length === 0) {
+                res.status(404).json({ error: 'Game not found' });
+                return;
+            }
+            const teamId = gameResult.rows[0].home_team_id as string;
+            const summaries = await performanceSummaryService.getAllGamePitcherSummaries(gameId, teamId);
+            res.status(200).json({ summaries });
         } catch (error) {
             next(error);
         }

@@ -5,6 +5,7 @@ import { performanceSummaryApi } from './api/performanceSummaryApi';
 interface PerformanceSummaryState {
     currentSummary: PerformanceSummary | null;
     pitcherSummaries: PerformanceSummary[];
+    gamePitcherSummaries: PerformanceSummary[];
     totalCount: number;
     batterBreakdown: BatterBreakdown[];
     loading: boolean;
@@ -14,6 +15,7 @@ interface PerformanceSummaryState {
 const initialState: PerformanceSummaryState = {
     currentSummary: null,
     pitcherSummaries: [],
+    gamePitcherSummaries: [],
     totalCount: 0,
     batterBreakdown: [],
     loading: false,
@@ -41,6 +43,13 @@ export const regenerateNarrative = createAsyncThunk('performanceSummary/regenera
 export const fetchBatterBreakdown = createAsyncThunk('performanceSummary/fetchBatterBreakdown', async (gameId: string) => {
     return await performanceSummaryApi.getBatterBreakdown(gameId);
 });
+
+export const fetchGamePitcherSummaries = createAsyncThunk(
+    'performanceSummary/fetchGamePitcherSummaries',
+    async (gameId: string) => {
+        return await performanceSummaryApi.getGamePitcherSummaries(gameId);
+    }
+);
 
 const performanceSummarySlice = createSlice({
     name: 'performanceSummary',
@@ -87,6 +96,18 @@ const performanceSummarySlice = createSlice({
             })
             .addCase(fetchBatterBreakdown.fulfilled, (state, action) => {
                 state.batterBreakdown = action.payload;
+            })
+            .addCase(fetchGamePitcherSummaries.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchGamePitcherSummaries.fulfilled, (state, action) => {
+                state.loading = false;
+                state.gamePitcherSummaries = action.payload;
+            })
+            .addCase(fetchGamePitcherSummaries.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message || 'Failed to fetch pitcher summaries';
             });
     },
 });

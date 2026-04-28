@@ -22,6 +22,11 @@ export const performanceSummaryService = {
         return response.data;
     },
 
+    getGamePitcherSummaries: async (gameId: string): Promise<PerformanceSummary[]> => {
+        const response = await api.get<{ summaries: PerformanceSummary[] }>(`/performance-summaries/game/${gameId}/pitchers`);
+        return response.data.summaries;
+    },
+
     regenerateNarrative: async (id: string): Promise<PerformanceSummary> => {
         const response = await api.post<{ summary: PerformanceSummary }>(`/performance-summaries/${id}/regenerate-narrative`);
         return response.data.summary;
