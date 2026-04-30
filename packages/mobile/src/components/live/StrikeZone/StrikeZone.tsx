@@ -212,7 +212,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
             if (tappedZone) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 onTargetZoneSelect(tappedZone);
-                const zc = PITCH_CALL_ZONE_COORDS[tappedZone];
+                const zc = getZoneCoords(tappedZone, effectiveSide);
                 onLocationSelect(zc.x, zc.y);
             }
             return;
@@ -233,8 +233,9 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         if (zoneX >= -0.3 && zoneX <= 1.3 && zoneY >= -0.3 && zoneY <= 1.3) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             const tappedZone = findTappedZone(svgX, svgY);
-            const finalX = tappedZone ? PITCH_CALL_ZONE_COORDS[tappedZone].x : zoneX;
-            const finalY = tappedZone ? PITCH_CALL_ZONE_COORDS[tappedZone].y : zoneY;
+            const zc = tappedZone ? getZoneCoords(tappedZone, effectiveSide) : null;
+            const finalX = zc ? zc.x : zoneX;
+            const finalY = zc ? zc.y : zoneY;
             setSelectedLocation({ x: finalX, y: finalY });
             onLocationSelect(finalX, finalY);
         }
