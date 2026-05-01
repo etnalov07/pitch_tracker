@@ -372,6 +372,18 @@ export default function LiveGameScreen() {
         [id, currentPitcher, currentOpposingPitcher, isScoutingMode, dispatch]
     );
 
+    // Finds the next active batter after currentOrder using sorted-list position,
+    // so gaps in batting order (substitutions, small lineups) never return null.
+    const findNextActiveBatter = useCallback(
+        (batters: OpponentLineupPlayer[], currentOrder: number): OpponentLineupPlayer | null => {
+            const sorted = [...batters].sort((a, b) => a.batting_order - b.batting_order);
+            if (sorted.length === 0) return null;
+            const idx = sorted.findIndex((b) => b.batting_order === currentOrder);
+            return sorted[(idx + 1) % sorted.length] ?? null;
+        },
+        []
+    );
+
     const advanceInningWithRuns = useCallback(
         async (runs: number) => {
             if (!id || !game) return;
@@ -450,14 +462,14 @@ export default function LiveGameScreen() {
                     }
                     dispatch(fetchCurrentInning(id));
                 } else if (freshGame.is_home_game !== false && freshGame.charting_mode !== 'both') {
-                    const firstBatter = getNextBatter(activeBatters, currentBattingOrder, lineupSize);
+                    const firstBatter = findNextActiveBatter(activeBatters, currentBattingOrder);
                     if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
                     if (firstBatter && newInning) {
                         setCurrentBatter(firstBatter);
                         await startAtBatForBatter(firstBatter, 0, newInning);
                         dispatch(fetchCurrentInning(id));
                     } else {
-                        setCurrentBatter(null);
+                        setCurrentBatter(firstBatter); // keep batter even if newInning is null
                         dispatch(fetchCurrentInning(id));
                     }
                 } else {
@@ -481,13 +493,13 @@ export default function LiveGameScreen() {
             game,
             currentBattingOrder,
             activeBatters,
-            lineupSize,
             isScoutingMode,
             scoutingBattingSide,
             opponentLineup,
             opposingPitchers,
             dispatch,
             startAtBatForBatter,
+            findNextActiveBatter,
             router,
         ]
     );
@@ -545,7 +557,7 @@ export default function LiveGameScreen() {
                         const nextMyBatter = myStarters.find((p) => p.batting_order === nextMyOrder) ?? myStarters[0] ?? null;
                         dispatch(setCurrentMyBatter(nextMyBatter));
                     } else {
-                        const nextBatter = getNextBatter(activeBatters, currentBattingOrder, lineupSize);
+                        const nextBatter = findNextActiveBatter(activeBatters, currentBattingOrder);
                         if (nextBatter) setCurrentBattingOrder(nextBatter.batting_order);
                         if (nextBatter) {
                             setCurrentBatter(nextBatter);
@@ -575,6 +587,7 @@ export default function LiveGameScreen() {
             myTeamLineup,
             dispatch,
             startAtBatForBatter,
+            findNextActiveBatter,
             advanceInningWithRuns,
         ]
     );
@@ -627,21 +640,21 @@ export default function LiveGameScreen() {
             setTeamAtBatRuns('0');
 
             // Set up next opponent batter
-            const firstBatter = getNextBatter(activeBatters, currentBattingOrder, lineupSize);
+            const firstBatter = findNextActiveBatter(activeBatters, currentBattingOrder);
             if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
             if (firstBatter && newInning) {
                 setCurrentBatter(firstBatter);
                 await startAtBatForBatter(firstBatter, 0, newInning);
                 dispatch(fetchCurrentInning(id));
             } else {
-                setCurrentBatter(null);
+                setCurrentBatter(firstBatter); // keep batter even if newInning is null
                 dispatch(fetchCurrentInning(id));
             }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {
             Alert.alert('Error', 'Failed to advance inning');
         }
-    }, [id, game, teamAtBatRuns, currentBattingOrder, activeBatters, lineupSize, dispatch, startAtBatForBatter, router]);
+    }, [id, game, teamAtBatRuns, currentBattingOrder, activeBatters, dispatch, startAtBatForBatter, findNextActiveBatter, router]);
 
     const handleSelectPitcher = async (player: Player) => {
         if (!id || !currentInning) return;
@@ -662,12 +675,23 @@ export default function LiveGameScreen() {
         }
     };
 
-    const handleSelectBatter = (batter: OpponentLineupPlayer) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setCurrentBatter(batter);
-        setCurrentBattingOrder(batter.batting_order);
-        setBatterModalVisible(false);
-    };
+    const handleSelectBatter = useCallback(
+        async (batter: OpponentLineupPlayer) => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setCurrentBatter(batter);
+            // Only update batting order tracking when no at-bat is in progress;
+            // mid-at-bat changes update the display but preserve sequence integrity.
+            if (!currentAtBat) {
+                setCurrentBattingOrder(batter.batting_order);
+                // Auto-start the at-bat so the user doesn't need a separate tap.
+                if (currentInning) {
+                    await startAtBatForBatter(batter, currentOuts, currentInning);
+                }
+            }
+            setBatterModalVisible(false);
+        },
+        [currentAtBat, currentInning, currentOuts, startAtBatForBatter]
+    );
 
     const handleEndGame = useCallback(() => {
         if (!id || !game) return;
