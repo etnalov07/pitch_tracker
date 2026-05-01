@@ -1538,7 +1538,7 @@ export default function LiveGameScreen() {
                             Select Your Batter
                         </Text>
                         <ScrollView>
-                            {myTeamLineup
+                            {[...myTeamLineup]
                                 .sort((a, b) => a.batting_order - b.batting_order)
                                 .map((p) => (
                                     <TouchableOpacity
