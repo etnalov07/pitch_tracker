@@ -16,6 +16,7 @@ interface BatterSelectorModalProps {
     gameId: string;
     lineupSize?: number;
     onBatterAdded: (batter: OpponentLineupPlayer) => void;
+    currentInningNumber?: number;
 }
 
 const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
@@ -28,6 +29,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
     gameId,
     lineupSize = 9,
     onBatterAdded,
+    currentInningNumber,
 }) => {
     const [formMode, setFormMode] = useState<FormMode | null>(null);
     const [editingBatter, setEditingBatter] = useState<OpponentLineupPlayer | null>(null);
@@ -74,7 +76,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
         setNewName('');
         setNewPosition(batter.position || '');
         setNewBats((batter.bats as 'R' | 'L' | 'S') || 'R');
-        setSubInning('');
+        setSubInning(currentInningNumber ? String(currentInningNumber) : '');
         setFormMode('substitute');
     };
 

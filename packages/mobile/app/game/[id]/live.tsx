@@ -1529,6 +1529,7 @@ export default function LiveGameScreen() {
                 gameId={id!}
                 lineupSize={lineupSize}
                 onBatterAdded={() => dispatch(fetchOpponentLineup(id!))}
+                currentInningNumber={currentInning?.inning_number}
             />
             {myBatterModalVisible && (
                 <View style={styles.myBatterOverlay}>
