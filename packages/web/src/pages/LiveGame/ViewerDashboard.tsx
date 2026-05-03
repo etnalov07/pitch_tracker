@@ -22,7 +22,9 @@ const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
 const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
     const [activeTab, setActiveTab] = useState<'stats' | 'counts' | 'breakdown' | 'tendencies' | 'summary'>('stats');
     const [breakdownTab, setBreakdownTab] = useState<'opponent' | 'our_team'>('opponent');
+    const [allPitchers, setAllPitchers] = useState<GamePitcherWithPlayer[]>([]);
     const [activePitcher, setActivePitcher] = useState<GamePitcherWithPlayer | null>(null);
+    const [selectedPitcherIdx, setSelectedPitcherIdx] = useState(0);
     const [currentOpposingPitcher, setCurrentOpposingPitcher] = useState<OpposingPitcher | null>(null);
     const [pitcherSummaries, setPitcherSummaries] = useState<PerformanceSummary[]>([]);
     const [activePitcherIdx, setActivePitcherIdx] = useState(0);
@@ -39,8 +41,11 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
         gamesApi
             .getGamePitchers(game.id)
             .then((pitchers) => {
+                setAllPitchers(pitchers);
                 const active = pitchers.find((p) => !p.inning_exited) ?? pitchers[pitchers.length - 1] ?? null;
                 setActivePitcher(active);
+                const activeIdx = active ? pitchers.findIndex((p) => p.player_id === active.player_id) : 0;
+                setSelectedPitcherIdx(Math.max(0, activeIdx));
             })
             .catch(() => {});
         opposingPitcherService
@@ -124,9 +129,10 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
         }
     };
 
-    const pitcherId = activePitcher?.player_id;
-    const pitcherName = activePitcher?.player
-        ? `${activePitcher.player.first_name} ${activePitcher.player.last_name}`
+    const selectedPitcher = allPitchers[selectedPitcherIdx] ?? activePitcher;
+    const pitcherId = selectedPitcher?.player_id;
+    const pitcherName = selectedPitcher?.player
+        ? `${selectedPitcher.player.first_name} ${selectedPitcher.player.last_name}`
         : 'Our Pitcher';
     const opponentPitcherName = currentOpposingPitcher?.pitcher_name ?? 'Opponent Pitcher';
 
@@ -167,6 +173,34 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
             </TabRow>
 
             <Content>
+                {(activeTab === 'stats' || activeTab === 'counts') && allPitchers.length > 1 && (
+                    <PitcherTabRow>
+                        {allPitchers.map((p, i) => {
+                            const name = p.player ? `${p.player.first_name} ${p.player.last_name}` : `Pitcher ${i + 1}`;
+                            return (
+                                <PitcherTab
+                                    key={p.player_id}
+                                    active={i === selectedPitcherIdx}
+                                    onClick={() => setSelectedPitcherIdx(i)}
+                                >
+                                    {name}
+                                    {!p.inning_exited && (
+                                        <span
+                                            style={{
+                                                marginLeft: 4,
+                                                fontSize: 10,
+                                                color: theme.colors.green[600],
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            ●
+                                        </span>
+                                    )}
+                                </PitcherTab>
+                            );
+                        })}
+                    </PitcherTabRow>
+                )}
                 {activeTab === 'stats' && pitcherId && (
                     <PitcherStats gameId={game.id} pitcherId={pitcherId} refreshTrigger={refreshTrigger} />
                 )}
@@ -225,6 +259,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 {activeTab === 'tendencies' && (
                     <ViewerTendenciesTab
                         game={game}
+                        allPitchers={allPitchers}
                         activePitcher={activePitcher}
                         currentOpposingPitcher={currentOpposingPitcher}
                         refreshTrigger={refreshTrigger}

@@ -1,5 +1,16 @@
-import { BatterAtBatPitch, BatterBreakdown, PitchCallZone, PitchResult, PitchType } from '@pitch-tracker/shared';
-import React, { useState } from 'react';
+import {
+    BatterAtBatPitch,
+    BatterBreakdown,
+    PitchCallZone,
+    PitchResult,
+    PitchType,
+    type PitchLocationData,
+    type SprayChartData,
+} from '@pitch-tracker/shared';
+import React, { useState, useCallback } from 'react';
+import { analyticsService } from '../../../services/analyticsService';
+import BatterHeatMapView from './BatterHeatMapView';
+import BatterSprayChartView from './BatterSprayChartView';
 import {
     AtBatBlock,
     AtBatHeaderRow,
@@ -183,9 +194,36 @@ function PitchCardItem({ pitch, bats }: { pitch: BatterAtBatPitch; bats?: string
     );
 }
 
-function BatterRow({ batter }: { batter: BatterBreakdown; pitcherId?: string; gameId?: string }) {
+function BatterRow({ batter, pitcherId, gameId }: { batter: BatterBreakdown; pitcherId?: string; gameId?: string }) {
     const [expanded, setExpanded] = useState(true);
+    const [showCharts, setShowCharts] = useState(false);
+    const [sprayData, setSprayData] = useState<SprayChartData[] | null>(null);
+    const [pitchLocations, setPitchLocations] = useState<PitchLocationData[] | null>(null);
+    const [chartsLoading, setChartsLoading] = useState(false);
     const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
+
+    const handleToggleCharts = useCallback(async () => {
+        if (showCharts) {
+            setShowCharts(false);
+            return;
+        }
+        setShowCharts(true);
+        if (sprayData !== null) return;
+        setChartsLoading(true);
+        try {
+            const [spray, locations] = await Promise.all([
+                analyticsService.getSprayChart(batter.batter_id, gameId),
+                analyticsService.getPitchLocations(batter.batter_id, pitcherId),
+            ]);
+            setSprayData(spray);
+            setPitchLocations(locations);
+        } catch {
+            setSprayData([]);
+            setPitchLocations([]);
+        } finally {
+            setChartsLoading(false);
+        }
+    }, [showCharts, sprayData, batter.batter_id, gameId, pitcherId]);
 
     return (
         <BatterRowContainer>
@@ -197,8 +235,46 @@ function BatterRow({ batter }: { batter: BatterBreakdown; pitcherId?: string; ga
                         {batter.position ?? '—'} · {batter.bats}HH · {batter.at_bats.length} AB · {totalPitches}P
                     </BatterMetaText>
                 </BatterNameBlock>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleCharts();
+                    }}
+                    style={{
+                        padding: '2px 8px',
+                        fontSize: 10,
+                        background: showCharts ? '#dbeafe' : '#f3f4f6',
+                        color: showCharts ? '#1d4ed8' : '#6b7280',
+                        border: `1px solid ${showCharts ? '#93c5fd' : '#d1d5db'}`,
+                        borderRadius: 4,
+                        cursor: 'pointer',
+                        marginRight: 4,
+                        whiteSpace: 'nowrap' as const,
+                    }}
+                >
+                    📊 Charts
+                </button>
                 <span style={{ fontSize: 11, color: '#9ca3af' }}>{expanded ? '▲' : '▽'}</span>
             </BatterHeader>
+
+            {showCharts && (
+                <div
+                    style={{
+                        padding: '12px 16px',
+                        background: '#f8fafc',
+                        borderTop: '1px solid #e2e8f0',
+                    }}
+                >
+                    {chartsLoading ? (
+                        <span style={{ fontSize: 12, color: '#9ca3af' }}>Loading charts…</span>
+                    ) : (
+                        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' as const, justifyContent: 'center' }}>
+                            <BatterSprayChartView sprayData={sprayData ?? []} />
+                            <BatterHeatMapView pitches={pitchLocations ?? []} bats={batter.bats} />
+                        </div>
+                    )}
+                </div>
+            )}
 
             {expanded && (
                 <>

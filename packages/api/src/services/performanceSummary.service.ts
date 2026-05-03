@@ -98,14 +98,21 @@ export class PerformanceSummaryService {
     async getSummary(sourceType: SummarySourceType, sourceId: string, pitcherId?: string): Promise<PerformanceSummary | null> {
         if (pitcherId) {
             const result = await query(
-                'SELECT * FROM performance_summaries WHERE source_type = $1 AND source_id = $2 AND pitcher_id = $3',
+                `SELECT ps.*, pl.first_name || ' ' || pl.last_name AS pitcher_name
+                 FROM performance_summaries ps
+                 LEFT JOIN players pl ON ps.pitcher_id = pl.id
+                 WHERE ps.source_type = $1 AND ps.source_id = $2 AND ps.pitcher_id = $3`,
                 [sourceType, sourceId, pitcherId]
             );
             if (result.rows.length === 0) return null;
             return this.mapRow(result.rows[0]);
         }
         const result = await query(
-            'SELECT * FROM performance_summaries WHERE source_type = $1 AND source_id = $2 ORDER BY created_at DESC LIMIT 1',
+            `SELECT ps.*, pl.first_name || ' ' || pl.last_name AS pitcher_name
+             FROM performance_summaries ps
+             LEFT JOIN players pl ON ps.pitcher_id = pl.id
+             WHERE ps.source_type = $1 AND ps.source_id = $2
+             ORDER BY ps.created_at DESC LIMIT 1`,
             [sourceType, sourceId]
         );
         if (result.rows.length === 0) return null;
@@ -137,7 +144,10 @@ export class PerformanceSummaryService {
         offset = 0
     ): Promise<{ summaries: PerformanceSummary[]; total_count: number }> {
         const result = await query(
-            'SELECT * FROM performance_summaries WHERE pitcher_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
+            `SELECT ps.*, pl.first_name || ' ' || pl.last_name AS pitcher_name
+             FROM performance_summaries ps
+             LEFT JOIN players pl ON ps.pitcher_id = pl.id
+             WHERE ps.pitcher_id = $1 ORDER BY ps.created_at DESC LIMIT $2 OFFSET $3`,
             [pitcherId, limit, offset]
         );
         const countResult = await query('SELECT COUNT(*) as total FROM performance_summaries WHERE pitcher_id = $1', [pitcherId]);

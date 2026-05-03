@@ -17,6 +17,7 @@ import TendencyZoneGrid from '../TendencyZoneGrid';
 
 interface Props {
     game: Game;
+    allPitchers?: GamePitcherWithPlayer[];
     activePitcher: GamePitcherWithPlayer | null;
     currentOpposingPitcher: OpposingPitcher | null;
     refreshTrigger: number;
@@ -673,13 +674,26 @@ const OpponentLineupSection: React.FC<{
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const ViewerTendenciesTab: React.FC<Props> = ({ game, activePitcher, currentOpposingPitcher, refreshTrigger }) => {
+const ViewerTendenciesTab: React.FC<Props> = ({
+    game,
+    allPitchers = [],
+    activePitcher,
+    currentOpposingPitcher,
+    refreshTrigger,
+}) => {
+    const [selectedPitcherIdx, setSelectedPitcherIdx] = React.useState(() => {
+        if (!activePitcher || allPitchers.length === 0) return 0;
+        const idx = allPitchers.findIndex((p) => p.player_id === activePitcher.player_id);
+        return Math.max(0, idx);
+    });
+
     const showOurPitcher = game.charting_mode !== 'opp_pitcher';
     const showOppPitcher = game.charting_mode !== 'our_pitcher';
 
-    const pitcherId = activePitcher?.player_id;
-    const pitcherName = activePitcher?.player
-        ? `${activePitcher.player.first_name} ${activePitcher.player.last_name}`
+    const displayedPitcher = allPitchers[selectedPitcherIdx] ?? activePitcher;
+    const pitcherId = displayedPitcher?.player_id;
+    const pitcherName = displayedPitcher?.player
+        ? `${displayedPitcher.player.first_name} ${displayedPitcher.player.last_name}`
         : 'Our Pitcher';
     const oppPitcherName = currentOpposingPitcher?.pitcher_name ?? 'Opposing Pitcher';
 
@@ -688,6 +702,48 @@ const ViewerTendenciesTab: React.FC<Props> = ({ game, activePitcher, currentOppo
             {/* Section 1: Our pitcher */}
             {showOurPitcher && (
                 <section>
+                    {allPitchers.length > 1 && (
+                        <div style={{ display: 'flex', gap: 0, marginBottom: 14 }}>
+                            {allPitchers.map((p, i) => {
+                                const name = p.player ? `${p.player.first_name} ${p.player.last_name}` : `Pitcher ${i + 1}`;
+                                return (
+                                    <button
+                                        key={p.player_id}
+                                        onClick={() => setSelectedPitcherIdx(i)}
+                                        style={{
+                                            padding: '4px 12px',
+                                            fontSize: theme.fontSize.sm,
+                                            fontWeight: theme.fontWeight.semibold,
+                                            border: `1px solid ${i === selectedPitcherIdx ? theme.colors.primary[500] : theme.colors.gray[300]}`,
+                                            background: i === selectedPitcherIdx ? theme.colors.primary[600] : 'white',
+                                            color: i === selectedPitcherIdx ? 'white' : theme.colors.gray[600],
+                                            cursor: 'pointer',
+                                            borderRadius:
+                                                i === 0
+                                                    ? `${theme.borderRadius.md} 0 0 ${theme.borderRadius.md}`
+                                                    : i === allPitchers.length - 1
+                                                      ? `0 ${theme.borderRadius.md} ${theme.borderRadius.md} 0`
+                                                      : '0',
+                                            transition: 'all 0.12s',
+                                        }}
+                                    >
+                                        {name}
+                                        {!p.inning_exited && (
+                                            <span
+                                                style={{
+                                                    marginLeft: 4,
+                                                    fontSize: 10,
+                                                    color: i === selectedPitcherIdx ? '#86efac' : theme.colors.green[600],
+                                                }}
+                                            >
+                                                ●
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                     {pitcherId ? (
                         <OurPitcherSection pitcherId={pitcherId} pitcherName={pitcherName} refreshTrigger={refreshTrigger} />
                     ) : (

@@ -120,9 +120,9 @@ export class AnalyticsService {
         COUNT(CASE WHEN p.pitch_result = 'in_play' THEN 1 END) AS in_play
       FROM pitches p
       JOIN at_bats ab ON p.at_bat_id = ab.id
-      WHERE p.batter_id = $1
+      WHERE (p.batter_id = $1 OR p.opponent_batter_id = $1)
       AND p.zone IS NOT NULL
-    `;
+`;
 
         const params: (string | undefined)[] = [batterId];
 
@@ -161,7 +161,7 @@ export class AnalyticsService {
         const result = await query(
             `SELECT location_x, location_y, pitch_type, pitch_result, velocity
              FROM pitches
-             WHERE batter_id = $1
+             WHERE (batter_id = $1 OR opponent_batter_id = $1)
              AND location_x IS NOT NULL
              AND location_y IS NOT NULL${pitcherFilter}`,
             params
@@ -203,7 +203,7 @@ export class AnalyticsService {
         COUNT(*) AS count
       FROM plays p
       JOIN at_bats ab ON p.at_bat_id = ab.id
-      WHERE ab.batter_id = $1
+      WHERE (ab.batter_id = $1 OR ab.opponent_batter_id = $1)
       AND (p.field_location IS NOT NULL OR p.fielded_by_position IS NOT NULL)
       ${gameFilter}
       GROUP BY 1, p.contact_quality, p.hit_result
@@ -637,7 +637,9 @@ export class AnalyticsService {
                 p.pitch_type,
                 p.pitch_result,
                 p.velocity,
-                p.zone
+                p.zone,
+                p.location_x,
+                p.location_y
              FROM pitches p
              LEFT JOIN opponent_lineup ol ON p.opponent_batter_id = ol.id
              LEFT JOIN players b ON p.batter_id = b.id
@@ -699,9 +701,22 @@ export class AnalyticsService {
         for (const z of strikeZones) zoneMap[z] = { count: 0, strikes: 0 };
 
         for (const p of pitches) {
-            if (p.zone && zoneMap[p.zone]) {
-                zoneMap[p.zone].count++;
-                if (p.pitch_result !== 'ball') zoneMap[p.zone].strikes++;
+            // Use stored zone if valid; otherwise derive from pitch coordinates
+            let effectiveZone: string | null = p.zone && zoneMap[p.zone] ? p.zone : null;
+            if (!effectiveZone && p.location_x != null && p.location_y != null) {
+                const lx = parseFloat(p.location_x);
+                const ly = parseFloat(p.location_y);
+                // For RHH, stored x is mirrored around 0.5 for display; restore canonical x
+                const canonicalX = batterHand === 'R' ? 1 - lx : lx;
+                if (canonicalX >= 0 && canonicalX <= 1 && ly >= 0 && ly <= 1) {
+                    const row = Math.min(2, Math.floor(ly * 3));
+                    const col = Math.min(2, Math.floor(canonicalX * 3));
+                    effectiveZone = `${row}-${col}`;
+                }
+            }
+            if (effectiveZone && zoneMap[effectiveZone]) {
+                zoneMap[effectiveZone].count++;
+                if (p.pitch_result !== 'ball') zoneMap[effectiveZone].strikes++;
             }
         }
 
@@ -803,7 +818,10 @@ export class AnalyticsService {
 
         // Fetch all pitches to this batter
         const pitchCol = batterType === 'opponent' ? 'opponent_batter_id' : 'batter_id';
-        const pitchResult = await query(`SELECT pitch_type, pitch_result, zone FROM pitches WHERE ${pitchCol} = $1`, [batterId]);
+        const pitchResult = await query(
+            `SELECT pitch_type, pitch_result, zone, location_x, location_y FROM pitches WHERE ${pitchCol} = $1`,
+            [batterId]
+        );
 
         const pitches = pitchResult.rows;
         const total = pitches.length;
@@ -837,10 +855,21 @@ export class AnalyticsService {
         const CONTACT_RESULTS = new Set(['foul', 'in_play']);
 
         for (const p of pitches) {
-            if (p.zone && zoneMap[p.zone]) {
-                zoneMap[p.zone].total++;
-                if (SWING_RESULTS.has(p.pitch_result)) zoneMap[p.zone].swings++;
-                if (CONTACT_RESULTS.has(p.pitch_result)) zoneMap[p.zone].contacts++;
+            let effectiveZone: string | null = p.zone && zoneMap[p.zone] ? p.zone : null;
+            if (!effectiveZone && p.location_x != null && p.location_y != null) {
+                const lx = parseFloat(p.location_x);
+                const ly = parseFloat(p.location_y);
+                const canonicalX = batterHand === 'R' ? 1 - lx : lx;
+                if (canonicalX >= 0 && canonicalX <= 1 && ly >= 0 && ly <= 1) {
+                    const row = Math.min(2, Math.floor(ly * 3));
+                    const col = Math.min(2, Math.floor(canonicalX * 3));
+                    effectiveZone = `${row}-${col}`;
+                }
+            }
+            if (effectiveZone && zoneMap[effectiveZone]) {
+                zoneMap[effectiveZone].total++;
+                if (SWING_RESULTS.has(p.pitch_result)) zoneMap[effectiveZone].swings++;
+                if (CONTACT_RESULTS.has(p.pitch_result)) zoneMap[effectiveZone].contacts++;
             }
         }
 
