@@ -252,10 +252,16 @@ export const gamesApi = {
     },
 
     // Count breakdown
-    getCountBreakdown: async (gameId: string, pitcherId?: string, teamSide?: TeamSide): Promise<CountBucketBreakdown> => {
+    getCountBreakdown: async (
+        gameId: string,
+        pitcherId?: string,
+        teamSide?: TeamSide,
+        opposingPitcherId?: string
+    ): Promise<CountBucketBreakdown> => {
         const params = new URLSearchParams();
         if (pitcherId) params.append('pitcherId', pitcherId);
         if (teamSide) params.append('team_side', teamSide);
+        if (opposingPitcherId) params.append('opposingPitcherId', opposingPitcherId);
         const qs = params.toString() ? `?${params}` : '';
         const response = await api.get<{ breakdown: CountBucketBreakdown }>(`/analytics/game/${gameId}/count-breakdown${qs}`);
         return response.data.breakdown;

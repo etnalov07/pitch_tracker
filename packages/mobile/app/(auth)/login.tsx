@@ -41,6 +41,7 @@ export default function LoginScreen() {
                     </Text>
 
                     <TextInput
+                        testID="login-email-input"
                         label="Email"
                         value={email}
                         onChangeText={handleEmailChange}
@@ -53,6 +54,7 @@ export default function LoginScreen() {
                     />
 
                     <TextInput
+                        testID="login-password-input"
                         label="Password"
                         value={password}
                         onChangeText={handlePasswordChange}
@@ -76,6 +78,7 @@ export default function LoginScreen() {
                     )}
 
                     <Button
+                        testID="login-submit-button"
                         mode="contained"
                         onPress={handleLogin}
                         loading={loading}

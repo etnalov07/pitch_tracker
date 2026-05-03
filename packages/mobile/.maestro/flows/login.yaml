@@ -1,6 +1,8 @@
-appId: com.bvolante.pitch-tracker
+appId: ${APP_ID}
 ---
-# Shared login flow - reusable by other flows
+# Shared login flow - reusable by other flows.
+# Targets testIDs added in app/(auth)/login.tsx so refactors that change copy
+# don't silently break the suite.
 - launchApp:
     clearState: true
 
@@ -9,15 +11,20 @@ appId: com.bvolante.pitch-tracker
 - assertVisible: "Sign in to your account"
 
 # Enter email
-- tapOn: "Email"
+- tapOn:
+    id: "login-email-input"
 - inputText: ${EMAIL}
+- hideKeyboard
 
 # Enter password
-- tapOn: "Password"
+- tapOn:
+    id: "login-password-input"
 - inputText: ${PASSWORD}
+- hideKeyboard
 
 # Tap Sign In
-- tapOn: "Sign In"
+- tapOn:
+    id: "login-submit-button"
 
 # Wait for dashboard to appear
 - extendedWaitUntil:

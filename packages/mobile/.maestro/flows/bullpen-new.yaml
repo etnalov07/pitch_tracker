@@ -1,4 +1,4 @@
-appId: com.bvolante.pitch-tracker
+appId: ${APP_ID}
 ---
 # New Bullpen Session - verify setup screen
 - runFlow: login.yaml

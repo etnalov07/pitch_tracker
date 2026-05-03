@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import Svg, { Rect, Circle, G, Text as SvgText, Line, Path, Ellipse } from 'react-native-svg';
 import * as Haptics from '../../../utils/haptics';
-import { Pitch, PitchCallZone, PITCH_CALL_ZONE_COORDS } from '@pitch-tracker/shared';
+import { Pitch, PitchCallZone } from '@pitch-tracker/shared';
 import { colors } from '../../../styles/theme';
 import BatterSilhouette from './BatterSilhouette';
+import { getZoneCoords } from './strikeZoneCoords';
 
 export const PITCH_TYPE_COLORS: Record<string, string> = {
     fastball: '#ef4444',
@@ -110,15 +111,6 @@ function getWasteZones(effectiveSide: 'R' | 'L') {
         { zone: 'W-low' as PitchCallZone, x: 125, y: 232, w: 50, h: 35, label: 'LOW' },
         { zone: 'W-low-out' as PitchCallZone, x: outPos.x, y: 232, w: outPos.w, h: 35, label: 'LO' },
     ];
-}
-
-// Flip zone center x-coordinate for LHH so target crosshair renders on correct side
-function getZoneCoords(zone: PitchCallZone, effectiveSide: 'R' | 'L'): { x: number; y: number } {
-    const coords = PITCH_CALL_ZONE_COORDS[zone];
-    if (effectiveSide === 'R') {
-        return { x: 1 - coords.x, y: coords.y };
-    }
-    return coords;
 }
 
 const VIEWBOX_WIDTH = 300;
@@ -277,6 +269,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         <View style={compact ? compactStyles.container : styles.container}>
             {!compact && <Text style={styles.title}>Strike Zone</Text>}
             <Pressable
+                testID="strike-zone-canvas"
                 onPress={handlePress}
                 onLongPress={handleLongPress}
                 style={compact ? compactStyles.zoneWrapper : styles.zoneWrapper}

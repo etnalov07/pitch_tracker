@@ -287,6 +287,7 @@ export default function DashboardScreen() {
             </ScrollView>
 
             <FAB
+                testID="dashboard-new-game-fab"
                 icon="plus"
                 style={[styles.fab, { backgroundColor: theme.colors.primary }]}
                 color={theme.colors.onPrimary}

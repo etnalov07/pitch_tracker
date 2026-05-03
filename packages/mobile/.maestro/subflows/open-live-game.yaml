@@ -1,0 +1,9 @@
+appId: ${APP_ID}
+---
+# Open an in-progress game from the dashboard.
+- tapOn: "In Progress"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible:
+      text: ".*"
+    timeout: 10000

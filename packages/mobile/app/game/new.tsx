@@ -294,6 +294,7 @@ export default function NewGameScreen() {
                         ) : (
                             <>
                                 <TextInput
+                                    testID="new-game-opponent-input"
                                     label="Opponent Name"
                                     value={opponentName}
                                     onChangeText={(text) => {
@@ -366,6 +367,7 @@ export default function NewGameScreen() {
 
                         {/* Create Button */}
                         <Button
+                            testID="new-game-create-button"
                             mode="contained"
                             onPress={handleCreate}
                             disabled={

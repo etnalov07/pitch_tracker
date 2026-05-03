@@ -1,4 +1,4 @@
-appId: com.bvolante.pitch-tracker
+appId: ${APP_ID}
 ---
 # Teams tab - verify team list and create team modal
 - runFlow: login.yaml

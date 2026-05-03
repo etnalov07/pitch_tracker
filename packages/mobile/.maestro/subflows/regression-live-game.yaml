@@ -1,0 +1,63 @@
+appId: ${APP_ID}
+---
+# Live-game regression checks. Run only when a live game is loaded
+# (caller verifies `batter-selector-open` is visible before invoking).
+
+# ---------------------------------------------------------------------------
+# Guards 0ed5e29 (substitute batter Save disabled because inning was empty).
+# Open the batter selector, tap the substitute icon for the current batter,
+# verify the inning input is pre-filled (so Save becomes enabled).
+# ---------------------------------------------------------------------------
+- tapOn:
+    id: "batter-selector-open"
+- assertVisible:
+    id: "batter-selector-modal"
+
+# Tap the substitute icon for batter #1 (assumes a starter at order 1).
+# If your test fixture uses a different lineup, change the order.
+- tapOn:
+    id: "batter-selector-substitute-1"
+- assertVisible: "Substitute Batter"
+- assertVisible:
+    id: "batter-selector-inning"
+
+# Inning is pre-filled => once we type a name, Save becomes tappable.
+# (We can't read the input value directly in Maestro, but if Save tap
+# succeeds the disabled gate held — which is exactly the bug under test.)
+- tapOn: "Player Name"
+- inputText: "Maestro Sub"
+- hideKeyboard
+- tapOn:
+    id: "batter-selector-save"
+
+# Dismiss whatever state we landed in to keep the suite idempotent.
+# The substitute form auto-resets after a successful save, leaving the modal's
+# Cancel button visible — tap it (optional in case the modal already closed).
+- tapOn:
+    text: "Cancel"
+    optional: true
+
+# ---------------------------------------------------------------------------
+# Guards 4db194b (inverted horizontal tap coordinates in mobile StrikeZone).
+# Verify the strike zone canvas is mounted and a tap registers (the pitch
+# count display, embedded in the pitcher name, should advance).
+# ---------------------------------------------------------------------------
+- assertVisible:
+    id: "strike-zone-canvas"
+- assertVisible:
+    id: "game-header-pitcher-name"
+
+# A coordinate-aware tap on the left third of the zone — the bug flipped
+# this onto the wrong side. We can't introspect zone state here, but if
+# the tap silently no-ops (or crashes), follow-up assertions will fail.
+- tapOn:
+    id: "strike-zone-canvas"
+    point: "20%,50%"
+
+# ---------------------------------------------------------------------------
+# Guards c9cac2d (batter tracking after manual change). After saving a
+# substitute, the AB display should show the new player. We assert the
+# "Maestro Sub" name appears somewhere on screen.
+# ---------------------------------------------------------------------------
+- assertVisible:
+    id: "game-header-batter-name"

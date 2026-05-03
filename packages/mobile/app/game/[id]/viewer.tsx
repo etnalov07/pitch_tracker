@@ -116,18 +116,28 @@ const BUCKET_LABELS: Record<string, string> = {
     behind: 'Behind (B > K)',
 };
 
-function CountBreakdownTab({ gameId, pitcherId, refreshTrigger }: { gameId: string; pitcherId?: string; refreshTrigger: number }) {
+function CountBreakdownTab({
+    gameId,
+    pitcherId,
+    opposingPitcherId,
+    refreshTrigger,
+}: {
+    gameId: string;
+    pitcherId?: string;
+    opposingPitcherId?: string;
+    refreshTrigger: number;
+}) {
     const [data, setData] = useState<CountBucketBreakdown | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         setLoading(true);
         gamesApi
-            .getCountBreakdown(gameId, pitcherId)
+            .getCountBreakdown(gameId, opposingPitcherId ? undefined : pitcherId, undefined, opposingPitcherId)
             .then(setData)
             .catch(() => setData(null))
             .finally(() => setLoading(false));
-    }, [gameId, pitcherId, refreshTrigger]);
+    }, [gameId, pitcherId, opposingPitcherId, refreshTrigger]);
 
     const buckets = ['1st_pitch', 'ahead', 'even', 'behind'] as const;
 
@@ -183,7 +193,8 @@ function CountBreakdownTab({ gameId, pitcherId, refreshTrigger }: { gameId: stri
 // ── Performance Summary ───────────────────────────────────────────────────────
 
 function SummaryTab({ gameId }: { gameId: string }) {
-    const [summary, setSummary] = useState<PerformanceSummary | null>(null);
+    const [summaries, setSummaries] = useState<PerformanceSummary[]>([]);
+    const [selectedIdx, setSelectedIdx] = useState(0);
     const [loading, setLoading] = useState(true);
     const [regenerating, setRegenerating] = useState(false);
     const pollAttemptsRef = useRef(0);
@@ -192,11 +203,13 @@ function SummaryTab({ gameId }: { gameId: string }) {
     useEffect(() => {
         setLoading(true);
         performanceSummaryApi
-            .getSummary('game', gameId)
-            .then((s) => setSummary(s))
+            .getGamePitcherSummaries(gameId)
+            .then((s) => setSummaries(s))
             .catch(() => {})
             .finally(() => setLoading(false));
     }, [gameId]);
+
+    const summary = summaries[selectedIdx] ?? null;
 
     // Poll until narrative arrives
     useEffect(() => {
@@ -209,9 +222,9 @@ function SummaryTab({ gameId }: { gameId: string }) {
         pollTimerRef.current = setTimeout(() => {
             pollAttemptsRef.current += 1;
             performanceSummaryApi
-                .getSummary('game', gameId)
+                .getGamePitcherSummaries(gameId)
                 .then((s) => {
-                    if (s) setSummary(s);
+                    if (s.length > 0) setSummaries(s);
                 })
                 .catch(() => {});
         }, NARRATIVE_POLL_INTERVAL_MS);
@@ -225,8 +238,8 @@ function SummaryTab({ gameId }: { gameId: string }) {
         setRegenerating(true);
         try {
             await performanceSummaryApi.regenerateNarrative(summary.id);
-            const updated = await performanceSummaryApi.getSummary('game', gameId);
-            if (updated) setSummary(updated);
+            const updated = await performanceSummaryApi.getGamePitcherSummaries(gameId);
+            setSummaries(updated);
         } finally {
             setRegenerating(false);
         }
@@ -235,7 +248,29 @@ function SummaryTab({ gameId }: { gameId: string }) {
     if (loading) return <ActivityIndicator style={styles.centered} />;
     if (!summary) return <Text style={styles.emptyText}>No performance data available for this game.</Text>;
 
-    return <PerformanceSummaryView summary={summary} onRegenerate={handleRegenerate} regenerating={regenerating} />;
+    return (
+        <View>
+            {summaries.length > 1 && (
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.pillRow}
+                    style={styles.pillRowWrap}
+                >
+                    {summaries.map((s, i) => (
+                        <TouchableOpacity
+                            key={s.id}
+                            style={[styles.pill, selectedIdx === i && styles.pillActive]}
+                            onPress={() => setSelectedIdx(i)}
+                        >
+                            <Text style={[styles.pillText, selectedIdx === i && styles.pillTextActive]}>{s.pitcher_name}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            )}
+            <PerformanceSummaryView summary={summary} onRegenerate={handleRegenerate} regenerating={regenerating} />
+        </View>
+    );
 }
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
@@ -254,12 +289,24 @@ export default function ViewerScreen() {
     const [oppBreakdown, setOppBreakdown] = useState<BatterBreakdown[]>([]);
     const [myTeamBreakdown, setMyTeamBreakdown] = useState<BatterBreakdown[]>([]);
     const [breakdownLoading, setBreakdownLoading] = useState(false);
+    const [selectedPitcherIdx, setSelectedPitcherIdx] = useState(0);
+    const [selectedOppPitcherIdx, setSelectedOppPitcherIdx] = useState(0);
+    const [countsMode, setCountsMode] = useState<'our' | 'opp'>('our');
 
-    const activePitcher = gamePitchers.find((p) => !p.inning_exited);
-    const pitcherId = activePitcher?.player_id;
-    const pitcherName = activePitcher?.player ? `${activePitcher.player.first_name} ${activePitcher.player.last_name}` : 'Pitcher';
-    const currentOpposingPitcher = opposingPitchers[opposingPitchers.length - 1] ?? null;
-    const opponentPitcherName = currentOpposingPitcher?.pitcher_name ?? 'Opponent Pitcher';
+    // Default to last opposing pitcher (most recent) once list loads
+    useEffect(() => {
+        if (opposingPitchers.length > 0) {
+            setSelectedOppPitcherIdx(opposingPitchers.length - 1);
+        }
+    }, [opposingPitchers.length]);
+
+    const selectedPitcher = gamePitchers[selectedPitcherIdx] ?? gamePitchers.find((p) => !p.inning_exited) ?? gamePitchers[0];
+    const pitcherId = selectedPitcher?.player_id;
+    const pitcherName = selectedPitcher?.player
+        ? `${selectedPitcher.player.first_name} ${selectedPitcher.player.last_name}`
+        : 'Pitcher';
+    const selectedOppPitcher = opposingPitchers[selectedOppPitcherIdx] ?? null;
+    const opponentPitcherName = selectedOppPitcher?.pitcher_name ?? 'Opponent Pitcher';
 
     useEffect(() => {
         if (id) {
@@ -370,20 +417,113 @@ export default function ViewerScreen() {
 
             {/* Content */}
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {activeTab === 'stats' &&
-                    (pitcherId && id ? (
-                        <PitcherStatsTab
-                            pitcherId={pitcherId}
-                            gameId={id}
-                            pitcherName={pitcherName}
-                            refreshTrigger={refreshTrigger}
-                        />
-                    ) : (
-                        <Text style={styles.emptyText}>No pitcher data available.</Text>
-                    ))}
+                {activeTab === 'stats' && (
+                    <>
+                        {gamePitchers.length > 1 && (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.pillRow}
+                                style={styles.pillRowWrap}
+                            >
+                                {gamePitchers.map((p, i) => {
+                                    const name = p.player ? `${p.player.first_name} ${p.player.last_name}` : `Pitcher ${i + 1}`;
+                                    return (
+                                        <TouchableOpacity
+                                            key={p.id}
+                                            style={[styles.pill, selectedPitcherIdx === i && styles.pillActive]}
+                                            onPress={() => setSelectedPitcherIdx(i)}
+                                        >
+                                            <Text style={[styles.pillText, selectedPitcherIdx === i && styles.pillTextActive]}>
+                                                {name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        )}
+                        {pitcherId && id ? (
+                            <PitcherStatsTab
+                                pitcherId={pitcherId}
+                                gameId={id}
+                                pitcherName={pitcherName}
+                                refreshTrigger={refreshTrigger}
+                            />
+                        ) : (
+                            <Text style={styles.emptyText}>No pitcher data available.</Text>
+                        )}
+                    </>
+                )}
 
                 {activeTab === 'counts' && id && (
-                    <CountBreakdownTab gameId={id} pitcherId={pitcherId} refreshTrigger={refreshTrigger} />
+                    <>
+                        {gamePitchers.length > 1 && countsMode === 'our' && (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.pillRow}
+                                style={styles.pillRowWrap}
+                            >
+                                {gamePitchers.map((p, i) => {
+                                    const name = p.player ? `${p.player.first_name} ${p.player.last_name}` : `Pitcher ${i + 1}`;
+                                    return (
+                                        <TouchableOpacity
+                                            key={p.id}
+                                            style={[styles.pill, selectedPitcherIdx === i && styles.pillActive]}
+                                            onPress={() => setSelectedPitcherIdx(i)}
+                                        >
+                                            <Text style={[styles.pillText, selectedPitcherIdx === i && styles.pillTextActive]}>
+                                                {name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        )}
+                        {game.charting_mode === 'both' && (
+                            <View style={styles.countsModeRow}>
+                                {(['our', 'opp'] as const).map((m) => (
+                                    <TouchableOpacity
+                                        key={m}
+                                        style={[styles.countsModeBtn, countsMode === m && styles.countsModeBtnActive]}
+                                        onPress={() => setCountsMode(m)}
+                                    >
+                                        <Text
+                                            style={[styles.countsModeBtnText, countsMode === m && styles.countsModeBtnTextActive]}
+                                        >
+                                            {m === 'our' ? 'Our Pitcher' : 'Opp Pitcher'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                        {countsMode === 'opp' && opposingPitchers.length > 1 && (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.pillRow}
+                                style={styles.pillRowWrap}
+                            >
+                                {opposingPitchers.map((p, i) => (
+                                    <TouchableOpacity
+                                        key={p.id}
+                                        style={[styles.pill, selectedOppPitcherIdx === i && styles.pillActive]}
+                                        onPress={() => setSelectedOppPitcherIdx(i)}
+                                    >
+                                        <Text style={[styles.pillText, selectedOppPitcherIdx === i && styles.pillTextActive]}>
+                                            {p.pitcher_name}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        )}
+                        <CountBreakdownTab
+                            gameId={id}
+                            pitcherId={countsMode === 'our' ? pitcherId : undefined}
+                            opposingPitcherId={countsMode === 'opp' ? selectedOppPitcher?.id : undefined}
+                            refreshTrigger={refreshTrigger}
+                        />
+                    </>
                 )}
 
                 {activeTab === 'breakdown' && (
@@ -612,4 +752,38 @@ const styles = StyleSheet.create({
     breakdownTabBtnActive: { borderBottomColor: '#1d4ed8' },
     breakdownTabText: { fontSize: 13, color: '#6b7280', fontWeight: '500' },
     breakdownTabTextActive: { color: '#1d4ed8', fontWeight: '600' },
+
+    // Pitcher / opponent pitcher pill selectors
+    pillRowWrap: { marginBottom: 10 },
+    pillRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 2 },
+    pill: {
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 20,
+        backgroundColor: '#f3f4f6',
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+    },
+    pillActive: { backgroundColor: '#1d4ed8', borderColor: '#1d4ed8' },
+    pillText: { fontSize: 13, fontWeight: '500', color: '#374151' },
+    pillTextActive: { color: 'white', fontWeight: '600' },
+
+    // Counts mode toggle (Our Pitcher / Opp Pitcher)
+    countsModeRow: {
+        flexDirection: 'row',
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        borderRadius: 8,
+        overflow: 'hidden',
+        marginBottom: 12,
+    },
+    countsModeBtn: {
+        flex: 1,
+        paddingVertical: 8,
+        alignItems: 'center',
+        backgroundColor: '#f9fafb',
+    },
+    countsModeBtnActive: { backgroundColor: '#1d4ed8' },
+    countsModeBtnText: { fontSize: 13, fontWeight: '500', color: '#6b7280' },
+    countsModeBtnTextActive: { color: 'white', fontWeight: '600' },
 });

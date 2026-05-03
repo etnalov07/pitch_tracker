@@ -1,0 +1,33 @@
+appId: ${APP_ID}
+---
+# Regression flow - exercises code paths that have broken on recent pushes.
+# Each block is annotated with the commit SHA of the regression it guards against.
+# Add new blocks here when a bug ships that should have been caught pre-push.
+- runFlow: login.yaml
+
+# ---------------------------------------------------------------------------
+# Guards 331f82c (spread myTeamLineup before sort to avoid mutating frozen state)
+# Symptom: Live game screen crashes with "Cannot assign to read only property"
+#          when the lineup renders. Just navigating to a live game catches it.
+# ---------------------------------------------------------------------------
+- extendedWaitUntil:
+    visible: "Games"
+    timeout: 10000
+
+# Open an in-progress game if one exists; otherwise this flow no-ops cleanly.
+# To make this deterministic, seed a test game in the dev DB before running.
+- runFlow:
+    when:
+      visible: "In Progress"
+    file: ../subflows/open-live-game.yaml
+
+# If we didn't navigate to a live game, the rest of the flow is irrelevant.
+# Wrap the deeper checks in a conditional so the flow stays green when no
+# in-progress game exists in the test account.
+- runFlow:
+    when:
+      visible:
+        id: "batter-selector-open"
+    file: ../subflows/regression-live-game.yaml
+
+- back

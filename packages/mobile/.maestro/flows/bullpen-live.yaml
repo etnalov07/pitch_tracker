@@ -1,4 +1,4 @@
-appId: com.bvolante.pitch-tracker
+appId: ${APP_ID}
 ---
 # Live Bullpen session - verify UI elements
 # NOTE: This flow verifies the bullpen live screen elements.

@@ -51,6 +51,8 @@ Always run in this order before committing:
 2. **Prettier**: `npx prettier --write` on all changed `.ts`/`.tsx` files
 3. **ESLint** (if any `packages/web/src/` files changed): `cd packages/web && npx eslint src/ --ext .ts,.tsx`
 4. **TypeScript**: `npx tsc --noEmit` in each affected package
+5. **Jest unit tests** (mobile): `cd packages/mobile && npm test` — fast, no simulator needed. Always run when touching files under `src/`.
+6. **Maestro E2E** (if mobile UI changed): `cd packages/mobile && npm run e2e:ios` — see `packages/mobile/.maestro/README.md` for one-time setup. Skip if no simulator is running, but rerun before pushing.
 
 Fix all errors before committing. Re-run all checks from the beginning after any fix.
 

@@ -1,4 +1,4 @@
-appId: com.bvolante.pitch-tracker
+appId: ${APP_ID}
 ---
 # Dashboard screen - verify main dashboard elements after login
 - runFlow: login.yaml
@@ -14,10 +14,9 @@ appId: com.bvolante.pitch-tracker
 - assertVisible: "Start Bullpen"
 - assertVisible: "Find a Team"
 
-# Verify FAB button exists (plus icon)
+# Verify FAB (required - fails the test if missing)
 - assertVisible:
-    id: ".*fab.*"
-    optional: true
+    id: "dashboard-new-game-fab"
 
 # Verify tab navigation is present
 - assertVisible: "Dashboard"

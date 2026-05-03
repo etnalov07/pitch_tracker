@@ -1,4 +1,4 @@
-appId: com.bvolante.pitch-tracker
+appId: ${APP_ID}
 ---
 # Settings screen - verify profile info, sync status, and options
 - runFlow: login.yaml

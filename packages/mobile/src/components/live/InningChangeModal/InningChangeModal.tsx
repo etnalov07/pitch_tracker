@@ -23,7 +23,7 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
 }) => {
     return (
         <Modal visible={visible} onDismiss={() => {}} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
-            <Text variant="titleLarge" style={styles.modalTitle}>
+            <Text variant="titleLarge" style={styles.modalTitle} testID="inning-change-modal">
                 Inning Over
             </Text>
             <Text style={styles.inningChangeText}>
@@ -34,6 +34,7 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
                 <>
                     <Text style={styles.runsLabel}>Opponent runs scored this inning:</Text>
                     <TextInput
+                        testID="inning-change-runs-input"
                         style={styles.runsInput}
                         value={teamRunsScored}
                         onChangeText={onRunsChange}
@@ -42,7 +43,7 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
                     />
                 </>
             )}
-            <Button mode="contained" onPress={onConfirm} style={styles.inningChangeButton}>
+            <Button testID="inning-change-confirm" mode="contained" onPress={onConfirm} style={styles.inningChangeButton}>
                 Next Half Inning
             </Button>
         </Modal>

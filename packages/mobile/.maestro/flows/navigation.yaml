@@ -1,4 +1,4 @@
-appId: com.bvolante.pitch-tracker
+appId: ${APP_ID}
 ---
 # Tab Navigation - verify all tabs work and show correct screens
 - runFlow: login.yaml

@@ -157,7 +157,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
 
     return (
         <Modal visible={visible} onDismiss={handleDismiss} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
-            <Pressable onPress={Keyboard.dismiss} style={styles.modalInner}>
+            <Pressable onPress={Keyboard.dismiss} style={styles.modalInner} testID="batter-selector-modal">
                 <Text variant="titleLarge" style={styles.modalTitle}>
                     Select Batter
                 </Text>
@@ -192,6 +192,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                                             style={styles.actionIcon}
                                         />
                                         <IconButton
+                                            testID={`batter-selector-substitute-${batter.batting_order}`}
                                             icon="account-switch"
                                             size={18}
                                             onPress={() => handleShowSubForm(batter)}
@@ -240,6 +241,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                             )}
                             {formMode === 'substitute' && (
                                 <TextInput
+                                    testID="batter-selector-inning"
                                     label="Inning"
                                     mode="outlined"
                                     value={subInning}
@@ -280,7 +282,13 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                             <Button mode="text" onPress={resetForm} disabled={saving}>
                                 Cancel
                             </Button>
-                            <Button mode="contained" onPress={handleSave} disabled={saveDisabled} loading={saving}>
+                            <Button
+                                testID="batter-selector-save"
+                                mode="contained"
+                                onPress={handleSave}
+                                disabled={saveDisabled}
+                                loading={saving}
+                            >
                                 Save
                             </Button>
                         </View>

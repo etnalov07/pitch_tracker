@@ -113,7 +113,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                     disabled={!onPitcherPress}
                 >
                     <Text style={styles.playerLabel}>P</Text>
-                    <Text style={styles.playerName} numberOfLines={1}>
+                    <Text testID="game-header-pitcher-name" style={styles.playerName} numberOfLines={1}>
                         {currentPitcher
                             ? `${currentPitcher.first_name[0]}. ${currentPitcher.last_name}${pitchCount != null ? ` (${pitchCount})` : ''}`
                             : 'Select'}
@@ -121,12 +121,13 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                 </Pressable>
                 <Text style={styles.vs}>vs</Text>
                 <Pressable
+                    testID="batter-selector-open"
                     style={[styles.playerInfo, onBatterPress && styles.playerInfoTappable]}
                     onPress={onBatterPress}
                     disabled={!onBatterPress}
                 >
                     <Text style={styles.playerLabel}>AB</Text>
-                    <Text style={styles.playerName} numberOfLines={1}>
+                    <Text testID="game-header-batter-name" style={styles.playerName} numberOfLines={1}>
                         {currentBatter
                             ? `${currentBatter.batting_order ? `#${currentBatter.batting_order} ` : ''}${currentBatter.name}`
                             : 'Select'}

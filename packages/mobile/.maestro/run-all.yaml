@@ -1,4 +1,4 @@
-appId: com.bvolante.pitch-tracker
+appId: ${APP_ID}
 ---
 # Run all Maestro e2e test flows in sequence
 
@@ -37,6 +37,9 @@ appId: com.bvolante.pitch-tracker
 
 # Bullpen - Live Session
 - runFlow: flows/bullpen-live.yaml
+
+# Regression smoke - guards against recently shipped bugs
+- runFlow: flows/regression.yaml
 
 # Login (standalone verification)
 - runFlow: flows/login.yaml

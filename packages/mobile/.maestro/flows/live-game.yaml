@@ -1,4 +1,4 @@
-appId: com.bvolante.pitch-tracker
+appId: ${APP_ID}
 ---
 # Live Game screen - verify UI elements if an in-progress game exists
 - runFlow: login.yaml

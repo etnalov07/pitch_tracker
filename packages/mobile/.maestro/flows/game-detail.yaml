@@ -1,4 +1,4 @@
-appId: com.bvolante.pitch-tracker
+appId: ${APP_ID}
 ---
 # Game Detail screen - verify game detail elements
 - runFlow: login.yaml
