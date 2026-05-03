@@ -25,7 +25,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
     const [allPitchers, setAllPitchers] = useState<GamePitcherWithPlayer[]>([]);
     const [activePitcher, setActivePitcher] = useState<GamePitcherWithPlayer | null>(null);
     const [selectedPitcherIdx, setSelectedPitcherIdx] = useState(0);
-    const [currentOpposingPitcher, setCurrentOpposingPitcher] = useState<OpposingPitcher | null>(null);
+    const [allOpposingPitchers, setAllOpposingPitchers] = useState<OpposingPitcher[]>([]);
     const [pitcherSummaries, setPitcherSummaries] = useState<PerformanceSummary[]>([]);
     const [activePitcherIdx, setActivePitcherIdx] = useState(0);
     const [summaryLoading, setSummaryLoading] = useState(false);
@@ -51,7 +51,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
         opposingPitcherService
             .getByGame(game.id)
             .then((pitchers) => {
-                setCurrentOpposingPitcher(pitchers[pitchers.length - 1] ?? null);
+                setAllOpposingPitchers(pitchers);
             })
             .catch(() => {});
     }, [game.id, refreshTrigger]);
@@ -134,6 +134,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
     const pitcherName = selectedPitcher?.player
         ? `${selectedPitcher.player.first_name} ${selectedPitcher.player.last_name}`
         : 'Our Pitcher';
+    const currentOpposingPitcher = allOpposingPitchers[allOpposingPitchers.length - 1] ?? null;
     const opponentPitcherName = currentOpposingPitcher?.pitcher_name ?? 'Opponent Pitcher';
 
     const score = `${game.home_score} – ${game.away_score}`;
@@ -261,7 +262,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                         game={game}
                         allPitchers={allPitchers}
                         activePitcher={activePitcher}
-                        currentOpposingPitcher={currentOpposingPitcher}
+                        allOpposingPitchers={allOpposingPitchers}
                         refreshTrigger={refreshTrigger}
                     />
                 )}

@@ -1139,32 +1139,44 @@ export class AnalyticsService {
         };
     }
 
-    async getCountBreakdown(gameId: string, pitcherId?: string, teamSide?: string): Promise<any> {
-        const params: any[] = [gameId];
-        let filters = '';
+    async getCountBreakdown(gameId: string, pitcherId?: string, teamSide?: string, opposingPitcherId?: string): Promise<any> {
+        let result;
 
-        if (pitcherId) {
-            params.push(pitcherId);
-            filters += ` AND pitcher_id = $${params.length}`;
+        if (opposingPitcherId) {
+            result = await query(
+                `SELECT p.balls_before, p.strikes_before, p.pitch_type, p.pitch_result, COUNT(*) as count
+                 FROM pitches p
+                 JOIN at_bats ab ON p.at_bat_id = ab.id
+                 WHERE p.game_id = $1 AND ab.opposing_pitcher_id = $2
+                 GROUP BY p.balls_before, p.strikes_before, p.pitch_type, p.pitch_result
+                 ORDER BY p.balls_before, p.strikes_before, p.pitch_type`,
+                [gameId, opposingPitcherId]
+            );
+        } else {
+            const params: any[] = [gameId];
+            let filters = '';
+            if (pitcherId) {
+                params.push(pitcherId);
+                filters += ` AND pitcher_id = $${params.length}`;
+            }
+            if (teamSide) {
+                params.push(teamSide);
+                filters += ` AND team_side = $${params.length}`;
+            }
+            result = await query(
+                `SELECT
+                    balls_before,
+                    strikes_before,
+                    pitch_type,
+                    pitch_result,
+                    COUNT(*) as count
+                 FROM pitches
+                 WHERE game_id = $1${filters}
+                 GROUP BY balls_before, strikes_before, pitch_type, pitch_result
+                 ORDER BY balls_before, strikes_before, pitch_type`,
+                params
+            );
         }
-        if (teamSide) {
-            params.push(teamSide);
-            filters += ` AND team_side = $${params.length}`;
-        }
-
-        const result = await query(
-            `SELECT
-                balls_before,
-                strikes_before,
-                pitch_type,
-                pitch_result,
-                COUNT(*) as count
-             FROM pitches
-             WHERE game_id = $1${filters}
-             GROUP BY balls_before, strikes_before, pitch_type, pitch_result
-             ORDER BY balls_before, strikes_before, pitch_type`,
-            params
-        );
 
         const buckets: Record<
             string,

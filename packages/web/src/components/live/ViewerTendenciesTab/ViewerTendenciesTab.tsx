@@ -19,7 +19,7 @@ interface Props {
     game: Game;
     allPitchers?: GamePitcherWithPlayer[];
     activePitcher: GamePitcherWithPlayer | null;
-    currentOpposingPitcher: OpposingPitcher | null;
+    allOpposingPitchers?: OpposingPitcher[];
     refreshTrigger: number;
 }
 
@@ -231,19 +231,21 @@ const BUCKET_LABELS: Record<string, string> = {
 const OppPitcherSection: React.FC<{
     gameId: string;
     pitcherName: string;
+    opposingPitcherId?: string;
     refreshTrigger: number;
-}> = ({ gameId, pitcherName, refreshTrigger }) => {
+}> = ({ gameId, pitcherName, opposingPitcherId, refreshTrigger }) => {
     const [data, setData] = useState<CountBucketBreakdown | null>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         setLoading(true);
-        analyticsService
-            .getCountBreakdown(gameId, undefined, 'opponent')
-            .then(setData)
+        const call = opposingPitcherId
+            ? analyticsService.getCountBreakdown(gameId, undefined, undefined, opposingPitcherId)
+            : analyticsService.getCountBreakdown(gameId, undefined, 'opponent');
+        call.then(setData)
             .catch(() => setData(null))
             .finally(() => setLoading(false));
-    }, [gameId, refreshTrigger]);
+    }, [gameId, opposingPitcherId, refreshTrigger]);
 
     const buckets = ['1st_pitch', 'ahead', 'even', 'behind'] as const;
     const hasData = data && buckets.some((k) => data[k].total > 0);
@@ -678,7 +680,7 @@ const ViewerTendenciesTab: React.FC<Props> = ({
     game,
     allPitchers = [],
     activePitcher,
-    currentOpposingPitcher,
+    allOpposingPitchers = [],
     refreshTrigger,
 }) => {
     const [selectedPitcherIdx, setSelectedPitcherIdx] = React.useState(() => {
@@ -686,6 +688,7 @@ const ViewerTendenciesTab: React.FC<Props> = ({
         const idx = allPitchers.findIndex((p) => p.player_id === activePitcher.player_id);
         return Math.max(0, idx);
     });
+    const [selectedOppPitcherIdx, setSelectedOppPitcherIdx] = React.useState(() => Math.max(0, allOpposingPitchers.length - 1));
 
     const showOurPitcher = game.charting_mode !== 'opp_pitcher';
     const showOppPitcher = game.charting_mode !== 'our_pitcher';
@@ -695,7 +698,9 @@ const ViewerTendenciesTab: React.FC<Props> = ({
     const pitcherName = displayedPitcher?.player
         ? `${displayedPitcher.player.first_name} ${displayedPitcher.player.last_name}`
         : 'Our Pitcher';
-    const oppPitcherName = currentOpposingPitcher?.pitcher_name ?? 'Opposing Pitcher';
+
+    const selectedOppPitcher = allOpposingPitchers[selectedOppPitcherIdx] ?? null;
+    const oppPitcherName = selectedOppPitcher?.pitcher_name ?? 'Opposing Pitcher';
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 32, maxWidth: 860, margin: '0 auto' }}>
@@ -762,7 +767,40 @@ const ViewerTendenciesTab: React.FC<Props> = ({
                         <hr style={{ border: 'none', borderTop: `1px solid ${theme.colors.gray[200]}`, margin: 0 }} />
                     )}
                     <section>
-                        <OppPitcherSection gameId={game.id} pitcherName={oppPitcherName} refreshTrigger={refreshTrigger} />
+                        {allOpposingPitchers.length > 1 && (
+                            <div style={{ display: 'flex', gap: 0, marginBottom: 14 }}>
+                                {allOpposingPitchers.map((p, i) => (
+                                    <button
+                                        key={p.id}
+                                        onClick={() => setSelectedOppPitcherIdx(i)}
+                                        style={{
+                                            padding: '4px 12px',
+                                            fontSize: theme.fontSize.sm,
+                                            fontWeight: theme.fontWeight.semibold,
+                                            border: `1px solid ${i === selectedOppPitcherIdx ? theme.colors.primary[500] : theme.colors.gray[300]}`,
+                                            background: i === selectedOppPitcherIdx ? theme.colors.primary[600] : 'white',
+                                            color: i === selectedOppPitcherIdx ? 'white' : theme.colors.gray[600],
+                                            cursor: 'pointer',
+                                            borderRadius:
+                                                i === 0
+                                                    ? `${theme.borderRadius.md} 0 0 ${theme.borderRadius.md}`
+                                                    : i === allOpposingPitchers.length - 1
+                                                      ? `0 ${theme.borderRadius.md} ${theme.borderRadius.md} 0`
+                                                      : '0',
+                                            transition: 'all 0.12s',
+                                        }}
+                                    >
+                                        {p.pitcher_name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        <OppPitcherSection
+                            gameId={game.id}
+                            pitcherName={oppPitcherName}
+                            opposingPitcherId={selectedOppPitcher?.id}
+                            refreshTrigger={refreshTrigger}
+                        />
                     </section>
                 </>
             )}
