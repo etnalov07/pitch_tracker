@@ -1,5 +1,5 @@
 import { HeatZoneData, PitchCallZone, PITCH_CALL_ZONE_COORDS } from '@pitch-tracker/shared';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { theme } from '../../../styles/theme';
 import { Pitch } from '../../../types';
 import HeatZoneOverlay from '../HeatZoneOverlay';
@@ -92,12 +92,15 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     batterSide,
     pitcherThrows,
 }) => {
-    // Track the selected actual-location zone for visual feedback
+    // Track the selected zone for cell highlight and raw click position for the dot
     const [selectedZone, setSelectedZone] = useState<PitchCallZone | null>(null);
+    const [selectedLocation, setSelectedLocation] = useState<{ x: number; y: number } | null>(null);
+    const svgRef = useRef<SVGSVGElement>(null);
 
-    // Reset selected zone when a new pitch is logged (previousPitches changes)
+    // Reset on new pitch logged
     useEffect(() => {
         setSelectedZone(null);
+        setSelectedLocation(null);
     }, [previousPitches.length]);
 
     // Determine batter position
@@ -118,19 +121,10 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     const BLUE = theme.colors.primary[600];
     const isTargetMode = onTargetZoneSelect && !targetZone;
 
-    /**
-     * Unified zone tap handler.
-     *
-     * Stage 1 — target mode (coach pre-pitch call):
-     *   When onTargetZoneSelect is provided and no target has been set yet,
-     *   tapping a zone records it as the called target.
-     *
-     * Stage 2 — location mode (post-pitch):
-     *   When the target is already set, or when there is no target system,
-     *   tapping a zone snaps the pitch location to that zone's center coords.
-     *   This is intentionally coarse — just select the square; not-MLB-level
-     *   precision is fine and faster on mobile.
-     */
+    // Stage 1 — target mode: tapping a zone records it as the called target.
+    // Stage 2 — location mode: clicking anywhere in a zone stores the raw click
+    // position (not the zone center), so heat maps reflect where the ball actually
+    // landed within the zone rather than collapsing to 17 discrete points.
     const handleZoneClick = (zone: PitchCallZone, e: React.MouseEvent | React.TouchEvent) => {
         e.stopPropagation();
         if (e.type === 'touchend') (e as React.TouchEvent).preventDefault();
@@ -138,9 +132,27 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         if (isTargetMode) {
             onTargetZoneSelect!(zone);
         } else {
-            const coords = getZoneCoords(zone, effectiveSide);
             setSelectedZone(zone);
-            onLocationSelect(coords.x, coords.y);
+            const svg = svgRef.current;
+            if (svg) {
+                const rect = svg.getBoundingClientRect();
+                let clientX: number, clientY: number;
+                if ('changedTouches' in e) {
+                    clientX = (e as React.TouchEvent).changedTouches[0].clientX;
+                    clientY = (e as React.TouchEvent).changedTouches[0].clientY;
+                } else {
+                    clientX = (e as React.MouseEvent).clientX;
+                    clientY = (e as React.MouseEvent).clientY;
+                }
+                const rawX = ((clientX - rect.left) * (300 / rect.width) - 105) / 90;
+                const rawY = ((clientY - rect.top) * (300 / rect.height) - 100) / 132;
+                setSelectedLocation({ x: rawX, y: rawY });
+                onLocationSelect(rawX, rawY);
+            } else {
+                const coords = getZoneCoords(zone, effectiveSide);
+                setSelectedLocation(coords);
+                onLocationSelect(coords.x, coords.y);
+            }
         }
     };
 
@@ -172,7 +184,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
             <Title>Strike Zone</Title>
             <ZoneWrapper>
                 {/* touchAction:none prevents scroll-while-tapping on mobile */}
-                <MainSvg viewBox="0 0 300 300" style={{ touchAction: 'none' }}>
+                <MainSvg ref={svgRef as React.Ref<SVGSVGElement>} viewBox="0 0 300 300" style={{ touchAction: 'none' }}>
                     {/* Background */}
                     <rect x="0" y="0" width="300" height="300" fill="#f5f5f0" />
 
@@ -346,14 +358,11 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                         </g>
                     )}
 
-                    {/* Selected location indicator — solid dot at zone center */}
-                    {selectedZone && (
+                    {/* Selected location indicator — pulsing dot at raw click position */}
+                    {selectedLocation && (
                         <g>
                             {(() => {
-                                const coords = toSvgCoords(
-                                    getZoneCoords(selectedZone, effectiveSide).x,
-                                    getZoneCoords(selectedZone, effectiveSide).y
-                                );
+                                const coords = toSvgCoords(selectedLocation.x, selectedLocation.y);
                                 return (
                                     <circle cx={coords.x} cy={coords.y} r="10" fill={BLUE} stroke="white" strokeWidth="3">
                                         <animate attributeName="r" values="8;12;8" dur="0.8s" repeatCount="indefinite" />

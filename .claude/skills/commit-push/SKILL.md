@@ -1,7 +1,7 @@
 ---
 name: commit-push
 description: Commit and push all coding changes to git. Use this after making code changes to prompt the user for approval, then commit and push.
-allowed-tools: Bash(git *), Bash(npx prettier *), Bash(npx tsc *), Bash(npx eslint *), Bash(npx react-scripts build), AskUserQuestion
+allowed-tools: Bash(git *), Bash(npx prettier *), Bash(npx tsc *), Bash(npx eslint *), Bash(npx react-scripts build), Bash(npx jest *), Bash(cd packages/*), AskUserQuestion
 argument-hint: [commit message]
 user-invocable: true
 auto-invoke: true
@@ -16,6 +16,7 @@ Commit and push code changes after the user approves them.
 After completing any coding task that modifies files (bug fixes, features, refactors, style changes), automatically invoke this skill to prompt the user for approval before committing and pushing.
 
 **Do NOT invoke** if:
+
 - No files were changed
 - The user explicitly said not to commit
 - The changes are exploratory / draft / WIP that the user hasn't reviewed yet
@@ -32,9 +33,9 @@ Use `AskUserQuestion` to ask the user to approve the changes:
 
 - **Question**: "Ready to commit and push these changes?"
 - **Options**:
-  - "Approve & Push" — commit and push immediately
-  - "Approve (no push)" — commit only, do not push
-  - "Skip" — do not commit
+    - "Approve & Push" — commit and push immediately
+    - "Approve (no push)" — commit only, do not push
+    - "Skip" — do not commit
 
 ### Step 3: Pre-Commit Checks (REQUIRED — always run before committing)
 
@@ -44,9 +45,11 @@ If approved, run **all** of the following checks on changed files **in this orde
 2. **Prettier**: Run `npx prettier --write` on **all** changed `.ts` / `.tsx` files. This formats code and may modify files — include any formatting changes in the commit.
 3. **ESLint** (web package): If **any** files under `packages/web/src/` were changed, run `cd packages/web && npx eslint src/ --ext .ts,.tsx` and fix all errors. Pay special attention to `import/order` — external/scoped imports like `@pitch-tracker/shared` must come before `react` and other libraries.
 4. **TypeScript**: Run `npx tsc --noEmit` in **each** affected package. Always check all three if unsure which packages are affected:
-   - `cd packages/api && npx tsc --noEmit`
-   - `cd packages/web && npx tsc --noEmit`
-   - `cd packages/mobile && npx tsc --noEmit`
+    - `cd packages/api && npx tsc --noEmit`
+    - `cd packages/web && npx tsc --noEmit`
+    - `cd packages/mobile && npx tsc --noEmit`
+5. **Unit tests** (mobile): If any files under `packages/mobile/src/` were changed, run `cd packages/mobile && npx jest --no-coverage`. All tests must pass.
+6. **API tests**: If any files under `packages/api/src/` were changed, run `cd packages/api && npx jest --no-coverage`. All tests must pass.
 
 If any check fails, fix the issue and re-run **all** checks from the beginning. Do not commit with failing checks. Report check results to the user before proceeding to commit.
 
@@ -65,15 +68,16 @@ Include these version files in the staged changes.
 1. Run `git status` to see all changes (including any prettier formatting fixes).
 2. Stage only the relevant files (not `.claude/`, `.expo/`, `.env`, `*.zip`, `nul`, or other non-code artifacts).
 3. Generate a commit message following the project convention:
-   - If `$ARGUMENTS` was provided, use it as the commit message.
-   - Otherwise, infer a message from the changes: `<type>: <short description>`
-   - Types: `feat`, `fix`, `style`, `refactor`, `docs`, `chore`
+    - If `$ARGUMENTS` was provided, use it as the commit message.
+    - Otherwise, infer a message from the changes: `<type>: <short description>`
+    - Types: `feat`, `fix`, `style`, `refactor`, `docs`, `chore`
 4. Commit with:
-   ```
-   <type>: <short description>
 
-   Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
-   ```
+    ```
+    <type>: <short description>
+
+    Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+    ```
 
 ### Step 5: Push (if approved)
 
@@ -88,6 +92,7 @@ Report the commit SHA and push status to the user.
 ### Step 6: Confirm
 
 Display:
+
 - Commit SHA
 - Files committed
 - Push status (pushed / local only / skipped)
