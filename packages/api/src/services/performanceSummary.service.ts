@@ -124,7 +124,7 @@ export class PerformanceSummaryService {
             `SELECT p.pitcher_id, pl.first_name || ' ' || pl.last_name AS pitcher_name, MIN(p.created_at) AS first_pitch_at
              FROM pitches p
              JOIN players pl ON p.pitcher_id = pl.id
-             WHERE p.game_id = $1 AND p.pitcher_id IS NOT NULL AND p.team_side = 'our_team'
+             WHERE p.game_id = $1 AND p.pitcher_id IS NOT NULL AND (p.team_side = 'our_team' OR p.team_side IS NULL)
              GROUP BY p.pitcher_id, pl.first_name, pl.last_name
              ORDER BY first_pitch_at ASC`,
             [gameId]
@@ -236,7 +236,8 @@ export class PerformanceSummaryService {
         });
 
         const summary = await this.getSummary(sourceType, sourceId, pitcherId);
-        return { ...summary!, pitcher_name: pitcherName };
+        if (!summary) throw new Error(`Summary not found after insert for ${sourceType}/${sourceId}`);
+        return { ...summary, pitcher_name: pitcherName };
     }
 
     async regenerateNarrative(summaryId: string): Promise<PerformanceSummary | null> {
@@ -336,14 +337,16 @@ export class PerformanceSummaryService {
             [pitcherId, gameId]
         );
 
-        // Innings pitched (count distinct innings where pitcher was active)
+        // Innings pitched (distinct innings where pitcher threw at least one pitch, via at_bats)
         const inningsResult = await query(
-            `SELECT COUNT(DISTINCT i.id) as innings_count,
-                    COALESCE(SUM(i.runs_scored), 0) as runs_allowed
-             FROM innings i
-             JOIN pitches p ON p.game_id = i.game_id
-             WHERE p.pitcher_id = $1 AND p.game_id = $2
-               AND i.pitching_team_id = (SELECT home_team_id FROM games WHERE id = $2)`,
+            `SELECT COUNT(*) as innings_count, COALESCE(SUM(runs_scored), 0) as runs_allowed
+             FROM (
+                 SELECT DISTINCT i.id, i.runs_scored
+                 FROM pitches p
+                 JOIN at_bats ab ON p.at_bat_id = ab.id
+                 JOIN innings i ON ab.inning_id = i.id
+                 WHERE p.pitcher_id = $1 AND p.game_id = $2
+             ) innings_pitched`,
             [pitcherId, gameId]
         );
         const inn = inningsResult.rows[0];

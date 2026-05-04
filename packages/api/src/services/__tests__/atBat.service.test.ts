@@ -57,7 +57,7 @@ describe('AtBatService', () => {
 
         it('throws when required fields are missing', async () => {
             await expect(service.createAtBat({ game_id: 'game-1' } as any)).rejects.toThrow(
-                'game_id, inning_id, pitcher_id, and outs_before are required'
+                'game_id, inning_id, and outs_before are required'
             );
         });
 

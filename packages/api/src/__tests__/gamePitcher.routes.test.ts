@@ -123,12 +123,25 @@ describe('GamePitcher Routes - /bt-api/game-pitchers', () => {
 
         it('changes the current pitcher', async () => {
             const currentPitcher = { id: 'gp1', player_id: 'p1', pitching_order: 1 };
-            const newPitcher = { id: 'test-gp-id', player_id: 'p2', pitching_order: 2 };
+            const newPitcherRow = {
+                id: 'test-gp-id',
+                game_id: 'g1',
+                player_id: 'p2',
+                pitching_order: 2,
+                inning_entered: 3,
+                inning_exited: null,
+                created_at: new Date().toISOString(),
+                first_name: 'Jane',
+                last_name: 'Doe',
+                jersey_number: 42,
+                throws: 'R',
+            };
 
             mockQuery
                 .mockResolvedValueOnce({ rows: [currentPitcher] } as any) // getCurrentPitcher
                 .mockResolvedValueOnce({ rows: [] } as any) // update old pitcher inning_exited
-                .mockResolvedValueOnce({ rows: [newPitcher] } as any); // insert new pitcher (addPitcher)
+                .mockResolvedValueOnce({ rows: [{ id: 'test-gp-id' }] } as any) // addPitcher INSERT RETURNING *
+                .mockResolvedValueOnce({ rows: [newPitcherRow] } as any); // re-fetch with player JOIN
 
             const res = await getAgent()
                 .post('/bt-api/game-pitchers/game/g1/change')
