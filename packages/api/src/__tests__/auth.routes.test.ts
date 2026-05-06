@@ -42,7 +42,7 @@ describe('Auth Routes - /bt-api/auth', () => {
             const res = await getAgent().post('/bt-api/auth/register').send({ email: 'test@test.com' });
 
             expect(res.status).toBe(400);
-            expect(res.body.error).toBe('All fields are required');
+            expect(res.body.error).toBe('Password must be at least 8 characters');
         });
 
         it('returns 400 with empty body', async () => {
@@ -81,7 +81,7 @@ describe('Auth Routes - /bt-api/auth', () => {
             const res = await getAgent().post('/bt-api/auth/login').send({ email: 'test@test.com' });
 
             expect(res.status).toBe(400);
-            expect(res.body.error).toBe('Email and password are required');
+            expect(res.body.error).toBe('Password required');
         });
     });
 

@@ -3,6 +3,16 @@ import { getAgent, authHeader, resetMocks, mockQuery } from './helpers/setup';
 // Mock uuid
 jest.mock('uuid', () => ({ v4: jest.fn(() => 'test-player-id') }));
 
+// Player routes mount loadUserRoles + requirePlayerTeamRole; bypass them so each test
+// only needs to mock its handler's own DB calls (role enforcement is exercised separately).
+jest.mock('../middleware/roles', () => ({
+    loadUserRoles: (_req: any, _res: any, next: any) => next(),
+    requireTeamRole: () => (_req: any, _res: any, next: any) => next(),
+    requireOrgRole: () => (_req: any, _res: any, next: any) => next(),
+    requirePlayerTeamRole: () => (_req: any, _res: any, next: any) => next(),
+    requireOrgMember: (_req: any, _res: any, next: any) => next(),
+}));
+
 describe('Player Routes - /bt-api/players', () => {
     beforeEach(() => resetMocks());
 

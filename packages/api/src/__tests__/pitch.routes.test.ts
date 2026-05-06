@@ -89,9 +89,11 @@ describe('Pitch Routes - /bt-api/pitches', () => {
             // Verify balls_before and strikes_before defaulted to 0 in the INSERT
             const insertCall = client.query.mock.calls[1];
             const insertParams = insertCall[1];
-            // balls_before is param index 14, strikes_before is param index 15
-            expect(insertParams[14]).toBe(0);
+            // INSERT params (0-indexed): id, at_bat_id, game_id, pitcher_id, batter_id, opponent_batter_id,
+            // pitch_number, pitch_type, velocity, location_x, location_y, target_location_x, target_location_y,
+            // target_zone, zone, balls_before (15), strikes_before (16), pitch_result, team_side
             expect(insertParams[15]).toBe(0);
+            expect(insertParams[16]).toBe(0);
         });
 
         it('returns 500 when required fields are missing', async () => {
