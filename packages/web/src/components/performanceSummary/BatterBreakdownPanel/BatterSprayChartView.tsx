@@ -5,17 +5,21 @@ import { theme } from '../../../styles/theme';
 
 const SIZE = 240;
 const CX = SIZE / 2;
-const CY = SIZE - 20;
+const CY = SIZE - 25;
+// Real baseball field foul lines are 90° apart (±45° from vertical). We use
+// MAX_R sized so the foul-line tips at depth 1.0 stay inside the SVG.
+const MAX_R = Math.min(CX - 8, CY - 8) / Math.sin((45 * Math.PI) / 180);
+const FOUL_ANGLE = 45;
 
 const FIELD_LOCATIONS: Record<FieldLocation, { angle: number; depth: number }> = {
-    left_field_line: { angle: -60, depth: 0.82 },
-    left_center_gap: { angle: -35, depth: 0.88 },
-    center_field: { angle: 0, depth: 0.92 },
-    right_center_gap: { angle: 35, depth: 0.88 },
-    right_field_line: { angle: 60, depth: 0.82 },
-    infield_left: { angle: -25, depth: 0.42 },
+    left_field_line: { angle: -42, depth: 0.95 },
+    left_center_gap: { angle: -25, depth: 0.92 },
+    center_field: { angle: 0, depth: 0.95 },
+    right_center_gap: { angle: 25, depth: 0.92 },
+    right_field_line: { angle: 42, depth: 0.95 },
+    infield_left: { angle: -28, depth: 0.42 },
     infield_center: { angle: 0, depth: 0.38 },
-    infield_right: { angle: 25, depth: 0.42 },
+    infield_right: { angle: 28, depth: 0.42 },
 };
 
 // Mirrors the trajectory aesthetic from BaseballDiamond (web): arc/line/squiggle.
@@ -45,14 +49,12 @@ const RESULT_SYMBOL: Record<string, string> = {
 
 function toXY(angleDeg: number, depth: number) {
     const rad = ((angleDeg - 90) * Math.PI) / 180;
-    const maxR = CY - 8;
-    return { x: CX + depth * maxR * Math.cos(rad), y: CY + depth * maxR * Math.sin(rad) };
+    return { x: CX + depth * MAX_R * Math.cos(rad), y: CY + depth * MAX_R * Math.sin(rad) };
 }
 
 function arcPath(startAngle: number, endAngle: number, r: number): string {
-    const maxR = CY - 8;
-    const s = toXY(startAngle, r / maxR);
-    const e = toXY(endAngle, r / maxR);
+    const s = toXY(startAngle, r / MAX_R);
+    const e = toXY(endAngle, r / MAX_R);
     return `M ${CX} ${CY} L ${s.x} ${s.y} A ${r} ${r} 0 0 1 ${e.x} ${e.y} Z`;
 }
 
@@ -100,21 +102,20 @@ interface Props {
 
 export default function BatterSprayChartView({ sprayData }: Props) {
     const plays = sprayData.filter((p) => p.field_location);
-    const maxR = CY - 8;
     const typesPresent = Array.from(new Set(plays.map((p) => p.contact_type).filter((t): t is ContactType => Boolean(t))));
 
     return (
         <Wrapper>
             <ChartLabel>Spray Chart</ChartLabel>
             <svg width={SIZE} height={SIZE} style={{ display: 'block' }}>
-                {/* Outfield grass */}
-                <path d={arcPath(-65, 65, maxR)} fill="#86efac" stroke="#166534" strokeWidth={1} />
+                {/* Outfield grass — drawn within fair territory plus a small buffer */}
+                <path d={arcPath(-FOUL_ANGLE, FOUL_ANGLE, MAX_R)} fill="#86efac" stroke="#166534" strokeWidth={1} />
                 {/* Infield dirt */}
-                <path d={arcPath(-65, 65, maxR * 0.52)} fill="#fde68a" stroke="#92400e" strokeWidth={0.5} />
+                <path d={arcPath(-FOUL_ANGLE, FOUL_ANGLE, MAX_R * 0.52)} fill="#fde68a" stroke="#92400e" strokeWidth={0.5} />
                 {/* Foul lines */}
                 {(() => {
-                    const left = toXY(-60, 1.0);
-                    const right = toXY(60, 1.0);
+                    const left = toXY(-FOUL_ANGLE, 1.0);
+                    const right = toXY(FOUL_ANGLE, 1.0);
                     return (
                         <>
                             <line x1={CX} y1={CY} x2={left.x} y2={left.y} stroke="#92400e" strokeWidth={1} strokeDasharray="4,3" />
@@ -144,8 +145,9 @@ export default function BatterSprayChartView({ sprayData }: Props) {
                             d={trajectoryPath(x, y, play.contact_type)}
                             fill="none"
                             stroke={color}
-                            strokeWidth={1.25}
-                            opacity={0.4}
+                            strokeWidth={2.25}
+                            opacity={0.7}
+                            strokeLinecap="round"
                         />
                     );
                 })}

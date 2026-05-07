@@ -6,22 +6,21 @@ import { SprayChartData, FieldLocation, ContactType } from '@pitch-tracker/share
 
 const SIZE = 220;
 const CX = SIZE / 2;
-const CY = SIZE - 20;
-
-// Angles measured from CY point, counter-clockwise (left field line = ~315°, right = ~225°)
-// In SVG: 0° = right, going clockwise. We'll use standard outfield angles.
-// Left foul line = 225° from center, right foul line = 315° from center (in standard coords)
-// Translate: left line angle from our CX/CY = 135° (SVG: y down, x right)
+const CY = SIZE - 22;
+// Real baseball field foul lines are 90° apart (±45° from vertical). MAX_R
+// is sized so the foul-line tips at depth 1.0 stay inside the SVG.
+const FOUL_ANGLE = 45;
+const MAX_R = Math.min(CX - 8, CY - 8) / Math.sin((FOUL_ANGLE * Math.PI) / 180);
 
 const FIELD_LOCATIONS: Record<FieldLocation, { angle: number; depth: number }> = {
-    left_field_line: { angle: -60, depth: 0.82 },
-    left_center_gap: { angle: -35, depth: 0.88 },
-    center_field: { angle: 0, depth: 0.92 },
-    right_center_gap: { angle: 35, depth: 0.88 },
-    right_field_line: { angle: 60, depth: 0.82 },
-    infield_left: { angle: -25, depth: 0.42 },
+    left_field_line: { angle: -42, depth: 0.95 },
+    left_center_gap: { angle: -25, depth: 0.92 },
+    center_field: { angle: 0, depth: 0.95 },
+    right_center_gap: { angle: 25, depth: 0.92 },
+    right_field_line: { angle: 42, depth: 0.95 },
+    infield_left: { angle: -28, depth: 0.42 },
     infield_center: { angle: 0, depth: 0.38 },
-    infield_right: { angle: 25, depth: 0.42 },
+    infield_right: { angle: 28, depth: 0.42 },
 };
 
 // Mirrors the trajectory aesthetic from the web BaseballDiamond: arc/line/squiggle.
@@ -51,8 +50,7 @@ const RESULT_SYMBOL: Record<string, string> = {
 
 function toXY(angleDeg: number, depth: number): { x: number; y: number } {
     const rad = ((angleDeg - 90) * Math.PI) / 180;
-    const maxRadius = CY - 8;
-    const r = depth * maxRadius;
+    const r = depth * MAX_R;
     return {
         x: CX + r * Math.cos(rad),
         y: CY + r * Math.sin(rad),
@@ -60,8 +58,8 @@ function toXY(angleDeg: number, depth: number): { x: number; y: number } {
 }
 
 function arcPath(startAngle: number, endAngle: number, radius: number): string {
-    const start = toXY(startAngle, radius / (CY - 8));
-    const end = toXY(endAngle, radius / (CY - 8));
+    const start = toXY(startAngle, radius / MAX_R);
+    const end = toXY(endAngle, radius / MAX_R);
     return `M ${CX} ${CY} L ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y} Z`;
 }
 
@@ -114,14 +112,14 @@ export default function SprayChartView({ sprayData }: Props) {
         <View style={styles.wrapper}>
             <Text style={styles.title}>Spray Chart</Text>
             <Svg width={SIZE} height={SIZE}>
-                {/* Outfield grass */}
-                <Path d={arcPath(-65, 65, CY - 10)} fill="#86efac" stroke="#166534" strokeWidth={1} />
+                {/* Outfield grass — drawn within fair territory */}
+                <Path d={arcPath(-FOUL_ANGLE, FOUL_ANGLE, MAX_R)} fill="#86efac" stroke="#166534" strokeWidth={1} />
                 {/* Infield dirt */}
-                <Path d={arcPath(-65, 65, (CY - 10) * 0.52)} fill="#fde68a" stroke="#92400e" strokeWidth={0.5} />
+                <Path d={arcPath(-FOUL_ANGLE, FOUL_ANGLE, MAX_R * 0.52)} fill="#fde68a" stroke="#92400e" strokeWidth={0.5} />
                 {/* Foul lines */}
                 {(() => {
-                    const left = toXY(-60, 1.0);
-                    const right = toXY(60, 1.0);
+                    const left = toXY(-FOUL_ANGLE, 1.0);
+                    const right = toXY(FOUL_ANGLE, 1.0);
                     return (
                         <>
                             <Line x1={CX} y1={CY} x2={left.x} y2={left.y} stroke="#92400e" strokeWidth={1} strokeDasharray="4,3" />
@@ -151,8 +149,9 @@ export default function SprayChartView({ sprayData }: Props) {
                             d={trajectoryPath(x, y, play.contact_type)}
                             fill="none"
                             stroke={color}
-                            strokeWidth={1.25}
-                            opacity={0.4}
+                            strokeWidth={2.25}
+                            opacity={0.7}
+                            strokeLinecap="round"
                         />
                     );
                 })}
