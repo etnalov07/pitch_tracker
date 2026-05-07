@@ -4,35 +4,33 @@ import { Text } from 'react-native-paper';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { ContactType, FieldLocation, SprayChartData } from '@pitch-tracker/shared';
 
-// Realistic top-down baseball field. Home plate at the bottom point of an
-// arrowhead-shaped fair territory; foul lines run up-and-out at ~45° to the
-// outfield corners; outfield wall is a curved arc connecting the corners
-// across deep center. Foul territory (dirt) fills the canvas behind it; a
-// small infield diamond sits at home plate with home as its bottom vertex.
+// Realistic top-down baseball field. Fair territory is a hexagon (home at the
+// bottom point; foul lines run up-out at ~45° to LF/RF foul poles; outfield
+// wall has angled segments meeting in deep CF). A thick brown stroke around
+// the hexagon is the warning track / dirt foul-territory border. Infield is
+// a small dirt cutout at home with a curved back edge (the lip behind 2B).
 const SIZE = 240;
 
-// Anchor points
 const HOME = { x: 120, y: 220 };
-const FOUL_LEFT_TIP = { x: 15, y: 75 };
-const FOUL_RIGHT_TIP = { x: 225, y: 75 };
-const OUTFIELD_RADIUS = 160;
+const LF_POLE = { x: 12, y: 105 };
+const UPPER_LEFT = { x: 50, y: 30 };
+const UPPER_RIGHT = { x: 190, y: 30 };
+const RF_POLE = { x: 228, y: 105 };
 
-// Infield diamond: home at bottom, 2B at top, 1B/3B on the sides
 const FIRST = { x: 155, y: 185 };
 const SECOND = { x: 120, y: 150 };
 const THIRD = { x: 85, y: 185 };
-const MOUND = { x: 120, y: 185 };
+const MOUND = { x: 120, y: 178 };
 
-// Where each field_location bucket places its dot
 const FIELD_LOCATIONS: Record<FieldLocation, { x: number; y: number }> = {
-    left_field_line: { x: 45, y: 100 },
-    left_center_gap: { x: 80, y: 78 },
-    center_field: { x: 120, y: 60 },
-    right_center_gap: { x: 160, y: 78 },
-    right_field_line: { x: 195, y: 100 },
-    infield_left: { x: 92, y: 180 },
-    infield_center: { x: 120, y: 168 },
-    infield_right: { x: 148, y: 180 },
+    left_field_line: { x: 50, y: 100 },
+    left_center_gap: { x: 80, y: 60 },
+    center_field: { x: 120, y: 45 },
+    right_center_gap: { x: 160, y: 60 },
+    right_field_line: { x: 190, y: 100 },
+    infield_left: { x: 92, y: 175 },
+    infield_center: { x: 120, y: 162 },
+    infield_right: { x: 148, y: 175 },
 };
 
 const CONTACT_TYPE_COLOR: Record<ContactType, string> = {
@@ -59,19 +57,14 @@ const RESULT_SYMBOL: Record<string, string> = {
     out: 'X',
 };
 
-// Stable jitter seeded by index so dots don't move on re-render
 function jitter(idx: number, range: number): number {
     return ((Math.sin(idx * 127.1 + 311.7) * 43758.5) % 1) * range - range / 2;
 }
 
-// Trajectory path from home plate to landing spot.
 function trajectoryPath(endX: number, endY: number, type?: ContactType): string {
     const startX = HOME.x;
     const startY = HOME.y;
-
-    if (type === 'line_drive' || type === 'bunt') {
-        return `M ${startX} ${startY} L ${endX} ${endY}`;
-    }
+    if (type === 'line_drive' || type === 'bunt') return `M ${startX} ${startY} L ${endX} ${endY}`;
     if (type === 'fly_ball' || type === 'pop_up') {
         const midX = (startX + endX) / 2;
         const peakOffset = type === 'pop_up' ? 60 : 36;
@@ -102,61 +95,51 @@ export default function SprayChartView({ sprayData }: Props) {
     const plays = sprayData.filter((p) => p.field_location);
     const typesPresent = Array.from(new Set(plays.map((p) => p.contact_type).filter((t): t is ContactType => Boolean(t))));
 
-    const fairTerritoryPath = `M ${HOME.x} ${HOME.y} L ${FOUL_LEFT_TIP.x} ${FOUL_LEFT_TIP.y} A ${OUTFIELD_RADIUS} ${OUTFIELD_RADIUS} 0 0 1 ${FOUL_RIGHT_TIP.x} ${FOUL_RIGHT_TIP.y} Z`;
-    const infieldPath = `M ${HOME.x} ${HOME.y} L ${FIRST.x} ${FIRST.y} L ${SECOND.x} ${SECOND.y} L ${THIRD.x} ${THIRD.y} Z`;
+    const fieldHexPath = `M ${HOME.x} ${HOME.y} L ${LF_POLE.x} ${LF_POLE.y} L ${UPPER_LEFT.x} ${UPPER_LEFT.y} A 200 200 0 0 1 ${UPPER_RIGHT.x} ${UPPER_RIGHT.y} L ${RF_POLE.x} ${RF_POLE.y} Z`;
+    const infieldPath = `M ${HOME.x} ${HOME.y} L ${FIRST.x} ${FIRST.y} Q ${HOME.x} 115 ${THIRD.x} ${THIRD.y} Z`;
 
     return (
         <View style={styles.wrapper}>
             <Text style={styles.title}>Spray Chart</Text>
             <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
-                {/* Foul territory — dirt fills the canvas */}
-                <Rect x={0} y={0} width={SIZE} height={SIZE} fill="#d4a76a" opacity={0.55} />
-                {/* Fair territory — green grass arrowhead with curved outfield wall */}
-                <Path d={fairTerritoryPath} fill="#86efac" stroke="#166534" strokeWidth={1.5} />
+                {/* Off-field background */}
+                <Rect x={0} y={0} width={SIZE} height={SIZE} fill="#d1fae5" />
+                {/* Field hexagon: thick brown stroke is the warning-track / dirt border */}
+                <Path
+                    d={fieldHexPath}
+                    fill="#22c55e"
+                    stroke="#a16207"
+                    strokeWidth={9}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                />
                 {/* Foul lines (white chalk) */}
-                <Line
-                    x1={HOME.x}
-                    y1={HOME.y}
-                    x2={FOUL_LEFT_TIP.x}
-                    y2={FOUL_LEFT_TIP.y}
-                    stroke="white"
-                    strokeWidth={1.5}
-                    opacity={0.9}
-                />
-                <Line
-                    x1={HOME.x}
-                    y1={HOME.y}
-                    x2={FOUL_RIGHT_TIP.x}
-                    y2={FOUL_RIGHT_TIP.y}
-                    stroke="white"
-                    strokeWidth={1.5}
-                    opacity={0.9}
-                />
-                {/* Infield dirt diamond */}
-                <Path d={infieldPath} fill="#c4915a" stroke="#92400e" strokeWidth={1} />
-                {/* Baseline paths (white chalk) */}
-                <Line x1={HOME.x} y1={HOME.y} x2={FIRST.x} y2={FIRST.y} stroke="white" strokeWidth={1.5} opacity={0.9} />
-                <Line x1={FIRST.x} y1={FIRST.y} x2={SECOND.x} y2={SECOND.y} stroke="white" strokeWidth={1.5} opacity={0.6} />
-                <Line x1={SECOND.x} y1={SECOND.y} x2={THIRD.x} y2={THIRD.y} stroke="white" strokeWidth={1.5} opacity={0.6} />
-                <Line x1={THIRD.x} y1={THIRD.y} x2={HOME.x} y2={HOME.y} stroke="white" strokeWidth={1.5} opacity={0.9} />
+                <Line x1={HOME.x} y1={HOME.y} x2={LF_POLE.x} y2={LF_POLE.y} stroke="white" strokeWidth={1.6} opacity={0.95} />
+                <Line x1={HOME.x} y1={HOME.y} x2={RF_POLE.x} y2={RF_POLE.y} stroke="white" strokeWidth={1.6} opacity={0.95} />
+                {/* Infield dirt cutout */}
+                <Path d={infieldPath} fill="#c2761d" stroke="#92400e" strokeWidth={0.8} />
+                {/* Baselines */}
+                <Line x1={HOME.x} y1={HOME.y} x2={FIRST.x} y2={FIRST.y} stroke="white" strokeWidth={1.6} opacity={0.95} />
+                <Line x1={THIRD.x} y1={THIRD.y} x2={HOME.x} y2={HOME.y} stroke="white" strokeWidth={1.6} opacity={0.95} />
                 {/* Pitcher's mound */}
-                <Circle cx={MOUND.x} cy={MOUND.y} r={4.5} fill="#c4915a" stroke="#92400e" strokeWidth={1} />
-                {/* Bases — small white squares (rotated) */}
+                <Circle cx={MOUND.x} cy={MOUND.y} r={5} fill="#c2761d" stroke="#92400e" strokeWidth={1} />
+                <Circle cx={MOUND.x} cy={MOUND.y} r={1.5} fill="white" />
+                {/* Bases */}
                 {[
-                    [HOME.x, HOME.y],
-                    [FIRST.x, FIRST.y],
-                    [SECOND.x, SECOND.y],
-                    [THIRD.x, THIRD.y],
-                ].map(([bx, by], i) => (
+                    [HOME.x, HOME.y, 5],
+                    [FIRST.x, FIRST.y, 4],
+                    [SECOND.x, SECOND.y, 4],
+                    [THIRD.x, THIRD.y, 4],
+                ].map(([bx, by, half], i) => (
                     <Rect
                         key={`base-${i}`}
-                        x={bx - 4}
-                        y={by - 4}
-                        width={8}
-                        height={8}
+                        x={bx - half}
+                        y={by - half}
+                        width={half * 2}
+                        height={half * 2}
                         fill="white"
                         stroke="#374151"
-                        strokeWidth={1}
+                        strokeWidth={0.8}
                         transform={`rotate(45 ${bx} ${by})`}
                     />
                 ))}
