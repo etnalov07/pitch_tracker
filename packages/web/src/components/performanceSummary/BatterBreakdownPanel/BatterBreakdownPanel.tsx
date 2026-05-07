@@ -194,7 +194,19 @@ function PitchCardItem({ pitch, bats }: { pitch: BatterAtBatPitch; bats?: string
     );
 }
 
-function BatterRow({ batter, pitcherId, gameId }: { batter: BatterBreakdown; pitcherId?: string; gameId?: string }) {
+function BatterRow({
+    batter,
+    pitcherId,
+    gameId,
+    opponentTeamId,
+    opponentName,
+}: {
+    batter: BatterBreakdown;
+    pitcherId?: string;
+    gameId?: string;
+    opponentTeamId?: string;
+    opponentName?: string;
+}) {
     const [expanded, setExpanded] = useState(true);
     const [showCharts, setShowCharts] = useState(false);
     const [sprayData, setSprayData] = useState<SprayChartData[] | null>(null);
@@ -213,7 +225,7 @@ function BatterRow({ batter, pitcherId, gameId }: { batter: BatterBreakdown; pit
         try {
             const [spray, locations] = await Promise.all([
                 analyticsService.getSprayChart(batter.batter_id, gameId),
-                analyticsService.getPitchLocations(batter.batter_id, pitcherId),
+                analyticsService.getPitchLocations(batter.batter_id, pitcherId, opponentTeamId, opponentName),
             ]);
             setSprayData(spray);
             setPitchLocations(locations);
@@ -223,7 +235,7 @@ function BatterRow({ batter, pitcherId, gameId }: { batter: BatterBreakdown; pit
         } finally {
             setChartsLoading(false);
         }
-    }, [showCharts, sprayData, batter.batter_id, gameId, pitcherId]);
+    }, [showCharts, sprayData, batter.batter_id, gameId, pitcherId, opponentTeamId, opponentName]);
 
     return (
         <BatterRowContainer>
@@ -310,9 +322,13 @@ interface Props {
     loading?: boolean;
     pitcherId?: string;
     gameId?: string;
+    /** Scope the heat map to all games against this opponent team (Our Lineup view). */
+    opponentTeamId?: string;
+    /** Fallback when opponent_team_id is null — match by free-text opponent name. */
+    opponentName?: string;
 }
 
-const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading, pitcherId, gameId }) => {
+const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading, pitcherId, gameId, opponentTeamId, opponentName }) => {
     if (loading) {
         return <EmptyText>Loading batter breakdown…</EmptyText>;
     }
@@ -350,7 +366,14 @@ const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading, pitcherId, g
                             {[...section.batters]
                                 .sort((a, b) => a.batting_order - b.batting_order)
                                 .map((batter) => (
-                                    <BatterRow key={batter.batter_id} batter={batter} pitcherId={pitcherId} gameId={gameId} />
+                                    <BatterRow
+                                        key={batter.batter_id}
+                                        batter={batter}
+                                        pitcherId={pitcherId}
+                                        gameId={gameId}
+                                        opponentTeamId={opponentTeamId}
+                                        opponentName={opponentName}
+                                    />
                                 ))}
                         </BatterList>
                     </div>

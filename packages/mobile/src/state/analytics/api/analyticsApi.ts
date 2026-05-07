@@ -16,8 +16,17 @@ export const analyticsApi = {
         return response.data.tendencies;
     },
 
-    getPitchLocations: async (batterId: string, pitcherId?: string): Promise<PitchLocationData[]> => {
-        const params = pitcherId ? `?pitcherId=${pitcherId}` : '';
+    getPitchLocations: async (
+        batterId: string,
+        pitcherId?: string,
+        opponentTeamId?: string,
+        opponentName?: string
+    ): Promise<PitchLocationData[]> => {
+        const qs = new URLSearchParams();
+        if (pitcherId) qs.append('pitcherId', pitcherId);
+        if (opponentTeamId) qs.append('opponentTeamId', opponentTeamId);
+        if (opponentName) qs.append('opponentName', opponentName);
+        const params = qs.toString() ? `?${qs.toString()}` : '';
         const response = await api.get<{ pitches: PitchLocationData[] }>(`/analytics/batter/${batterId}/pitch-locations${params}`);
         return response.data.pitches ?? [];
     },

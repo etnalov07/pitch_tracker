@@ -24,9 +24,21 @@ export const analyticsService = {
         return response.data;
     },
 
-    // Get raw pitch locations for scatter plot (colored by type)
-    getPitchLocations: async (batterId: string, pitcherId?: string): Promise<PitchLocationData[]> => {
-        const params = pitcherId ? `?pitcherId=${pitcherId}` : '';
+    // Get raw pitch locations for scatter plot (colored by type).
+    // pitcherId scopes to a single pitcher (Opponent Lineup view); opponentTeamId
+    // / opponentName scope to all games against the same opposing team (Our
+    // Lineup view — e.g. every game in a series vs the Wolves).
+    getPitchLocations: async (
+        batterId: string,
+        pitcherId?: string,
+        opponentTeamId?: string,
+        opponentName?: string
+    ): Promise<PitchLocationData[]> => {
+        const qs = new URLSearchParams();
+        if (pitcherId) qs.append('pitcherId', pitcherId);
+        if (opponentTeamId) qs.append('opponentTeamId', opponentTeamId);
+        if (opponentName) qs.append('opponentName', opponentName);
+        const params = qs.toString() ? `?${qs.toString()}` : '';
         const response = await api.get<{ pitches: PitchLocationData[] }>(`/analytics/batter/${batterId}/pitch-locations${params}`);
         return response.data.pitches ?? [];
     },

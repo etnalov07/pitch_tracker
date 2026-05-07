@@ -32,9 +32,11 @@ export class AnalyticsController {
     async getBatterPitchLocations(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { batterId } = req.params;
-            const { pitcherId } = req.query;
+            const { pitcherId, opponentTeamId, opponentName } = req.query;
             const pid = typeof pitcherId === 'string' ? pitcherId : undefined;
-            const pitches = await analyticsService.getBatterPitchLocations(batterId as string, pid);
+            const otid = typeof opponentTeamId === 'string' ? opponentTeamId : undefined;
+            const oname = typeof opponentName === 'string' ? opponentName : undefined;
+            const pitches = await analyticsService.getBatterPitchLocations(batterId as string, pid, otid, oname);
             res.json({ pitches });
         } catch (error) {
             next(error);

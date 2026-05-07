@@ -152,18 +152,43 @@ export class AnalyticsService {
         return { batter_id: batterId, pitcher_id: pitcherId, zones };
     }
 
-    // Raw pitch locations for a batter (scatter plot by pitch type)
-    async getBatterPitchLocations(batterId: string, pitcherId?: string): Promise<PitchLocationData[]> {
+    // Raw pitch locations for a batter (scatter plot by pitch type).
+    // Optional scopes: a specific pitcher (used for "Opponent Lineup" view) or
+    // an opponent team (used for "Our Lineup" view — aggregates across every
+    // game played against the same opponent, e.g. a 3-game series).
+    async getBatterPitchLocations(
+        batterId: string,
+        pitcherId?: string,
+        opponentTeamId?: string,
+        opponentName?: string
+    ): Promise<PitchLocationData[]> {
         const params: (string | undefined)[] = [batterId];
-        const pitcherFilter = pitcherId ? ' AND pitcher_id = $2' : '';
-        if (pitcherId) params.push(pitcherId);
+        const filters: string[] = [
+            '(p.batter_id = $1 OR p.opponent_batter_id = $1)',
+            'p.location_x IS NOT NULL',
+            'p.location_y IS NOT NULL',
+        ];
+
+        if (pitcherId) {
+            params.push(pitcherId);
+            filters.push(`p.pitcher_id = $${params.length}`);
+        }
+
+        const needGamesJoin = Boolean(opponentTeamId || opponentName);
+        if (opponentTeamId) {
+            params.push(opponentTeamId);
+            filters.push(`g.opponent_team_id = $${params.length}`);
+        } else if (opponentName) {
+            params.push(opponentName);
+            filters.push(`g.opponent_name = $${params.length}`);
+        }
+
+        const fromClause = needGamesJoin ? 'FROM pitches p JOIN games g ON p.game_id = g.id' : 'FROM pitches p';
 
         const result = await query(
-            `SELECT location_x, location_y, pitch_type, pitch_result, velocity
-             FROM pitches
-             WHERE (batter_id = $1 OR opponent_batter_id = $1)
-             AND location_x IS NOT NULL
-             AND location_y IS NOT NULL${pitcherFilter}`,
+            `SELECT p.location_x, p.location_y, p.pitch_type, p.pitch_result, p.velocity
+             ${fromClause}
+             WHERE ${filters.join(' AND ')}`,
             params
         );
 

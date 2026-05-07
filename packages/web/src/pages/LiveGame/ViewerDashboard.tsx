@@ -240,6 +240,8 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                                 sections={[{ title: `Our Lineup vs. ${opponentPitcherName}`, batters: myTeamBreakdown ?? [] }]}
                                 loading={breakdownLoading}
                                 gameId={game.id}
+                                opponentTeamId={game.opponent_team_id ?? undefined}
+                                opponentName={game.opponent_name ?? undefined}
                             />
                         ) : breakdownTab === 'opponent' || game.charting_mode !== 'both' ? (
                             <BatterBreakdownPanel
@@ -253,6 +255,8 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                                 sections={[{ title: `Our Lineup vs. ${opponentPitcherName}`, batters: myTeamBreakdown ?? [] }]}
                                 loading={breakdownLoading}
                                 gameId={game.id}
+                                opponentTeamId={game.opponent_team_id ?? undefined}
+                                opponentName={game.opponent_name ?? undefined}
                             />
                         )}
                     </BreakdownWrapper>
