@@ -144,6 +144,14 @@ export function useLiveGameState() {
         }
     }, [isUserBatting, game?.current_inning, game?.inning_half, game?.charting_mode, showInningChange]);
 
+    const refreshOpponentLineup = () => {
+        if (!gameId) return;
+        gamesApi
+            .getOpponentLineup(gameId)
+            .then((lineup) => setOpponentLineup(lineup || []))
+            .catch((err) => console.error('Failed to refresh opponent lineup:', err));
+    };
+
     useEffect(() => {
         if (gameId) {
             dispatch(fetchGameById(gameId));
@@ -281,6 +289,7 @@ export function useLiveGameState() {
         availablePitchTypes,
         // Lineup
         opponentLineup,
+        refreshOpponentLineup,
         // Outs
         currentOuts,
         setCurrentOuts,

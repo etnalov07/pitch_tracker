@@ -175,6 +175,19 @@ export const gamesApi = {
         return response.data.lineup;
     },
 
+    /**
+     * In-game substitute for an opponent batter. Inserts a new lineup row with
+     * is_starter=false, inning_entered set, and chains replaced_by_id from the
+     * original player. Returns the new sub row.
+     */
+    substituteOpponentPlayer: async (
+        playerId: string,
+        sub: { player_name: string; inning_entered: number; position?: string; bats?: 'R' | 'L' | 'S' }
+    ): Promise<OpponentLineupPlayer> => {
+        const response = await api.post<{ player: OpponentLineupPlayer }>(`/opponent-lineup/player/${playerId}/substitute`, sub);
+        return response.data.player;
+    },
+
     createOpponentLineupBulk: async (
         gameId: string,
         players: {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
-import { OpponentLineupPlayer } from '../../../types';
+import { gamesApi } from '../../../state/games/api/gamesApi';
+import { OpponentLineupPlayer, OpponentRosterPlayer } from '../../../types';
 import {
     Overlay,
     Modal,
@@ -9,11 +10,15 @@ import {
     CloseButton,
     BatterList,
     BatterCard,
+    BatterCardActions,
     BatterInfo,
     BattingOrderBadge,
     BatterName,
     BatterStats,
     NextUpBadge,
+    SubActionButton,
+    SubFormCard,
+    SubFormHeader,
     EmptyMessage,
     AddBatterButton,
     AddBatterForm,
@@ -29,7 +34,12 @@ import {
 interface BatterSelectorProps {
     gameId: string;
     currentBattingOrder?: number;
+    /** Current inning, used to default the inning_entered for substitutions. */
+    currentInning?: number;
     onBatterSelected: (batter: OpponentLineupPlayer) => void;
+    /** Fires after a substitution lands so the parent can refetch its own
+     *  opponent lineup state. Optional — modal works without it. */
+    onLineupChanged?: () => void;
     onClose: () => void;
     teamSide?: 'home' | 'away';
 }
@@ -37,11 +47,14 @@ interface BatterSelectorProps {
 const BatterSelector: React.FC<BatterSelectorProps> = ({
     gameId,
     currentBattingOrder = 1,
+    currentInning = 1,
     onBatterSelected,
+    onLineupChanged,
     onClose,
     teamSide,
 }) => {
     const [lineup, setLineup] = useState<OpponentLineupPlayer[]>([]);
+    const [knownPlayers, setKnownPlayers] = useState<OpponentRosterPlayer[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
     const [newName, setNewName] = useState('');
@@ -49,21 +62,35 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({
     const [newPosition, setNewPosition] = useState('');
     const [newBats, setNewBats] = useState<'R' | 'L' | 'S'>('R');
     const [saving, setSaving] = useState(false);
+    // Inline substitution state — keyed by the original lineup row's id
+    const [subbingId, setSubbingId] = useState<string | null>(null);
+    const [subName, setSubName] = useState('');
+    const [subPosition, setSubPosition] = useState('');
+    const [subBats, setSubBats] = useState<'R' | 'L' | 'S'>('R');
+    const [subInning, setSubInning] = useState<string>(String(currentInning));
 
     useEffect(() => {
-        const fetchLineup = async () => {
+        const fetchAll = async () => {
             try {
-                const response = await api.get<{ lineup: OpponentLineupPlayer[] }>(`/opponent-lineup/game/${gameId}`);
-                const all = response.data.lineup || [];
+                const [lineupRes, roster] = await Promise.all([
+                    api.get<{ lineup: OpponentLineupPlayer[] }>(`/opponent-lineup/game/${gameId}`),
+                    gamesApi.getOpponentRoster(gameId).catch(() => ({ pitchers: [], batters: [], players: [] })),
+                ]);
+                const all = lineupRes.data.lineup || [];
                 setLineup(teamSide ? all.filter((p) => p.team_side === teamSide) : all);
+                setKnownPlayers(roster.players ?? []);
             } catch (error) {
                 console.error('Failed to fetch lineup:', error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchLineup();
+        fetchAll();
     }, [gameId, teamSide]);
+
+    useEffect(() => {
+        setSubInning(String(currentInning));
+    }, [currentInning]);
 
     const handleSelectBatter = (batter: OpponentLineupPlayer) => {
         if (batter.replaced_by_id) return; // Can't select subbed-out players
@@ -139,6 +166,60 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({
         }
     };
 
+    const handleStartSub = (batter: OpponentLineupPlayer) => {
+        setSubbingId(batter.id);
+        setSubName('');
+        setSubPosition(batter.position ?? '');
+        setSubBats((batter.bats as 'R' | 'L' | 'S') || 'R');
+        setSubInning(String(currentInning));
+    };
+
+    const handleCancelSub = () => {
+        setSubbingId(null);
+        setSubName('');
+        setSubPosition('');
+        setSubBats('R');
+    };
+
+    const handleSubNameChange = (value: string) => {
+        setSubName(value);
+        const known = knownPlayers.find((p) => p.name === value);
+        if (known?.bats) setSubBats(known.bats as 'R' | 'L' | 'S');
+    };
+
+    const handleSaveSub = async (originalId: string) => {
+        if (!subName.trim()) return;
+        const inningNum = parseInt(subInning, 10);
+        if (Number.isNaN(inningNum) || inningNum < 1) return;
+        setSaving(true);
+        try {
+            const newPlayer = await gamesApi.substituteOpponentPlayer(originalId, {
+                player_name: subName.trim(),
+                inning_entered: inningNum,
+                position: subPosition.trim() || undefined,
+                bats: subBats,
+            });
+            // Update local lineup: mark original as replaced and append the sub.
+            setLineup((prev) => [
+                ...prev.map((p) => (p.id === originalId ? { ...p, replaced_by_id: newPlayer.id } : p)),
+                newPlayer,
+            ]);
+            handleCancelSub();
+            // Notify the parent so any cached lineup state outside this modal can refresh.
+            onLineupChanged?.();
+            // Auto-select the sub if they're stepping in for the current batting slot.
+            if (newPlayer.batting_order === currentBattingOrder) {
+                onBatterSelected(newPlayer);
+                onClose();
+            }
+        } catch (error) {
+            console.error('Failed to substitute batter:', error);
+            alert('Failed to substitute batter. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     return (
         <Overlay onClick={onClose}>
             <Modal onClick={(e) => e.stopPropagation()}>
@@ -146,6 +227,14 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({
                     <ModalTitle>Select Batter</ModalTitle>
                     <CloseButton onClick={onClose}>&times;</CloseButton>
                 </ModalHeader>
+
+                {knownPlayers.length > 0 && (
+                    <datalist id="batter-selector-known-players">
+                        {knownPlayers.map((p) => (
+                            <option key={p.normalized_name} value={p.name} />
+                        ))}
+                    </datalist>
+                )}
 
                 {loading ? (
                     <EmptyMessage>Loading lineup...</EmptyMessage>
@@ -155,21 +244,101 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({
                     <BatterList>
                         {activeLineup.map((batter) => {
                             const isNext = batter.batting_order === nextBatterOrder;
+                            const isSubbing = subbingId === batter.id;
                             return (
-                                <BatterCard key={batter.id} isNext={isNext} onClick={() => handleSelectBatter(batter)}>
-                                    <BatterInfo>
-                                        <BattingOrderBadge>{batter.batting_order}</BattingOrderBadge>
-                                        <div>
-                                            <BatterName>{batter.player_name}</BatterName>
-                                            <BatterStats>
-                                                {batter.position && `${batter.position} • `}
-                                                Bats: {batter.bats}
-                                                {!batter.is_starter && ` • Sub (Inn ${batter.inning_entered})`}
-                                            </BatterStats>
-                                        </div>
-                                    </BatterInfo>
-                                    {isNext && <NextUpBadge>Next Up</NextUpBadge>}
-                                </BatterCard>
+                                <React.Fragment key={batter.id}>
+                                    <BatterCard
+                                        isNext={isNext}
+                                        onClick={() => !isSubbing && handleSelectBatter(batter)}
+                                        role="button"
+                                        tabIndex={0}
+                                    >
+                                        <BatterInfo>
+                                            <BattingOrderBadge>{batter.batting_order}</BattingOrderBadge>
+                                            <div>
+                                                <BatterName>{batter.player_name}</BatterName>
+                                                <BatterStats>
+                                                    {batter.position && `${batter.position} • `}
+                                                    Bats: {batter.bats}
+                                                    {!batter.is_starter && ` • Sub (Inn ${batter.inning_entered})`}
+                                                </BatterStats>
+                                            </div>
+                                        </BatterInfo>
+                                        <BatterCardActions>
+                                            {isNext && <NextUpBadge>Next Up</NextUpBadge>}
+                                            <SubActionButton
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (isSubbing) handleCancelSub();
+                                                    else handleStartSub(batter);
+                                                }}
+                                                disabled={saving && !isSubbing}
+                                            >
+                                                {isSubbing ? 'Cancel' : 'Sub'}
+                                            </SubActionButton>
+                                        </BatterCardActions>
+                                    </BatterCard>
+                                    {isSubbing && (
+                                        <SubFormCard onClick={(e) => e.stopPropagation()}>
+                                            <SubFormHeader>
+                                                Substitute for {batter.player_name} (#{batter.batting_order})
+                                            </SubFormHeader>
+                                            <FormRow>
+                                                <FormLabel>Name</FormLabel>
+                                                <FormInput
+                                                    type="text"
+                                                    placeholder="Pinch hitter / sub name"
+                                                    value={subName}
+                                                    onChange={(e) => handleSubNameChange(e.target.value)}
+                                                    list={knownPlayers.length > 0 ? 'batter-selector-known-players' : undefined}
+                                                    autoFocus
+                                                />
+                                            </FormRow>
+                                            <FormRow>
+                                                <FormLabel>Inning</FormLabel>
+                                                <FormInput
+                                                    type="number"
+                                                    min={1}
+                                                    value={subInning}
+                                                    onChange={(e) => setSubInning(e.target.value)}
+                                                />
+                                            </FormRow>
+                                            <FormRow>
+                                                <FormLabel>Position</FormLabel>
+                                                <FormInput
+                                                    type="text"
+                                                    placeholder="e.g. PH, RF"
+                                                    value={subPosition}
+                                                    onChange={(e) => setSubPosition(e.target.value)}
+                                                />
+                                            </FormRow>
+                                            <FormRow>
+                                                <FormLabel>Bats</FormLabel>
+                                                <FormSelect
+                                                    value={subBats}
+                                                    onChange={(e) => setSubBats(e.target.value as 'R' | 'L' | 'S')}
+                                                >
+                                                    <option value="R">Right</option>
+                                                    <option value="L">Left</option>
+                                                    <option value="S">Switch</option>
+                                                </FormSelect>
+                                            </FormRow>
+                                            <FormActions>
+                                                <CancelButton type="button" onClick={handleCancelSub} disabled={saving}>
+                                                    Cancel
+                                                </CancelButton>
+                                                <SaveButton
+                                                    type="button"
+                                                    onClick={() => handleSaveSub(batter.id)}
+                                                    disabled={saving || !subName.trim()}
+                                                >
+                                                    {saving ? 'Saving...' : 'Confirm Sub'}
+                                                </SaveButton>
+                                            </FormActions>
+                                        </SubFormCard>
+                                    )}
+                                </React.Fragment>
                             );
                         })}
                     </BatterList>
@@ -184,6 +353,7 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({
                                 placeholder="Player name"
                                 value={newName}
                                 onChange={(e) => setNewName(e.target.value)}
+                                list={knownPlayers.length > 0 ? 'batter-selector-known-players' : undefined}
                                 autoFocus
                             />
                         </FormRow>

@@ -844,7 +844,9 @@ const LiveGame: React.FC = () => {
                 <BatterSelector
                     gameId={gameId}
                     currentBattingOrder={currentBattingOrder}
+                    currentInning={game?.current_inning ?? 1}
                     onBatterSelected={actions.handleBatterSelected}
+                    onLineupChanged={state.refreshOpponentLineup}
                     onClose={() => setShowBatterSelector(false)}
                     teamSide={isScoutingMode ? (scoutingBattingSide as 'home' | 'away') : undefined}
                 />

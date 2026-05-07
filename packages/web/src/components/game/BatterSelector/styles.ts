@@ -57,7 +57,7 @@ export const BatterList = styled.div({
     gap: theme.spacing.sm,
 });
 
-export const BatterCard = styled.button<{ isNext?: boolean; isSubbed?: boolean }>((props) => ({
+export const BatterCard = styled.div<{ isNext?: boolean; isSubbed?: boolean }>((props) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -66,15 +66,63 @@ export const BatterCard = styled.button<{ isNext?: boolean; isSubbed?: boolean }
     borderRadius: theme.borderRadius.md,
     background: props.isSubbed ? theme.colors.gray[100] : props.isNext ? theme.colors.primary[50] : 'white',
     cursor: props.isSubbed ? 'default' : 'pointer',
-    textAlign: 'left',
+    textAlign: 'left' as const,
     width: '100%',
     opacity: props.isSubbed ? 0.6 : 1,
+    boxSizing: 'border-box' as const,
 
     '&:hover': {
         borderColor: props.isSubbed ? theme.colors.gray[200] : theme.colors.primary[400],
         background: props.isSubbed ? theme.colors.gray[100] : theme.colors.primary[50],
     },
 }));
+
+export const BatterCardActions = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+});
+
+export const SubActionButton = styled.button({
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    backgroundColor: 'white',
+    color: theme.colors.gray[700],
+    border: `1px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap' as const,
+
+    '&:hover': {
+        borderColor: theme.colors.primary[400],
+        color: theme.colors.primary[700],
+        backgroundColor: theme.colors.primary[50],
+    },
+
+    '&:disabled': {
+        opacity: 0.4,
+        cursor: 'not-allowed',
+    },
+});
+
+export const SubFormCard = styled.div({
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
+    padding: theme.spacing.md,
+    border: `1px solid ${theme.colors.primary[300]}`,
+    borderRadius: theme.borderRadius.md,
+    background: theme.colors.primary[50],
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.sm,
+});
+
+export const SubFormHeader = styled.div({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[800],
+});
 
 export const BatterInfo = styled.div({
     display: 'flex',
