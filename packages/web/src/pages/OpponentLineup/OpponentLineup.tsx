@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { gamesApi } from '../../state/games/api/gamesApi';
-import { BatterScoutingProfile, Game, OpponentPitcherProfile } from '../../types';
+import { BatterScoutingProfile, Game, OpponentLineupPlayer, OpponentPitcherProfile } from '../../types';
 import {
     Container,
     Header,
@@ -30,6 +30,8 @@ import {
     GameInfoText,
     GameInfoSubtext,
     HelpText,
+    PrefillBar,
+    PrefillButton,
 } from './styles';
 
 interface LineupEntry {
@@ -52,6 +54,8 @@ const OpponentLineup: React.FC = () => {
     const [startingPitcherName, setStartingPitcherName] = useState('');
     const [knownPitchers, setKnownPitchers] = useState<OpponentPitcherProfile[]>([]);
     const [knownBatters, setKnownBatters] = useState<BatterScoutingProfile[]>([]);
+    const [lastLineup, setLastLineup] = useState<OpponentLineupPlayer[]>([]);
+    const [prefillNote, setPrefillNote] = useState('');
 
     const [lineup, setLineup] = useState<LineupEntry[]>(
         Array.from({ length: 9 }, (_, i) => ({
@@ -77,9 +81,13 @@ const OpponentLineup: React.FC = () => {
                         bats: 'R' as const,
                     }))
                 );
-                const roster = await gamesApi.getOpponentRoster(gameId);
+                const [roster, last] = await Promise.all([
+                    gamesApi.getOpponentRoster(gameId),
+                    gamesApi.getLastLineupVsOpponent(gameId).catch(() => [] as OpponentLineupPlayer[]),
+                ]);
                 setKnownPitchers(roster.pitchers);
                 setKnownBatters(roster.batters);
+                setLastLineup(last);
             } catch {
                 setError('Failed to load game');
             } finally {
@@ -88,6 +96,27 @@ const OpponentLineup: React.FC = () => {
         };
         fetchGame();
     }, [gameId]);
+
+    const handleUseLastLineup = () => {
+        if (lastLineup.length === 0) return;
+        const size = game?.lineup_size ?? 9;
+        const slots: LineupEntry[] = Array.from({ length: size }, (_, i) => {
+            const prior = lastLineup.find((p) => p.batting_order === i + 1);
+            if (!prior) {
+                return { player_name: '', batting_order: i + 1, position: '', bats: 'R' as const };
+            }
+            const bats = prior.bats === 'L' || prior.bats === 'S' ? prior.bats : 'R';
+            return {
+                player_name: prior.player_name,
+                batting_order: i + 1,
+                position: prior.position ?? '',
+                bats: bats as 'R' | 'L' | 'S',
+            };
+        });
+        setLineup(slots);
+        setPrefillNote('Last game’s lineup loaded — edit any rows below before saving.');
+        setError('');
+    };
 
     const handlePlayerChange = (index: number, field: keyof LineupEntry, value: string) => {
         setLineup((prev) => {
@@ -195,6 +224,18 @@ const OpponentLineup: React.FC = () => {
                             </GameInfoSubtext>
                         </div>
                     </GameInfo>
+
+                    {lastLineup.length > 0 && (
+                        <PrefillBar>
+                            <span>
+                                {prefillNote ||
+                                    `Last game’s starting lineup vs ${game.opponent_name} is on file (${lastLineup.length} batters).`}
+                            </span>
+                            <PrefillButton type="button" onClick={handleUseLastLineup}>
+                                Use last game’s lineup
+                            </PrefillButton>
+                        </PrefillBar>
+                    )}
 
                     {error && <ErrorMessage>{error}</ErrorMessage>}
 

@@ -12,6 +12,8 @@ router.post('/game/:gameId', opponentLineupController.createPlayer);
 router.post('/game/:gameId/bulk', opponentLineupController.createLineup);
 router.get('/game/:gameId', opponentLineupController.getLineup);
 router.get('/game/:gameId/active', opponentLineupController.getActiveLineup);
+// Place specific routes before parameterized ones to avoid conflicts.
+router.get('/game/:gameId/last-vs-opponent', opponentLineupController.getLastVsOpponent);
 router.delete('/game/:gameId', opponentLineupController.deleteLineup);
 
 // Individual player routes

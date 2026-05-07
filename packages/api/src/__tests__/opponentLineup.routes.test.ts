@@ -147,6 +147,54 @@ describe('OpponentLineup Routes - /bt-api/opponent-lineup', () => {
     });
 
     // ========================================================================
+    // GET /bt-api/opponent-lineup/game/:gameId/last-vs-opponent
+    // ========================================================================
+
+    describe('GET /bt-api/opponent-lineup/game/:gameId/last-vs-opponent', () => {
+        it('returns the most recent prior lineup vs the same opponent team', async () => {
+            const priorStarters = [
+                { id: 'ol-9', game_id: 'g0', player_name: 'Leadoff', batting_order: 1, position: 'CF', bats: 'R' },
+                { id: 'ol-10', game_id: 'g0', player_name: 'Two Hole', batting_order: 2, position: 'SS', bats: 'L' },
+            ];
+            mockQuery
+                .mockResolvedValueOnce({
+                    rows: [{ opponent_team_id: 'opp-1', game_date: '2026-05-04', home_team_id: 't1' }],
+                } as any) // current game lookup
+                .mockResolvedValueOnce({ rows: [{ id: 'g0' }] } as any) // prior game lookup
+                .mockResolvedValueOnce({ rows: priorStarters } as any); // prior starters
+
+            const res = await getAgent().get('/bt-api/opponent-lineup/game/g1/last-vs-opponent').set('Authorization', authHeader());
+
+            expect(res.status).toBe(200);
+            expect(res.body.lineup).toEqual(priorStarters);
+        });
+
+        it('returns empty when current game has no opponent_team_id', async () => {
+            mockQuery.mockResolvedValueOnce({
+                rows: [{ opponent_team_id: null, game_date: '2026-05-04', home_team_id: 't1' }],
+            } as any);
+
+            const res = await getAgent().get('/bt-api/opponent-lineup/game/g1/last-vs-opponent').set('Authorization', authHeader());
+
+            expect(res.status).toBe(200);
+            expect(res.body.lineup).toEqual([]);
+        });
+
+        it('returns empty when no prior game exists', async () => {
+            mockQuery
+                .mockResolvedValueOnce({
+                    rows: [{ opponent_team_id: 'opp-1', game_date: '2026-05-04', home_team_id: 't1' }],
+                } as any)
+                .mockResolvedValueOnce({ rows: [] } as any); // no prior game
+
+            const res = await getAgent().get('/bt-api/opponent-lineup/game/g1/last-vs-opponent').set('Authorization', authHeader());
+
+            expect(res.status).toBe(200);
+            expect(res.body.lineup).toEqual([]);
+        });
+    });
+
+    // ========================================================================
     // POST /bt-api/opponent-lineup/player/:playerId/substitute
     // ========================================================================
 

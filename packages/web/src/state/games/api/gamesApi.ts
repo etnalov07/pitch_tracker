@@ -173,6 +173,15 @@ export const gamesApi = {
         return response.data.lineup;
     },
 
+    /**
+     * Returns the starting lineup from the most recent prior game vs the same
+     * opponent team. Empty when there's no linked opponent team or no prior game.
+     */
+    getLastLineupVsOpponent: async (gameId: string): Promise<OpponentLineupPlayer[]> => {
+        const response = await api.get<{ lineup: OpponentLineupPlayer[] }>(`/opponent-lineup/game/${gameId}/last-vs-opponent`);
+        return response.data.lineup;
+    },
+
     createOpponentLineupBulk: async (
         gameId: string,
         players: {

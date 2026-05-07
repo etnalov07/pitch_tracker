@@ -243,3 +243,38 @@ export const HelpText = styled.p({
     color: theme.colors.gray[500],
     marginBottom: theme.spacing.lg,
 });
+
+export const PrefillBar = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.md,
+    padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+    backgroundColor: theme.colors.primary[50],
+    border: `1px solid ${theme.colors.primary[200]}`,
+    borderRadius: theme.borderRadius.md,
+    marginBottom: theme.spacing.lg,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[700],
+});
+
+export const PrefillButton = styled.button({
+    backgroundColor: theme.colors.primary[600],
+    color: 'white',
+    border: 'none',
+    padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+
+    '&:hover:not(:disabled)': {
+        backgroundColor: theme.colors.primary[700],
+    },
+
+    '&:disabled': {
+        opacity: 0.6,
+        cursor: 'not-allowed',
+    },
+});

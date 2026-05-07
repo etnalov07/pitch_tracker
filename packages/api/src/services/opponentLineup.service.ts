@@ -171,6 +171,45 @@ export class OpponentLineupService {
     async deleteLineup(gameId: string): Promise<void> {
         await query(`DELETE FROM opponent_lineup WHERE game_id = $1`, [gameId]);
     }
+
+    /**
+     * Returns the starting lineup from the most recent prior game played against
+     * the same opponent team. Used to pre-fill game N's lineup with game N-1's
+     * roster when starting a new game in a series. Returns [] when there's no
+     * prior game vs the same opponent (or when the current game has no
+     * opponent_team_id linked).
+     *
+     * Only returns starters (is_starter=true, replaced_by_id IS NULL) so subs
+     * from the prior game don't carry over by default — the charter explicitly
+     * picks who's playing today.
+     */
+    async getMostRecentLineupVsOpponent(gameId: string): Promise<OpponentLineupPlayer[]> {
+        const gameRow = await query('SELECT opponent_team_id, game_date, home_team_id FROM games WHERE id = $1', [gameId]);
+        const game = gameRow.rows[0];
+        if (!game?.opponent_team_id) return [];
+
+        const priorGameRow = await query(
+            `SELECT id FROM games
+             WHERE opponent_team_id = $1
+               AND id <> $2
+               AND game_date <= $3
+             ORDER BY game_date DESC, created_at DESC
+             LIMIT 1`,
+            [game.opponent_team_id, gameId, game.game_date]
+        );
+        const priorGameId = priorGameRow.rows[0]?.id;
+        if (!priorGameId) return [];
+
+        const lineupRow = await query(
+            `SELECT * FROM opponent_lineup
+             WHERE game_id = $1
+               AND is_starter = true
+               AND replaced_by_id IS NULL
+             ORDER BY batting_order`,
+            [priorGameId]
+        );
+        return lineupRow.rows;
+    }
 }
 
 export default new OpponentLineupService();

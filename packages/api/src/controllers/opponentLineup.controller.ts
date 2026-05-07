@@ -118,6 +118,16 @@ export class OpponentLineupController {
             next(error);
         }
     }
+
+    async getLastVsOpponent(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { gameId } = req.params;
+            const lineup = await opponentLineupService.getMostRecentLineupVsOpponent(gameId as string);
+            res.json({ lineup });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new OpponentLineupController();
