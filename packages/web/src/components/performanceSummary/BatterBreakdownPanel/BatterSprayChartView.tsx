@@ -3,27 +3,33 @@ import { ContactType, FieldLocation, SprayChartData } from '@pitch-tracker/share
 import React from 'react';
 import { theme } from '../../../styles/theme';
 
+// Field geometry mirrors BaseballDiamond (web charter view): 100-unit
+// coordinates scaled 2.4× into a 240-unit viewBox. Home plate at (120, 204),
+// bases at (168, 156)/(120, 108)/(72, 156), bell-shaped outfield via Q-curves,
+// rotated-square infield dirt polygon, dashed foul lines and warning track.
 const SIZE = 240;
-const CX = SIZE / 2;
-const CY = SIZE - 25;
-// Real baseball field foul lines are 90° apart (±45° from vertical). We use
-// MAX_R sized so the foul-line tips at depth 1.0 stay inside the SVG.
-const MAX_R = Math.min(CX - 8, CY - 8) / Math.sin((45 * Math.PI) / 180);
-const FOUL_ANGLE = 45;
+const HOME = { x: 120, y: 204 };
+const FIRST = { x: 168, y: 156 };
+const SECOND = { x: 120, y: 108 };
+const THIRD = { x: 72, y: 156 };
+const MOUND = { x: 120, y: 156 };
+const FOUL_LEFT_TIP = { x: 12, y: 96 };
+const FOUL_RIGHT_TIP = { x: 228, y: 96 };
 
-const FIELD_LOCATIONS: Record<FieldLocation, { angle: number; depth: number }> = {
-    left_field_line: { angle: -42, depth: 0.95 },
-    left_center_gap: { angle: -25, depth: 0.92 },
-    center_field: { angle: 0, depth: 0.95 },
-    right_center_gap: { angle: 25, depth: 0.92 },
-    right_field_line: { angle: 42, depth: 0.95 },
-    infield_left: { angle: -28, depth: 0.42 },
-    infield_center: { angle: 0, depth: 0.38 },
-    infield_right: { angle: 28, depth: 0.42 },
+// Where each field_location bucket places its dot, in 240-unit coordinates.
+// Outfield positions sit just inside the foul lines (LF/RF) and between gaps.
+// Infield positions sit at roughly the SS/2B/up-the-middle fielder spots.
+const FIELD_LOCATIONS: Record<FieldLocation, { x: number; y: number }> = {
+    left_field_line: { x: 45, y: 100 },
+    left_center_gap: { x: 80, y: 80 },
+    center_field: { x: 120, y: 55 },
+    right_center_gap: { x: 160, y: 80 },
+    right_field_line: { x: 195, y: 100 },
+    infield_left: { x: 88, y: 138 },
+    infield_center: { x: 120, y: 130 },
+    infield_right: { x: 152, y: 138 },
 };
 
-// Mirrors the trajectory aesthetic from BaseballDiamond (web): arc/line/squiggle.
-// pop_up uses a higher arc, bunt uses a short straight stub.
 const CONTACT_TYPE_COLOR: Record<ContactType, string> = {
     fly_ball: theme.colors.primary[500],
     pop_up: theme.colors.primary[300],
@@ -47,35 +53,24 @@ const RESULT_SYMBOL: Record<string, string> = {
     home_run: 'HR',
 };
 
-function toXY(angleDeg: number, depth: number) {
-    const rad = ((angleDeg - 90) * Math.PI) / 180;
-    return { x: CX + depth * MAX_R * Math.cos(rad), y: CY + depth * MAX_R * Math.sin(rad) };
-}
-
-function arcPath(startAngle: number, endAngle: number, r: number): string {
-    const s = toXY(startAngle, r / MAX_R);
-    const e = toXY(endAngle, r / MAX_R);
-    return `M ${CX} ${CY} L ${s.x} ${s.y} A ${r} ${r} 0 0 1 ${e.x} ${e.y} Z`;
-}
-
 // Stable jitter seeded by index so dots don't move on re-render
 function jitter(idx: number, range: number): number {
     return ((Math.sin(idx * 127.1 + 311.7) * 43758.5) % 1) * range - range / 2;
 }
 
-// Trajectory path from home plate (CX, CY) to landing spot (endX, endY).
-// Mirrors BaseballDiamond's path math, rescaled from a 100-unit viewBox
-// (peak offset = 15, wiggle = 2) to this chart's 240-unit viewBox.
+// Trajectory path from home plate to landing spot. Mirrors BaseballDiamond's
+// path math: line for liners/bunts, Q-curve arc for fly/pop-ups, segmented
+// squiggle for grounders.
 function trajectoryPath(endX: number, endY: number, type?: ContactType): string {
-    const startX = CX;
-    const startY = CY;
+    const startX = HOME.x;
+    const startY = HOME.y;
 
     if (type === 'line_drive' || type === 'bunt') {
         return `M ${startX} ${startY} L ${endX} ${endY}`;
     }
     if (type === 'fly_ball' || type === 'pop_up') {
         const midX = (startX + endX) / 2;
-        const peakOffset = type === 'pop_up' ? 60 : 36; // pop-ups arc higher
+        const peakOffset = type === 'pop_up' ? 60 : 36;
         const midY = Math.min(startY, endY) - peakOffset;
         return `M ${startX} ${startY} Q ${midX} ${midY} ${endX} ${endY}`;
     }
@@ -92,7 +87,6 @@ function trajectoryPath(endX: number, endY: number, type?: ContactType): string 
         }
         return path;
     }
-    // Unknown type — straight line, gray
     return `M ${startX} ${startY} L ${endX} ${endY}`;
 }
 
@@ -107,37 +101,87 @@ export default function BatterSprayChartView({ sprayData }: Props) {
     return (
         <Wrapper>
             <ChartLabel>Spray Chart</ChartLabel>
-            <svg width={SIZE} height={SIZE} style={{ display: 'block' }}>
-                {/* Outfield grass — drawn within fair territory plus a small buffer */}
-                <path d={arcPath(-FOUL_ANGLE, FOUL_ANGLE, MAX_R)} fill="#86efac" stroke="#166534" strokeWidth={1} />
-                {/* Infield dirt */}
-                <path d={arcPath(-FOUL_ANGLE, FOUL_ANGLE, MAX_R * 0.52)} fill="#fde68a" stroke="#92400e" strokeWidth={0.5} />
-                {/* Foul lines */}
-                {(() => {
-                    const left = toXY(-FOUL_ANGLE, 1.0);
-                    const right = toXY(FOUL_ANGLE, 1.0);
-                    return (
-                        <>
-                            <line x1={CX} y1={CY} x2={left.x} y2={left.y} stroke="#92400e" strokeWidth={1} strokeDasharray="4,3" />
-                            <line
-                                x1={CX}
-                                y1={CY}
-                                x2={right.x}
-                                y2={right.y}
-                                stroke="#92400e"
-                                strokeWidth={1}
-                                strokeDasharray="4,3"
-                            />
-                        </>
-                    );
-                })()}
+            <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ display: 'block' }}>
+                {/* Outfield grass — bell-shaped, matching BaseballDiamond */}
+                <path
+                    d="M 120 24 Q 12 96 24 204 L 120 204 L 216 204 Q 228 96 120 24"
+                    fill={theme.colors.green[200]}
+                    stroke={theme.colors.green[400]}
+                    strokeWidth={1.2}
+                />
+                {/* Infield dirt — rotated square, matching BaseballDiamond */}
+                <polygon
+                    points="120,132 72,180 120,228 168,180"
+                    fill={theme.colors.yellow[200]}
+                    stroke={theme.colors.yellow[400]}
+                    strokeWidth={1.2}
+                />
+                {/* Baseline paths */}
+                <line x1={HOME.x} y1={HOME.y} x2={THIRD.x} y2={THIRD.y} stroke={theme.colors.gray[300]} strokeWidth={2.4} />
+                <line x1={HOME.x} y1={HOME.y} x2={FIRST.x} y2={FIRST.y} stroke={theme.colors.gray[300]} strokeWidth={2.4} />
+                <line x1={THIRD.x} y1={THIRD.y} x2={SECOND.x} y2={SECOND.y} stroke={theme.colors.gray[300]} strokeWidth={2.4} />
+                <line x1={FIRST.x} y1={FIRST.y} x2={SECOND.x} y2={SECOND.y} stroke={theme.colors.gray[300]} strokeWidth={2.4} />
+                {/* Foul lines (dashed) */}
+                <line
+                    x1={HOME.x}
+                    y1={HOME.y}
+                    x2={FOUL_LEFT_TIP.x}
+                    y2={FOUL_LEFT_TIP.y}
+                    stroke={theme.colors.gray[400]}
+                    strokeWidth={1.2}
+                    strokeDasharray="4.8,4.8"
+                />
+                <line
+                    x1={HOME.x}
+                    y1={HOME.y}
+                    x2={FOUL_RIGHT_TIP.x}
+                    y2={FOUL_RIGHT_TIP.y}
+                    stroke={theme.colors.gray[400]}
+                    strokeWidth={1.2}
+                    strokeDasharray="4.8,4.8"
+                />
+                {/* Warning track arc (dashed) */}
+                <path
+                    d="M 24 120 Q 120 12 216 120"
+                    fill="none"
+                    stroke={theme.colors.yellow[400]}
+                    strokeWidth={1.2}
+                    strokeDasharray="4.8,4.8"
+                />
+                {/* Pitcher's mound */}
+                <circle
+                    cx={MOUND.x}
+                    cy={MOUND.y}
+                    r={3.6}
+                    fill={theme.colors.yellow[300]}
+                    stroke={theme.colors.yellow[500]}
+                    strokeWidth={1.2}
+                />
+                {/* Bases — small rotated squares like BaseballDiamond */}
+                {[
+                    [HOME.x, HOME.y],
+                    [FIRST.x, FIRST.y],
+                    [SECOND.x, SECOND.y],
+                    [THIRD.x, THIRD.y],
+                ].map(([bx, by], i) => (
+                    <rect
+                        key={`base-${i}`}
+                        x={bx - 4.8}
+                        y={by - 4.8}
+                        width={9.6}
+                        height={9.6}
+                        fill="white"
+                        stroke={theme.colors.gray[400]}
+                        strokeWidth={1.2}
+                        transform={`rotate(45 ${bx} ${by})`}
+                    />
+                ))}
                 {/* Trajectories drawn under the dots */}
                 {plays.map((play, i) => {
                     const loc = FIELD_LOCATIONS[play.field_location];
                     if (!loc) return null;
-                    const a = loc.angle + jitter(i, 6);
-                    const d = Math.max(0.1, Math.min(0.99, loc.depth + jitter(i + 1, 0.06)));
-                    const { x, y } = toXY(a, d);
+                    const x = loc.x + jitter(i, 14);
+                    const y = loc.y + jitter(i + 1, 12);
                     const color = play.contact_type ? CONTACT_TYPE_COLOR[play.contact_type] : '#9ca3af';
                     return (
                         <path
@@ -151,15 +195,12 @@ export default function BatterSprayChartView({ sprayData }: Props) {
                         />
                     );
                 })}
-                {/* Home plate */}
-                <circle cx={CX} cy={CY} r={5} fill="white" stroke="#374151" strokeWidth={1} />
-                {/* One dot per aggregated entry; radius scales with count */}
+                {/* Hit-location dots */}
                 {plays.map((play, i) => {
                     const loc = FIELD_LOCATIONS[play.field_location];
                     if (!loc) return null;
-                    const a = loc.angle + jitter(i, 6);
-                    const d = Math.max(0.1, Math.min(0.99, loc.depth + jitter(i + 1, 0.06)));
-                    const { x, y } = toXY(a, d);
+                    const x = loc.x + jitter(i, 14);
+                    const y = loc.y + jitter(i + 1, 12);
                     const color = play.contact_type ? CONTACT_TYPE_COLOR[play.contact_type] : '#6b7280';
                     const symbol = play.hit_result ? (RESULT_SYMBOL[play.hit_result] ?? 'X') : 'X';
                     const r = Math.min(14, 6 + (play.count - 1) * 2);
@@ -174,19 +215,12 @@ export default function BatterSprayChartView({ sprayData }: Props) {
                 })}
             </svg>
             <LegendRow>
-                {typesPresent.length === 0
-                    ? (Object.keys(CONTACT_TYPE_COLOR) as ContactType[]).map((t) => (
-                          <LegendItem key={t}>
-                              <LegendDot style={{ backgroundColor: CONTACT_TYPE_COLOR[t] }} />
-                              {CONTACT_TYPE_LABEL[t]}
-                          </LegendItem>
-                      ))
-                    : typesPresent.map((t) => (
-                          <LegendItem key={t}>
-                              <LegendDot style={{ backgroundColor: CONTACT_TYPE_COLOR[t] }} />
-                              {CONTACT_TYPE_LABEL[t]}
-                          </LegendItem>
-                      ))}
+                {(typesPresent.length === 0 ? (Object.keys(CONTACT_TYPE_COLOR) as ContactType[]) : typesPresent).map((t) => (
+                    <LegendItem key={t}>
+                        <LegendDot style={{ backgroundColor: CONTACT_TYPE_COLOR[t] }} />
+                        {CONTACT_TYPE_LABEL[t]}
+                    </LegendItem>
+                ))}
             </LegendRow>
             {plays.length === 0 && <EmptyText>No batted ball data yet.</EmptyText>}
         </Wrapper>
