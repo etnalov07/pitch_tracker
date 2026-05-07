@@ -89,7 +89,18 @@ const MyTeamLineup: React.FC = () => {
             if (field === 'player_id' && value) {
                 const player = roster.find((p) => p.id === value);
                 if (player && !updated[index].position) {
-                    updated[index].position = player.primary_position;
+                    // Most rosters mark anyone who can pitch as primary='P', even guys
+                    // who play a fielding position most days. Auto-filling 'P' for every
+                    // batter slot results in nine pitchers in the lineup. Prefer the
+                    // secondary position when primary is 'P'; otherwise take primary.
+                    // Charter can always change it via the Position dropdown.
+                    const primary = player.primary_position;
+                    const secondary = player.secondary_position;
+                    let suggested: string = primary || '';
+                    if (primary === 'P' && secondary && secondary !== 'P') {
+                        suggested = secondary;
+                    }
+                    updated[index].position = suggested;
                 }
             }
             return updated;
@@ -132,6 +143,17 @@ const MyTeamLineup: React.FC = () => {
 
     const pitchers = roster.filter((p) => p.primary_position === 'P' || p.secondary_position === 'P');
     const nonPitchers = roster.filter((p) => p.primary_position !== 'P' && p.secondary_position !== 'P');
+
+    // Surface duplicate fielding positions so the charter notices when auto-fill
+    // (or manual entry) puts e.g. two SS in the lineup. Empty positions are
+    // ignored.
+    const positionCounts = new Map<string, number>();
+    for (const entry of lineup) {
+        if (entry.position) positionCounts.set(entry.position, (positionCounts.get(entry.position) || 0) + 1);
+    }
+    const duplicatePositions = Array.from(positionCounts.entries())
+        .filter(([, n]) => n > 1)
+        .map(([pos, n]) => `${pos} ×${n}`);
 
     if (loading)
         return (
@@ -197,6 +219,24 @@ const MyTeamLineup: React.FC = () => {
 
                 <SectionTitle>Batting Order</SectionTitle>
                 <HelpText>Select your team's batting order. Batter handedness comes from player profiles.</HelpText>
+
+                {duplicatePositions.length > 0 && (
+                    <div
+                        style={{
+                            background: '#fef3c7',
+                            border: '1px solid #f59e0b',
+                            color: '#92400e',
+                            padding: '8px 12px',
+                            borderRadius: 6,
+                            fontSize: 13,
+                            marginBottom: 12,
+                        }}
+                    >
+                        Duplicate position{duplicatePositions.length === 1 ? '' : 's'} in lineup:{' '}
+                        <strong>{duplicatePositions.join(', ')}</strong>. A standard nine has one player per fielding spot — adjust
+                        the dropdowns below.
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit}>
                     <LineupTable>
