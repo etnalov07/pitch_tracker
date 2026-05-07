@@ -3,31 +3,35 @@ import { ContactType, FieldLocation, SprayChartData } from '@pitch-tracker/share
 import React from 'react';
 import { theme } from '../../../styles/theme';
 
-// Field geometry mirrors BaseballDiamond (web charter view): 100-unit
-// coordinates scaled 2.4× into a 240-unit viewBox. Home plate at (120, 204),
-// bases at (168, 156)/(120, 108)/(72, 156), bell-shaped outfield via Q-curves,
-// rotated-square infield dirt polygon, dashed foul lines and warning track.
+// Realistic top-down baseball field. Home plate at the bottom point of an
+// arrowhead-shaped fair territory; foul lines run up-and-out at ~45° to the
+// outfield corners; outfield wall is a curved arc connecting the corners
+// across deep center. Foul territory (dirt) fills the canvas behind it; a
+// small infield diamond sits at home plate with home as its bottom vertex.
 const SIZE = 240;
-const HOME = { x: 120, y: 204 };
-const FIRST = { x: 168, y: 156 };
-const SECOND = { x: 120, y: 108 };
-const THIRD = { x: 72, y: 156 };
-const MOUND = { x: 120, y: 156 };
-const FOUL_LEFT_TIP = { x: 12, y: 96 };
-const FOUL_RIGHT_TIP = { x: 228, y: 96 };
 
-// Where each field_location bucket places its dot, in 240-unit coordinates.
-// Outfield positions sit just inside the foul lines (LF/RF) and between gaps.
-// Infield positions sit at roughly the SS/2B/up-the-middle fielder spots.
+// Anchor points
+const HOME = { x: 120, y: 220 };
+const FOUL_LEFT_TIP = { x: 15, y: 75 };
+const FOUL_RIGHT_TIP = { x: 225, y: 75 };
+const OUTFIELD_RADIUS = 160;
+
+// Infield diamond: home at bottom, 2B at top, 1B/3B on the sides
+const FIRST = { x: 155, y: 185 };
+const SECOND = { x: 120, y: 150 };
+const THIRD = { x: 85, y: 185 };
+const MOUND = { x: 120, y: 185 };
+
+// Where each field_location bucket places its dot
 const FIELD_LOCATIONS: Record<FieldLocation, { x: number; y: number }> = {
     left_field_line: { x: 45, y: 100 },
-    left_center_gap: { x: 80, y: 80 },
-    center_field: { x: 120, y: 55 },
-    right_center_gap: { x: 160, y: 80 },
+    left_center_gap: { x: 80, y: 78 },
+    center_field: { x: 120, y: 60 },
+    right_center_gap: { x: 160, y: 78 },
     right_field_line: { x: 195, y: 100 },
-    infield_left: { x: 88, y: 138 },
-    infield_center: { x: 120, y: 130 },
-    infield_right: { x: 152, y: 138 },
+    infield_left: { x: 92, y: 180 },
+    infield_center: { x: 120, y: 168 },
+    infield_right: { x: 148, y: 180 },
 };
 
 const CONTACT_TYPE_COLOR: Record<ContactType, string> = {
@@ -58,9 +62,7 @@ function jitter(idx: number, range: number): number {
     return ((Math.sin(idx * 127.1 + 311.7) * 43758.5) % 1) * range - range / 2;
 }
 
-// Trajectory path from home plate to landing spot. Mirrors BaseballDiamond's
-// path math: line for liners/bunts, Q-curve arc for fly/pop-ups, segmented
-// squiggle for grounders.
+// Trajectory path from home plate to landing spot.
 function trajectoryPath(endX: number, endY: number, type?: ContactType): string {
     const startX = HOME.x;
     const startY = HOME.y;
@@ -98,66 +100,46 @@ export default function BatterSprayChartView({ sprayData }: Props) {
     const plays = sprayData.filter((p) => p.field_location);
     const typesPresent = Array.from(new Set(plays.map((p) => p.contact_type).filter((t): t is ContactType => Boolean(t))));
 
+    const fairTerritoryPath = `M ${HOME.x} ${HOME.y} L ${FOUL_LEFT_TIP.x} ${FOUL_LEFT_TIP.y} A ${OUTFIELD_RADIUS} ${OUTFIELD_RADIUS} 0 0 1 ${FOUL_RIGHT_TIP.x} ${FOUL_RIGHT_TIP.y} Z`;
+    const infieldPath = `M ${HOME.x} ${HOME.y} L ${FIRST.x} ${FIRST.y} L ${SECOND.x} ${SECOND.y} L ${THIRD.x} ${THIRD.y} Z`;
+
     return (
         <Wrapper>
             <ChartLabel>Spray Chart</ChartLabel>
-            <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ display: 'block' }}>
-                {/* Outfield grass — bell-shaped, matching BaseballDiamond */}
-                <path
-                    d="M 120 24 Q 12 96 24 204 L 120 204 L 216 204 Q 228 96 120 24"
-                    fill={theme.colors.green[200]}
-                    stroke={theme.colors.green[400]}
-                    strokeWidth={1.2}
-                />
-                {/* Infield dirt — rotated square, matching BaseballDiamond */}
-                <polygon
-                    points="120,132 72,180 120,228 168,180"
-                    fill={theme.colors.yellow[200]}
-                    stroke={theme.colors.yellow[400]}
-                    strokeWidth={1.2}
-                />
-                {/* Baseline paths */}
-                <line x1={HOME.x} y1={HOME.y} x2={THIRD.x} y2={THIRD.y} stroke={theme.colors.gray[300]} strokeWidth={2.4} />
-                <line x1={HOME.x} y1={HOME.y} x2={FIRST.x} y2={FIRST.y} stroke={theme.colors.gray[300]} strokeWidth={2.4} />
-                <line x1={THIRD.x} y1={THIRD.y} x2={SECOND.x} y2={SECOND.y} stroke={theme.colors.gray[300]} strokeWidth={2.4} />
-                <line x1={FIRST.x} y1={FIRST.y} x2={SECOND.x} y2={SECOND.y} stroke={theme.colors.gray[300]} strokeWidth={2.4} />
-                {/* Foul lines (dashed) */}
+            <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ display: 'block', borderRadius: 8 }}>
+                {/* Foul territory — dirt fills the canvas */}
+                <rect x={0} y={0} width={SIZE} height={SIZE} fill="#d4a76a" opacity={0.55} />
+                {/* Fair territory — green grass arrowhead with curved outfield wall */}
+                <path d={fairTerritoryPath} fill={theme.colors.green[300]} stroke={theme.colors.green[600]} strokeWidth={1.5} />
+                {/* Foul lines (white chalk) */}
                 <line
                     x1={HOME.x}
                     y1={HOME.y}
                     x2={FOUL_LEFT_TIP.x}
                     y2={FOUL_LEFT_TIP.y}
-                    stroke={theme.colors.gray[400]}
-                    strokeWidth={1.2}
-                    strokeDasharray="4.8,4.8"
+                    stroke="white"
+                    strokeWidth={1.5}
+                    opacity={0.9}
                 />
                 <line
                     x1={HOME.x}
                     y1={HOME.y}
                     x2={FOUL_RIGHT_TIP.x}
                     y2={FOUL_RIGHT_TIP.y}
-                    stroke={theme.colors.gray[400]}
-                    strokeWidth={1.2}
-                    strokeDasharray="4.8,4.8"
+                    stroke="white"
+                    strokeWidth={1.5}
+                    opacity={0.9}
                 />
-                {/* Warning track arc (dashed) */}
-                <path
-                    d="M 24 120 Q 120 12 216 120"
-                    fill="none"
-                    stroke={theme.colors.yellow[400]}
-                    strokeWidth={1.2}
-                    strokeDasharray="4.8,4.8"
-                />
+                {/* Infield dirt diamond */}
+                <path d={infieldPath} fill="#c4915a" stroke="#92400e" strokeWidth={1} />
+                {/* Baseline paths (white chalk) */}
+                <line x1={HOME.x} y1={HOME.y} x2={FIRST.x} y2={FIRST.y} stroke="white" strokeWidth={1.5} opacity={0.9} />
+                <line x1={FIRST.x} y1={FIRST.y} x2={SECOND.x} y2={SECOND.y} stroke="white" strokeWidth={1.5} opacity={0.6} />
+                <line x1={SECOND.x} y1={SECOND.y} x2={THIRD.x} y2={THIRD.y} stroke="white" strokeWidth={1.5} opacity={0.6} />
+                <line x1={THIRD.x} y1={THIRD.y} x2={HOME.x} y2={HOME.y} stroke="white" strokeWidth={1.5} opacity={0.9} />
                 {/* Pitcher's mound */}
-                <circle
-                    cx={MOUND.x}
-                    cy={MOUND.y}
-                    r={3.6}
-                    fill={theme.colors.yellow[300]}
-                    stroke={theme.colors.yellow[500]}
-                    strokeWidth={1.2}
-                />
-                {/* Bases — small rotated squares like BaseballDiamond */}
+                <circle cx={MOUND.x} cy={MOUND.y} r={4.5} fill="#c4915a" stroke="#92400e" strokeWidth={1} />
+                {/* Bases — small white squares (rotated) */}
                 {[
                     [HOME.x, HOME.y],
                     [FIRST.x, FIRST.y],
@@ -166,13 +148,13 @@ export default function BatterSprayChartView({ sprayData }: Props) {
                 ].map(([bx, by], i) => (
                     <rect
                         key={`base-${i}`}
-                        x={bx - 4.8}
-                        y={by - 4.8}
-                        width={9.6}
-                        height={9.6}
+                        x={bx - 4}
+                        y={by - 4}
+                        width={8}
+                        height={8}
                         fill="white"
-                        stroke={theme.colors.gray[400]}
-                        strokeWidth={1.2}
+                        stroke="#374151"
+                        strokeWidth={1}
                         transform={`rotate(45 ${bx} ${by})`}
                     />
                 ))}
@@ -206,7 +188,7 @@ export default function BatterSprayChartView({ sprayData }: Props) {
                     const r = Math.min(14, 6 + (play.count - 1) * 2);
                     return (
                         <g key={`dot-${i}`}>
-                            <circle cx={x} cy={y} r={r} fill={color} opacity={0.85} stroke="white" strokeWidth={1} />
+                            <circle cx={x} cy={y} r={r} fill={color} opacity={0.9} stroke="white" strokeWidth={1} />
                             <text x={x} y={y + 3.5} fontSize={6} fontWeight="700" fill="white" textAnchor="middle">
                                 {symbol}
                             </text>
