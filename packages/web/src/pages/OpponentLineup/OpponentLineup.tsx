@@ -179,6 +179,17 @@ const OpponentLineup: React.FC = () => {
         }
     };
 
+    // Surface duplicate fielding positions so the charter notices when entries
+    // (manual or copied from last game) put e.g. two SS in the lineup. Empty
+    // positions are ignored.
+    const positionCounts = new Map<string, number>();
+    for (const entry of lineup) {
+        if (entry.position) positionCounts.set(entry.position, (positionCounts.get(entry.position) || 0) + 1);
+    }
+    const duplicatePositions = Array.from(positionCounts.entries())
+        .filter(([, n]) => n > 1)
+        .map(([pos, n]) => `${pos} ×${n}`);
+
     if (loading) {
         return (
             <Container>
@@ -268,6 +279,24 @@ const OpponentLineup: React.FC = () => {
                             Enter the names of opposing batters in their batting order. You can add or change players during the
                             game.
                         </HelpText>
+
+                        {duplicatePositions.length > 0 && (
+                            <div
+                                style={{
+                                    background: '#fef3c7',
+                                    border: '1px solid #f59e0b',
+                                    color: '#92400e',
+                                    padding: '8px 12px',
+                                    borderRadius: 6,
+                                    fontSize: 13,
+                                    marginBottom: 12,
+                                }}
+                            >
+                                Duplicate position{duplicatePositions.length === 1 ? '' : 's'} in lineup:{' '}
+                                <strong>{duplicatePositions.join(', ')}</strong>. A standard nine has one player per fielding spot —
+                                adjust the dropdowns below.
+                            </div>
+                        )}
 
                         <LineupTable>
                             <thead>
