@@ -526,6 +526,7 @@ export interface PitchLocationHeatMap {
 
 export interface SprayChartData {
     field_location: FieldLocation;
+    contact_type?: ContactType;
     contact_quality?: ContactQuality;
     hit_result?: HitResult;
     count: number;

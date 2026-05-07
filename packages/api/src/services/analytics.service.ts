@@ -198,6 +198,7 @@ export class AnalyticsService {
             WHEN 'RF' THEN 'right_field_line'
           END
         ) AS field_location,
+        p.contact_type,
         p.contact_quality,
         p.hit_result,
         COUNT(*) AS count
@@ -206,7 +207,7 @@ export class AnalyticsService {
       WHERE (ab.batter_id = $1 OR ab.opponent_batter_id = $1)
       AND (p.field_location IS NOT NULL OR p.fielded_by_position IS NOT NULL)
       ${gameFilter}
-      GROUP BY 1, p.contact_quality, p.hit_result
+      GROUP BY 1, p.contact_type, p.contact_quality, p.hit_result
     `;
 
         const result = await query(queryText, params);
