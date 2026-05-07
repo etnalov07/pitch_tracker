@@ -46,9 +46,12 @@ export class AnalyticsController {
     async getBatterSprayChart(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { batterId } = req.params;
-            const { game_id: gameId } = req.query;
+            const { game_id: gameId, opponentTeamId, opponentName } = req.query;
+            const gid = typeof gameId === 'string' ? gameId : undefined;
+            const otid = typeof opponentTeamId === 'string' ? opponentTeamId : undefined;
+            const oname = typeof opponentName === 'string' ? opponentName : undefined;
 
-            const sprayChart = await analyticsService.getBatterSprayChart(batterId as string, gameId as string);
+            const sprayChart = await analyticsService.getBatterSprayChart(batterId as string, gid, otid, oname);
 
             res.status(200).json({ sprayChart });
         } catch (error) {

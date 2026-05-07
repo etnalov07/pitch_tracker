@@ -43,9 +43,22 @@ export const analyticsService = {
         return response.data.pitches ?? [];
     },
 
-    // Get spray chart
-    getSprayChart: async (batterId: string, gameId?: string): Promise<SprayChartData[]> => {
-        const params = gameId ? `?game_id=${gameId}` : '';
+    // Get spray chart.
+    // gameId scopes to a single game (Opponent Lineup view); opponentTeamId / opponentName
+    // scope to all games against the same opposing team (Our Lineup view — e.g. every game
+    // in a series vs the Wolves), with rows grouped per-game so the client can distinguish
+    // outcomes by game.
+    getSprayChart: async (
+        batterId: string,
+        gameId?: string,
+        opponentTeamId?: string,
+        opponentName?: string
+    ): Promise<SprayChartData[]> => {
+        const qs = new URLSearchParams();
+        if (gameId) qs.append('game_id', gameId);
+        if (opponentTeamId) qs.append('opponentTeamId', opponentTeamId);
+        if (opponentName) qs.append('opponentName', opponentName);
+        const params = qs.toString() ? `?${qs.toString()}` : '';
         const response = await api.get<{ sprayChart: SprayChartData[] }>(`/analytics/batter/${batterId}/spray-chart${params}`);
         return response.data.sprayChart ?? [];
     },

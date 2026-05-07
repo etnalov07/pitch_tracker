@@ -159,7 +159,17 @@ describe('Analytics Routes - /bt-api/analytics', () => {
                 .get('/bt-api/analytics/batter/batter-1/spray-chart?game_id=game-42')
                 .set('Authorization', authHeader());
 
-            expect(svc.getBatterSprayChart).toHaveBeenCalledWith('batter-1', 'game-42');
+            expect(svc.getBatterSprayChart).toHaveBeenCalledWith('batter-1', 'game-42', undefined, undefined);
+        });
+
+        it('forwards opponent scope query params to service', async () => {
+            svc.getBatterSprayChart.mockResolvedValueOnce([]);
+
+            await getAgent()
+                .get('/bt-api/analytics/batter/batter-1/spray-chart?opponentTeamId=team-7&opponentName=Wolves')
+                .set('Authorization', authHeader());
+
+            expect(svc.getBatterSprayChart).toHaveBeenCalledWith('batter-1', undefined, 'team-7', 'Wolves');
         });
     });
 

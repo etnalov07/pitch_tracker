@@ -201,11 +201,37 @@ export class AnalyticsService {
         }));
     }
 
-    // Spray chart for a batter
-    async getBatterSprayChart(batterId: string, gameId?: string): Promise<any[]> {
-        const gameFilter = gameId ? 'AND ab.game_id = $2' : '';
+    // Spray chart for a batter.
+    // - gameId: scopes to a single game (existing behavior, used by Opponent Lineup view).
+    // - opponentTeamId / opponentName: scopes across all games against the same opposing team
+    //   (Our Lineup view, e.g. all games of a series vs the Wolves). When opponent scope is
+    //   active, rows are grouped per-game so the client can distinguish which hits came from
+    //   which game.
+    async getBatterSprayChart(batterId: string, gameId?: string, opponentTeamId?: string, opponentName?: string): Promise<any[]> {
         const params: any[] = [batterId];
-        if (gameId) params.push(gameId);
+        const filters: string[] = [
+            '(ab.batter_id = $1 OR ab.opponent_batter_id = $1)',
+            '(p.field_location IS NOT NULL OR p.fielded_by_position IS NOT NULL)',
+        ];
+
+        if (gameId) {
+            params.push(gameId);
+            filters.push(`ab.game_id = $${params.length}`);
+        }
+
+        const opponentScope = Boolean(opponentTeamId || opponentName);
+        if (opponentTeamId) {
+            params.push(opponentTeamId);
+            filters.push(`g.opponent_team_id = $${params.length}`);
+        } else if (opponentName) {
+            params.push(opponentName);
+            filters.push(`g.opponent_name = $${params.length}`);
+        }
+
+        const gamesJoin = opponentScope ? 'JOIN games g ON ab.game_id = g.id' : '';
+        const perGameSelect = opponentScope ? ', ab.game_id, g.game_date' : '';
+        const perGameGroup = opponentScope ? ', ab.game_id, g.game_date' : '';
+        const orderBy = opponentScope ? 'ORDER BY g.game_date ASC, 1' : '';
 
         const queryText = `
       SELECT
@@ -226,13 +252,13 @@ export class AnalyticsService {
         p.contact_type,
         p.contact_quality,
         p.hit_result,
-        COUNT(*) AS count
+        COUNT(*) AS count${perGameSelect}
       FROM plays p
       JOIN at_bats ab ON p.at_bat_id = ab.id
-      WHERE (ab.batter_id = $1 OR ab.opponent_batter_id = $1)
-      AND (p.field_location IS NOT NULL OR p.fielded_by_position IS NOT NULL)
-      ${gameFilter}
-      GROUP BY 1, p.contact_type, p.contact_quality, p.hit_result
+      ${gamesJoin}
+      WHERE ${filters.join(' AND ')}
+      GROUP BY 1, p.contact_type, p.contact_quality, p.hit_result${perGameGroup}
+      ${orderBy}
     `;
 
         const result = await query(queryText, params);

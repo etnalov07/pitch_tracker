@@ -223,8 +223,12 @@ function BatterRow({
         if (sprayData !== null) return;
         setChartsLoading(true);
         try {
+            // Our Lineup view: opponent scope (all games vs this opponent), with per-game distinction.
+            // Opponent Lineup view: single-game scope (no opponent params).
+            const useOpponentScope = Boolean(opponentTeamId || opponentName);
+            const sprayGameId = useOpponentScope ? undefined : gameId;
             const [spray, locations] = await Promise.all([
-                analyticsService.getSprayChart(batter.batter_id, gameId),
+                analyticsService.getSprayChart(batter.batter_id, sprayGameId, opponentTeamId, opponentName),
                 analyticsService.getPitchLocations(batter.batter_id, pitcherId, opponentTeamId, opponentName),
             ]);
             setSprayData(spray);
@@ -281,7 +285,7 @@ function BatterRow({
                         <span style={{ fontSize: 12, color: '#9ca3af' }}>Loading charts…</span>
                     ) : (
                         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' as const, justifyContent: 'center' }}>
-                            <BatterSprayChartView sprayData={sprayData ?? []} />
+                            <BatterSprayChartView sprayData={sprayData ?? []} currentGameId={gameId} />
                             <BatterHeatMapView pitches={pitchLocations ?? []} bats={batter.bats} />
                         </div>
                     )}

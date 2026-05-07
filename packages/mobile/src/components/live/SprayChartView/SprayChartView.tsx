@@ -57,8 +57,19 @@ const RESULT_SYMBOL: Record<string, string> = {
     out: 'X',
 };
 
+// Per-game border colors when the chart is scoped across multiple games
+// (Our Lineup view vs. an opponent series).
+const GAME_BORDER_PALETTE = ['#1d4ed8', '#c2410c', '#15803d', '#7e22ce', '#b45309', '#be185d', '#4d7c0f'];
+
 function jitter(idx: number, range: number): number {
     return ((Math.sin(idx * 127.1 + 311.7) * 43758.5) % 1) * range - range / 2;
+}
+
+function formatGameDate(iso?: string): string {
+    if (!iso) return '';
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+    if (!m) return '';
+    return `${parseInt(m[2], 10)}/${parseInt(m[3], 10)}`;
 }
 
 function trajectoryPath(endX: number, endY: number, type?: ContactType): string {
@@ -89,11 +100,28 @@ function trajectoryPath(endX: number, endY: number, type?: ContactType): string 
 
 interface Props {
     sprayData: SprayChartData[];
+    /** When set, the matching game is labeled "(this game)" in the per-game legend. */
+    currentGameId?: string;
 }
 
-export default function SprayChartView({ sprayData }: Props) {
+export default function SprayChartView({ sprayData, currentGameId }: Props) {
     const plays = sprayData.filter((p) => p.field_location);
     const typesPresent = Array.from(new Set(plays.map((p) => p.contact_type).filter((t): t is ContactType => Boolean(t))));
+
+    const gamesPresent = (() => {
+        const seen = new Map<string, { game_id: string; game_date?: string }>();
+        for (const p of plays) {
+            if (p.game_id && !seen.has(p.game_id)) {
+                seen.set(p.game_id, { game_id: p.game_id, game_date: p.game_date });
+            }
+        }
+        return Array.from(seen.values()).sort((a, b) => (a.game_date ?? '').localeCompare(b.game_date ?? ''));
+    })();
+    const multiGame = gamesPresent.length >= 2;
+    const gameColorById: Record<string, string> = {};
+    gamesPresent.forEach((g, i) => {
+        gameColorById[g.game_id] = GAME_BORDER_PALETTE[i % GAME_BORDER_PALETTE.length];
+    });
 
     const fieldHexPath = `M ${HOME.x} ${HOME.y} L ${LF_POLE.x} ${LF_POLE.y} L ${UPPER_LEFT.x} ${UPPER_LEFT.y} A 200 200 0 0 1 ${UPPER_RIGHT.x} ${UPPER_RIGHT.y} L ${RF_POLE.x} ${RF_POLE.y} Z`;
     const infieldPath = `M ${HOME.x} ${HOME.y} L ${FIRST.x} ${FIRST.y} Q ${HOME.x} 115 ${THIRD.x} ${THIRD.y} Z`;
@@ -171,9 +199,19 @@ export default function SprayChartView({ sprayData }: Props) {
                     const color = play.contact_type ? CONTACT_TYPE_COLOR[play.contact_type] : '#6b7280';
                     const symbol = play.hit_result ? (RESULT_SYMBOL[play.hit_result] ?? 'X') : 'X';
                     const r = Math.min(14, 6 + (play.count - 1) * 2);
+                    const gameBorder = multiGame && play.game_id ? gameColorById[play.game_id] : 'white';
+                    const gameStrokeWidth = multiGame ? 2.25 : 1;
                     return (
                         <G key={`dot-${i}`}>
-                            <Circle cx={x} cy={y} r={r} fill={color} opacity={0.9} stroke="white" strokeWidth={1} />
+                            <Circle
+                                cx={x}
+                                cy={y}
+                                r={r}
+                                fill={color}
+                                opacity={0.9}
+                                stroke={gameBorder}
+                                strokeWidth={gameStrokeWidth}
+                            />
                             <SvgText x={x} y={y + 3.5} fontSize={6} fontWeight="700" fill="white" textAnchor="middle">
                                 {symbol}
                             </SvgText>
@@ -189,6 +227,19 @@ export default function SprayChartView({ sprayData }: Props) {
                     </View>
                 ))}
             </View>
+            {multiGame && (
+                <View style={styles.legend}>
+                    {gamesPresent.map((g) => (
+                        <View key={g.game_id} style={styles.legendItem}>
+                            <View style={[styles.legendRing, { borderColor: gameColorById[g.game_id] }]} />
+                            <Text style={styles.legendLabel}>
+                                {formatGameDate(g.game_date)}
+                                {currentGameId === g.game_id ? ' (this game)' : ''}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+            )}
             {plays.length === 0 && <Text style={styles.empty}>No batted ball data yet.</Text>}
         </View>
     );
@@ -222,6 +273,13 @@ const styles = StyleSheet.create({
         width: 8,
         height: 8,
         borderRadius: 4,
+    },
+    legendRing: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
     },
     legendLabel: {
         fontSize: 9,

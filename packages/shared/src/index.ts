@@ -530,6 +530,10 @@ export interface SprayChartData {
     contact_quality?: ContactQuality;
     hit_result?: HitResult;
     count: number;
+    /** Set when the spray chart is scoped across multiple games (opponent scope). */
+    game_id?: string;
+    /** ISO date of the game this aggregated row belongs to. */
+    game_date?: string;
 }
 
 export interface SprayChart {

@@ -31,8 +31,17 @@ export const analyticsApi = {
         return response.data.pitches ?? [];
     },
 
-    getSprayChart: async (batterId: string, gameId?: string): Promise<SprayChartData[]> => {
-        const params = gameId ? `?game_id=${gameId}` : '';
+    getSprayChart: async (
+        batterId: string,
+        gameId?: string,
+        opponentTeamId?: string,
+        opponentName?: string
+    ): Promise<SprayChartData[]> => {
+        const qs = new URLSearchParams();
+        if (gameId) qs.append('game_id', gameId);
+        if (opponentTeamId) qs.append('opponentTeamId', opponentTeamId);
+        if (opponentName) qs.append('opponentName', opponentName);
+        const params = qs.toString() ? `?${qs.toString()}` : '';
         const response = await api.get<{ sprayChart: SprayChartData[] }>(`/analytics/batter/${batterId}/spray-chart${params}`);
         return response.data.sprayChart ?? [];
     },
