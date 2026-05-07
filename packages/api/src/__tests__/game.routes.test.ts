@@ -234,4 +234,80 @@ describe('Game Routes - /bt-api/games', () => {
             expect(res.body.message).toBe('Home/away swapped');
         });
     });
+
+    // ========================================================================
+    // GET /bt-api/games/:id/opponent-roster
+    // ========================================================================
+
+    describe('GET /bt-api/games/:id/opponent-roster', () => {
+        it('returns unified players merging pitcher and batter profiles', async () => {
+            // game lookup
+            mockQuery.mockResolvedValueOnce({
+                rows: [{ home_team_id: 't1', opponent_team_id: 'opp-1' }],
+            } as any);
+            // opponent_teams lookup
+            mockQuery.mockResolvedValueOnce({
+                rows: [{ id: 'opp-1', team_id: 't1', name: 'Wolves', normalized_name: 'wolves' }],
+            } as any);
+            // pitchers + batters in parallel
+            mockQuery.mockResolvedValueOnce({
+                rows: [
+                    {
+                        id: 'p1',
+                        pitcher_name: 'Smith',
+                        normalized_name: 'smith',
+                        throws: 'R',
+                        jersey_number: 14,
+                    },
+                    {
+                        id: 'p2',
+                        pitcher_name: 'Jones',
+                        normalized_name: 'jones',
+                        throws: 'L',
+                        jersey_number: 7,
+                    },
+                ],
+            } as any);
+            mockQuery.mockResolvedValueOnce({
+                rows: [
+                    // Smith is also a batter — should merge into a single player record
+                    { id: 'b1', player_name: 'Smith', normalized_name: 'smith', bats: 'R' },
+                    { id: 'b2', player_name: 'Adams', normalized_name: 'adams', bats: 'L' },
+                ],
+            } as any);
+
+            const res = await getAgent().get('/bt-api/games/g1/opponent-roster').set('Authorization', authHeader());
+
+            expect(res.status).toBe(200);
+            expect(res.body.pitchers).toHaveLength(2);
+            expect(res.body.batters).toHaveLength(2);
+            const players = res.body.players as Array<{
+                name: string;
+                is_pitcher: boolean;
+                is_batter: boolean;
+                throws?: string;
+                bats?: string;
+            }>;
+            // 3 unique players: Smith (two-way), Jones (pitcher only), Adams (batter only)
+            expect(players).toHaveLength(3);
+            const smith = players.find((p) => p.name === 'Smith');
+            expect(smith).toMatchObject({ is_pitcher: true, is_batter: true, throws: 'R', bats: 'R' });
+            const jones = players.find((p) => p.name === 'Jones');
+            expect(jones).toMatchObject({ is_pitcher: true, is_batter: false, throws: 'L' });
+            expect(jones?.bats).toBeUndefined();
+            const adams = players.find((p) => p.name === 'Adams');
+            expect(adams).toMatchObject({ is_pitcher: false, is_batter: true, bats: 'L' });
+        });
+
+        it('returns empty arrays when game has no opponent_team_id', async () => {
+            mockQuery.mockResolvedValueOnce({ rows: [{ home_team_id: 't1', opponent_team_id: null }] } as any);
+
+            const res = await getAgent().get('/bt-api/games/g1/opponent-roster').set('Authorization', authHeader());
+
+            expect(res.status).toBe(200);
+            expect(res.body.pitchers).toEqual([]);
+            expect(res.body.batters).toEqual([]);
+            expect(res.body.players).toEqual([]);
+        });
+    });
 });

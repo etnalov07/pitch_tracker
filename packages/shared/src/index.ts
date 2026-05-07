@@ -1541,6 +1541,23 @@ export interface OpponentTeamWithRoster extends OpponentTeam {
     batters: BatterScoutingProfile[];
 }
 
+/**
+ * Unified opponent-team player. Merges {@link OpponentPitcherProfile} and
+ * {@link BatterScoutingProfile} by normalized name so a two-way player who
+ * has both pitched and batted appears as a single record with `is_pitcher`
+ * and `is_batter` both true. Used by lineup pickers that draw from the
+ * same pool whether the user is filling a batter slot or naming a pitcher.
+ */
+export interface OpponentRosterPlayer {
+    name: string;
+    normalized_name: string;
+    bats?: HandednessType;
+    throws?: ThrowingHand;
+    jersey_number?: number | null;
+    is_pitcher: boolean;
+    is_batter: boolean;
+}
+
 // ============================================================================
 // Scouting Lineup Utilities
 // ============================================================================

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { gamesApi } from '../../state/games/api/gamesApi';
-import { BatterScoutingProfile, Game, OpponentLineupPlayer, OpponentPitcherProfile } from '../../types';
+import { Game, OpponentLineupPlayer, OpponentRosterPlayer } from '../../types';
 import {
     Container,
     Header,
@@ -52,8 +52,7 @@ const OpponentLineup: React.FC = () => {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [startingPitcherName, setStartingPitcherName] = useState('');
-    const [knownPitchers, setKnownPitchers] = useState<OpponentPitcherProfile[]>([]);
-    const [knownBatters, setKnownBatters] = useState<BatterScoutingProfile[]>([]);
+    const [knownPlayers, setKnownPlayers] = useState<OpponentRosterPlayer[]>([]);
     const [lastLineup, setLastLineup] = useState<OpponentLineupPlayer[]>([]);
     const [prefillNote, setPrefillNote] = useState('');
 
@@ -85,8 +84,7 @@ const OpponentLineup: React.FC = () => {
                     gamesApi.getOpponentRoster(gameId),
                     gamesApi.getLastLineupVsOpponent(gameId).catch(() => [] as OpponentLineupPlayer[]),
                 ]);
-                setKnownPitchers(roster.pitchers);
-                setKnownBatters(roster.batters);
+                setKnownPlayers(roster.players);
                 setLastLineup(last);
             } catch {
                 setError('Failed to load game');
@@ -122,11 +120,14 @@ const OpponentLineup: React.FC = () => {
         setLineup((prev) => {
             const updated = [...prev];
             if (field === 'player_name') {
-                const known = knownBatters.find((b) => b.player_name === value);
+                // Match against the unified roster (batter profiles + pitcher profiles
+                // deduped by normalized name) so two-way players auto-fill bats even
+                // if their only known profile is on the pitching side.
+                const known = knownPlayers.find((p) => p.name === value);
                 updated[index] = {
                     ...updated[index],
                     player_name: value,
-                    bats: known ? (known.bats as 'R' | 'L' | 'S') : updated[index].bats,
+                    bats: known?.bats ? (known.bats as 'R' | 'L' | 'S') : updated[index].bats,
                 };
             } else {
                 updated[index] = { ...updated[index], [field]: value };
@@ -240,28 +241,25 @@ const OpponentLineup: React.FC = () => {
                     {error && <ErrorMessage>{error}</ErrorMessage>}
 
                     <form onSubmit={handleSubmit}>
-                        {knownPitchers.length > 0 && (
-                            <datalist id="known-pitchers-list">
-                                {knownPitchers.map((p) => (
-                                    <option key={p.id} value={p.pitcher_name} />
-                                ))}
-                            </datalist>
-                        )}
-                        {knownBatters.length > 0 && (
-                            <datalist id="known-batters-list">
-                                {knownBatters.map((b) => (
-                                    <option key={b.id} value={b.player_name} />
+                        {knownPlayers.length > 0 && (
+                            <datalist id="known-players-list">
+                                {knownPlayers.map((p) => (
+                                    <option key={p.normalized_name} value={p.name} />
                                 ))}
                             </datalist>
                         )}
                         <SectionTitle>Starting Pitcher</SectionTitle>
-                        <HelpText>Enter the opponent's starting pitcher name.</HelpText>
+                        <HelpText>
+                            Enter the opponent's starting pitcher name.
+                            {knownPlayers.length > 0 &&
+                                ` ${knownPlayers.length} known player${knownPlayers.length === 1 ? '' : 's'} available — start typing to pick from the roster.`}
+                        </HelpText>
                         <Input
                             type="text"
                             value={startingPitcherName}
                             onChange={(e) => setStartingPitcherName(e.target.value)}
                             placeholder="e.g. Smith"
-                            list="known-pitchers-list"
+                            list={knownPlayers.length > 0 ? 'known-players-list' : undefined}
                             style={{ marginBottom: '24px' }}
                         />
 
@@ -292,7 +290,7 @@ const OpponentLineup: React.FC = () => {
                                                 value={entry.player_name}
                                                 onChange={(e) => handlePlayerChange(index, 'player_name', e.target.value)}
                                                 placeholder={`Batter ${entry.batting_order}`}
-                                                list={knownBatters.length > 0 ? 'known-batters-list' : undefined}
+                                                list={knownPlayers.length > 0 ? 'known-players-list' : undefined}
                                             />
                                         </Td>
                                         <Td>

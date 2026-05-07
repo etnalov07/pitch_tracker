@@ -161,7 +161,12 @@ export class OpponentLineupService {
 
         await query(`UPDATE opponent_lineup SET replaced_by_id = $1 WHERE id = $2`, [newPlayerId, originalPlayerId]);
 
-        return result.rows[0];
+        const newPlayer = result.rows[0];
+        // Mirror createPlayer: link the sub to a scouting profile so career stats
+        // aggregate across games for the same person.
+        this._maybeAutoLinkBatter(newPlayer, original.game_id).catch(() => {});
+
+        return newPlayer;
     }
 
     async deletePlayer(playerId: string): Promise<void> {

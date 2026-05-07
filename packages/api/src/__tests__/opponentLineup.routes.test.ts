@@ -216,7 +216,8 @@ describe('OpponentLineup Routes - /bt-api/opponent-lineup', () => {
             mockQuery
                 .mockResolvedValueOnce({ rows: [original] } as any) // getPlayerById (original)
                 .mockResolvedValueOnce({ rows: [newPlayer] } as any) // insert new player
-                .mockResolvedValueOnce({ rows: [] } as any); // update original replaced_by_id
+                .mockResolvedValueOnce({ rows: [] } as any) // update original replaced_by_id
+                .mockResolvedValueOnce({ rows: [{ opponent_team_id: null }] } as any); // _maybeAutoLinkBatter exits early
 
             const res = await getAgent()
                 .post('/bt-api/opponent-lineup/player/ol-1/substitute')

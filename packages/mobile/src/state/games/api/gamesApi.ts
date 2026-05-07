@@ -15,6 +15,7 @@ import {
     CreateMyTeamLineupPlayerParams,
     OpponentLineupPlayer,
     OpponentPitcherProfile,
+    OpponentRosterPlayer,
     BaseRunners,
     BaserunnerEvent,
     OpposingPitcher,
@@ -295,10 +296,20 @@ export const gamesApi = {
 
     getOpponentRoster: async (
         gameId: string
-    ): Promise<{ pitchers: OpponentPitcherProfile[]; batters: BatterScoutingProfile[] }> => {
-        const response = await api.get<{ pitchers: OpponentPitcherProfile[]; batters: BatterScoutingProfile[] }>(
-            `/games/${gameId}/opponent-roster`
-        );
-        return response.data;
+    ): Promise<{
+        pitchers: OpponentPitcherProfile[];
+        batters: BatterScoutingProfile[];
+        players: OpponentRosterPlayer[];
+    }> => {
+        const response = await api.get<{
+            pitchers: OpponentPitcherProfile[];
+            batters: BatterScoutingProfile[];
+            players?: OpponentRosterPlayer[];
+        }>(`/games/${gameId}/opponent-roster`);
+        return {
+            pitchers: response.data.pitchers ?? [],
+            batters: response.data.batters ?? [],
+            players: response.data.players ?? [],
+        };
     },
 };

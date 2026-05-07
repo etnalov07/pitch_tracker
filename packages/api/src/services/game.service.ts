@@ -1,5 +1,5 @@
 import { query, transaction } from '../config/database';
-import { Game, Inning, BaseRunners, OpponentPitcherProfile, BatterScoutingProfile } from '../types';
+import { Game, Inning, BaseRunners, OpponentPitcherProfile, BatterScoutingProfile, OpponentRosterPlayer } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import opponentTeamService from './opponentTeam.service';
 
@@ -74,13 +74,59 @@ export class GameService {
         return game;
     }
 
-    async getOpponentRoster(gameId: string): Promise<{ pitchers: OpponentPitcherProfile[]; batters: BatterScoutingProfile[] }> {
+    async getOpponentRoster(gameId: string): Promise<{
+        pitchers: OpponentPitcherProfile[];
+        batters: BatterScoutingProfile[];
+        players: OpponentRosterPlayer[];
+    }> {
         const gameRow = await query('SELECT home_team_id, opponent_team_id FROM games WHERE id = $1', [gameId]);
         const game = gameRow.rows[0];
-        if (!game?.opponent_team_id) return { pitchers: [], batters: [] };
+        if (!game?.opponent_team_id) return { pitchers: [], batters: [], players: [] };
 
         const roster = await opponentTeamService.getWithRoster(game.opponent_team_id, game.home_team_id);
-        return { pitchers: roster?.pitchers ?? [], batters: roster?.batters ?? [] };
+        const pitchers = roster?.pitchers ?? [];
+        const batters = roster?.batters ?? [];
+        return { pitchers, batters, players: this._unifyRoster(pitchers, batters) };
+    }
+
+    /**
+     * Merge pitcher profiles and batter scouting profiles by normalized name
+     * so a two-way player surfaces as one record. The pitcher's display name
+     * wins when both exist (typically the more authoritative spelling). Bats
+     * comes from the batter profile, throws from the pitcher profile.
+     */
+    private _unifyRoster(pitchers: OpponentPitcherProfile[], batters: BatterScoutingProfile[]): OpponentRosterPlayer[] {
+        const byKey = new Map<string, OpponentRosterPlayer>();
+        const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+
+        for (const p of pitchers) {
+            const key = p.normalized_name || norm(p.pitcher_name);
+            byKey.set(key, {
+                name: p.pitcher_name,
+                normalized_name: key,
+                throws: p.throws,
+                jersey_number: p.jersey_number,
+                is_pitcher: true,
+                is_batter: false,
+            });
+        }
+        for (const b of batters) {
+            const key = b.normalized_name || norm(b.player_name);
+            const existing = byKey.get(key);
+            if (existing) {
+                existing.bats = b.bats;
+                existing.is_batter = true;
+            } else {
+                byKey.set(key, {
+                    name: b.player_name,
+                    normalized_name: key,
+                    bats: b.bats,
+                    is_pitcher: false,
+                    is_batter: true,
+                });
+            }
+        }
+        return Array.from(byKey.values()).sort((a, b) => a.name.localeCompare(b.name));
     }
 
     async getGameById(gameId: string): Promise<any> {
