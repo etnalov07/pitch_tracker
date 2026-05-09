@@ -1,4 +1,12 @@
-import { getNextBattingOrder, getNextBatter, applyAtBatResult, advanceHalf, HalfInningState, LineupSlot } from '../gameSimulation';
+import {
+    getNextBattingOrder,
+    getNextBatter,
+    getInningLeadoffBatter,
+    applyAtBatResult,
+    advanceHalf,
+    HalfInningState,
+    LineupSlot,
+} from '../gameSimulation';
 import { BaseRunners, clearBases } from '../atBatHelpers';
 
 // ============================================================================
@@ -103,6 +111,59 @@ describe('getNextBatter', () => {
     it('works with custom lineupSize', () => {
         const small = makeLineup(3);
         expect(getNextBatter(small, 3, 3)?.batting_order).toBe(1);
+    });
+});
+
+// ============================================================================
+// getInningLeadoffBatter — leadoff resolution at half-inning end
+// ============================================================================
+
+describe('getInningLeadoffBatter', () => {
+    const lineup = makeLineup(9);
+
+    describe('batter recorded the last out', () => {
+        it('advances to the next slot (Player 5 strikes out → Player 6 leads off)', () => {
+            const leadoff = getInningLeadoffBatter(lineup, 5, false);
+            expect(leadoff?.batting_order).toBe(6);
+        });
+
+        it('wraps from slot 9 to slot 1', () => {
+            const leadoff = getInningLeadoffBatter(lineup, 9, false);
+            expect(leadoff?.batting_order).toBe(1);
+        });
+    });
+
+    describe('baserunner recorded the last out', () => {
+        it('returns the player at currentOrder (caught stealing mid-AB → Player 5 leads off)', () => {
+            const leadoff = getInningLeadoffBatter(lineup, 5, true);
+            expect(leadoff?.batting_order).toBe(5);
+        });
+
+        it('does not advance even when at slot 9', () => {
+            const leadoff = getInningLeadoffBatter(lineup, 9, true);
+            expect(leadoff?.batting_order).toBe(9);
+        });
+
+        it('handles thrown_out_advancing case (Player 5 hits, on-deck Player 6 already advanced — Player 6 leads off, no further advance)', () => {
+            // After a hit, the lineup pointer was already advanced in handleEndAtBat
+            // to the on-deck batter. The throwout that ended the inning was a baserunner
+            // out, so leadoff = on-deck batter (no further advance).
+            const leadoff = getInningLeadoffBatter(lineup, 6, true);
+            expect(leadoff?.batting_order).toBe(6);
+        });
+    });
+
+    describe('replaced players', () => {
+        it('returns null if the slot is occupied only by a replaced player (baserunner-out path)', () => {
+            const lineupWithSub: LineupSlot[] = [
+                { id: 'p1', batting_order: 1, replaced_by_id: null },
+                { id: 'p2', batting_order: 2, replaced_by_id: 'sub-1' },
+                { id: 'p3', batting_order: 3, replaced_by_id: null },
+            ];
+            // Player 2 was substituted out; an event leaving the lineup pointer at 2
+            // and a baserunner-out path returns null (caller should refresh lineup).
+            expect(getInningLeadoffBatter(lineupWithSub, 2, true, 3)).toBeNull();
+        });
     });
 });
 

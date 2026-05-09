@@ -12,7 +12,7 @@ export {
     isTargetHit,
 } from './utils/pitchLocation';
 export { getCountBucket, deriveGameMode } from './utils/gameMode';
-export { getNextBattingOrder, getNextBatter, applyAtBatResult, advanceHalf } from './utils/gameSimulation';
+export { getNextBattingOrder, getNextBatter, getInningLeadoffBatter, applyAtBatResult, advanceHalf } from './utils/gameSimulation';
 export { formatFielderSequence, parseFielderSequence } from './utils/fielderSequence';
 export { describeBaserunnerEvent } from './utils/baserunnerEvent';
 export type { LineupSlot, HalfInningState, AtBatOutcome } from './utils/gameSimulation';

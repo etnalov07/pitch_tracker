@@ -153,6 +153,10 @@ export default function LiveGameScreen() {
     const [showInningChange, setShowInningChange] = useState(false);
     const [teamRunsScored, setTeamRunsScored] = useState('0');
     const [inningChangeInfo, setInningChangeInfo] = useState<{ inning: number; half: string } | null>(null);
+    // True when the inning-ending out was recorded by a baserunner (caught stealing,
+    // pickoff, thrown_out_advancing). When set, the leadoff batter when this team
+    // returns is the on-deck slot — do NOT advance the lineup pointer further.
+    const [inningEndedByBaserunnerOut, setInningEndedByBaserunnerOut] = useState(false);
 
     // Base runner modals state
     const [showRunnerEventModal, setShowRunnerEventModal] = useState(false);
@@ -403,6 +407,20 @@ export default function LiveGameScreen() {
         []
     );
 
+    // Resolves the leadoff batter when this team returns to bat. When the inning
+    // ended via a baserunner out, the player at currentOrder leads off (no advance);
+    // otherwise advance to the next slot.
+    const findInningLeadoffBatter = useCallback(
+        (batters: OpponentLineupPlayer[], currentOrder: number, lastOutWasBaserunnerOut: boolean): OpponentLineupPlayer | null => {
+            if (lastOutWasBaserunnerOut) {
+                const sorted = [...batters].sort((a, b) => a.batting_order - b.batting_order);
+                return sorted.find((b) => b.batting_order === currentOrder) ?? null;
+            }
+            return findNextActiveBatter(batters, currentOrder);
+        },
+        [findNextActiveBatter]
+    );
+
     const advanceInningWithRuns = useCallback(
         async (runs: number) => {
             if (!id || !game) return;
@@ -481,7 +499,7 @@ export default function LiveGameScreen() {
                     }
                     dispatch(fetchCurrentInning(id));
                 } else if (freshGame.is_home_game !== false && freshGame.charting_mode !== 'both') {
-                    const firstBatter = findNextActiveBatter(activeBatters, currentBattingOrder);
+                    const firstBatter = findInningLeadoffBatter(activeBatters, currentBattingOrder, inningEndedByBaserunnerOut);
                     if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
                     if (firstBatter && newInning) {
                         setCurrentBatter(firstBatter);
@@ -502,6 +520,7 @@ export default function LiveGameScreen() {
                     ]);
                     dispatch(fetchCurrentInning(id));
                 }
+                setInningEndedByBaserunnerOut(false);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {
                 Alert.alert('Error', 'Failed to advance inning');
@@ -518,7 +537,8 @@ export default function LiveGameScreen() {
             opposingPitchers,
             dispatch,
             startAtBatForBatter,
-            findNextActiveBatter,
+            findInningLeadoffBatter,
+            inningEndedByBaserunnerOut,
             router,
         ]
     );
@@ -658,8 +678,9 @@ export default function LiveGameScreen() {
             setShowTeamAtBat(false);
             setTeamAtBatRuns('0');
 
-            // Set up next opponent batter
-            const firstBatter = findNextActiveBatter(activeBatters, currentBattingOrder);
+            // Set up next opponent batter, honoring whether the prior half-inning
+            // ended via a baserunner out (don't advance the lineup pointer in that case).
+            const firstBatter = findInningLeadoffBatter(activeBatters, currentBattingOrder, inningEndedByBaserunnerOut);
             if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
             if (firstBatter && newInning) {
                 setCurrentBatter(firstBatter);
@@ -669,11 +690,23 @@ export default function LiveGameScreen() {
                 setCurrentBatter(firstBatter); // keep batter even if newInning is null
                 dispatch(fetchCurrentInning(id));
             }
+            setInningEndedByBaserunnerOut(false);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {
             Alert.alert('Error', 'Failed to advance inning');
         }
-    }, [id, game, teamAtBatRuns, currentBattingOrder, activeBatters, dispatch, startAtBatForBatter, findNextActiveBatter, router]);
+    }, [
+        id,
+        game,
+        teamAtBatRuns,
+        currentBattingOrder,
+        activeBatters,
+        dispatch,
+        startAtBatForBatter,
+        findInningLeadoffBatter,
+        inningEndedByBaserunnerOut,
+        router,
+    ]);
 
     const handleSelectPitcher = async (player: Player) => {
         if (!id || !currentInning) return;
@@ -1173,6 +1206,10 @@ export default function LiveGameScreen() {
                         setTeamRunsScored('0');
                         setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
                         setShowInningChange(true);
+                        // 3rd out came from a baserunner thrown out advancing — the
+                        // on-deck batter (after handleEndAtBat advances the pointer for
+                        // the completed hit) leads off without further advancement.
+                        setInningEndedByBaserunnerOut(true);
                     } else {
                         setCurrentOuts(lastOutsAfter);
                     }
@@ -1215,6 +1252,9 @@ export default function LiveGameScreen() {
                     setTeamRunsScored('0');
                     setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
                     setShowInningChange(true);
+                    // The batter at the plate was not retired — they lead off when this
+                    // team returns next inning.
+                    setInningEndedByBaserunnerOut(true);
                 }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {

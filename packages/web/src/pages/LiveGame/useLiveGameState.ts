@@ -83,6 +83,10 @@ export function useLiveGameState() {
     const [showInningChange, setShowInningChange] = useState(false);
     const [inningChangeInfo, setInningChangeInfo] = useState<{ inning: number; half: string } | null>(null);
     const [teamRunsScored, setTeamRunsScored] = useState<string>('0');
+    // Tracks whether the inning-ending out was recorded by a baserunner (caught
+    // stealing, pickoff, thrown_out_advancing). When true, the batter at the plate
+    // (or on deck after a completed AB) leads off next inning instead of advancing.
+    const [inningEndedByBaserunnerOut, setInningEndedByBaserunnerOut] = useState(false);
 
     // Baseball diamond modal for in-play recording
     const [showDiamondModal, setShowDiamondModal] = useState(false);
@@ -300,6 +304,8 @@ export function useLiveGameState() {
         setInningChangeInfo,
         teamRunsScored,
         setTeamRunsScored,
+        inningEndedByBaserunnerOut,
+        setInningEndedByBaserunnerOut,
         // Diamond modal
         showDiamondModal,
         setShowDiamondModal,
