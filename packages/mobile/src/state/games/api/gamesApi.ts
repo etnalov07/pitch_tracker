@@ -121,6 +121,11 @@ export const gamesApi = {
         return response.data.pitches;
     },
 
+    getPitcherGameStats: async (pitcherId: string, gameId: string): Promise<{ total_pitches: number }> => {
+        const response = await api.get<{ stats: { total_pitches: number } }>(`/players/${pitcherId}/game-stats/${gameId}`);
+        return response.data.stats;
+    },
+
     // Play operations
     recordPlay: async (playData: Partial<Play>): Promise<Play> => {
         const response = await api.post<{ play: Play }>('/plays', playData);

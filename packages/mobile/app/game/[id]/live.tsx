@@ -91,6 +91,7 @@ import RunnerEventModal from '../../../src/components/live/RunnerEventModal';
 import OpposingPitcherModal from '../../../src/components/live/OpposingPitcherModal';
 import CountBreakdownModal from '../../../src/components/live/CountBreakdownModal';
 import type { CompletedAtBatEntry } from '../../../src/components/live';
+import type { Throwout } from '../../../src/components/live/RunnerAdvancementModal/RunnerAdvancementModal';
 import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/components/common';
 import { HitLocation } from '../../../src/components/live/InPlayModal';
 
@@ -167,8 +168,10 @@ export default function LiveGameScreen() {
     const [completedAtBatsByBatter, setCompletedAtBatsByBatter] = useState<Record<string, CompletedAtBatEntry[]>>({});
     const [showPreviousAtBats, setShowPreviousAtBats] = useState(false);
 
-    // Running game pitch count (seeded from game data, incremented on each logged pitch)
-    const [totalPitchCount, setTotalPitchCount] = useState(0);
+    // Pitch count for the currently selected pitcher in this game.
+    // Fetched from the per-pitcher stats endpoint so a pitching change resets
+    // the displayed count to the new pitcher's outing total.
+    const [currentPitcherPitchCount, setCurrentPitcherPitchCount] = useState(0);
 
     // Pitch call state (integrated from pitch-calling screen)
     const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
@@ -266,12 +269,27 @@ export default function LiveGameScreen() {
         }
     }, [game?.id, game?.home_team_id, game?.charting_mode, dispatch, id]);
 
-    // Seed pitch count from game data on load (only once when game first loads)
+    // Refresh the current pitcher's game pitch count when the active pitcher
+    // changes (pitching change) or after each pitch is logged
+    // (statsRefreshTrigger bumps).
     useEffect(() => {
-        if (game?.total_pitches != null) {
-            setTotalPitchCount(game.total_pitches);
+        if (!currentPitcher?.player_id || !id) {
+            setCurrentPitcherPitchCount(0);
+            return;
         }
-    }, [game?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+        let cancelled = false;
+        gamesApi
+            .getPitcherGameStats(currentPitcher.player_id, id)
+            .then((stats) => {
+                if (!cancelled) setCurrentPitcherPitchCount(stats.total_pitches ?? 0);
+            })
+            .catch(() => {
+                // Network errors leave the prior count visible until the next refresh.
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [currentPitcher?.player_id, id, statsRefreshTrigger]);
 
     useEffect(() => {
         if (gamePitchers.length > 0 && !currentPitcher) {
@@ -911,7 +929,6 @@ export default function LiveGameScreen() {
                 Alert.alert('Error', 'Failed to log pitch');
                 return;
             }
-            setTotalPitchCount((prev) => prev + 1);
             setStatsRefreshTrigger((prev) => prev + 1);
             const newBalls = balls + (selectedResult === 'ball' ? 1 : 0);
             const newStrikes =
@@ -1085,18 +1102,65 @@ export default function LiveGameScreen() {
     );
 
     const handleRunnerAdvancementConfirm = useCallback(
-        async (newRunners: BaseRunners, runsScored: number) => {
+        async (newRunners: BaseRunners, runsScored: number, throwouts: Throwout[] = []) => {
             if (!pendingHitResult) return;
-            dispatch(setBaseRunners(newRunners));
-            if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
-            await updateScoreForRuns(runsScored);
-            setShowRunnerAdvancementModal(false);
-            // Credit the batter with an RBI for each run scored on the play (sac fly, hit, etc.).
-            // Walks/HBPs also legitimately credit forced runs.
-            await handleEndAtBat(pendingHitResult, undefined, { rbi: runsScored, runs_scored: runsScored });
-            setPendingHitResult(null);
+            try {
+                let lastOutsAfter = currentOuts;
+                if (throwouts.length > 0 && id && currentInning) {
+                    // Record N throwout events sequentially. Thread outs_before through each
+                    // call so the service computes outs_after correctly. new_base_runners
+                    // attaches only to the last event so games.base_runners lands once.
+                    let runningOutsBefore = currentOuts;
+                    for (let i = 0; i < throwouts.length; i++) {
+                        if (runningOutsBefore >= 3) break;
+                        const t = throwouts[i];
+                        const isLast = i === throwouts.length - 1;
+                        const event = await dispatch(
+                            recordBaserunnerEvent({
+                                game_id: id,
+                                inning_id: currentInning.id,
+                                at_bat_id: currentAtBat?.id,
+                                event_type: 'thrown_out_advancing',
+                                runner_base: t.fromBase,
+                                runner_to_base: t.toBase,
+                                fielder_sequence: t.fielderSeq,
+                                outs_before: runningOutsBefore,
+                                new_base_runners: isLast ? newRunners : undefined,
+                            } as any)
+                        ).unwrap();
+                        runningOutsBefore = event.outs_after;
+                        lastOutsAfter = event.outs_after;
+                    }
+                    dispatch(setBaseRunners(newRunners));
+                } else {
+                    dispatch(setBaseRunners(newRunners));
+                    if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
+                }
+
+                await updateScoreForRuns(runsScored);
+                setShowRunnerAdvancementModal(false);
+
+                if (throwouts.length > 0) {
+                    if (lastOutsAfter >= 3) {
+                        setCurrentOuts(0);
+                        setTeamRunsScored('0');
+                        setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
+                        setShowInningChange(true);
+                    } else {
+                        setCurrentOuts(lastOutsAfter);
+                    }
+                }
+
+                // Credit the batter with an RBI for each run scored on the play (sac fly, hit, etc.).
+                // Walks/HBPs also legitimately credit forced runs. The hit still counts even if a
+                // runner was thrown out trying to advance.
+                await handleEndAtBat(pendingHitResult, undefined, { rbi: runsScored, runs_scored: runsScored });
+                setPendingHitResult(null);
+            } catch {
+                Alert.alert('Error', 'Failed to update runner positions');
+            }
         },
-        [pendingHitResult, id, dispatch, handleEndAtBat, updateScoreForRuns]
+        [pendingHitResult, id, dispatch, handleEndAtBat, updateScoreForRuns, currentInning, currentAtBat, currentOuts, game]
     );
 
     const handleRecordBaserunnerOut = useCallback(
@@ -1415,7 +1479,7 @@ export default function LiveGameScreen() {
             strikes={strikes}
             outs={currentOuts}
             runners={baseRunners}
-            pitchCount={totalPitchCount}
+            pitchCount={currentPitcherPitchCount}
             onPitcherPress={
                 game.status === 'in_progress'
                     ? isScoutingMode || gameMode === 'opp_pitcher'
