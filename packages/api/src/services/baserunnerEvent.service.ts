@@ -17,13 +17,33 @@ const moveRunner = (runners: BaseRunners, fromBase: RunnerBase, toBase: RunnerBa
 
 export class BaserunnerEventService {
     async recordEvent(
-        data: Partial<BaserunnerEvent> & { new_base_runners?: BaseRunners; runner_to_base?: string }
+        data: Partial<BaserunnerEvent> & {
+            new_base_runners?: BaseRunners;
+            runner_to_base?: string;
+            fielder_sequence?: number[] | null;
+        }
     ): Promise<BaserunnerEvent> {
-        const { game_id, inning_id, at_bat_id, event_type, runner_base, outs_before, notes, new_base_runners, runner_to_base } =
-            data;
+        const {
+            game_id,
+            inning_id,
+            at_bat_id,
+            event_type,
+            runner_base,
+            outs_before,
+            notes,
+            new_base_runners,
+            runner_to_base,
+            fielder_sequence,
+        } = data;
 
         if (!game_id || !inning_id || !event_type || !runner_base || outs_before === undefined) {
             throw new Error('Missing required fields: game_id, inning_id, event_type, runner_base, outs_before');
+        }
+
+        // thrown_out_advancing must anchor to an at-bat and a target base
+        if (event_type === 'thrown_out_advancing') {
+            if (!at_bat_id) throw new Error('thrown_out_advancing requires at_bat_id');
+            if (!runner_to_base) throw new Error('thrown_out_advancing requires runner_to_base');
         }
 
         const isAdvancement = ADVANCEMENT_EVENT_TYPES.has(event_type);
@@ -36,8 +56,8 @@ export class BaserunnerEventService {
             const result = await client.query(
                 `INSERT INTO baserunner_events
                  (id, game_id, inning_id, at_bat_id, event_type, runner_base, runner_to_base,
-                  out_recorded, outs_before, outs_after, notes)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                  out_recorded, outs_before, outs_after, fielder_sequence, notes)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                  RETURNING *`,
                 [
                     eventId,
@@ -50,6 +70,7 @@ export class BaserunnerEventService {
                     outRecorded,
                     outs_before,
                     outsAfter,
+                    fielder_sequence && fielder_sequence.length > 0 ? fielder_sequence : null,
                     notes || null,
                 ]
             );
@@ -62,12 +83,15 @@ export class BaserunnerEventService {
                 third: false,
             };
 
+            // The hit-flow caller computes the final base-runners state across all
+            // advancers + throwouts and passes it on the LAST event of the play, so
+            // honor new_base_runners regardless of event_type. Falls through to the
+            // legacy advancement/out logic when the caller doesn't supply one.
             let updatedRunners: BaseRunners;
-            if (isAdvancement) {
-                // Use client-supplied new state if provided (handles multi-runner balk/WP/PB)
-                if (new_base_runners) {
-                    updatedRunners = new_base_runners;
-                } else if (runner_to_base) {
+            if (new_base_runners) {
+                updatedRunners = new_base_runners;
+            } else if (isAdvancement) {
+                if (runner_to_base) {
                     updatedRunners = moveRunner(currentRunners, runner_base as RunnerBase, runner_to_base as RunnerBase | 'home');
                 } else {
                     updatedRunners = currentRunners;
