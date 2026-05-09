@@ -36,7 +36,7 @@ const RESULT_LABEL: Record<PitchResult, string> = {
     hit_by_pitch: 'HBP',
 };
 
-function getLocationLabel(zone?: PitchCallZone, bats?: string): string | null {
+function getLocationLabel(zone?: PitchCallZone): string | null {
     if (!zone) return null;
     if (zone.startsWith('W-')) {
         const parts = zone.slice(2).split('-');
@@ -54,8 +54,11 @@ function getLocationLabel(zone?: PitchCallZone, bats?: string): string | null {
     const col = parseInt(zone.split('-')[1]);
     if (isNaN(col)) return null;
     if (col === 1) return 'Mid';
-    const isLHH = bats === 'L';
-    return col === 0 ? (isLHH ? 'Out' : 'In') : isLHH ? 'In' : 'Out';
+    // target_zone is semantic — column 0 always means "Inside" and column 2 always
+    // means "Outside" regardless of batter handedness. The live grid renders those
+    // semantic columns on different visual sides for LHH/RHH, but the stored zone
+    // string is the same.
+    return col === 0 ? 'In' : 'Out';
 }
 
 const POSITION_NUM: Record<string, number> = {
@@ -124,14 +127,13 @@ function formatInning(num: number, half: string): string {
 
 interface PitchDotProps {
     pitch: BatterAtBatPitch;
-    bats?: string;
 }
 
-function PitchDot({ pitch, bats }: PitchDotProps) {
+function PitchDot({ pitch }: PitchDotProps) {
     const colors = RESULT_COLOR[pitch.pitch_result];
     const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
     const resultLabel = RESULT_LABEL[pitch.pitch_result];
-    const locationLabel = getLocationLabel(pitch.target_zone, bats);
+    const locationLabel = getLocationLabel(pitch.target_zone);
     return (
         <View style={[styles.pitchDot, { backgroundColor: colors.bg }, pitch.is_ab_ending && styles.pitchDotEnding]}>
             <Text style={[styles.pitchCount, { color: colors.text }]}>
@@ -184,7 +186,7 @@ function BatterRow({ batter }: BatterRowProps) {
                             </View>
                             <View style={styles.pitchRow}>
                                 {ab.pitches.map((pitch) => (
-                                    <PitchDot key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
+                                    <PitchDot key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} />
                                 ))}
                             </View>
                             {abIdx < batter.at_bats.length - 1 && <View style={styles.atBatDivider} />}

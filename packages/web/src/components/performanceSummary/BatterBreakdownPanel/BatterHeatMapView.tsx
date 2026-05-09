@@ -32,7 +32,11 @@ const PITCH_TYPE_ABBREV: Record<string, string> = {
 };
 
 // Matches the coordinate mapping used by the live StrikeZone (viewBox 0 0 300 300).
-// For LHH, X is mirrored around the zone so inside/outside render on the correct side.
+// location_x/location_y are stored in SVG-frame: x=0 is the SVG's left edge of the
+// strike zone and x=1 is the right edge, regardless of batter handedness. The live
+// tracker already places the LHH batter on the visual left and RHH on the right, so
+// no further per-handedness mirror is needed here — applying one would invert the
+// dot horizontally for LHH.
 const toY = (ly: number) => 120 + ly * 110;
 
 interface Props {
@@ -41,7 +45,7 @@ interface Props {
 }
 
 export default function BatterHeatMapView({ pitches, bats }: Props) {
-    const toX = (lx: number) => (bats === 'L' ? 188 - lx * 75 : 113 + lx * 75);
+    const toX = (lx: number) => 113 + lx * 75;
     const located = pitches.filter((p) => p.location_x != null && p.location_y != null);
     const typesPresent = Array.from(new Set(located.map((p) => p.pitch_type)));
 

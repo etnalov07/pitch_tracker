@@ -34,10 +34,14 @@ const PITCH_TYPE_ABBREV: Record<string, string> = {
 };
 
 // Scale from the 300×300 viewBox used by the live StrikeZone.
-// toX is defined inside the component so it can mirror for LHH.
+// location_x is stored in SVG-frame (x=0 is the strike zone's SVG left edge, x=1
+// is the right edge) regardless of handedness. The live tracker already mirrors
+// the visual layout so LHH stands on the left and RHH on the right; mirroring
+// here as well would put LHH dots on the wrong side of the zone.
 const SIZE = 200;
 const S = SIZE / 300;
 const toY = (ly: number) => (100 + ly * 132) * S;
+const toX = (lx: number) => (105 + lx * 90) * S;
 
 interface Props {
     pitches: PitchLocationData[];
@@ -45,7 +49,6 @@ interface Props {
 }
 
 export default function HeatMapView({ pitches, bats }: Props) {
-    const toX = (lx: number) => (bats === 'L' ? (195 - lx * 90) * S : (105 + lx * 90) * S);
     const located = pitches.filter((p) => p.location_x != null && p.location_y != null);
     const typesPresent = [...new Set(located.map((p) => p.pitch_type))];
 

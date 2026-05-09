@@ -156,20 +156,23 @@ function formatInning(num: number, half: string): string {
     return `${half === 'top' ? 'Top' : 'Bot'} ${num}`;
 }
 
-function getLocationLabel(zone?: PitchCallZone, bats?: string): string | null {
+function getLocationLabel(zone?: PitchCallZone): string | null {
     if (!zone) return null;
     if (zone.startsWith('W-')) return 'W';
     const col = parseInt(zone.split('-')[1]);
     if (isNaN(col)) return null;
     if (col === 1) return 'Mid';
-    const isLHH = bats === 'L';
-    return col === 0 ? (isLHH ? 'Out' : 'In') : isLHH ? 'In' : 'Out';
+    // target_zone is semantic — column 0 always means "Inside" and column 2 always
+    // means "Outside" regardless of batter handedness. The live grid renders those
+    // semantic columns on different visual sides for LHH/RHH, but the stored zone
+    // string is the same.
+    return col === 0 ? 'In' : 'Out';
 }
 
-function WebPitchCard({ pitch, bats }: { pitch: BatterAtBatPitch; bats?: string }) {
+function WebPitchCard({ pitch }: { pitch: BatterAtBatPitch }) {
     const colors = RESULT_COLOR[pitch.pitch_result];
     const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
-    const locationLabel = getLocationLabel(pitch.target_zone, bats);
+    const locationLabel = getLocationLabel(pitch.target_zone);
     return (
         <PitchCard bg={colors.bg} isEnding={pitch.is_ab_ending} title={pitch.pitch_type}>
             <PitchTextLine color={colors.text} size={9}>
@@ -220,7 +223,7 @@ function WebBatterRow({ batter }: { batter: BatterBreakdown }) {
                         </AtBatHeaderRow>
                         <PitchSequence>
                             {ab.pitches.map((pitch) => (
-                                <WebPitchCard key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
+                                <WebPitchCard key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} />
                             ))}
                         </PitchSequence>
                     </AtBatBlock>

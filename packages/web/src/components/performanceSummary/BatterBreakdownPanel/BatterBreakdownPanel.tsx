@@ -143,7 +143,7 @@ function formatInning(num: number, half: string): string {
     return `${half === 'top' ? 'Top' : 'Bot'} ${num}`;
 }
 
-function getLocationLabel(zone?: PitchCallZone, bats?: string): string | null {
+function getLocationLabel(zone?: PitchCallZone): string | null {
     if (!zone) return null;
     if (zone.startsWith('W-')) {
         const parts = zone.slice(2).split('-');
@@ -161,14 +161,17 @@ function getLocationLabel(zone?: PitchCallZone, bats?: string): string | null {
     const col = parseInt(zone.split('-')[1]);
     if (isNaN(col)) return null;
     if (col === 1) return 'Mid';
-    const isLHH = bats === 'L';
-    return col === 0 ? (isLHH ? 'Out' : 'In') : isLHH ? 'In' : 'Out';
+    // target_zone is semantic — column 0 always means "Inside" and column 2 always
+    // means "Outside" regardless of batter handedness. The live grid renders those
+    // semantic columns on different visual sides for LHH/RHH, but the stored zone
+    // string is the same.
+    return col === 0 ? 'In' : 'Out';
 }
 
-function PitchCardItem({ pitch, bats }: { pitch: BatterAtBatPitch; bats?: string }) {
+function PitchCardItem({ pitch }: { pitch: BatterAtBatPitch }) {
     const colors = RESULT_COLOR[pitch.pitch_result];
     const abbrev = PITCH_ABBREV[pitch.pitch_type] ?? pitch.pitch_type.slice(0, 2).toUpperCase();
-    const locationLabel = getLocationLabel(pitch.target_zone, bats);
+    const locationLabel = getLocationLabel(pitch.target_zone);
     return (
         <PitchCard bg={colors.bg} isEnding={pitch.is_ab_ending} title={pitch.pitch_type}>
             <PitchTextLine color={colors.text} size={9}>
@@ -305,7 +308,7 @@ function BatterRow({
                             </AtBatHeaderRow>
                             <PitchSequence>
                                 {ab.pitches.map((pitch) => (
-                                    <PitchCardItem key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} bats={batter.bats} />
+                                    <PitchCardItem key={`${ab.at_bat_id}-${pitch.pitch_number}`} pitch={pitch} />
                                 ))}
                             </PitchSequence>
                         </AtBatBlock>
