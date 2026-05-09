@@ -570,7 +570,13 @@ export interface PitchLocationData {
     pitch_type: PitchType;
     pitch_result: PitchResult;
     velocity?: number;
+    target_location_x?: number;
+    target_location_y?: number;
+    balls_before?: number;
+    strikes_before?: number;
 }
+
+export type TendencyBucket = 'first_pitch' | 'hitter_count' | 'pitcher_count' | 'two_strike';
 
 export interface PitchLocationHeatMap {
     batter_id: string;
