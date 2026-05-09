@@ -13,6 +13,8 @@ export {
 } from './utils/pitchLocation';
 export { getCountBucket, deriveGameMode } from './utils/gameMode';
 export { getNextBattingOrder, getNextBatter, applyAtBatResult, advanceHalf } from './utils/gameSimulation';
+export { formatFielderSequence, parseFielderSequence } from './utils/fielderSequence';
+export { describeBaserunnerEvent } from './utils/baserunnerEvent';
 export type { LineupSlot, HalfInningState, AtBatOutcome } from './utils/gameSimulation';
 
 // ============================================================================
@@ -91,6 +93,33 @@ export interface TeamWithPlayers extends Team {
 // ============================================================================
 
 export type PlayerPosition = 'P' | 'C' | '1B' | '2B' | '3B' | 'SS' | 'LF' | 'CF' | 'RF' | 'OF' | 'INF' | 'MIF' | 'DH' | 'UTIL';
+
+// Standard baseball position numbers (1=P, 2=C, 3=1B, ..., 9=RF). Used for
+// putout/assist sequences (e.g. "9-2" = throw from RF to C) and any future
+// scoring notation. Group positions (OF, INF, MIF, DH, UTIL) are not numbered.
+export const POSITION_NUM = {
+    P: 1,
+    C: 2,
+    '1B': 3,
+    '2B': 4,
+    '3B': 5,
+    SS: 6,
+    LF: 7,
+    CF: 8,
+    RF: 9,
+} as const;
+
+export const NUM_TO_POSITION: Record<number, PlayerPosition> = {
+    1: 'P',
+    2: 'C',
+    3: '1B',
+    4: '2B',
+    5: '3B',
+    6: 'SS',
+    7: 'LF',
+    8: 'CF',
+    9: 'RF',
+};
 
 export type HandednessType = 'R' | 'L' | 'S';
 
@@ -225,7 +254,8 @@ export type BaserunnerEventType =
     | 'stolen_base'
     | 'wild_pitch'
     | 'passed_ball'
-    | 'balk';
+    | 'balk'
+    | 'thrown_out_advancing';
 
 export type RunnerBase = 'first' | 'second' | 'third';
 
@@ -240,6 +270,9 @@ export interface BaserunnerEvent {
     out_recorded: boolean;
     outs_before: number;
     outs_after: number;
+    // Putout/assist fielder sequence (1-9). For thrown_out_advancing events
+    // this captures e.g. [9, 2] for "throw from RF, putout by C".
+    fielder_sequence?: number[] | null;
     notes?: string;
     created_at: string;
 }
