@@ -26,6 +26,7 @@ import {
 } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { MyTeamLineupPlayer, OpponentLineupPlayer, GamePitcherWithPlayer, getOutsForResult } from '../../types';
+import type { Throwout } from './RunnerAdvancementModal';
 import { LiveGameState } from './useLiveGameState';
 
 export function useLiveGameActions(state: LiveGameState) {
@@ -567,20 +568,64 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
-    const handleRunnerAdvancementConfirm = async (newRunners: BaseRunners, runsScored: number) => {
+    const handleRunnerAdvancementConfirm = async (newRunners: BaseRunners, runsScored: number, throwouts: Throwout[] = []) => {
         if (!gameId || !game) return;
 
         try {
-            // Update base runners on server
-            await gamesApi.updateBaseRunners(gameId, newRunners);
+            let lastOutsAfter = currentOuts;
+
+            if (throwouts.length > 0 && currentInning) {
+                // Record N throwout events sequentially. Thread outs_before through each
+                // call so the service computes outs_after correctly. Pass new_base_runners
+                // only on the LAST event so games.base_runners lands once.
+                let runningOutsBefore = currentOuts;
+                for (let i = 0; i < throwouts.length; i++) {
+                    if (runningOutsBefore >= 3) break;
+                    const t = throwouts[i];
+                    const isLast = i === throwouts.length - 1;
+                    const event = await gamesApi.recordBaserunnerEvent({
+                        game_id: gameId,
+                        inning_id: currentInning.id,
+                        at_bat_id: currentAtBat?.id,
+                        event_type: 'thrown_out_advancing',
+                        runner_base: t.fromBase,
+                        runner_to_base: t.toBase,
+                        fielder_sequence: t.fielderSeq,
+                        outs_before: runningOutsBefore,
+                        new_base_runners: isLast ? newRunners : undefined,
+                    } as Partial<BaserunnerEvent> & {
+                        new_base_runners?: BaseRunners;
+                        runner_to_base?: string;
+                        fielder_sequence?: number[];
+                    });
+                    runningOutsBefore = event.outs_after;
+                    lastOutsAfter = event.outs_after;
+                }
+            } else {
+                await gamesApi.updateBaseRunners(gameId, newRunners);
+            }
+
             setBaseRunners(newRunners);
-
             await updateScoreForRuns(runsScored);
-
             setShowRunnerAdvancementModal(false);
 
-            // Now end the at-bat with the pending result.
-            // Credit the batter with an RBI for each run scored (sac fly, hit, forced walk/HBP).
+            const inningEnded = throwouts.length > 0 && lastOutsAfter >= 3;
+            if (throwouts.length > 0) {
+                if (inningEnded) {
+                    setCurrentOuts(0);
+                    setTeamRunsScored('0');
+                    setInningChangeInfo({
+                        inning: game?.current_inning || 1,
+                        half: game?.inning_half || 'top',
+                    });
+                    setShowInningChange(true);
+                } else {
+                    setCurrentOuts(lastOutsAfter);
+                }
+            }
+
+            // End the at-bat with the pending result. The hit still counts even if a
+            // runner was thrown out; runs scored on the play earn the batter RBIs.
             const result = state.pendingHitResult;
             setPendingHitResult(null);
             if (result) {
