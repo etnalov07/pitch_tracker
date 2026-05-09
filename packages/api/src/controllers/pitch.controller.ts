@@ -12,6 +12,26 @@ export class PitchController {
         }
     }
 
+    async undoPitch(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const result = await pitchService.undoPitch(id as string);
+            res.status(200).json({
+                message: 'Pitch undone successfully',
+                pitch: result.pitch,
+                atBat: result.atBat,
+                game: result.game,
+            });
+        } catch (error) {
+            const status = (error as { status?: number })?.status;
+            if (status) {
+                res.status(status).json({ error: (error as Error).message });
+                return;
+            }
+            next(error);
+        }
+    }
+
     async getPitchById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;

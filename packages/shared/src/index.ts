@@ -12,7 +12,7 @@ export {
     isTargetHit,
 } from './utils/pitchLocation';
 export { getCountBucket, deriveGameMode } from './utils/gameMode';
-export { getNextBattingOrder, getNextBatter, applyAtBatResult, advanceHalf } from './utils/gameSimulation';
+export { getNextBattingOrder, getNextBatter, getInningLeadoffBatter, applyAtBatResult, advanceHalf } from './utils/gameSimulation';
 export { formatFielderSequence, parseFielderSequence } from './utils/fielderSequence';
 export { describeBaserunnerEvent } from './utils/baserunnerEvent';
 export type { LineupSlot, HalfInningState, AtBatOutcome } from './utils/gameSimulation';
@@ -443,6 +443,26 @@ export type PitchType =
 
 export type PitchResult = 'ball' | 'called_strike' | 'swinging_strike' | 'foul' | 'in_play' | 'hit_by_pitch';
 
+// Snapshot of at-bat + game state captured at logPitch time so the pitch can be
+// fully reversed (undo). Restoring this snapshot rewinds count, runners, score,
+// and at-bat lifecycle (result/outs_after/rbi/runs_scored/ab_end_time).
+export interface PitchPrevState {
+    at_bat: {
+        balls: number;
+        strikes: number;
+        result: string | null;
+        outs_after: number;
+        rbi: number;
+        runs_scored: number;
+        ab_end_time: string | null;
+    };
+    game: {
+        base_runners: BaseRunners;
+        home_score: number;
+        away_score: number;
+    };
+}
+
 export interface Pitch {
     id: string;
     at_bat_id: string;
@@ -463,6 +483,7 @@ export interface Pitch {
     strikes_before: number;
     pitch_result: PitchResult;
     team_side?: TeamSide;
+    prev_state?: PitchPrevState | null;
     created_at: string;
 }
 

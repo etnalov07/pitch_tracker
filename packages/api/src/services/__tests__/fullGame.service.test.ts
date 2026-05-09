@@ -303,6 +303,22 @@ describe('logPitch', () => {
     function setupPitchTransaction(pitchResult: unknown) {
         setupTransaction([
             { rows: [{ max_pitch: 0 }] }, // max pitch number
+            {
+                rows: [
+                    {
+                        balls: 0,
+                        strikes: 0,
+                        result: null,
+                        outs_after: 0,
+                        rbi: 0,
+                        runs_scored: 0,
+                        ab_end_time: null,
+                        base_runners: { first: false, second: false, third: false },
+                        home_score: 0,
+                        away_score: 0,
+                    },
+                ],
+            }, // snapshot pre-pitch state
             { rows: [pitchResult] }, // INSERT pitch
             { rows: [] }, // UPDATE at_bats
             { rows: [] }, // check pitch type
@@ -395,7 +411,29 @@ describe('full 3-inning game — service call sequence', () => {
 
             // logPitch (1 pitch per at-bat for simplicity)
             const pitch = makePitch(atBatId, 1);
-            setupTransaction([{ rows: [{ max_pitch: 0 }] }, { rows: [pitch] }, { rows: [] }, { rows: [] }, { rows: [] }]);
+            setupTransaction([
+                { rows: [{ max_pitch: 0 }] },
+                {
+                    rows: [
+                        {
+                            balls: 0,
+                            strikes: 0,
+                            result: null,
+                            outs_after: 0,
+                            rbi: 0,
+                            runs_scored: 0,
+                            ab_end_time: null,
+                            base_runners: { first: false, second: false, third: false },
+                            home_score: 0,
+                            away_score: 0,
+                        },
+                    ],
+                },
+                { rows: [pitch] },
+                { rows: [] },
+                { rows: [] },
+                { rows: [] },
+            ]);
 
             await pitchService.logPitch({
                 at_bat_id: atBatId,

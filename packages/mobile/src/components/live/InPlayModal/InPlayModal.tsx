@@ -5,7 +5,7 @@ import Svg, { Path, Circle, G, Line, Rect, Text as SvgText } from 'react-native-
 import * as Haptics from '../../../utils/haptics';
 import { colors } from '../../../styles/theme';
 
-export type HitType = 'fly_ball' | 'line_drive' | 'ground_ball';
+export type HitType = 'fly_ball' | 'line_drive' | 'ground_ball' | 'bunt';
 
 export interface HitLocation {
     x: number;
@@ -38,6 +38,7 @@ const OTHER_RESULTS = [
     { result: 'fielders_choice', label: 'FC', isOut: true },
     { result: 'double_play', label: 'DP', isOut: true },
     { result: 'sacrifice_fly', label: 'Sac Fly', isOut: true },
+    { result: 'sacrifice_bunt', label: 'Sac Bunt', isOut: true },
 ];
 
 const FIELD_SIZE = 280;
@@ -112,7 +113,13 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
 
     const handleResultSelect = (result: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        onResult(result, hitLocation || undefined, selectedFielder || undefined);
+        // A sac bunt is by definition a bunt — promote the contact type so the
+        // recorded play tags it correctly even if the user didn't tap the chip.
+        const effectiveLocation =
+            result === 'sacrifice_bunt' && hitLocation && hitLocation.hitType !== 'bunt'
+                ? { ...hitLocation, hitType: 'bunt' as HitType }
+                : hitLocation;
+        onResult(result, effectiveLocation || undefined, selectedFielder || undefined);
         setHitLocation(null);
         setHitType('line_drive');
         setSelectedFielder(null);
@@ -143,7 +150,7 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                 <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {/* Hit Type Selector */}
                     <View style={styles.hitTypeRow}>
-                        {(['fly_ball', 'line_drive', 'ground_ball'] as HitType[]).map((type) => (
+                        {(['fly_ball', 'line_drive', 'ground_ball', 'bunt'] as HitType[]).map((type) => (
                             <View
                                 key={type}
                                 style={[styles.hitTypeButton, hitType === type && styles.hitTypeButtonActive]}
@@ -153,7 +160,13 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                                 }}
                             >
                                 <Text style={[styles.hitTypeText, hitType === type && styles.hitTypeTextActive]}>
-                                    {type === 'fly_ball' ? 'Fly Ball' : type === 'line_drive' ? 'Line Drive' : 'Ground Ball'}
+                                    {type === 'fly_ball'
+                                        ? 'Fly Ball'
+                                        : type === 'line_drive'
+                                          ? 'Line Drive'
+                                          : type === 'ground_ball'
+                                            ? 'Ground Ball'
+                                            : 'Bunt'}
                                 </Text>
                             </View>
                         ))}

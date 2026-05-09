@@ -8,6 +8,7 @@ const router = Router();
 router.use(authenticateToken);
 
 router.post('/', pitchController.logPitch.bind(pitchController));
+router.delete('/:id', pitchController.undoPitch.bind(pitchController));
 router.get('/:id', pitchController.getPitchById.bind(pitchController));
 router.get('/at-bat/:atBatId', pitchController.getPitchesByAtBat.bind(pitchController));
 router.get('/game/:gameId', pitchController.getPitchesByGame.bind(pitchController));

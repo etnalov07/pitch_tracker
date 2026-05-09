@@ -24,6 +24,29 @@ export function getNextBatter<T extends LineupSlot>(lineup: T[], currentOrder: n
     return lineup.find((p) => p.batting_order === nextOrder && !p.replaced_by_id) ?? null;
 }
 
+/**
+ * Resolves the leadoff batter when a team returns to bat after the half-inning ends.
+ *
+ * If the inning-ending out was recorded by a baserunner (caught stealing, pickoff,
+ * thrown out advancing, etc.), the batter who was at the plate was NOT retired,
+ * so they (or the on-deck batter the lineup pointer already advanced to after a
+ * completed at-bat) lead off — do not advance further.
+ *
+ * If the inning-ending out was a batter out (strikeout, groundout, etc.), the
+ * retired batter is at currentOrder, so advance to the next slot.
+ */
+export function getInningLeadoffBatter<T extends LineupSlot>(
+    lineup: T[],
+    currentOrder: number,
+    lastOutWasBaserunnerOut: boolean,
+    lineupSize = 9
+): T | null {
+    if (lastOutWasBaserunnerOut) {
+        return lineup.find((p) => p.batting_order === currentOrder && !p.replaced_by_id) ?? null;
+    }
+    return getNextBatter(lineup, currentOrder, lineupSize);
+}
+
 // ============================================================================
 // Pure half-inning state machine — used for simulation tests
 // ============================================================================

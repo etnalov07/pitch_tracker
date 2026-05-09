@@ -116,6 +116,11 @@ export const gamesApi = {
         return response.data.pitch;
     },
 
+    undoPitch: async (pitchId: string): Promise<{ pitch: Pitch; atBat: AtBat; game: Game }> => {
+        const response = await api.delete<{ pitch: Pitch; atBat: AtBat; game: Game }>(`/pitches/${pitchId}`);
+        return { pitch: response.data.pitch, atBat: response.data.atBat, game: response.data.game };
+    },
+
     getGamePitches: async (gameId: string): Promise<Pitch[]> => {
         const response = await api.get<{ pitches: Pitch[] }>(`/pitches/game/${gameId}`);
         return response.data.pitches;
