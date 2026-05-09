@@ -91,6 +91,7 @@ import RunnerEventModal from '../../../src/components/live/RunnerEventModal';
 import OpposingPitcherModal from '../../../src/components/live/OpposingPitcherModal';
 import CountBreakdownModal from '../../../src/components/live/CountBreakdownModal';
 import type { CompletedAtBatEntry } from '../../../src/components/live';
+import type { Throwout } from '../../../src/components/live/RunnerAdvancementModal/RunnerAdvancementModal';
 import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/components/common';
 import { HitLocation } from '../../../src/components/live/InPlayModal';
 
@@ -1101,18 +1102,65 @@ export default function LiveGameScreen() {
     );
 
     const handleRunnerAdvancementConfirm = useCallback(
-        async (newRunners: BaseRunners, runsScored: number) => {
+        async (newRunners: BaseRunners, runsScored: number, throwouts: Throwout[] = []) => {
             if (!pendingHitResult) return;
-            dispatch(setBaseRunners(newRunners));
-            if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
-            await updateScoreForRuns(runsScored);
-            setShowRunnerAdvancementModal(false);
-            // Credit the batter with an RBI for each run scored on the play (sac fly, hit, etc.).
-            // Walks/HBPs also legitimately credit forced runs.
-            await handleEndAtBat(pendingHitResult, undefined, { rbi: runsScored, runs_scored: runsScored });
-            setPendingHitResult(null);
+            try {
+                let lastOutsAfter = currentOuts;
+                if (throwouts.length > 0 && id && currentInning) {
+                    // Record N throwout events sequentially. Thread outs_before through each
+                    // call so the service computes outs_after correctly. new_base_runners
+                    // attaches only to the last event so games.base_runners lands once.
+                    let runningOutsBefore = currentOuts;
+                    for (let i = 0; i < throwouts.length; i++) {
+                        if (runningOutsBefore >= 3) break;
+                        const t = throwouts[i];
+                        const isLast = i === throwouts.length - 1;
+                        const event = await dispatch(
+                            recordBaserunnerEvent({
+                                game_id: id,
+                                inning_id: currentInning.id,
+                                at_bat_id: currentAtBat?.id,
+                                event_type: 'thrown_out_advancing',
+                                runner_base: t.fromBase,
+                                runner_to_base: t.toBase,
+                                fielder_sequence: t.fielderSeq,
+                                outs_before: runningOutsBefore,
+                                new_base_runners: isLast ? newRunners : undefined,
+                            } as any)
+                        ).unwrap();
+                        runningOutsBefore = event.outs_after;
+                        lastOutsAfter = event.outs_after;
+                    }
+                    dispatch(setBaseRunners(newRunners));
+                } else {
+                    dispatch(setBaseRunners(newRunners));
+                    if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
+                }
+
+                await updateScoreForRuns(runsScored);
+                setShowRunnerAdvancementModal(false);
+
+                if (throwouts.length > 0) {
+                    if (lastOutsAfter >= 3) {
+                        setCurrentOuts(0);
+                        setTeamRunsScored('0');
+                        setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
+                        setShowInningChange(true);
+                    } else {
+                        setCurrentOuts(lastOutsAfter);
+                    }
+                }
+
+                // Credit the batter with an RBI for each run scored on the play (sac fly, hit, etc.).
+                // Walks/HBPs also legitimately credit forced runs. The hit still counts even if a
+                // runner was thrown out trying to advance.
+                await handleEndAtBat(pendingHitResult, undefined, { rbi: runsScored, runs_scored: runsScored });
+                setPendingHitResult(null);
+            } catch {
+                Alert.alert('Error', 'Failed to update runner positions');
+            }
         },
-        [pendingHitResult, id, dispatch, handleEndAtBat, updateScoreForRuns]
+        [pendingHitResult, id, dispatch, handleEndAtBat, updateScoreForRuns, currentInning, currentAtBat, currentOuts, game]
     );
 
     const handleRecordBaserunnerOut = useCallback(

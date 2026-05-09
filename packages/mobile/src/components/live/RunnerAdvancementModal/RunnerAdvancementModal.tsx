@@ -1,22 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Modal, Portal, Text, Button, Chip, useTheme, IconButton } from 'react-native-paper';
-import { BaseRunners, getSuggestedAdvancement } from '@pitch-tracker/shared';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Modal, Portal, Text, Button, Chip, useTheme, IconButton, Divider } from 'react-native-paper';
+import { BaseRunners, formatFielderSequence, getSuggestedAdvancement, RunnerBase } from '@pitch-tracker/shared';
 import { colors } from '../../../styles/theme';
 import BaseRunnerDiamond from '../BaseRunnerDiamond';
+import FielderSequencePicker from '../FielderSequencePicker';
+
+export type ThrowoutTargetBase = 'second' | 'third' | 'home';
+
+export interface Throwout {
+    fromBase: RunnerBase;
+    toBase: ThrowoutTargetBase;
+    fielderSeq: number[];
+}
 
 interface RunnerAdvancementModalProps {
     visible: boolean;
     onDismiss: () => void;
     currentRunners: BaseRunners;
     hitResult: string;
-    onConfirm: (newRunners: BaseRunners, runsScored: number) => void;
+    onConfirm: (newRunners: BaseRunners, runsScored: number, throwouts: Throwout[]) => void;
 }
+
+const FROM_BASE_LABEL: Record<RunnerBase, string> = { first: '1st', second: '2nd', third: '3rd' };
+const TO_BASE_LABEL: Record<ThrowoutTargetBase, string> = { second: '2nd', third: '3rd', home: 'home' };
+
+const VALID_TARGETS: Record<RunnerBase, ThrowoutTargetBase[]> = {
+    first: ['second', 'third', 'home'],
+    second: ['third', 'home'],
+    third: ['home'],
+};
 
 /**
  * Modal for adjusting runner positions after a hit.
- * Shows suggested advancement based on hit type, but allows manual adjustment
- * to handle extra-base advancement (e.g., first-to-third on a single).
+ * Shows suggested advancement based on hit type, allows manual base toggling,
+ * and lets the user record any baserunners thrown out trying to advance on the
+ * play (with putout/assist fielder sequence).
  */
 const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
     visible,
@@ -26,40 +45,37 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
     onConfirm,
 }) => {
     const theme = useTheme();
-
-    // Get initial suggested advancement
     const { suggestedRunners, suggestedRuns } = getSuggestedAdvancement(currentRunners, hitResult);
-
-    // State for adjusted positions
     const [newRunners, setNewRunners] = useState<BaseRunners>(suggestedRunners);
     const [runsScored, setRunsScored] = useState(suggestedRuns);
+    const [throwouts, setThrowouts] = useState<Throwout[]>([]);
+    const [showAddThrowout, setShowAddThrowout] = useState(false);
+    const [draftFromBase, setDraftFromBase] = useState<RunnerBase | null>(null);
+    const [draftToBase, setDraftToBase] = useState<ThrowoutTargetBase | null>(null);
+    const [draftFielderSeq, setDraftFielderSeq] = useState<number[]>([]);
 
-    // Reset when modal opens with new data
     useEffect(() => {
         if (visible) {
             const suggestion = getSuggestedAdvancement(currentRunners, hitResult);
             setNewRunners(suggestion.suggestedRunners);
             setRunsScored(suggestion.suggestedRuns);
+            setThrowouts([]);
+            setShowAddThrowout(false);
+            setDraftFromBase(null);
+            setDraftToBase(null);
+            setDraftFielderSeq([]);
         }
     }, [visible, currentRunners, hitResult]);
 
-    const toggleBase = (base: 'first' | 'second' | 'third') => {
-        setNewRunners((prev) => ({
-            ...prev,
-            [base]: !prev[base],
-        }));
+    const toggleBase = (base: RunnerBase) => {
+        setNewRunners((prev) => ({ ...prev, [base]: !prev[base] }));
     };
 
-    const incrementRuns = () => {
-        setRunsScored((prev) => prev + 1);
-    };
-
-    const decrementRuns = () => {
-        setRunsScored((prev) => Math.max(0, prev - 1));
-    };
+    const incrementRuns = () => setRunsScored((prev) => prev + 1);
+    const decrementRuns = () => setRunsScored((prev) => Math.max(0, prev - 1));
 
     const handleConfirm = () => {
-        onConfirm(newRunners, runsScored);
+        onConfirm(newRunners, runsScored, throwouts);
         onDismiss();
     };
 
@@ -88,8 +104,34 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
         }
     };
 
-    // Calculate how many runners were on base before
     const runnersOnBefore = (currentRunners.first ? 1 : 0) + (currentRunners.second ? 1 : 0) + (currentRunners.third ? 1 : 0);
+
+    const usedFromBases = new Set(throwouts.map((t) => t.fromBase));
+    const availableFromBases: RunnerBase[] = (['first', 'second', 'third'] as RunnerBase[]).filter(
+        (b) => currentRunners[b] && !usedFromBases.has(b)
+    );
+    const validTargets = draftFromBase ? VALID_TARGETS[draftFromBase] : [];
+    const canAddThrowout = draftFromBase != null && draftToBase != null && draftFielderSeq.length > 0;
+
+    const resetDraft = () => {
+        setDraftFromBase(null);
+        setDraftToBase(null);
+        setDraftFielderSeq([]);
+    };
+
+    const handleAddThrowout = () => {
+        if (!canAddThrowout) return;
+        setThrowouts((prev) => [
+            ...prev,
+            { fromBase: draftFromBase as RunnerBase, toBase: draftToBase as ThrowoutTargetBase, fielderSeq: draftFielderSeq },
+        ]);
+        resetDraft();
+        setShowAddThrowout(false);
+    };
+
+    const handleRemoveThrowout = (index: number) => {
+        setThrowouts((prev) => prev.filter((_, i) => i !== index));
+    };
 
     return (
         <Portal>
@@ -98,79 +140,179 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
                 onDismiss={onDismiss}
                 contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.colors.surface }]}
             >
-                <Text variant="titleLarge" style={styles.title}>
-                    Runner Advancement
-                </Text>
-
-                <Chip style={styles.hitChip} textStyle={styles.hitChipText}>
-                    {getHitLabel(hitResult)}
-                </Chip>
-
-                {/* Before state */}
-                <View style={styles.section}>
-                    <Text variant="titleSmall" style={styles.sectionTitle}>
-                        Before ({runnersOnBefore} on base)
+                <ScrollView contentContainerStyle={styles.scrollContent}>
+                    <Text variant="titleLarge" style={styles.title}>
+                        Runner Advancement
                     </Text>
-                    <BaseRunnerDiamond runners={currentRunners} size={80} disabled />
-                </View>
 
-                {/* After state - adjustable */}
-                <View style={styles.section}>
-                    <Text variant="titleSmall" style={styles.sectionTitle}>
-                        After (tap bases to adjust)
-                    </Text>
-                    <BaseRunnerDiamond runners={newRunners} size={100} onBasePress={toggleBase} />
-                    <View style={styles.baseToggles}>
-                        <Chip
-                            selected={newRunners.first}
-                            onPress={() => toggleBase('first')}
-                            style={[styles.baseChip, newRunners.first && styles.baseChipActive]}
-                            textStyle={newRunners.first ? styles.baseChipActiveText : undefined}
-                        >
-                            1st
-                        </Chip>
-                        <Chip
-                            selected={newRunners.second}
-                            onPress={() => toggleBase('second')}
-                            style={[styles.baseChip, newRunners.second && styles.baseChipActive]}
-                            textStyle={newRunners.second ? styles.baseChipActiveText : undefined}
-                        >
-                            2nd
-                        </Chip>
-                        <Chip
-                            selected={newRunners.third}
-                            onPress={() => toggleBase('third')}
-                            style={[styles.baseChip, newRunners.third && styles.baseChipActive]}
-                            textStyle={newRunners.third ? styles.baseChipActiveText : undefined}
-                        >
-                            3rd
-                        </Chip>
-                    </View>
-                </View>
+                    <Chip style={styles.hitChip} textStyle={styles.hitChipText}>
+                        {getHitLabel(hitResult)}
+                    </Chip>
 
-                {/* Runs scored */}
-                <View style={styles.runsSection}>
-                    <Text variant="titleSmall" style={styles.sectionTitle}>
-                        Runs Scored
-                    </Text>
-                    <View style={styles.runsControl}>
-                        <IconButton icon="minus" mode="contained" onPress={decrementRuns} disabled={runsScored === 0} />
-                        <Text variant="headlineMedium" style={styles.runsCount}>
-                            {runsScored}
+                    {/* Before state */}
+                    <View style={styles.section}>
+                        <Text variant="titleSmall" style={styles.sectionTitle}>
+                            Before ({runnersOnBefore} on base)
                         </Text>
-                        <IconButton icon="plus" mode="contained" onPress={incrementRuns} />
+                        <BaseRunnerDiamond runners={currentRunners} size={80} disabled />
                     </View>
-                </View>
 
-                {/* Actions */}
-                <View style={styles.actions}>
-                    <Button mode="outlined" onPress={onDismiss} style={styles.button}>
-                        Cancel
-                    </Button>
-                    <Button mode="contained" onPress={handleConfirm} style={styles.button}>
-                        Confirm
-                    </Button>
-                </View>
+                    {/* After state - adjustable */}
+                    <View style={styles.section}>
+                        <Text variant="titleSmall" style={styles.sectionTitle}>
+                            After (tap bases to adjust)
+                        </Text>
+                        <BaseRunnerDiamond runners={newRunners} size={100} onBasePress={toggleBase} />
+                        <View style={styles.baseToggles}>
+                            <Chip
+                                selected={newRunners.first}
+                                onPress={() => toggleBase('first')}
+                                style={[styles.baseChip, newRunners.first && styles.baseChipActive]}
+                                textStyle={newRunners.first ? styles.baseChipActiveText : undefined}
+                            >
+                                1st
+                            </Chip>
+                            <Chip
+                                selected={newRunners.second}
+                                onPress={() => toggleBase('second')}
+                                style={[styles.baseChip, newRunners.second && styles.baseChipActive]}
+                                textStyle={newRunners.second ? styles.baseChipActiveText : undefined}
+                            >
+                                2nd
+                            </Chip>
+                            <Chip
+                                selected={newRunners.third}
+                                onPress={() => toggleBase('third')}
+                                style={[styles.baseChip, newRunners.third && styles.baseChipActive]}
+                                textStyle={newRunners.third ? styles.baseChipActiveText : undefined}
+                            >
+                                3rd
+                            </Chip>
+                        </View>
+                    </View>
+
+                    {/* Runs scored */}
+                    <View style={styles.runsSection}>
+                        <Text variant="titleSmall" style={styles.sectionTitle}>
+                            Runs Scored
+                        </Text>
+                        <View style={styles.runsControl}>
+                            <IconButton icon="minus" mode="contained" onPress={decrementRuns} disabled={runsScored === 0} />
+                            <Text variant="headlineMedium" style={styles.runsCount}>
+                                {runsScored}
+                            </Text>
+                            <IconButton icon="plus" mode="contained" onPress={incrementRuns} />
+                        </View>
+                    </View>
+
+                    {/* Throwouts */}
+                    {(runnersOnBefore > 0 || throwouts.length > 0) && (
+                        <View style={styles.throwoutSection}>
+                            <Text variant="titleSmall" style={styles.sectionTitle}>
+                                Runners thrown out advancing
+                            </Text>
+                            {throwouts.length > 0 && (
+                                <View style={styles.throwoutList}>
+                                    {throwouts.map((t, idx) => (
+                                        <View key={idx} style={styles.throwoutRow}>
+                                            <Text variant="bodySmall" style={styles.throwoutText}>
+                                                {FROM_BASE_LABEL[t.fromBase]} → out at {TO_BASE_LABEL[t.toBase]} (
+                                                {formatFielderSequence(t.fielderSeq)})
+                                            </Text>
+                                            <IconButton
+                                                icon="close"
+                                                size={16}
+                                                onPress={() => handleRemoveThrowout(idx)}
+                                                accessibilityLabel="Remove throwout"
+                                                style={styles.removeThrowout}
+                                            />
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
+
+                            {!showAddThrowout && availableFromBases.length > 0 && (
+                                <Button mode="outlined" compact onPress={() => setShowAddThrowout(true)} style={styles.addButton}>
+                                    + Add throwout
+                                </Button>
+                            )}
+
+                            {showAddThrowout && (
+                                <View style={styles.addForm}>
+                                    <Divider style={styles.divider} />
+                                    <View style={styles.formRow}>
+                                        <Text style={styles.formLabel}>From:</Text>
+                                        <View style={styles.formChips}>
+                                            {availableFromBases.map((b) => (
+                                                <Chip
+                                                    key={b}
+                                                    selected={draftFromBase === b}
+                                                    onPress={() => {
+                                                        setDraftFromBase(b);
+                                                        setDraftToBase(null);
+                                                    }}
+                                                    style={[styles.draftChip, draftFromBase === b && styles.draftChipActive]}
+                                                    textStyle={draftFromBase === b ? styles.draftChipActiveText : undefined}
+                                                >
+                                                    {FROM_BASE_LABEL[b]}
+                                                </Chip>
+                                            ))}
+                                        </View>
+                                    </View>
+                                    {draftFromBase && (
+                                        <View style={styles.formRow}>
+                                            <Text style={styles.formLabel}>Out at:</Text>
+                                            <View style={styles.formChips}>
+                                                {validTargets.map((b) => (
+                                                    <Chip
+                                                        key={b}
+                                                        selected={draftToBase === b}
+                                                        onPress={() => setDraftToBase(b)}
+                                                        style={[styles.draftChip, draftToBase === b && styles.draftChipActive]}
+                                                        textStyle={draftToBase === b ? styles.draftChipActiveText : undefined}
+                                                    >
+                                                        {TO_BASE_LABEL[b]}
+                                                    </Chip>
+                                                ))}
+                                            </View>
+                                        </View>
+                                    )}
+                                    {draftFromBase && draftToBase && (
+                                        <View style={styles.formRowColumn}>
+                                            <Text style={styles.formLabel}>Fielders:</Text>
+                                            <FielderSequencePicker value={draftFielderSeq} onChange={setDraftFielderSeq} />
+                                        </View>
+                                    )}
+                                    <View style={styles.formActions}>
+                                        <Button
+                                            mode="outlined"
+                                            compact
+                                            onPress={() => {
+                                                resetDraft();
+                                                setShowAddThrowout(false);
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button mode="contained" compact onPress={handleAddThrowout} disabled={!canAddThrowout}>
+                                            Add
+                                        </Button>
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+                    )}
+
+                    {/* Actions */}
+                    <View style={styles.actions}>
+                        <Button mode="outlined" onPress={onDismiss} style={styles.button}>
+                            Cancel
+                        </Button>
+                        <Button mode="contained" onPress={handleConfirm} style={styles.button}>
+                            Confirm
+                        </Button>
+                    </View>
+                </ScrollView>
             </Modal>
         </Portal>
     );
@@ -179,8 +321,11 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
 const styles = StyleSheet.create({
     modalContainer: {
         margin: 20,
-        padding: 20,
         borderRadius: 12,
+        maxHeight: '90%',
+    },
+    scrollContent: {
+        padding: 20,
     },
     title: {
         fontWeight: 'bold',
@@ -232,6 +377,77 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         minWidth: 40,
         textAlign: 'center',
+    },
+    throwoutSection: {
+        marginBottom: 16,
+        padding: 12,
+        backgroundColor: colors.gray[50],
+        borderRadius: 8,
+    },
+    throwoutList: {
+        gap: 6,
+        marginBottom: 8,
+    },
+    throwoutRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        backgroundColor: 'white',
+        borderRadius: 6,
+    },
+    throwoutText: {
+        flex: 1,
+        color: colors.gray[800],
+    },
+    removeThrowout: {
+        margin: 0,
+    },
+    addButton: {
+        alignSelf: 'flex-start',
+    },
+    addForm: {
+        gap: 12,
+    },
+    divider: {
+        marginTop: 4,
+    },
+    formRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        flexWrap: 'wrap',
+    },
+    formRowColumn: {
+        gap: 8,
+    },
+    formLabel: {
+        fontSize: 12,
+        color: colors.gray[600],
+        fontWeight: '600',
+        minWidth: 56,
+    },
+    formChips: {
+        flexDirection: 'row',
+        gap: 6,
+        flexWrap: 'wrap',
+        flex: 1,
+    },
+    draftChip: {
+        backgroundColor: colors.gray[100],
+    },
+    draftChipActive: {
+        backgroundColor: colors.red[100],
+    },
+    draftChipActiveText: {
+        color: colors.red[700],
+    },
+    formActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 8,
     },
     actions: {
         flexDirection: 'row',
