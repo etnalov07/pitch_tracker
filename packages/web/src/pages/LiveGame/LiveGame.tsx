@@ -41,6 +41,8 @@ import {
     ResultButtons,
     ResultButton,
     LogButton,
+    LogRow,
+    UndoButton,
     NoAtBatContainer,
     NoAtBatText,
     StartAtBatButton,
@@ -92,6 +94,7 @@ import {
     DroppedThirdBtn,
 } from './styles';
 import TeamAtBatModal from './TeamAtBatModal';
+import UndoPitchModal from './UndoPitchModal';
 import { useLiveGameActions } from './useLiveGameActions';
 import { useLiveGameState } from './useLiveGameState';
 import ViewerDashboard from './ViewerDashboard';
@@ -100,6 +103,7 @@ const LiveGame: React.FC = () => {
     const state = useLiveGameState();
     const actions = useLiveGameActions(state);
     const [showSettingsPanel, setShowSettingsPanel] = React.useState(false);
+    const [showUndoPitch, setShowUndoPitch] = React.useState(false);
 
     const {
         gameId,
@@ -800,9 +804,16 @@ const LiveGame: React.FC = () => {
                                     </ResultButtons>
                                 </FormGroup>
 
-                                <LogButton onClick={actions.handleLogPitch} disabled={!pitchLocation}>
-                                    Log Pitch
-                                </LogButton>
+                                <LogRow>
+                                    <LogButton onClick={actions.handleLogPitch} disabled={!pitchLocation}>
+                                        Log Pitch
+                                    </LogButton>
+                                    {pitches.length > 0 && (
+                                        <UndoButton onClick={() => setShowUndoPitch(true)} type="button">
+                                            ↶ Undo
+                                        </UndoButton>
+                                    )}
+                                </LogRow>
 
                                 {pitchResult === 'in_play' && (
                                     <OpenDiamondButton onClick={() => setShowDiamondModal(true)}>
@@ -917,6 +928,16 @@ const LiveGame: React.FC = () => {
                     onConfirm={actions.handleRunnerAdvancementConfirm}
                 />
             )}
+
+            <UndoPitchModal
+                isOpen={showUndoPitch}
+                pitch={pitches.length > 0 ? pitches[pitches.length - 1] : null}
+                onCancel={() => setShowUndoPitch(false)}
+                onConfirm={async () => {
+                    setShowUndoPitch(false);
+                    await actions.handleUndoLastPitch();
+                }}
+            />
 
             {showDroppedThirdModal && (
                 <DroppedThirdOverlay onClick={() => setShowDroppedThirdModal(false)}>

@@ -65,6 +65,90 @@ describe('BaserunnerEvent Routes - /bt-api/baserunner-events', () => {
 
             expect(res.status).toBe(500);
         });
+
+        it('records a thrown_out_advancing event with fielder_sequence', async () => {
+            const throwoutPayload = {
+                ...validPayload,
+                event_type: 'thrown_out_advancing',
+                at_bat_id: 'at-bat-1',
+                runner_base: 'second',
+                runner_to_base: 'home',
+                fielder_sequence: [9, 2],
+                new_base_runners: { first: false, second: false, third: false },
+            };
+            const mockEvent = {
+                id: 'test-event-id',
+                ...throwoutPayload,
+                out_recorded: true,
+                outs_after: 1,
+            };
+            setupMockTransaction([
+                { rows: [mockEvent] }, // INSERT baserunner_events
+                { rows: [{ base_runners: { first: false, second: true, third: false } }] }, // SELECT games
+                { rows: [] }, // UPDATE games
+            ]);
+
+            const res = await getAgent().post('/bt-api/baserunner-events').set('Authorization', authHeader()).send(throwoutPayload);
+
+            expect(res.status).toBe(201);
+            expect(res.body.event.event_type).toBe('thrown_out_advancing');
+            expect(res.body.event.out_recorded).toBe(true);
+            expect(res.body.event.outs_after).toBe(1);
+            expect(res.body.event.fielder_sequence).toEqual([9, 2]);
+        });
+
+        it('rejects thrown_out_advancing without at_bat_id', async () => {
+            const res = await getAgent()
+                .post('/bt-api/baserunner-events')
+                .set('Authorization', authHeader())
+                .send({
+                    ...validPayload,
+                    event_type: 'thrown_out_advancing',
+                    runner_base: 'second',
+                    runner_to_base: 'home',
+                });
+
+            expect(res.status).toBe(500);
+        });
+
+        it('rejects thrown_out_advancing without runner_to_base', async () => {
+            const res = await getAgent()
+                .post('/bt-api/baserunner-events')
+                .set('Authorization', authHeader())
+                .send({
+                    ...validPayload,
+                    event_type: 'thrown_out_advancing',
+                    at_bat_id: 'at-bat-1',
+                    runner_base: 'second',
+                });
+
+            expect(res.status).toBe(500);
+        });
+
+        it('honors new_base_runners on a non-advancement event', async () => {
+            // Hit-flow caller computes the post-play state across advancers + throwouts
+            // and supplies it on the LAST event so games.base_runners lands once.
+            const payload = {
+                ...validPayload,
+                event_type: 'thrown_out_advancing',
+                at_bat_id: 'at-bat-1',
+                runner_base: 'second',
+                runner_to_base: 'home',
+                fielder_sequence: [9, 2],
+                new_base_runners: { first: true, second: false, third: false },
+            };
+            const mockEvent = { id: 'test-event-id', ...payload, out_recorded: true, outs_after: 1 };
+            setupMockTransaction([
+                { rows: [mockEvent] },
+                { rows: [{ base_runners: { first: false, second: true, third: false } }] },
+                { rows: [] },
+            ]);
+
+            const res = await getAgent().post('/bt-api/baserunner-events').set('Authorization', authHeader()).send(payload);
+
+            expect(res.status).toBe(201);
+            expect(res.body.event.out_recorded).toBe(true);
+        });
     });
 
     describe('GET /game/:gameId', () => {

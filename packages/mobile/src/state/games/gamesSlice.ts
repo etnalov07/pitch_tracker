@@ -178,6 +178,14 @@ export const logPitch = createAsyncThunk('games/logPitch', async (pitchData: Par
     }
 });
 
+export const undoLastPitch = createAsyncThunk('games/undoLastPitch', async (pitchId: string, { rejectWithValue }) => {
+    try {
+        return await gamesApi.undoPitch(pitchId);
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to undo pitch'));
+    }
+});
+
 export const recordPlay = createAsyncThunk('games/recordPlay', async (playData: Partial<Play>, { rejectWithValue }) => {
     try {
         return await gamesApi.recordPlay(playData);
@@ -568,6 +576,28 @@ const gamesSlice = createSlice({
                 state.pitches.push(action.payload);
             })
             .addCase(logPitch.rejected, (state, action) => {
+                state.error = action.payload as string;
+            });
+
+        // Undo Last Pitch — pop the pitch and restore at-bat + game from server response
+        builder
+            .addCase(undoLastPitch.fulfilled, (state, action) => {
+                const { pitch, atBat, game } = action.payload;
+                state.pitches = state.pitches.filter((p) => p.id !== pitch.id);
+                if (state.currentAtBat?.id === atBat.id) {
+                    state.currentAtBat = atBat;
+                }
+                if (game.base_runners) {
+                    state.baseRunners = game.base_runners;
+                }
+                if (state.selectedGame?.id === game.id) {
+                    state.selectedGame = game;
+                }
+                if (state.currentGameState?.game?.id === game.id) {
+                    state.currentGameState = { ...state.currentGameState, game };
+                }
+            })
+            .addCase(undoLastPitch.rejected, (state, action) => {
                 state.error = action.payload as string;
             });
 

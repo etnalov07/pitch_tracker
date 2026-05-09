@@ -11,6 +11,7 @@ import React, { useState, useCallback } from 'react';
 import { analyticsService } from '../../../services/analyticsService';
 import BatterHeatMapView from './BatterHeatMapView';
 import BatterSprayChartView from './BatterSprayChartView';
+import BatterTendenciesView from './BatterTendenciesView';
 import {
     AtBatBlock,
     AtBatHeaderRow,
@@ -290,6 +291,7 @@ function BatterRow({
                         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' as const, justifyContent: 'center' }}>
                             <BatterSprayChartView sprayData={sprayData ?? []} currentGameId={gameId} />
                             <BatterHeatMapView pitches={pitchLocations ?? []} bats={batter.bats} />
+                            <BatterTendenciesView pitches={pitchLocations ?? []} bats={batter.bats} />
                         </div>
                     )}
                 </div>

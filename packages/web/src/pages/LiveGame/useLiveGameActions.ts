@@ -12,12 +12,14 @@ import {
     getSuggestedAdvancement,
     clearBases,
     getNextBatter,
+    getInningLeadoffBatter,
 } from '@pitch-tracker/shared';
 import { pitchCallService } from '../../services/pitchCallService';
 import {
     fetchGameById,
     startGame,
     logPitch,
+    undoLastPitch,
     createAtBat,
     endAtBat,
     setCurrentAtBat,
@@ -26,6 +28,7 @@ import {
 } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { MyTeamLineupPlayer, OpponentLineupPlayer, GamePitcherWithPlayer, getOutsForResult } from '../../types';
+import type { Throwout } from './RunnerAdvancementModal';
 import { LiveGameState } from './useLiveGameState';
 
 export function useLiveGameActions(state: LiveGameState) {
@@ -78,6 +81,8 @@ export function useLiveGameActions(state: LiveGameState) {
         setTeamAtBatRuns,
         activeCallId,
         setActiveCallId,
+        inningEndedByBaserunnerOut,
+        setInningEndedByBaserunnerOut,
     } = state;
 
     const gameMode = deriveGameMode(game?.is_home_game ?? true, game?.inning_half ?? 'top');
@@ -240,8 +245,11 @@ export function useLiveGameActions(state: LiveGameState) {
                     state.setCurrentOpposingPitcher(null);
                 }
             } else if (freshGame.is_home_game !== false && freshGame.charting_mode !== 'both') {
-                // Home game single-team mode: set up next opponent batter immediately
-                const firstBatter = getNextBatter(opponentLineup, currentBattingOrder);
+                // Home game single-team mode: set up next opponent batter immediately.
+                // If the inning ended via a baserunner out, the batter at the plate (or
+                // on-deck batter the lineup pointer already advanced to) leads off — do
+                // not advance the lineup further.
+                const firstBatter = getInningLeadoffBatter(opponentLineup, currentBattingOrder, inningEndedByBaserunnerOut);
                 if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
                 if (firstBatter && newInning) {
                     setCurrentBatter(firstBatter);
@@ -251,6 +259,7 @@ export function useLiveGameActions(state: LiveGameState) {
                 }
             }
             // In 'both' mode or visitor games, game mode switches automatically on re-render
+            setInningEndedByBaserunnerOut(false);
         } catch (error) {
             console.error('Failed to advance inning:', error);
             alert('Failed to advance inning');
@@ -472,6 +481,7 @@ export function useLiveGameActions(state: LiveGameState) {
             'walk',
             'hit_by_pitch',
             'sacrifice_fly',
+            'sacrifice_bunt',
             'fielders_choice',
         ].includes(result);
 
@@ -552,8 +562,9 @@ export function useLiveGameActions(state: LiveGameState) {
             setShowTeamAtBat(false);
             setTeamAtBatRuns('0');
 
-            // Set up next opponent batter
-            const firstBatter = getNextBatter(opponentLineup, currentBattingOrder);
+            // Set up next opponent batter. Honor the baserunner-out flag so the batter
+            // who was at the plate when our half ended via a baserunner out leads off.
+            const firstBatter = getInningLeadoffBatter(opponentLineup, currentBattingOrder, inningEndedByBaserunnerOut);
             if (firstBatter) setCurrentBattingOrder(firstBatter.batting_order);
             if (firstBatter && newInning) {
                 setCurrentBatter(firstBatter);
@@ -561,26 +572,75 @@ export function useLiveGameActions(state: LiveGameState) {
             } else {
                 setCurrentBatter(null);
             }
+            setInningEndedByBaserunnerOut(false);
         } catch (error) {
             console.error('Failed to confirm team at bat:', error);
             alert('Failed to advance inning');
         }
     };
 
-    const handleRunnerAdvancementConfirm = async (newRunners: BaseRunners, runsScored: number) => {
+    const handleRunnerAdvancementConfirm = async (newRunners: BaseRunners, runsScored: number, throwouts: Throwout[] = []) => {
         if (!gameId || !game) return;
 
         try {
-            // Update base runners on server
-            await gamesApi.updateBaseRunners(gameId, newRunners);
+            let lastOutsAfter = currentOuts;
+
+            if (throwouts.length > 0 && currentInning) {
+                // Record N throwout events sequentially. Thread outs_before through each
+                // call so the service computes outs_after correctly. Pass new_base_runners
+                // only on the LAST event so games.base_runners lands once.
+                let runningOutsBefore = currentOuts;
+                for (let i = 0; i < throwouts.length; i++) {
+                    if (runningOutsBefore >= 3) break;
+                    const t = throwouts[i];
+                    const isLast = i === throwouts.length - 1;
+                    const event = await gamesApi.recordBaserunnerEvent({
+                        game_id: gameId,
+                        inning_id: currentInning.id,
+                        at_bat_id: currentAtBat?.id,
+                        event_type: 'thrown_out_advancing',
+                        runner_base: t.fromBase,
+                        runner_to_base: t.toBase,
+                        fielder_sequence: t.fielderSeq,
+                        outs_before: runningOutsBefore,
+                        new_base_runners: isLast ? newRunners : undefined,
+                    } as Partial<BaserunnerEvent> & {
+                        new_base_runners?: BaseRunners;
+                        runner_to_base?: string;
+                        fielder_sequence?: number[];
+                    });
+                    runningOutsBefore = event.outs_after;
+                    lastOutsAfter = event.outs_after;
+                }
+            } else {
+                await gamesApi.updateBaseRunners(gameId, newRunners);
+            }
+
             setBaseRunners(newRunners);
-
             await updateScoreForRuns(runsScored);
-
             setShowRunnerAdvancementModal(false);
 
-            // Now end the at-bat with the pending result.
-            // Credit the batter with an RBI for each run scored (sac fly, hit, forced walk/HBP).
+            const inningEnded = throwouts.length > 0 && lastOutsAfter >= 3;
+            if (throwouts.length > 0) {
+                if (inningEnded) {
+                    setCurrentOuts(0);
+                    setTeamRunsScored('0');
+                    setInningChangeInfo({
+                        inning: game?.current_inning || 1,
+                        half: game?.inning_half || 'top',
+                    });
+                    setShowInningChange(true);
+                    // 3rd out came from a baserunner thrown out; the on-deck batter
+                    // (after handleEndAtBat advances the pointer for the completed hit)
+                    // should lead off next inning without further advancement.
+                    setInningEndedByBaserunnerOut(true);
+                } else {
+                    setCurrentOuts(lastOutsAfter);
+                }
+            }
+
+            // End the at-bat with the pending result. The hit still counts even if a
+            // runner was thrown out; runs scored on the play earn the batter RBIs.
             const result = state.pendingHitResult;
             setPendingHitResult(null);
             if (result) {
@@ -623,6 +683,9 @@ export function useLiveGameActions(state: LiveGameState) {
                     half: game?.inning_half || 'top',
                 });
                 setShowInningChange(true);
+                // The batter at the plate was not retired (a baserunner was) — they
+                // lead off when this team returns next inning.
+                setInningEndedByBaserunnerOut(true);
             } else {
                 setCurrentOuts(newOuts);
             }
@@ -812,8 +875,27 @@ export function useLiveGameActions(state: LiveGameState) {
         await advanceInning(0);
     };
 
+    // Undo most recent pitch — fully reverses count, runners, score, AB lifecycle.
+    // Server returns restored {atBat, game}; sync local out/runner state from response.
+    const handleUndoLastPitch = async () => {
+        if (pitches.length === 0) return;
+        const last = pitches[pitches.length - 1];
+        try {
+            const result = await dispatch(undoLastPitch(last.id)).unwrap();
+            if (result.game.base_runners) {
+                setBaseRunners(result.game.base_runners);
+            }
+            if (typeof result.atBat.outs_after === 'number') {
+                setCurrentOuts(result.atBat.outs_after);
+            }
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Failed to undo pitch');
+        }
+    };
+
     return {
         handleLogPitch,
+        handleUndoLastPitch,
         handleEndAtBat,
         handleDiamondResult,
         handleInningChangeConfirm,

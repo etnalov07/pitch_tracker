@@ -54,6 +54,7 @@ describe('getOutsForResult', () => {
         expect(getOutsForResult('groundout')).toBe(1);
         expect(getOutsForResult('flyout')).toBe(1);
         expect(getOutsForResult('sacrifice_fly')).toBe(1);
+        expect(getOutsForResult('sacrifice_bunt')).toBe(1);
     });
 
     it('returns 0 for non-out results', () => {
@@ -213,6 +214,26 @@ describe('getSuggestedAdvancement', () => {
             const result = getSuggestedAdvancement(firstOnly, 'sacrifice_fly');
             expect(result.suggestedRuns).toBe(0);
             expect(result.suggestedRunners).toEqual({ first: true, second: false, third: false });
+        });
+    });
+
+    describe('sacrifice_bunt', () => {
+        it('bases loaded: runner on 3rd scores, 1st→2nd, 2nd→3rd', () => {
+            const result = getSuggestedAdvancement(loaded, 'sacrifice_bunt');
+            expect(result.suggestedRuns).toBe(1);
+            expect(result.suggestedRunners).toEqual({ first: false, second: true, third: true });
+        });
+
+        it('runner on 1st only: advances to 2nd, 0 runs', () => {
+            const result = getSuggestedAdvancement(firstOnly, 'sacrifice_bunt');
+            expect(result.suggestedRuns).toBe(0);
+            expect(result.suggestedRunners).toEqual({ first: false, second: true, third: false });
+        });
+
+        it('empty bases: no runners, 0 runs', () => {
+            const result = getSuggestedAdvancement(empty, 'sacrifice_bunt');
+            expect(result.suggestedRuns).toBe(0);
+            expect(result.suggestedRunners).toEqual({ first: false, second: false, third: false });
         });
     });
 
