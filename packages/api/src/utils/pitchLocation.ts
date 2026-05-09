@@ -2,6 +2,7 @@ export const BALL_RADIUS = 0.085;
 export const BALL_DIAMETER = BALL_RADIUS * 2;
 
 export const TARGET_ACCURACY_THRESHOLD = 0.22;
+export const SUMMARY_TARGET_ACCURACY_THRESHOLD = BALL_DIAMETER * 2.5;
 
 export function targetDistance(targetX: number, targetY: number, actualX: number, actualY: number): number {
     const dx = actualX - targetX;

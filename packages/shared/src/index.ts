@@ -3,7 +3,14 @@
 // ============================================================================
 
 export { isOutResult, getOutsForResult, getSuggestedAdvancement, removeRunner, clearBases } from './utils/atBatHelpers';
-export { BALL_RADIUS, BALL_DIAMETER, TARGET_ACCURACY_THRESHOLD, targetDistance, isTargetHit } from './utils/pitchLocation';
+export {
+    BALL_RADIUS,
+    BALL_DIAMETER,
+    TARGET_ACCURACY_THRESHOLD,
+    SUMMARY_TARGET_ACCURACY_THRESHOLD,
+    targetDistance,
+    isTargetHit,
+} from './utils/pitchLocation';
 export { getCountBucket, deriveGameMode } from './utils/gameMode';
 export { getNextBattingOrder, getNextBatter, applyAtBatResult, advanceHalf } from './utils/gameSimulation';
 export type { LineupSlot, HalfInningState, AtBatOutcome } from './utils/gameSimulation';

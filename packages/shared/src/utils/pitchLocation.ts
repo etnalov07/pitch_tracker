@@ -11,11 +11,16 @@
 // threshold of 0.22 means the ball circle visually touches or overlaps the
 // target — forgiving enough to credit well-spotted pitches, strict enough that
 // clear misses still miss. Roughly 3.75" tolerance across a 17" zone.
+//
+// SUMMARY_TARGET_ACCURACY_THRESHOLD is a looser threshold used only by the
+// post-game performance summary (2.5 ball-widths). Live UI, analytics, and
+// bullpen continue to use the stricter TARGET_ACCURACY_THRESHOLD.
 
 export const BALL_RADIUS = 0.085;
 export const BALL_DIAMETER = BALL_RADIUS * 2;
 
 export const TARGET_ACCURACY_THRESHOLD = 0.22;
+export const SUMMARY_TARGET_ACCURACY_THRESHOLD = BALL_DIAMETER * 2.5;
 
 /** Euclidean distance between target and actual pitch location in zone coords. */
 export function targetDistance(targetX: number, targetY: number, actualX: number, actualY: number): number {

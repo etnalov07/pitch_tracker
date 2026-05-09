@@ -1,4 +1,4 @@
-import { TARGET_ACCURACY_THRESHOLD, isTargetHit } from '../utils/pitchLocation';
+import { SUMMARY_TARGET_ACCURACY_THRESHOLD, isTargetHit } from '../utils/pitchLocation';
 import { query, transaction } from '../config/database';
 import {
     PerformanceSummary,
@@ -296,7 +296,7 @@ export class PerformanceSummaryService {
                     THEN 1 END) as accurate_pitches,
                 COUNT(CASE WHEN target_location_x IS NOT NULL AND target_location_y IS NOT NULL THEN 1 END) as targeted_pitches
              FROM pitches WHERE pitcher_id = $1 AND game_id = $2`,
-            [pitcherId, gameId, TARGET_ACCURACY_THRESHOLD]
+            [pitcherId, gameId, SUMMARY_TARGET_ACCURACY_THRESHOLD]
         );
 
         const s = statsResult.rows[0];
@@ -376,7 +376,7 @@ export class PerformanceSummaryService {
                 COUNT(CASE WHEN target_location_x IS NOT NULL AND target_location_y IS NOT NULL THEN 1 END) as targeted
              FROM pitches WHERE pitcher_id = $1 AND game_id = $2
              GROUP BY pitch_type ORDER BY count DESC`,
-            [pitcherId, gameId, TARGET_ACCURACY_THRESHOLD]
+            [pitcherId, gameId, SUMMARY_TARGET_ACCURACY_THRESHOLD]
         );
 
         return {
@@ -431,7 +431,9 @@ export class PerformanceSummaryService {
         const withTarget = pitches.filter(
             (p: any) => p.target_x != null && p.target_y != null && p.actual_x != null && p.actual_y != null
         );
-        const accurateCount = withTarget.filter((p: any) => isTargetHit(p.target_x, p.target_y, p.actual_x, p.actual_y)).length;
+        const accurateCount = withTarget.filter((p: any) =>
+            isTargetHit(p.target_x, p.target_y, p.actual_x, p.actual_y, SUMMARY_TARGET_ACCURACY_THRESHOLD)
+        ).length;
 
         // Pitch type breakdown
         const typeMap = new Map<
@@ -454,7 +456,8 @@ export class PerformanceSummaryService {
             if (p.target_x != null && p.target_y != null) {
                 entry.targeted++;
                 if (p.actual_x != null && p.actual_y != null) {
-                    if (isTargetHit(p.target_x, p.target_y, p.actual_x, p.actual_y)) entry.accurate++;
+                    if (isTargetHit(p.target_x, p.target_y, p.actual_x, p.actual_y, SUMMARY_TARGET_ACCURACY_THRESHOLD))
+                        entry.accurate++;
                 }
             }
             typeMap.set(p.pitch_type, entry);

@@ -1,4 +1,11 @@
-import { BALL_RADIUS, BALL_DIAMETER, TARGET_ACCURACY_THRESHOLD, targetDistance, isTargetHit } from '../pitchLocation';
+import {
+    BALL_RADIUS,
+    BALL_DIAMETER,
+    TARGET_ACCURACY_THRESHOLD,
+    SUMMARY_TARGET_ACCURACY_THRESHOLD,
+    targetDistance,
+    isTargetHit,
+} from '../pitchLocation';
 
 describe('utils/pitchLocation', () => {
     describe('constants', () => {
@@ -44,6 +51,29 @@ describe('utils/pitchLocation', () => {
             // Use a tighter custom threshold to flip the result.
             expect(isTargetHit(0.5, 0.5, 0.6, 0.5)).toBe(true);
             expect(isTargetHit(0.5, 0.5, 0.6, 0.5, 0.05)).toBe(false);
+        });
+    });
+
+    describe('SUMMARY_TARGET_ACCURACY_THRESHOLD', () => {
+        it('equals 2.5 ball-widths', () => {
+            expect(SUMMARY_TARGET_ACCURACY_THRESHOLD).toBeCloseTo(BALL_DIAMETER * 2.5, 10);
+        });
+
+        it('is looser than the live-UI TARGET_ACCURACY_THRESHOLD', () => {
+            expect(SUMMARY_TARGET_ACCURACY_THRESHOLD).toBeGreaterThan(TARGET_ACCURACY_THRESHOLD);
+        });
+
+        it('credits a near-miss that the strict threshold would reject', () => {
+            // 1.5 ball-widths off — outside live threshold (0.22), inside summary threshold (0.425)
+            const dx = BALL_DIAMETER * 1.5;
+            expect(isTargetHit(0.5, 0.5, 0.5 + dx, 0.5)).toBe(false);
+            expect(isTargetHit(0.5, 0.5, 0.5 + dx, 0.5, SUMMARY_TARGET_ACCURACY_THRESHOLD)).toBe(true);
+        });
+
+        it('still rejects clear misses beyond 2.5 ball-widths', () => {
+            // 3 ball-widths off — outside both thresholds
+            const dx = BALL_DIAMETER * 3;
+            expect(isTargetHit(0.5, 0.5, 0.5 + dx, 0.5, SUMMARY_TARGET_ACCURACY_THRESHOLD)).toBe(false);
         });
     });
 });
