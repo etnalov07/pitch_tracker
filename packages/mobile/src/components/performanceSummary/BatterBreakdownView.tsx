@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, Card, Divider } from 'react-native-paper';
-import { BatterAtBatPitch, BatterBreakdown, PitchCallZone, PitchResult, PitchType } from '@pitch-tracker/shared';
+import { BatterAtBatPitch, BatterBreakdown, PitchCallZone, PitchLocationData, PitchResult, PitchType } from '@pitch-tracker/shared';
+import { analyticsApi } from '../../state/analytics/api/analyticsApi';
+import BatterTendenciesView from './BatterTendenciesView';
 
 const PITCH_ABBREV: Record<PitchType, string> = {
     fastball: 'FB',
@@ -154,9 +156,30 @@ interface BatterRowProps {
     gameId?: string;
 }
 
-function BatterRow({ batter }: BatterRowProps) {
+function BatterRow({ batter, pitcherId }: BatterRowProps) {
     const [expanded, setExpanded] = useState(true);
+    const [showCharts, setShowCharts] = useState(false);
+    const [pitchLocations, setPitchLocations] = useState<PitchLocationData[] | null>(null);
+    const [chartsLoading, setChartsLoading] = useState(false);
     const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
+
+    const handleToggleCharts = useCallback(async () => {
+        if (showCharts) {
+            setShowCharts(false);
+            return;
+        }
+        setShowCharts(true);
+        if (pitchLocations !== null) return;
+        setChartsLoading(true);
+        try {
+            const locations = await analyticsApi.getPitchLocations(batter.batter_id, pitcherId);
+            setPitchLocations(locations);
+        } catch {
+            setPitchLocations([]);
+        } finally {
+            setChartsLoading(false);
+        }
+    }, [showCharts, pitchLocations, batter.batter_id, pitcherId]);
 
     return (
         <View style={styles.batterRow}>
@@ -170,8 +193,25 @@ function BatterRow({ batter }: BatterRowProps) {
                         {batter.position ?? '—'} · {batter.bats}HH · {batter.at_bats.length} AB · {totalPitches}P
                     </Text>
                 </View>
+                <TouchableOpacity
+                    onPress={handleToggleCharts}
+                    style={[styles.chartsToggle, showCharts && styles.chartsToggleActive]}
+                    activeOpacity={0.7}
+                >
+                    <Text style={[styles.chartsToggleText, showCharts && styles.chartsToggleTextActive]}>📊 Charts</Text>
+                </TouchableOpacity>
                 <Text style={styles.expandChevron}>{expanded ? '▲' : '▽'}</Text>
             </TouchableOpacity>
+
+            {showCharts && (
+                <View style={styles.chartContainer}>
+                    {chartsLoading ? (
+                        <Text style={styles.chartLoading}>Loading charts…</Text>
+                    ) : (
+                        <BatterTendenciesView pitches={pitchLocations ?? []} bats={batter.bats} />
+                    )}
+                </View>
+            )}
 
             {expanded && (
                 <>
@@ -347,6 +387,26 @@ const styles = StyleSheet.create({
     expandChevron: {
         fontSize: 11,
         color: '#9ca3af',
+    },
+    chartsToggle: {
+        paddingVertical: 2,
+        paddingHorizontal: 8,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        backgroundColor: '#f3f4f6',
+        marginRight: 4,
+    },
+    chartsToggleActive: {
+        borderColor: '#93c5fd',
+        backgroundColor: '#dbeafe',
+    },
+    chartsToggleText: {
+        fontSize: 10,
+        color: '#6b7280',
+    },
+    chartsToggleTextActive: {
+        color: '#1d4ed8',
     },
     viewToggleRow: {
         paddingLeft: 38,

@@ -186,7 +186,8 @@ export class AnalyticsService {
         const fromClause = needGamesJoin ? 'FROM pitches p JOIN games g ON p.game_id = g.id' : 'FROM pitches p';
 
         const result = await query(
-            `SELECT p.location_x, p.location_y, p.pitch_type, p.pitch_result, p.velocity
+            `SELECT p.location_x, p.location_y, p.pitch_type, p.pitch_result, p.velocity,
+                    p.target_location_x, p.target_location_y, p.balls_before, p.strikes_before
              ${fromClause}
              WHERE ${filters.join(' AND ')}`,
             params
@@ -198,6 +199,10 @@ export class AnalyticsService {
             pitch_type: row.pitch_type,
             pitch_result: row.pitch_result,
             velocity: row.velocity != null ? parseFloat(row.velocity) : undefined,
+            target_location_x: row.target_location_x != null ? parseFloat(row.target_location_x) : undefined,
+            target_location_y: row.target_location_y != null ? parseFloat(row.target_location_y) : undefined,
+            balls_before: row.balls_before != null ? parseInt(row.balls_before, 10) : undefined,
+            strikes_before: row.strikes_before != null ? parseInt(row.strikes_before, 10) : undefined,
         }));
     }
 
