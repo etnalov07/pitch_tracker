@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>BatterHeatMapView preview</title>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: #fafaf7;
+                margin: 0;
+                padding: 32px;
+                color: #111827;
+            }
+            h1 {
+                font-size: 18px;
+                font-weight: 600;
+                margin: 0 0 4px;
+            }
+            p.lede {
+                color: #6b7280;
+                margin: 0 0 24px;
+                font-size: 13px;
+            }
+            .row {
+                display: flex;
+                gap: 48px;
+                flex-wrap: wrap;
+            }
+            .panel {
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 16px 20px;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            }
+            .panel h2 {
+                font-size: 13px;
+                font-weight: 600;
+                margin: 0 0 8px;
+                color: #374151;
+            }
+            .heatmap {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+            }
+            .caption {
+                font-size: 11px;
+                color: #6b7280;
+                font-style: italic;
+            }
+            .legend {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px 10px;
+                justify-content: center;
+                max-width: 210px;
+            }
+            .legend-item {
+                display: flex;
+                align-items: center;
+                gap: 3px;
+            }
+            .legend-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+            }
+            .legend-label {
+                font-size: 10px;
+                color: #6b7280;
+            }
+            .axis-note {
+                font-size: 10px;
+                color: #9ca3af;
+                margin-top: 4px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>BatterHeatMapView — what the rendering looks like</h1>
+        <p class="lede">
+            viewBox 300×300, displayed at 200×200. Strike zone rect at x=113 y=120 w=75 h=110, 3×3 grid, surrounded by a "waste area" rect.
+            Each dot is r=5, colored by pitch_type. RHH on the left; LHH mirrors X around the zone.
+        </p>
+
+        <div class="row">
+            <div class="panel">
+                <h2>Right-handed batter</h2>
+                <div class="heatmap" id="rhh"></div>
+                <div class="axis-note">↑ inside = pitcher's glove side · ↓ outside</div>
+            </div>
+            <div class="panel">
+                <h2>Left-handed batter (X mirrored)</h2>
+                <div class="heatmap" id="lhh"></div>
+                <div class="axis-note">Mirrored so inside/outside read the same to the catcher</div>
+            </div>
+        </div>
+
+        <script>
+            const PITCH_TYPE_COLORS = {
+                fastball: '#ef4444',
+                '4-seam': '#ef4444',
+                '2-seam': '#f97316',
+                cutter: '#f59e0b',
+                sinker: '#eab308',
+                slider: '#3b82f6',
+                curveball: '#8b5cf6',
+                changeup: '#22c55e',
+                splitter: '#14b8a6',
+                knuckleball: '#6b7280',
+                screwball: '#ec4899',
+                other: '#9ca3af',
+            };
+            const PITCH_TYPE_ABBREV = {
+                fastball: 'FB',
+                '4-seam': 'FB',
+                '2-seam': '2S',
+                cutter: 'CT',
+                sinker: 'SK',
+                slider: 'SL',
+                curveball: 'CB',
+                changeup: 'CH',
+                splitter: 'SP',
+                knuckleball: 'KN',
+                screwball: 'SC',
+                other: 'OT',
+            };
+
+            // location_x and location_y are roughly 0..1 across the zone (with 0..1 range matching the 75px / 110px zone box).
+            // Negative or >1 values land in the waste/chase area. These samples emulate what a typical AB sequence looks like.
+            const samplePitches = [
+                // Fastballs — up and arm-side
+                { pitch_type: '4-seam', location_x: 0.25, location_y: 0.15 },
+                { pitch_type: '4-seam', location_x: 0.45, location_y: 0.05 },
+                { pitch_type: '4-seam', location_x: 0.7, location_y: 0.25 },
+                { pitch_type: '4-seam', location_x: 0.85, location_y: 0.4 },
+                { pitch_type: '4-seam', location_x: 0.6, location_y: -0.1 }, // up out of zone
+                // Sliders — low away
+                { pitch_type: 'slider', location_x: 0.9, location_y: 0.75 },
+                { pitch_type: 'slider', location_x: 1.05, location_y: 0.85 }, // chase
+                { pitch_type: 'slider', location_x: 0.75, location_y: 0.65 },
+                { pitch_type: 'slider', location_x: 1.15, location_y: 0.95 }, // chase
+                // Curveballs — bottom of zone
+                { pitch_type: 'curveball', location_x: 0.5, location_y: 0.9 },
+                { pitch_type: 'curveball', location_x: 0.4, location_y: 1.05 }, // dropped below
+                { pitch_type: 'curveball', location_x: 0.55, location_y: 0.8 },
+                // Changeups — low and away
+                { pitch_type: 'changeup', location_x: 0.8, location_y: 0.7 },
+                { pitch_type: 'changeup', location_x: 0.95, location_y: 0.85 },
+                { pitch_type: 'changeup', location_x: 0.7, location_y: 0.55 },
+                // Cutter — in
+                { pitch_type: 'cutter', location_x: 0.15, location_y: 0.35 },
+                { pitch_type: 'cutter', location_x: 0.05, location_y: 0.5 },
+                // Sinker — bottom arm side
+                { pitch_type: 'sinker', location_x: 0.3, location_y: 0.85 },
+                { pitch_type: 'sinker', location_x: 0.2, location_y: 0.95 },
+            ];
+
+            function renderHeatMap(targetId, bats) {
+                const toY = (ly) => 120 + ly * 110;
+                const toX = (lx) => (bats === 'L' ? 188 - lx * 75 : 113 + lx * 75);
+                const located = samplePitches.filter((p) => p.location_x != null && p.location_y != null);
+                const typesPresent = Array.from(new Set(located.map((p) => p.pitch_type)));
+
+                const container = document.getElementById(targetId);
+
+                // caption
+                const cap = document.createElement('span');
+                cap.className = 'caption';
+                cap.textContent = `${bats === 'L' ? 'LHH' : 'RHH'} · Pitch Locations by Type`;
+                container.appendChild(cap);
+
+                // svg
+                const SVG_NS = 'http://www.w3.org/2000/svg';
+                const svg = document.createElementNS(SVG_NS, 'svg');
+                svg.setAttribute('viewBox', '0 0 300 300');
+                svg.setAttribute('width', '260');
+                svg.setAttribute('height', '260');
+
+                const bg = document.createElementNS(SVG_NS, 'rect');
+                bg.setAttribute('x', 0);
+                bg.setAttribute('y', 0);
+                bg.setAttribute('width', 300);
+                bg.setAttribute('height', 300);
+                bg.setAttribute('fill', '#f5f5f0');
+                svg.appendChild(bg);
+
+                const waste = document.createElementNS(SVG_NS, 'rect');
+                waste.setAttribute('x', 81);
+                waste.setAttribute('y', 85);
+                waste.setAttribute('width', 139);
+                waste.setAttribute('height', 185);
+                waste.setAttribute('fill', 'rgba(200,200,195,0.25)');
+                waste.setAttribute('stroke', '#b0b0a8');
+                waste.setAttribute('stroke-width', 1);
+                svg.appendChild(waste);
+
+                const zone = document.createElementNS(SVG_NS, 'rect');
+                zone.setAttribute('x', 113);
+                zone.setAttribute('y', 120);
+                zone.setAttribute('width', 75);
+                zone.setAttribute('height', 110);
+                zone.setAttribute('fill', 'rgba(255,255,255,0.9)');
+                zone.setAttribute('stroke', '#374151');
+                zone.setAttribute('stroke-width', 1.5);
+                svg.appendChild(zone);
+
+                const gridLines = [
+                    { x1: 113, y1: 156.7, x2: 188, y2: 156.7 },
+                    { x1: 113, y1: 193.4, x2: 188, y2: 193.4 },
+                    { x1: 138, y1: 120, x2: 138, y2: 230 },
+                    { x1: 163, y1: 120, x2: 163, y2: 230 },
+                ];
+                gridLines.forEach((g) => {
+                    const ln = document.createElementNS(SVG_NS, 'line');
+                    ln.setAttribute('x1', g.x1);
+                    ln.setAttribute('y1', g.y1);
+                    ln.setAttribute('x2', g.x2);
+                    ln.setAttribute('y2', g.y2);
+                    ln.setAttribute('stroke', '#d1d5db');
+                    ln.setAttribute('stroke-width', 0.5);
+                    svg.appendChild(ln);
+                });
+
+                located.forEach((p) => {
+                    const c = document.createElementNS(SVG_NS, 'circle');
+                    c.setAttribute('cx', toX(p.location_x));
+                    c.setAttribute('cy', toY(p.location_y));
+                    c.setAttribute('r', 5);
+                    c.setAttribute('fill', PITCH_TYPE_COLORS[p.pitch_type] ?? '#9ca3af');
+                    c.setAttribute('opacity', 0.8);
+                    c.setAttribute('stroke', 'white');
+                    c.setAttribute('stroke-width', 0.8);
+                    svg.appendChild(c);
+                });
+
+                container.appendChild(svg);
+
+                // legend
+                const legend = document.createElement('div');
+                legend.className = 'legend';
+                typesPresent.forEach((t) => {
+                    const item = document.createElement('div');
+                    item.className = 'legend-item';
+                    const dot = document.createElement('div');
+                    dot.className = 'legend-dot';
+                    dot.style.backgroundColor = PITCH_TYPE_COLORS[t] ?? '#9ca3af';
+                    const label = document.createElement('span');
+                    label.className = 'legend-label';
+                    label.textContent = PITCH_TYPE_ABBREV[t] ?? t;
+                    item.appendChild(dot);
+                    item.appendChild(label);
+                    legend.appendChild(item);
+                });
+                container.appendChild(legend);
+            }
+
+            renderHeatMap('rhh', 'R');
+            renderHeatMap('lhh', 'L');
+        </script>
+    </body>
+</html>

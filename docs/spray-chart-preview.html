@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Spray chart field preview v2</title>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: #fafaf7;
+                margin: 0;
+                padding: 32px;
+            }
+            h1 {
+                font-size: 18px;
+                margin: 0 0 16px;
+            }
+            .row {
+                display: flex;
+                gap: 32px;
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+            .panel {
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 16px;
+            }
+            .panel h2 {
+                font-size: 13px;
+                margin: 0 0 8px;
+                color: #374151;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Spray chart field preview — hexagon with dirt warning track</h1>
+        <div class="row">
+            <div class="panel">
+                <h2>Empty field</h2>
+                <svg id="empty" width="240" height="240" viewBox="0 0 240 240" style="border-radius: 8px"></svg>
+            </div>
+            <div class="panel">
+                <h2>Sample plays (mixed types)</h2>
+                <svg id="filled" width="240" height="240" viewBox="0 0 240 240" style="border-radius: 8px"></svg>
+            </div>
+            <div class="panel">
+                <h2>Larger 2x</h2>
+                <svg id="big" width="480" height="480" viewBox="0 0 240 240" style="border-radius: 8px"></svg>
+            </div>
+        </div>
+
+        <script>
+            const SIZE = 240;
+            const HOME = { x: 120, y: 220 };
+            const LF_POLE = { x: 12, y: 105 };
+            const UPPER_LEFT = { x: 50, y: 30 };
+            const UPPER_RIGHT = { x: 190, y: 30 };
+            const RF_POLE = { x: 228, y: 105 };
+            const FIRST = { x: 155, y: 185 };
+            const SECOND = { x: 120, y: 150 };
+            const THIRD = { x: 85, y: 185 };
+            const MOUND = { x: 120, y: 178 };
+
+            const FIELD_LOCATIONS = {
+                left_field_line: { x: 50, y: 100 },
+                left_center_gap: { x: 80, y: 60 },
+                center_field: { x: 120, y: 45 },
+                right_center_gap: { x: 160, y: 60 },
+                right_field_line: { x: 190, y: 100 },
+                infield_left: { x: 92, y: 175 },
+                infield_center: { x: 120, y: 162 },
+                infield_right: { x: 148, y: 175 },
+            };
+
+            const CONTACT_TYPE_COLOR = {
+                fly_ball: '#3b82f6',
+                pop_up: '#93c5fd',
+                line_drive: '#dc2626',
+                ground_ball: '#ca8a04',
+                bunt: '#6b7280',
+            };
+
+            const RESULT_SYMBOL = { single: '1B', double: '2B', triple: '3B', home_run: 'HR' };
+
+            function jitter(idx, range) {
+                return ((Math.sin(idx * 127.1 + 311.7) * 43758.5) % 1) * range - range / 2;
+            }
+
+            function trajectoryPath(endX, endY, type) {
+                const startX = HOME.x;
+                const startY = HOME.y;
+                if (type === 'line_drive' || type === 'bunt') return `M ${startX} ${startY} L ${endX} ${endY}`;
+                if (type === 'fly_ball' || type === 'pop_up') {
+                    const midX = (startX + endX) / 2;
+                    const peakOffset = type === 'pop_up' ? 60 : 36;
+                    const midY = Math.min(startY, endY) - peakOffset;
+                    return `M ${startX} ${startY} Q ${midX} ${midY} ${endX} ${endY}`;
+                }
+                if (type === 'ground_ball') {
+                    const segments = 6;
+                    let path = `M ${startX} ${startY}`;
+                    const dx = (endX - startX) / segments;
+                    const dy = (endY - startY) / segments;
+                    for (let i = 0; i < segments; i++) {
+                        const x1 = startX + dx * i + dx / 2;
+                        const y1 = startY + dy * i + dy / 2;
+                        const wiggle = i % 2 === 0 ? 5 : -5;
+                        path += ` Q ${x1 + wiggle} ${y1} ${startX + dx * (i + 1)} ${startY + dy * (i + 1)}`;
+                    }
+                    return path;
+                }
+                return `M ${startX} ${startY} L ${endX} ${endY}`;
+            }
+
+            function renderField(svg, plays) {
+                const NS = 'http://www.w3.org/2000/svg';
+                const fieldHexPath = `M ${HOME.x} ${HOME.y} L ${LF_POLE.x} ${LF_POLE.y} L ${UPPER_LEFT.x} ${UPPER_LEFT.y} A 200 200 0 0 1 ${UPPER_RIGHT.x} ${UPPER_RIGHT.y} L ${RF_POLE.x} ${RF_POLE.y} Z`;
+                const infieldPath = `M ${HOME.x} ${HOME.y} L ${FIRST.x} ${FIRST.y} Q ${HOME.x} 115 ${THIRD.x} ${THIRD.y} Z`;
+
+                const make = (tag, attrs) => {
+                    const el = document.createElementNS(NS, tag);
+                    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+                    return el;
+                };
+
+                // Off-field background
+                svg.appendChild(make('rect', { x: 0, y: 0, width: SIZE, height: SIZE, fill: '#d1fae5' }));
+                // Hexagon with thick brown stroke (warning track)
+                svg.appendChild(
+                    make('path', {
+                        d: fieldHexPath,
+                        fill: '#22c55e',
+                        stroke: '#a16207',
+                        'stroke-width': 9,
+                        'stroke-linejoin': 'round',
+                        'stroke-linecap': 'round',
+                    })
+                );
+                // Foul lines
+                svg.appendChild(
+                    make('line', {
+                        x1: HOME.x,
+                        y1: HOME.y,
+                        x2: LF_POLE.x,
+                        y2: LF_POLE.y,
+                        stroke: 'white',
+                        'stroke-width': 1.6,
+                        opacity: 0.95,
+                    })
+                );
+                svg.appendChild(
+                    make('line', {
+                        x1: HOME.x,
+                        y1: HOME.y,
+                        x2: RF_POLE.x,
+                        y2: RF_POLE.y,
+                        stroke: 'white',
+                        'stroke-width': 1.6,
+                        opacity: 0.95,
+                    })
+                );
+                // Infield dirt
+                svg.appendChild(
+                    make('path', { d: infieldPath, fill: '#c2761d', stroke: '#92400e', 'stroke-width': 0.8 })
+                );
+                // Baselines
+                svg.appendChild(
+                    make('line', {
+                        x1: HOME.x,
+                        y1: HOME.y,
+                        x2: FIRST.x,
+                        y2: FIRST.y,
+                        stroke: 'white',
+                        'stroke-width': 1.6,
+                        opacity: 0.95,
+                    })
+                );
+                svg.appendChild(
+                    make('line', {
+                        x1: THIRD.x,
+                        y1: THIRD.y,
+                        x2: HOME.x,
+                        y2: HOME.y,
+                        stroke: 'white',
+                        'stroke-width': 1.6,
+                        opacity: 0.95,
+                    })
+                );
+                // Mound
+                svg.appendChild(
+                    make('circle', { cx: MOUND.x, cy: MOUND.y, r: 5, fill: '#c2761d', stroke: '#92400e', 'stroke-width': 1 })
+                );
+                svg.appendChild(make('circle', { cx: MOUND.x, cy: MOUND.y, r: 1.5, fill: 'white' }));
+                // Bases
+                [
+                    [HOME, 5],
+                    [FIRST, 4],
+                    [SECOND, 4],
+                    [THIRD, 4],
+                ].forEach(([b, half]) => {
+                    svg.appendChild(
+                        make('rect', {
+                            x: b.x - half,
+                            y: b.y - half,
+                            width: half * 2,
+                            height: half * 2,
+                            fill: 'white',
+                            stroke: '#374151',
+                            'stroke-width': 0.8,
+                            transform: `rotate(45 ${b.x} ${b.y})`,
+                        })
+                    );
+                });
+
+                // Trajectories
+                plays.forEach((p, i) => {
+                    const loc = FIELD_LOCATIONS[p.field_location];
+                    if (!loc) return;
+                    const x = loc.x + jitter(i, 14);
+                    const y = loc.y + jitter(i + 1, 12);
+                    const color = CONTACT_TYPE_COLOR[p.contact_type] || '#9ca3af';
+                    svg.appendChild(
+                        make('path', {
+                            d: trajectoryPath(x, y, p.contact_type),
+                            fill: 'none',
+                            stroke: color,
+                            'stroke-width': 2.25,
+                            opacity: 0.7,
+                            'stroke-linecap': 'round',
+                        })
+                    );
+                });
+
+                // Dots
+                plays.forEach((p, i) => {
+                    const loc = FIELD_LOCATIONS[p.field_location];
+                    if (!loc) return;
+                    const x = loc.x + jitter(i, 14);
+                    const y = loc.y + jitter(i + 1, 12);
+                    const color = CONTACT_TYPE_COLOR[p.contact_type] || '#6b7280';
+                    const symbol = p.hit_result ? RESULT_SYMBOL[p.hit_result] || 'X' : 'X';
+                    const r = Math.min(14, 6 + ((p.count || 1) - 1) * 2);
+                    const g = make('g', {});
+                    g.appendChild(
+                        make('circle', {
+                            cx: x,
+                            cy: y,
+                            r,
+                            fill: color,
+                            opacity: 0.9,
+                            stroke: 'white',
+                            'stroke-width': 1,
+                        })
+                    );
+                    const t = make('text', {
+                        x,
+                        y: y + 3.5,
+                        'font-size': 6,
+                        'font-weight': 700,
+                        fill: 'white',
+                        'text-anchor': 'middle',
+                    });
+                    t.textContent = symbol;
+                    g.appendChild(t);
+                    svg.appendChild(g);
+                });
+            }
+
+            const samplePlays = [
+                { contact_type: 'line_drive', field_location: 'center_field', hit_result: 'single', count: 1 },
+                { contact_type: 'fly_ball', field_location: 'right_center_gap', hit_result: 'double', count: 1 },
+                { contact_type: 'fly_ball', field_location: 'left_center_gap', hit_result: 'out', count: 1 },
+                { contact_type: 'pop_up', field_location: 'infield_center', hit_result: 'out', count: 2 },
+                { contact_type: 'ground_ball', field_location: 'infield_left', hit_result: 'out', count: 3 },
+                { contact_type: 'ground_ball', field_location: 'infield_right', hit_result: 'out', count: 1 },
+                { contact_type: 'line_drive', field_location: 'left_field_line', hit_result: 'triple', count: 1 },
+                { contact_type: 'line_drive', field_location: 'right_field_line', hit_result: 'home_run', count: 1 },
+            ];
+            renderField(document.getElementById('empty'), []);
+            renderField(document.getElementById('filled'), samplePlays);
+            renderField(document.getElementById('big'), samplePlays);
+        </script>
+    </body>
+</html>
