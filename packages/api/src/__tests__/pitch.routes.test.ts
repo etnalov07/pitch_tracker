@@ -33,9 +33,23 @@ describe('Pitch Routes - /bt-api/pitches', () => {
 
         const mockReturnedPitch = { id: 'test-pitch-id', ...fullPayload, pitch_number: 1 };
 
+        const mockSnapshotRow = {
+            balls: 0,
+            strikes: 0,
+            result: null,
+            outs_after: 0,
+            rbi: 0,
+            runs_scored: 0,
+            ab_end_time: null,
+            base_runners: { first: false, second: false, third: false },
+            home_score: 0,
+            away_score: 0,
+        };
+
         function setupPitchTransaction() {
             return setupMockTransaction([
                 { rows: [{ max_pitch: 0 }] }, // get max pitch number
+                { rows: [mockSnapshotRow] }, // snapshot pre-pitch state
                 { rows: [mockReturnedPitch] }, // insert pitch
                 { rows: [] }, // update at_bats
                 { rows: [] }, // check existing pitch type
@@ -77,6 +91,7 @@ describe('Pitch Routes - /bt-api/pitches', () => {
 
             const client = setupMockTransaction([
                 { rows: [{ max_pitch: 0 }] },
+                { rows: [mockSnapshotRow] },
                 { rows: [mockPitch] },
                 { rows: [] },
                 { rows: [] },
@@ -87,7 +102,7 @@ describe('Pitch Routes - /bt-api/pitches', () => {
 
             expect(res.status).toBe(201);
             // Verify balls_before and strikes_before defaulted to 0 in the INSERT
-            const insertCall = client.query.mock.calls[1];
+            const insertCall = client.query.mock.calls[2];
             const insertParams = insertCall[1];
             // INSERT params (0-indexed): id, at_bat_id, game_id, pitcher_id, batter_id, opponent_batter_id,
             // pitch_number, pitch_type, velocity, location_x, location_y, target_location_x, target_location_y,
@@ -126,6 +141,82 @@ describe('Pitch Routes - /bt-api/pitches', () => {
             const res = await getAgent().post('/bt-api/pitches').set('Authorization', authHeader()).send(payload);
 
             expect(res.status).toBe(201);
+        });
+    });
+
+    // ========================================================================
+    // DELETE /bt-api/pitches/:id (undo)
+    // ========================================================================
+
+    describe('DELETE /bt-api/pitches/:id', () => {
+        const sampleSnapshot = {
+            at_bat: { balls: 1, strikes: 1, result: null, outs_after: 0, rbi: 0, runs_scored: 0, ab_end_time: null },
+            game: { base_runners: { first: false, second: false, third: false }, home_score: 0, away_score: 0 },
+        };
+
+        function setupUndoTransaction(opts: { pitchRow?: any | null; latestId?: string } = {}) {
+            const pitchRow =
+                opts.pitchRow === null
+                    ? null
+                    : (opts.pitchRow ?? {
+                          id: 'pitch-1',
+                          at_bat_id: 'ab-1',
+                          game_id: 'game-1',
+                          opponent_batter_id: null,
+                          created_at: '2026-01-01T00:00:00Z',
+                          prev_state: sampleSnapshot,
+                      });
+            const latestId = opts.latestId ?? pitchRow?.id ?? 'pitch-1';
+
+            return setupMockTransaction([
+                { rows: pitchRow ? [pitchRow] : [] }, // SELECT pitch
+                { rows: latestId ? [{ id: latestId }] : [] }, // SELECT latest
+                { rows: [] }, // DELETE baserunner_events
+                { rows: [{ id: 'ab-1', balls: 1, strikes: 1 }] }, // UPDATE at_bats
+                { rows: [{ id: 'game-1', home_score: 0 }] }, // UPDATE games
+                { rows: [] }, // DELETE pitch
+            ]);
+        }
+
+        it('returns 401 without auth', async () => {
+            const res = await getAgent().delete('/bt-api/pitches/pitch-1');
+            expect(res.status).toBe(401);
+        });
+
+        it('returns 200 and restored state on success', async () => {
+            setupUndoTransaction();
+            const res = await getAgent().delete('/bt-api/pitches/pitch-1').set('Authorization', authHeader());
+            expect(res.status).toBe(200);
+            expect(res.body.message).toBe('Pitch undone successfully');
+            expect(res.body.atBat).toBeDefined();
+            expect(res.body.game).toBeDefined();
+        });
+
+        it('returns 404 when pitch missing', async () => {
+            setupUndoTransaction({ pitchRow: null });
+            const res = await getAgent().delete('/bt-api/pitches/missing').set('Authorization', authHeader());
+            expect(res.status).toBe(404);
+        });
+
+        it('returns 400 for legacy pitch (prev_state null)', async () => {
+            setupUndoTransaction({
+                pitchRow: {
+                    id: 'pitch-1',
+                    at_bat_id: 'ab-1',
+                    game_id: 'game-1',
+                    opponent_batter_id: null,
+                    created_at: '2026-01-01T00:00:00Z',
+                    prev_state: null,
+                },
+            });
+            const res = await getAgent().delete('/bt-api/pitches/pitch-1').set('Authorization', authHeader());
+            expect(res.status).toBe(400);
+        });
+
+        it('returns 409 when pitch is not the latest in its at-bat', async () => {
+            setupUndoTransaction({ latestId: 'pitch-2' });
+            const res = await getAgent().delete('/bt-api/pitches/pitch-1').set('Authorization', authHeader());
+            expect(res.status).toBe(409);
         });
     });
 

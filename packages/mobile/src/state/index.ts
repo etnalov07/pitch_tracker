@@ -30,6 +30,7 @@ export {
     createAtBat,
     updateAtBat,
     logPitch,
+    undoLastPitch,
     recordPlay,
     updateBaseRunners,
     fetchBaseRunners,

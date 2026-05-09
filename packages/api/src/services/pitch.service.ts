@@ -1,5 +1,5 @@
 import { query, transaction } from '../config/database';
-import { Pitch } from '../types';
+import { AtBat, Game, Pitch, PitchPrevState } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import scoutingService from './scouting.service';
 
@@ -41,15 +41,46 @@ export class PitchService {
             );
             const pitchNumber = countResult.rows[0].max_pitch + 1;
 
+            // Snapshot pre-pitch at-bat + game state for undo. Captured here so a
+            // later undoPitch can fully reverse count, runners, score, and AB lifecycle.
+            const snapshotResult = await client.query(
+                `SELECT a.balls, a.strikes, a.result, a.outs_after, a.rbi, a.runs_scored, a.ab_end_time,
+                        g.base_runners, g.home_score, g.away_score
+                 FROM at_bats a
+                 JOIN games g ON g.id = a.game_id
+                 WHERE a.id = $1`,
+                [at_bat_id]
+            );
+            if (snapshotResult.rows.length === 0) {
+                throw new Error('At-bat not found');
+            }
+            const snap = snapshotResult.rows[0];
+            const prevState: PitchPrevState = {
+                at_bat: {
+                    balls: snap.balls,
+                    strikes: snap.strikes,
+                    result: snap.result,
+                    outs_after: snap.outs_after,
+                    rbi: snap.rbi,
+                    runs_scored: snap.runs_scored,
+                    ab_end_time: snap.ab_end_time,
+                },
+                game: {
+                    base_runners: snap.base_runners ?? { first: false, second: false, third: false },
+                    home_score: snap.home_score ?? 0,
+                    away_score: snap.away_score ?? 0,
+                },
+            };
+
             // Insert pitch
             const pitchId = uuidv4();
             const pitchResult = await client.query(
                 `INSERT INTO pitches (
           id, at_bat_id, game_id, pitcher_id, batter_id, opponent_batter_id, pitch_number,
           pitch_type, velocity, location_x, location_y, target_location_x, target_location_y, target_zone, zone,
-          balls_before, strikes_before, pitch_result, team_side
+          balls_before, strikes_before, pitch_result, team_side, prev_state
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
         RETURNING *`,
                 [
                     pitchId,
@@ -71,6 +102,7 @@ export class PitchService {
                     strikes_before ?? 0,
                     pitch_result,
                     team_side ?? null,
+                    JSON.stringify(prevState),
                 ]
             );
 
@@ -119,6 +151,98 @@ export class PitchService {
         }
 
         return pitch;
+    }
+
+    async undoPitch(pitchId: string): Promise<{ pitch: Pitch; atBat: AtBat; game: Game }> {
+        const result = await transaction(async (client) => {
+            // 1. Read pitch (lock row)
+            const pitchRes = await client.query(`SELECT * FROM pitches WHERE id = $1 FOR UPDATE`, [pitchId]);
+            if (pitchRes.rows.length === 0) {
+                const err: Error & { status?: number } = new Error('Pitch not found');
+                err.status = 404;
+                throw err;
+            }
+            const pitch: Pitch & { prev_state: PitchPrevState | null } = pitchRes.rows[0];
+
+            if (!pitch.prev_state) {
+                const err: Error & { status?: number } = new Error('Pitch was logged before undo support — cannot be undone');
+                err.status = 400;
+                throw err;
+            }
+
+            // 2. Reject if pitch is not the latest in its at-bat (race / non-LIFO)
+            const latestRes = await client.query(`SELECT id FROM pitches WHERE at_bat_id = $1 ORDER BY pitch_number DESC LIMIT 1`, [
+                pitch.at_bat_id,
+            ]);
+            if (latestRes.rows[0]?.id !== pitchId) {
+                const err: Error & { status?: number } = new Error('Only the most recent pitch in an at-bat can be undone');
+                err.status = 409;
+                throw err;
+            }
+
+            // 3. Delete baserunner_events tied to this at-bat that fired AFTER the pitch
+            //    (covers the thrown_out_advancing + advancement cascade from a hit/walk).
+            //    Mid-AB events recorded before the pitch are preserved.
+            await client.query(`DELETE FROM baserunner_events WHERE at_bat_id = $1 AND created_at > $2`, [
+                pitch.at_bat_id,
+                pitch.created_at,
+            ]);
+
+            // 4. Restore at_bats from snapshot
+            const prev = pitch.prev_state;
+            const atBatRes = await client.query(
+                `UPDATE at_bats
+                 SET balls = $1,
+                     strikes = $2,
+                     result = $3,
+                     outs_after = $4,
+                     rbi = $5,
+                     runs_scored = $6,
+                     ab_end_time = $7
+                 WHERE id = $8
+                 RETURNING *`,
+                [
+                    prev.at_bat.balls,
+                    prev.at_bat.strikes,
+                    prev.at_bat.result,
+                    prev.at_bat.outs_after,
+                    prev.at_bat.rbi,
+                    prev.at_bat.runs_scored,
+                    prev.at_bat.ab_end_time,
+                    pitch.at_bat_id,
+                ]
+            );
+
+            // 5. Restore games (base_runners, scores)
+            const gameRes = await client.query(
+                `UPDATE games
+                 SET base_runners = $1,
+                     home_score = $2,
+                     away_score = $3
+                 WHERE id = $4
+                 RETURNING *`,
+                [JSON.stringify(prev.game.base_runners), prev.game.home_score, prev.game.away_score, pitch.game_id]
+            );
+
+            // 6. Delete the pitch (cascades to plays via FK; pitch_calls.pitch_id set NULL)
+            await client.query(`DELETE FROM pitches WHERE id = $1`, [pitchId]);
+
+            return {
+                pitch,
+                atBat: atBatRes.rows[0],
+                game: gameRes.rows[0],
+            };
+        });
+
+        if (result.pitch.opponent_batter_id) {
+            try {
+                await scoutingService.markTendenciesStale(result.pitch.opponent_batter_id);
+            } catch (error) {
+                console.error('Failed to mark tendencies as stale on undo:', error);
+            }
+        }
+
+        return result;
     }
 
     async getPitchById(pitchId: string): Promise<Pitch | null> {

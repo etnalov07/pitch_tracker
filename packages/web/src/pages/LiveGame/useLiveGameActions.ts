@@ -18,6 +18,7 @@ import {
     fetchGameById,
     startGame,
     logPitch,
+    undoLastPitch,
     createAtBat,
     endAtBat,
     setCurrentAtBat,
@@ -857,8 +858,27 @@ export function useLiveGameActions(state: LiveGameState) {
         await advanceInning(0);
     };
 
+    // Undo most recent pitch — fully reverses count, runners, score, AB lifecycle.
+    // Server returns restored {atBat, game}; sync local out/runner state from response.
+    const handleUndoLastPitch = async () => {
+        if (pitches.length === 0) return;
+        const last = pitches[pitches.length - 1];
+        try {
+            const result = await dispatch(undoLastPitch(last.id)).unwrap();
+            if (result.game.base_runners) {
+                setBaseRunners(result.game.base_runners);
+            }
+            if (typeof result.atBat.outs_after === 'number') {
+                setCurrentOuts(result.atBat.outs_after);
+            }
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Failed to undo pitch');
+        }
+    };
+
     return {
         handleLogPitch,
+        handleUndoLastPitch,
         handleEndAtBat,
         handleDiamondResult,
         handleInningChangeConfirm,

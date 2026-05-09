@@ -56,6 +56,7 @@ import {
     endGame,
     setCurrentAtBat,
     clearPitches,
+    undoLastPitch,
     setBaseRunners,
     updateBaseRunners,
     recordBaserunnerEvent,
@@ -886,6 +887,32 @@ export default function LiveGameScreen() {
             setWalkieTalkieActive(false);
         }
     };
+
+    const handleUndoLastPitch = useCallback(() => {
+        if (pitches.length === 0) return;
+        const last = pitches[pitches.length - 1];
+        const formatPitchType = (t: string) => t.replace(/_/g, ' ');
+        const formatResult = (r: string) => r.replace(/_/g, ' ');
+        Alert.alert(
+            'Undo last pitch?',
+            `${formatPitchType(last.pitch_type)} — ${formatResult(last.pitch_result)}\nCount before: ${last.balls_before}-${last.strikes_before}`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Undo',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await dispatch(undoLastPitch(last.id)).unwrap();
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        } catch (err) {
+                            Alert.alert('Undo failed', err instanceof Error ? err.message : 'Could not undo pitch');
+                        }
+                    },
+                },
+            ]
+        );
+    }, [pitches, dispatch]);
 
     const handleLogPitch = async () => {
         if (!selectedPitchType || !selectedResult || !pitchLocation) {
@@ -2019,16 +2046,30 @@ export default function LiveGameScreen() {
                             </View>
                         )}
                         {!isReadOnly && (
-                            <Button
-                                mode="contained"
-                                onPress={handleLogPitch}
-                                disabled={!canLogPitch}
-                                loading={isLogging}
-                                style={styles.logButton}
-                                contentStyle={styles.logButtonContent}
-                            >
-                                Log Pitch
-                            </Button>
+                            <View style={styles.logRow}>
+                                <Button
+                                    mode="contained"
+                                    onPress={handleLogPitch}
+                                    disabled={!canLogPitch}
+                                    loading={isLogging}
+                                    style={styles.logButtonGrow}
+                                    contentStyle={styles.logButtonContent}
+                                >
+                                    Log Pitch
+                                </Button>
+                                {pitches.length > 0 && !isLogging && (
+                                    <Button
+                                        mode="outlined"
+                                        onPress={handleUndoLastPitch}
+                                        style={styles.undoButton}
+                                        contentStyle={styles.logButtonContent}
+                                        textColor="#b91c1c"
+                                        icon="undo"
+                                    >
+                                        Undo
+                                    </Button>
+                                )}
+                            </View>
                         )}
                         {!isReadOnly && hasPreviousAtBats && (
                             <Button
@@ -2238,16 +2279,30 @@ export default function LiveGameScreen() {
                 )}
                 {/* 6. Log Pitch */}
                 {!isReadOnly && (
-                    <Button
-                        mode="contained"
-                        onPress={handleLogPitch}
-                        disabled={!canLogPitch}
-                        loading={isLogging}
-                        style={styles.logButton}
-                        contentStyle={styles.logButtonContent}
-                    >
-                        Log Pitch
-                    </Button>
+                    <View style={styles.logRow}>
+                        <Button
+                            mode="contained"
+                            onPress={handleLogPitch}
+                            disabled={!canLogPitch}
+                            loading={isLogging}
+                            style={styles.logButtonGrow}
+                            contentStyle={styles.logButtonContent}
+                        >
+                            Log Pitch
+                        </Button>
+                        {pitches.length > 0 && !isLogging && (
+                            <Button
+                                mode="outlined"
+                                onPress={handleUndoLastPitch}
+                                style={styles.undoButton}
+                                contentStyle={styles.logButtonContent}
+                                textColor="#b91c1c"
+                                icon="undo"
+                            >
+                                Undo
+                            </Button>
+                        )}
+                    </View>
                 )}
                 {/* 7. Previous At-Bats (hidden on first at-bat) */}
                 {!isReadOnly && hasPreviousAtBats && (
@@ -2297,6 +2352,9 @@ const styles = StyleSheet.create({
     phoneContentInner: { padding: 10, gap: 8 },
     placeholder: { color: '#6b7280', marginTop: 4 },
     logButton: { marginTop: 4 },
+    logRow: { flexDirection: 'row', gap: 8, marginTop: 4, alignItems: 'center' },
+    logButtonGrow: { flex: 1 },
+    undoButton: { borderColor: '#b91c1c' },
     logButtonContent: { paddingVertical: 6 },
     previousAtBatsButton: { marginTop: 8 },
     startAtBatButton: { marginTop: 6 },
