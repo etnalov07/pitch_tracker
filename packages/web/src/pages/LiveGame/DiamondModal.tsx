@@ -64,6 +64,10 @@ const DiamondModal: React.FC<DiamondModalProps> = ({
     }, [hitLocation, selectedFielder]);
 
     const handleResult = (result: string) => {
+        // A sac bunt is by definition a bunt — flip contact type for the user.
+        if (result === 'sacrifice_bunt' && hitType !== 'bunt') {
+            onHitTypeChange('bunt');
+        }
         onResult(result, selectedFielder || undefined);
         setSelectedFielder(null);
     };
@@ -102,6 +106,13 @@ const DiamondModal: React.FC<DiamondModalProps> = ({
                         onClick={() => onHitTypeChange('ground_ball')}
                     >
                         Ground Ball
+                    </HitTypeButton>
+                    <HitTypeButton
+                        active={hitType === 'bunt'}
+                        hitColor={theme.colors.gray[700]}
+                        onClick={() => onHitTypeChange('bunt')}
+                    >
+                        Bunt
                     </HitTypeButton>
                 </HitTypeSelector>
 
@@ -165,6 +176,9 @@ const DiamondModal: React.FC<DiamondModalProps> = ({
                         </DiamondResultButton>
                         <DiamondResultButton disabled={!hitLocation} isOut onClick={() => handleResult('sacrifice_fly')}>
                             Sac Fly
+                        </DiamondResultButton>
+                        <DiamondResultButton disabled={!hitLocation} isOut onClick={() => handleResult('sacrifice_bunt')}>
+                            Sac Bunt
                         </DiamondResultButton>
                     </DiamondResultGrid>
                 </DiamondResultSection>

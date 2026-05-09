@@ -116,6 +116,13 @@ export const getSuggestedAdvancement = (currentRunners: BaseRunners, result: str
             if (currentRunners.second) newRunners.second = true;
             break;
 
+        case 'sacrifice_bunt':
+            // Standard sac bunt: each runner advances one base, runner on 3rd scores.
+            if (currentRunners.third) runs++;
+            if (currentRunners.second) newRunners.third = true;
+            if (currentRunners.first) newRunners.second = true;
+            break;
+
         case 'fielders_choice':
             // Batter reaches, but a runner is out - complex, use defaults
             // Typically the lead runner is out, batter goes to first

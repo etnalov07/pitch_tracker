@@ -95,6 +95,8 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
                 return 'Hit By Pitch';
             case 'sacrifice_fly':
                 return 'Sacrifice Fly';
+            case 'sacrifice_bunt':
+                return 'Sacrifice Bunt';
             case 'fielders_choice':
                 return "Fielder's Choice";
             case 'strikeout_dropped':

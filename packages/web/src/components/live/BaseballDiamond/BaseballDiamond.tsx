@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { theme } from '../../../styles/theme';
 import { Container, DiamondSvg, Legend, LegendItem, LegendLine } from './styles';
 
-export type HitType = 'fly_ball' | 'line_drive' | 'ground_ball';
+export type HitType = 'fly_ball' | 'line_drive' | 'ground_ball' | 'bunt';
 
 export interface HitLocation {
     x: number; // 0-100 percentage
@@ -75,6 +75,19 @@ const BaseballDiamond: React.FC<BaseballDiamondProps> = ({
             const midX = (startX + endX) / 2;
             const midY = Math.min(startY, endY) - 15;
             return `M ${startX} ${startY} Q ${midX} ${midY} ${endX} ${endY}`;
+        } else if (type === 'bunt') {
+            // Bunts dribble a short distance; render a tight wiggle to the spot.
+            const segments = 4;
+            let path = `M ${startX} ${startY}`;
+            const dx = (endX - startX) / segments;
+            const dy = (endY - startY) / segments;
+            for (let i = 0; i < segments; i++) {
+                const x1 = startX + dx * i + dx / 2;
+                const y1 = startY + dy * i + dy / 2;
+                const wiggle = i % 2 === 0 ? 1 : -1;
+                path += ` Q ${x1 + wiggle} ${y1} ${startX + dx * (i + 1)} ${startY + dy * (i + 1)}`;
+            }
+            return path;
         } else {
             const segments = 6;
             let path = `M ${startX} ${startY}`;
@@ -98,6 +111,8 @@ const BaseballDiamond: React.FC<BaseballDiamondProps> = ({
                 return theme.colors.red[500];
             case 'ground_ball':
                 return theme.colors.yellow[600];
+            case 'bunt':
+                return theme.colors.gray[700];
             default:
                 return theme.colors.gray[500];
         }

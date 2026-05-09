@@ -481,6 +481,7 @@ export function useLiveGameActions(state: LiveGameState) {
             'walk',
             'hit_by_pitch',
             'sacrifice_fly',
+            'sacrifice_bunt',
             'fielders_choice',
         ].includes(result);
 

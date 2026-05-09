@@ -1103,7 +1103,16 @@ export default function LiveGameScreen() {
 
             setShowInPlayModal(false);
             // For hits, show runner advancement modal
-            const hitResults = ['single', 'double', 'triple', 'home_run', 'walk', 'hit_by_pitch', 'sacrifice_fly'];
+            const hitResults = [
+                'single',
+                'double',
+                'triple',
+                'home_run',
+                'walk',
+                'hit_by_pitch',
+                'sacrifice_fly',
+                'sacrifice_bunt',
+            ];
             const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
             if (hitResults.includes(result) && hasRunnersOnBase) {
                 setPendingHitResult(result);
