@@ -201,7 +201,86 @@ export const ChartLoading = styled.p({
     color: theme.colors.gray[400],
     fontStyle: 'italic',
     padding: `${theme.spacing.lg} 0`,
+    textAlign: 'center',
 });
+
+export const ChartsPanel = styled.div({
+    backgroundColor: theme.colors.gray[50],
+    borderTop: `1px solid ${theme.colors.gray[200]}`,
+    padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
+});
+
+export const ChartsGrid = styled.div({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(12, 1fr)',
+    gap: theme.spacing.md,
+    width: '100%',
+    [`@media (max-width: 640px)`]: {
+        gridTemplateColumns: '1fr',
+    },
+});
+
+export const ChartCard = styled.div<{ span?: 'half' | 'full' }>(({ span = 'half' }) => ({
+    gridColumn: span === 'full' ? '1 / -1' : 'span 6',
+    backgroundColor: '#ffffff',
+    border: `1px solid ${theme.colors.gray[200]}`,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.md,
+    boxShadow: theme.shadows.sm,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    [`@media (max-width: 640px)`]: {
+        gridColumn: '1 / -1',
+    },
+}));
+
+export const ChartCardHeader = styled.div({
+    display: 'flex',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingBottom: theme.spacing.xs,
+    borderBottom: `1px solid ${theme.colors.gray[100]}`,
+    marginBottom: theme.spacing.xs,
+    gap: theme.spacing.sm,
+});
+
+export const ChartCardTitle = styled.span({
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[700],
+});
+
+export const ChartCardSubtitle = styled.span({
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.gray[400],
+    letterSpacing: '0.4px',
+    textTransform: 'uppercase' as const,
+});
+
+export const ChartsToggleBtn = styled.button<{ active: boolean }>(({ active }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    fontSize: 11,
+    fontWeight: active ? theme.fontWeight.semibold : theme.fontWeight.medium,
+    color: active ? theme.colors.primary[700] : theme.colors.gray[600],
+    backgroundColor: active ? theme.colors.primary[50] : theme.colors.gray[50],
+    border: `1px solid ${active ? theme.colors.primary[300] : theme.colors.gray[200]}`,
+    borderRadius: theme.borderRadius.sm,
+    padding: `2px ${theme.spacing.sm}`,
+    marginRight: 4,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap' as const,
+    transition: 'all 0.1s',
+    '&:hover': {
+        borderColor: theme.colors.primary[300],
+        color: active ? theme.colors.primary[700] : theme.colors.primary[600],
+    },
+}));
 
 export const MiniZoneGrid = styled.div({
     width: 27,

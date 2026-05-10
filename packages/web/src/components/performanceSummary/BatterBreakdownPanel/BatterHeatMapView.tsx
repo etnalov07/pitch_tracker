@@ -41,19 +41,15 @@ const toY = (ly: number) => 120 + ly * 110;
 
 interface Props {
     pitches: PitchLocationData[];
-    bats?: string;
 }
 
-export default function BatterHeatMapView({ pitches, bats }: Props) {
+export default function BatterHeatMapView({ pitches }: Props) {
     const toX = (lx: number) => 113 + lx * 75;
     const located = pitches.filter((p) => p.location_x != null && p.location_y != null);
     const typesPresent = Array.from(new Set(located.map((p) => p.pitch_type)));
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 11, color: '#6b7280', fontStyle: 'italic' }}>
-                {bats === 'L' ? 'LHH' : 'RHH'} · Pitch Locations by Type
-            </span>
             <svg viewBox="0 0 300 300" width={200} height={200} style={{ display: 'block' }}>
                 <rect x={0} y={0} width={300} height={300} fill="#f5f5f0" />
                 {/* Waste area */}

@@ -58,10 +58,9 @@ const toY = (ly: number) => 120 + ly * 110;
 
 interface Props {
     pitches: PitchLocationData[];
-    bats?: string;
 }
 
-export default function BatterTendenciesView({ pitches, bats }: Props) {
+export default function BatterTendenciesView({ pitches }: Props) {
     const bucketed: Record<TendencyBucket, PitchLocationData[]> = {
         first_pitch: [],
         hitter_count: [],
@@ -76,11 +75,9 @@ export default function BatterTendenciesView({ pitches, bats }: Props) {
     }
 
     const typesPresent = Array.from(new Set(pitches.map((p) => p.pitch_type)));
-    const handLabel = bats === 'L' ? 'LHH' : 'RHH';
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: '#6b7280', fontStyle: 'italic' }}>{handLabel} · Tendencies by Count</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center', width: '100%' }}>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {BUCKET_ORDER.map((bucket) => (
                     <BucketCell key={bucket} label={BUCKET_LABELS[bucket]} pitches={bucketed[bucket]} />

@@ -139,7 +139,6 @@ export default function BatterSprayChartView({ sprayData, currentGameId }: Props
 
     return (
         <Wrapper>
-            <ChartLabel>Spray Chart</ChartLabel>
             <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ display: 'block', borderRadius: 8 }}>
                 {/* Off-field background — light green */}
                 <rect x={0} y={0} width={SIZE} height={SIZE} fill={theme.colors.green[100]} />
@@ -259,13 +258,6 @@ const Wrapper = styled.div({
     flexDirection: 'column',
     alignItems: 'center',
     padding: `${theme.spacing.sm} 0`,
-});
-
-const ChartLabel = styled.p({
-    fontSize: 11,
-    color: theme.colors.gray[500],
-    fontStyle: 'italic',
-    marginBottom: theme.spacing.xs,
 });
 
 const LegendRow = styled.div({

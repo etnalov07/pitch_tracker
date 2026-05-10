@@ -24,6 +24,14 @@ import {
     BatterNameText,
     BatterOrderBadge,
     BatterRowContainer,
+    ChartCard,
+    ChartCardHeader,
+    ChartCardSubtitle,
+    ChartCardTitle,
+    ChartLoading,
+    ChartsGrid,
+    ChartsPanel,
+    ChartsToggleBtn,
     EmptyText,
     HintText,
     Legend,
@@ -255,46 +263,47 @@ function BatterRow({
                         {batter.position ?? '—'} · {batter.bats}HH · {batter.at_bats.length} AB · {totalPitches}P
                     </BatterMetaText>
                 </BatterNameBlock>
-                <button
+                <ChartsToggleBtn
+                    active={showCharts}
                     onClick={(e) => {
                         e.stopPropagation();
                         handleToggleCharts();
                     }}
-                    style={{
-                        padding: '2px 8px',
-                        fontSize: 10,
-                        background: showCharts ? '#dbeafe' : '#f3f4f6',
-                        color: showCharts ? '#1d4ed8' : '#6b7280',
-                        border: `1px solid ${showCharts ? '#93c5fd' : '#d1d5db'}`,
-                        borderRadius: 4,
-                        cursor: 'pointer',
-                        marginRight: 4,
-                        whiteSpace: 'nowrap' as const,
-                    }}
                 >
                     📊 Charts
-                </button>
+                </ChartsToggleBtn>
                 <span style={{ fontSize: 11, color: '#9ca3af' }}>{expanded ? '▲' : '▽'}</span>
             </BatterHeader>
 
             {showCharts && (
-                <div
-                    style={{
-                        padding: '12px 16px',
-                        background: '#f8fafc',
-                        borderTop: '1px solid #e2e8f0',
-                    }}
-                >
+                <ChartsPanel>
                     {chartsLoading ? (
-                        <span style={{ fontSize: 12, color: '#9ca3af' }}>Loading charts…</span>
+                        <ChartLoading>Loading charts…</ChartLoading>
                     ) : (
-                        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' as const, justifyContent: 'center' }}>
-                            <BatterSprayChartView sprayData={sprayData ?? []} currentGameId={gameId} />
-                            <BatterHeatMapView pitches={pitchLocations ?? []} bats={batter.bats} />
-                            <BatterTendenciesView pitches={pitchLocations ?? []} bats={batter.bats} />
-                        </div>
+                        <ChartsGrid>
+                            <ChartCard>
+                                <ChartCardHeader>
+                                    <ChartCardTitle>Spray Chart</ChartCardTitle>
+                                </ChartCardHeader>
+                                <BatterSprayChartView sprayData={sprayData ?? []} currentGameId={gameId} />
+                            </ChartCard>
+                            <ChartCard>
+                                <ChartCardHeader>
+                                    <ChartCardTitle>Pitch Locations</ChartCardTitle>
+                                    <ChartCardSubtitle>{batter.bats === 'L' ? 'LHH' : 'RHH'}</ChartCardSubtitle>
+                                </ChartCardHeader>
+                                <BatterHeatMapView pitches={pitchLocations ?? []} />
+                            </ChartCard>
+                            <ChartCard span="full">
+                                <ChartCardHeader>
+                                    <ChartCardTitle>Tendencies by Count</ChartCardTitle>
+                                    <ChartCardSubtitle>{batter.bats === 'L' ? 'LHH' : 'RHH'}</ChartCardSubtitle>
+                                </ChartCardHeader>
+                                <BatterTendenciesView pitches={pitchLocations ?? []} />
+                            </ChartCard>
+                        </ChartsGrid>
                     )}
-                </div>
+                </ChartsPanel>
             )}
 
             {expanded && (
