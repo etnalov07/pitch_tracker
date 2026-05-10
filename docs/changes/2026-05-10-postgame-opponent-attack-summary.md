@@ -84,3 +84,7 @@ Caveats for older games (graceful degradation, not failure):
 - LHH/RHH split rollup as a separate view.
 - Spray-chart integration on outcome buckets.
 - Coach-tagged "key moments."
+
+## Follow-ups
+
+- **Migration `035_widen_performance_summaries_source_type.sql`**: Migration 033 added `'team_offense'` (12 chars) to the source_type CHECK constraint but left the column as `VARCHAR(10)` from migration 011. Prod hit `22001 value too long for type character varying(10)` on the first team-offense narrative insert (`generateTeamOffenseNarrative`). Widened `performance_summaries.source_type` to `VARCHAR(32)`. **Apply 035 on prod.**
