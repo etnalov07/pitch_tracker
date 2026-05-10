@@ -67,6 +67,16 @@ export const theme = {
             600: 'var(--color-orange-600)',
         },
     },
+    surfaces: {
+        body: 'var(--surface-body)',
+        card: 'var(--surface-card)',
+        elevated: 'var(--surface-elevated)',
+        text: 'var(--surface-text)',
+        textMuted: 'var(--surface-text-muted)',
+        textSubtle: 'var(--surface-text-subtle)',
+        border: 'var(--surface-border)',
+        borderStrong: 'var(--surface-border-strong)',
+    },
     spacing: {
         xs: '0.1875rem', // 3px
         sm: '0.25rem', // 4px

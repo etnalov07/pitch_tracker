@@ -4,7 +4,7 @@ import { theme } from '../../styles/theme';
 // Styled Components
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
@@ -98,8 +98,8 @@ export const QuickActions = styled.div({
 export const ActionCard = styled.button({
     flex: '1',
     maxWidth: '200px',
-    background: 'white',
-    border: '2px dashed #d1d5db',
+    background: theme.surfaces.card,
+    border: `2px dashed ${theme.surfaces.borderStrong}`,
     borderRadius: theme.borderRadius.lg,
     padding: `${theme.spacing.xl}`,
     cursor: 'pointer',
@@ -180,7 +180,7 @@ export const GameGrid = styled.div({
 });
 
 export const GameCard = styled.div<{ isLive?: boolean }>(({ isLive }) => ({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     boxShadow: theme.shadows.sm,
@@ -242,7 +242,7 @@ export const InningInfo = styled.span({
 });
 
 export const GameList = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
     overflow: 'hidden',
@@ -328,7 +328,7 @@ export const TeamGrid = styled.div({
 });
 
 export const TeamCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     boxShadow: theme.shadows.sm,
@@ -374,7 +374,7 @@ export const TeamCardAbbr = styled.span({
 export const EmptyState = styled.div({
     textAlign: 'center',
     padding: theme.spacing['3xl'],
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
 });
