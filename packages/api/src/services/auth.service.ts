@@ -1,8 +1,13 @@
+import crypto from 'crypto';
 import { query } from '../config/database';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
 import { UserWithPassword, UserResponse, RegisterData, LoginCredentials } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import emailService from './email.service';
+import { config } from '../config/env';
+
+const VERIFY_TOKEN_TTL_DAYS = 7;
 
 export class AuthService {
     async register(data: RegisterData): Promise<{ user: UserResponse; token: string }> {
@@ -32,7 +37,56 @@ export class AuthService {
         // Generate JWT token
         const token = generateToken({ id: user.id, email: user.email });
 
+        // Fire-and-forget welcome email with optional verify CTA. Best effort —
+        // a delivery failure must not block registration.
+        this.issueAndSendWelcome(user.id, user.email, user.first_name).catch((err) =>
+            console.error('Welcome email pipeline failed:', err)
+        );
+
         return { user, token };
+    }
+
+    /**
+     * Issue a fresh verification token for the given user and send the welcome
+     * email containing the verify CTA. Used at registration and from
+     * resend-verification.
+     */
+    async issueAndSendWelcome(userId: string, email: string, firstName: string): Promise<void> {
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
+        await query('INSERT INTO email_verifications (user_id, token, expires_at) VALUES ($1, $2, $3)', [userId, token, expiresAt]);
+        const verifyUrl = `${config.invite.baseUrl}/verify-email?token=${token}`;
+        await emailService.sendWelcomeEmail({ to: email, firstName, verifyUrl });
+    }
+
+    /**
+     * Issue a fresh verification token and send a standalone verification email
+     * (no welcome copy). Used when the user requests a re-send.
+     */
+    async issueAndSendVerification(userId: string, email: string, firstName: string): Promise<void> {
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
+        await query('INSERT INTO email_verifications (user_id, token, expires_at) VALUES ($1, $2, $3)', [userId, token, expiresAt]);
+        const verifyUrl = `${config.invite.baseUrl}/verify-email?token=${token}`;
+        await emailService.sendVerificationEmail({ to: email, firstName, verifyUrl });
+    }
+
+    /**
+     * Consume a verification token: marks the user as verified and the token
+     * as used. Returns false for unknown/expired/already-used tokens.
+     */
+    async verifyEmail(token: string): Promise<boolean> {
+        const row = await query('SELECT id, user_id, expires_at, used_at FROM email_verifications WHERE token = $1', [token]);
+        if (row.rows.length === 0) return false;
+        const v = row.rows[0];
+        if (v.used_at) return false;
+        if (new Date(v.expires_at).getTime() < Date.now()) return false;
+
+        await query(`UPDATE users SET email_verified = TRUE, email_verified_at = NOW(), updated_at = NOW() WHERE id = $1`, [
+            v.user_id,
+        ]);
+        await query('UPDATE email_verifications SET used_at = NOW() WHERE id = $1', [v.id]);
+        return true;
     }
 
     async login(credentials: LoginCredentials): Promise<{ user: UserResponse; token: string }> {

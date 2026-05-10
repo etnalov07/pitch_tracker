@@ -57,4 +57,12 @@ export const performanceSummaryApi = {
         );
         return response.data.summary;
     },
+
+    emailPostGameReport: async (gameId: string, emails: string[]): Promise<string[]> => {
+        const response = await api.post<{ message: string; recipients: string[] }>(
+            `/performance-summaries/game/${gameId}/email-report`,
+            { emails }
+        );
+        return response.data.recipients;
+    },
 };

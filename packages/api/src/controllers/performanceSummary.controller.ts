@@ -172,6 +172,39 @@ export class PerformanceSummaryController {
             next(error);
         }
     }
+
+    async emailPostGameReport(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { gameId } = req.params;
+            const body = (req.body || {}) as { emails?: unknown };
+            const raw = Array.isArray(body.emails) ? body.emails : [];
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const recipients = Array.from(
+                new Set(
+                    raw
+                        .filter((e): e is string => typeof e === 'string')
+                        .map((e) => e.trim().toLowerCase())
+                        .filter((e) => emailRegex.test(e))
+                )
+            );
+            if (recipients.length === 0) {
+                res.status(400).json({ error: 'At least one valid email address is required' });
+                return;
+            }
+            if (recipients.length > 25) {
+                res.status(400).json({ error: 'Cap is 25 recipients per send' });
+                return;
+            }
+            const ok = await performanceSummaryService.emailPostGameReport(gameId as string, recipients);
+            if (!ok) {
+                res.status(502).json({ error: 'Failed to send report email. Check API logs.' });
+                return;
+            }
+            res.status(200).json({ message: 'Report emailed', recipients });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new PerformanceSummaryController();

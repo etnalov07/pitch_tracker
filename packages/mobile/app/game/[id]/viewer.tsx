@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Text, useTheme, ActivityIndicator, Button } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BatterBreakdown, CountBucketBreakdown, PerformanceSummary, PitcherGameStats } from '@pitch-tracker/shared';
 import {
@@ -11,7 +11,7 @@ import {
     fetchOpposingPitchers,
 } from '../../../src/state';
 import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
-import { BatterBreakdownView, OpponentAttackSummaryView } from '../../../src/components/performanceSummary';
+import { BatterBreakdownView, EmailReportModal, OpponentAttackSummaryView } from '../../../src/components/performanceSummary';
 import PerformanceSummaryView from '../../../src/components/performanceSummary/PerformanceSummaryView';
 import { performanceSummaryApi } from '../../../src/state/performanceSummary/api/performanceSummaryApi';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
@@ -206,6 +206,7 @@ function SummaryTab({ gameId }: { gameId: string }) {
     const [selectedIdx, setSelectedIdx] = useState(0);
     const [loading, setLoading] = useState(true);
     const [regenerating, setRegenerating] = useState(false);
+    const [emailModalVisible, setEmailModalVisible] = useState(false);
     const pollAttemptsRef = useRef(0);
     const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -254,19 +255,30 @@ function SummaryTab({ gameId }: { gameId: string }) {
         }
     };
 
+    const emailButton = (
+        <View style={styles.emailRow}>
+            <Button mode="outlined" icon="email" compact onPress={() => setEmailModalVisible(true)}>
+                Email report
+            </Button>
+        </View>
+    );
+
     if (loading) return <ActivityIndicator style={styles.centered} />;
     if (!summary)
         return (
             <View>
+                {emailButton}
                 <OpponentAttackSummaryView gameId={gameId} />
                 <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
                     No pitcher performance data available for this game.
                 </Text>
+                <EmailReportModal gameId={gameId} visible={emailModalVisible} onDismiss={() => setEmailModalVisible(false)} />
             </View>
         );
 
     return (
         <View>
+            {emailButton}
             <OpponentAttackSummaryView gameId={gameId} />
             {summaries.length > 1 && (
                 <ScrollView
@@ -295,6 +307,7 @@ function SummaryTab({ gameId }: { gameId: string }) {
                 </ScrollView>
             )}
             <PerformanceSummaryView summary={summary} onRegenerate={handleRegenerate} regenerating={regenerating} />
+            <EmailReportModal gameId={gameId} visible={emailModalVisible} onDismiss={() => setEmailModalVisible(false)} />
         </View>
     );
 }
@@ -726,6 +739,11 @@ const styles = StyleSheet.create({
         marginTop: 32,
         fontSize: 14,
         fontStyle: 'italic',
+    },
+    emailRow: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginBottom: 8,
     },
 
     // Pitcher stats

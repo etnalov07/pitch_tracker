@@ -29,8 +29,10 @@ const loginValidation = [
 // Public routes
 router.post('/register', authLimiter, registerValidation, authController.register.bind(authController));
 router.post('/login', authLimiter, loginValidation, authController.login.bind(authController));
+router.get('/verify-email', authController.verifyEmail.bind(authController));
 
 // Protected routes
 router.get('/profile', authenticateToken, authController.getProfile.bind(authController));
+router.post('/resend-verification', authenticateToken, authController.resendVerification.bind(authController));
 
 export default router;

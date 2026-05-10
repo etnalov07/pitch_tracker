@@ -12,3 +12,4 @@ Per-feature/per-fix change docs combining the plan summary and what shipped. Eac
 | 2026-05-10 | fix   | Heat-zone label orientation + batter-relative attack heatmap            | `c515dce`            | [heat-zone-orientation-fix](2026-05-10-heat-zone-orientation-fix.md)               |
 | 2026-05-10 | feat  | Narrative polling for team-offense summary                              | `0a6329f`, `40c85ba` | [narrative-polling](2026-05-10-narrative-polling.md)                               |
 | 2026-05-10 | docs  | Codify change-doc convention in CLAUDE.md                               | `2d2af1a`            | [claude-md-change-doc-convention](2026-05-10-claude-md-change-doc-convention.md)   |
+| 2026-05-10 | feat  | Welcome email on registration + Email Postgame Report                   | _(pending)_          | [email-welcome-and-postgame-report](2026-05-10-email-welcome-and-postgame-report.md) |

@@ -9,6 +9,26 @@ interface InviteEmailParams {
     inviteUrl: string;
 }
 
+interface WelcomeEmailParams {
+    to: string;
+    firstName: string;
+    verifyUrl?: string;
+}
+
+interface VerificationEmailParams {
+    to: string;
+    firstName: string;
+    verifyUrl: string;
+}
+
+interface PostGameReportEmailParams {
+    to: string[];
+    subject: string;
+    gameLabel: string; // e.g., "AHS Eagles vs. North 4-2 — 2026-05-10"
+    summaryLines: string[]; // Human-readable bullet points for the body
+    reportUrl: string;
+}
+
 class EmailService {
     private resend: Resend | null = null;
 
@@ -109,6 +129,171 @@ class EmailService {
             return false;
         }
     }
+
+    async sendWelcomeEmail({ to, firstName, verifyUrl }: WelcomeEmailParams): Promise<boolean> {
+        const client = this.getClient();
+        if (!client) {
+            console.warn('Email not configured: RESEND_API_KEY is not set. Skipping welcome email.');
+            return false;
+        }
+
+        const verifyButton = verifyUrl
+            ? `
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 16px;">
+                    <a href="${verifyUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:14px 40px;border-radius:6px;">Verify your email</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 8px;font-size:13px;color:#9ca3af;text-align:center;">Verifying unlocks password recovery and other email-anchored features.</p>`
+            : '';
+
+        const html = baseShell(
+            'Welcome to Pitch Chart',
+            `
+              <p style="margin:0 0 12px;font-size:16px;color:#1a1a1a;">Hi ${escapeHtml(firstName)},</p>
+              <p style="margin:0 0 16px;font-size:15px;color:#1a1a1a;line-height:1.5;">Welcome to Pitch Chart. Your account is ready — you can sign in and start charting games, building lineups, and reviewing scouting reports right away.</p>
+              ${verifyButton}
+              <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">If you didn't sign up, you can ignore this email.</p>
+            `
+        );
+
+        try {
+            await client.emails.send({
+                from: `${config.email.fromEmailName} <${config.email.fromEmail}>`,
+                to,
+                subject: 'Welcome to Pitch Chart',
+                html,
+            });
+            return true;
+        } catch (err) {
+            console.error('Failed to send welcome email:', err);
+            return false;
+        }
+    }
+
+    async sendVerificationEmail({ to, firstName, verifyUrl }: VerificationEmailParams): Promise<boolean> {
+        const client = this.getClient();
+        if (!client) {
+            console.warn('Email not configured: RESEND_API_KEY is not set. Skipping verification email.');
+            return false;
+        }
+
+        const html = baseShell(
+            'Verify your email',
+            `
+              <p style="margin:0 0 12px;font-size:16px;color:#1a1a1a;">Hi ${escapeHtml(firstName)},</p>
+              <p style="margin:0 0 16px;font-size:15px;color:#1a1a1a;line-height:1.5;">Click the button below to verify your email on Pitch Chart.</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 16px;">
+                    <a href="${verifyUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:14px 40px;border-radius:6px;">Verify your email</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">If you didn't request this, you can ignore this email.</p>
+            `
+        );
+
+        try {
+            await client.emails.send({
+                from: `${config.email.fromEmailName} <${config.email.fromEmail}>`,
+                to,
+                subject: 'Verify your email on Pitch Chart',
+                html,
+            });
+            return true;
+        } catch (err) {
+            console.error('Failed to send verification email:', err);
+            return false;
+        }
+    }
+
+    async sendPostGameReport({ to, subject, gameLabel, summaryLines, reportUrl }: PostGameReportEmailParams): Promise<boolean> {
+        const client = this.getClient();
+        if (!client) {
+            console.warn('Email not configured: RESEND_API_KEY is not set. Skipping post-game report email.');
+            return false;
+        }
+
+        const bullets = summaryLines
+            .map((line) => `<li style="margin:4px 0;font-size:14px;color:#1a1a1a;line-height:1.5;">${escapeHtml(line)}</li>`)
+            .join('');
+
+        const html = baseShell(
+            'Postgame Report',
+            `
+              <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Game</p>
+              <p style="margin:0 0 20px;font-size:18px;color:#1a1a1a;font-weight:700;">${escapeHtml(gameLabel)}</p>
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8f9fa;border:1px solid #e2e8f0;border-radius:6px;margin:0 0 20px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <ul style="margin:0;padding:0 0 0 20px;">${bullets}</ul>
+                  </td>
+                </tr>
+              </table>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 16px;">
+                    <a href="${reportUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:14px 40px;border-radius:6px;">View full report</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:24px 0 0;font-size:13px;color:#6b7280;text-align:center;">Charts, per-hitter breakdowns, and the opponent's attack plan are in the full report.</p>
+            `
+        );
+
+        try {
+            await client.emails.send({
+                from: `${config.email.fromEmailName} <${config.email.fromEmail}>`,
+                to,
+                subject,
+                html,
+            });
+            return true;
+        } catch (err) {
+            console.error('Failed to send post-game report email:', err);
+            return false;
+        }
+    }
+}
+
+/** Minimal HTML escaper for user-controlled strings in templates. */
+function escapeHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/** Shared header/footer wrapper so every template stays visually consistent. */
+function baseShell(heading: string, bodyHtml: string): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background-color:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background-color:#1e3a5f;padding:24px 32px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:0.5px;">${escapeHtml(heading)}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">${bodyHtml}</td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px;background-color:#f8f9fa;border-top:1px solid #e2e8f0;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;">&copy; ${new Date().getFullYear()} Pitch Chart</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`.trim();
 }
 
 export default new EmailService();

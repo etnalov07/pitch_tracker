@@ -4,7 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import CountBreakdownPanel from '../../components/live/CountBreakdownPanel';
 import PitcherStats from '../../components/live/PitcherStats';
 import ViewerTendenciesTab from '../../components/live/ViewerTendenciesTab';
-import { BatterBreakdownPanel, OpponentAttackSummary, PerformanceSummaryCard } from '../../components/performanceSummary';
+import {
+    BatterBreakdownPanel,
+    EmailReportModal,
+    OpponentAttackSummary,
+    PerformanceSummaryCard,
+} from '../../components/performanceSummary';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { performanceSummaryService } from '../../services/performanceSummaryService';
 import { gamesApi } from '../../state/games/api/gamesApi';
@@ -33,6 +38,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
     const [oppBreakdown, setOppBreakdown] = useState<BatterBreakdown[] | null>(null);
     const [myTeamBreakdown, setMyTeamBreakdown] = useState<BatterBreakdown[] | null>(null);
     const [breakdownLoading, setBreakdownLoading] = useState(false);
+    const [emailModalOpen, setEmailModalOpen] = useState(false);
     const breakdownFetchedRef = useRef(false);
     const pollAttemptsRef = useRef(0);
     const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -272,6 +278,9 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 )}
                 {activeTab === 'summary' && (
                     <SummaryWrapper>
+                        <SummaryToolbar>
+                            <ToolbarButton onClick={() => setEmailModalOpen(true)}>📧 Email report</ToolbarButton>
+                        </SummaryToolbar>
                         <OpponentAttackSummary gameId={game.id} />
                         {summaryLoading && <LoadingText>Loading performance summary…</LoadingText>}
                         {!summaryLoading && pitcherSummaries.length === 0 && (
@@ -293,6 +302,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                                 regenerating={regenerating}
                             />
                         )}
+                        {emailModalOpen && <EmailReportModal gameId={game.id} onClose={() => setEmailModalOpen(false)} />}
                     </SummaryWrapper>
                 )}
             </Content>
@@ -440,6 +450,27 @@ const BreakdownTab = styled.button<{ active: boolean }>`
 const SummaryWrapper = styled.div`
     max-width: 800px;
     margin: 0 auto;
+`;
+
+const SummaryToolbar = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: ${theme.spacing.md};
+`;
+
+const ToolbarButton = styled.button`
+    padding: 8px 14px;
+    background: ${theme.surfaces.card};
+    border: 1px solid ${theme.colors.gray[300]};
+    color: ${theme.colors.gray[700]};
+    border-radius: ${theme.borderRadius.md};
+    font-size: ${theme.fontSize.sm};
+    font-weight: ${theme.fontWeight.semibold};
+    cursor: pointer;
+
+    &:hover {
+        background: ${theme.colors.gray[100]};
+    }
 `;
 
 const PitcherTabRow = styled.div`

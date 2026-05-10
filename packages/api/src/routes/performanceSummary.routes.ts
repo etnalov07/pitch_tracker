@@ -22,6 +22,7 @@ router.post(
     '/team-offense/:gameId/regenerate-narrative',
     performanceSummaryController.regenerateTeamOffenseNarrative.bind(performanceSummaryController)
 );
+router.post('/game/:gameId/email-report', performanceSummaryController.emailPostGameReport.bind(performanceSummaryController));
 
 // Get or generate summary for a game or bullpen session
 router.get('/:sourceType/:sourceId', performanceSummaryController.getOrGenerateSummary.bind(performanceSummaryController));
