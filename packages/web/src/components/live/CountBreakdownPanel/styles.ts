@@ -49,7 +49,7 @@ export const PitchTypeCell = styled.td({
 
 export const CountCell = styled.td({
     color: theme.colors.gray[800],
-    background: 'white',
+    background: theme.surfaces.card,
     minWidth: 28,
 });
 
@@ -78,7 +78,7 @@ export const KPctCell = styled.td<{ pct: number }>((props) => ({
               : props.pct > 0
                 ? theme.colors.red[600]
                 : theme.colors.gray[400],
-    background: 'white',
+    background: theme.surfaces.card,
 }));
 
 export const EmptyText = styled.p({
@@ -91,7 +91,7 @@ export const EmptyText = styled.p({
 
 // Legacy exports kept for any remaining consumers
 export const Panel = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
     boxShadow: theme.shadows.sm,

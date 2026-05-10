@@ -6,7 +6,7 @@ export const Container = styled.div({
     flexDirection: 'column',
     gap: theme.spacing.md,
     padding: theme.spacing.lg,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.md,
 });

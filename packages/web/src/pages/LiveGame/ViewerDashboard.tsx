@@ -303,7 +303,7 @@ const Wrapper = styled.div`
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background: ${theme.colors.gray[50]};
+    background: ${theme.surfaces.body};
     font-family: system-ui, sans-serif;
 `;
 
@@ -312,7 +312,7 @@ const Header = styled.div`
     align-items: center;
     gap: ${theme.spacing.lg};
     padding: ${theme.spacing.md} ${theme.spacing.xl};
-    background: white;
+    background: ${theme.surfaces.card};
     border-bottom: 1px solid ${theme.colors.gray[200]};
     box-shadow: ${theme.shadows.sm};
 `;
@@ -349,8 +349,8 @@ const InningBadge = styled.span`
 const ViewerBadge = styled.span`
     font-size: ${theme.fontSize.xs};
     font-weight: ${theme.fontWeight.bold};
-    color: white;
-    background: ${theme.colors.gray[500]};
+    color: ${theme.colors.primary[700]};
+    background: ${theme.colors.primary[100]};
     border-radius: ${theme.borderRadius.sm};
     padding: 2px ${theme.spacing.xs};
     letter-spacing: 1px;
@@ -359,9 +359,9 @@ const ViewerBadge = styled.span`
 const ExitButton = styled.button`
     font-size: ${theme.fontSize.xs};
     font-weight: ${theme.fontWeight.medium};
-    color: ${theme.colors.gray[600]};
+    color: ${theme.colors.primary[600]};
     background: none;
-    border: 1px solid ${theme.colors.gray[300]};
+    border: 1px solid ${theme.colors.primary[300]};
     border-radius: ${theme.borderRadius.md};
     padding: ${theme.spacing.xs} ${theme.spacing.sm};
     cursor: pointer;
@@ -369,14 +369,14 @@ const ExitButton = styled.button`
     margin-left: auto;
 
     &:hover {
-        background: ${theme.colors.gray[100]};
-        color: ${theme.colors.gray[800]};
+        background: ${theme.colors.primary[50]};
+        color: ${theme.colors.primary[700]};
     }
 `;
 
 const TabRow = styled.div`
     display: flex;
-    background: white;
+    background: ${theme.surfaces.card};
     border-bottom: 2px solid ${theme.colors.gray[200]};
     padding: 0 ${theme.spacing.xl};
 `;

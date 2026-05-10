@@ -222,7 +222,7 @@ export const ChartsGrid = styled.div({
 
 export const ChartCard = styled.div<{ span?: 'half' | 'full' }>(({ span = 'half' }) => ({
     gridColumn: span === 'full' ? '1 / -1' : 'span 6',
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.surfaces.card,
     border: `1px solid ${theme.colors.gray[200]}`,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,

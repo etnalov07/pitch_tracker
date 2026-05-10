@@ -85,7 +85,7 @@ const HandToggle: React.FC<{ value: 'L' | 'R'; onChange: (v: 'L' | 'R') => void 
                     fontSize: theme.fontSize.sm,
                     fontWeight: theme.fontWeight.semibold,
                     border: `1px solid ${value === hand ? theme.colors.primary[500] : theme.colors.gray[300]}`,
-                    background: value === hand ? theme.colors.primary[600] : 'white',
+                    background: value === hand ? theme.colors.primary[600] : theme.surfaces.card,
                     color: value === hand ? 'white' : theme.colors.gray[600],
                     cursor: 'pointer',
                     borderRadius:
@@ -386,7 +386,7 @@ const HitterTendenciesExpanded: React.FC<{
                                 key={stat.label}
                                 style={{
                                     padding: '6px 10px',
-                                    background: 'white',
+                                    background: theme.surfaces.card,
                                     borderRadius: theme.borderRadius.md,
                                     textAlign: 'center' as const,
                                     minWidth: 64,
@@ -555,7 +555,7 @@ const OpponentLineupSection: React.FC<{
                                         alignItems: 'center',
                                         gap: 12,
                                         padding: '10px 14px',
-                                        background: isExpanded ? theme.colors.primary[50] : 'white',
+                                        background: isExpanded ? theme.colors.primary[50] : theme.surfaces.card,
                                         border: 'none',
                                         cursor: 'pointer',
                                         textAlign: 'left' as const,
@@ -720,7 +720,7 @@ const ViewerTendenciesTab: React.FC<Props> = ({
                                             fontSize: theme.fontSize.sm,
                                             fontWeight: theme.fontWeight.semibold,
                                             border: `1px solid ${i === selectedPitcherIdx ? theme.colors.primary[500] : theme.colors.gray[300]}`,
-                                            background: i === selectedPitcherIdx ? theme.colors.primary[600] : 'white',
+                                            background: i === selectedPitcherIdx ? theme.colors.primary[600] : theme.surfaces.card,
                                             color: i === selectedPitcherIdx ? 'white' : theme.colors.gray[600],
                                             cursor: 'pointer',
                                             borderRadius:
@@ -778,7 +778,8 @@ const ViewerTendenciesTab: React.FC<Props> = ({
                                             fontSize: theme.fontSize.sm,
                                             fontWeight: theme.fontWeight.semibold,
                                             border: `1px solid ${i === selectedOppPitcherIdx ? theme.colors.primary[500] : theme.colors.gray[300]}`,
-                                            background: i === selectedOppPitcherIdx ? theme.colors.primary[600] : 'white',
+                                            background:
+                                                i === selectedOppPitcherIdx ? theme.colors.primary[600] : theme.surfaces.card,
                                             color: i === selectedOppPitcherIdx ? 'white' : theme.colors.gray[600],
                                             cursor: 'pointer',
                                             borderRadius:

@@ -6,7 +6,7 @@ export const Card = styled.div({
     flexDirection: 'column',
     gap: theme.spacing.lg,
     padding: theme.spacing.xl,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.md,
 });
