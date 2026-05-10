@@ -11,7 +11,10 @@ import {
     SectionTitle,
     PitchMixRow,
     PitchMixChip,
-    Grid3x3,
+    HeatmapWrap,
+    HeatmapColLabel,
+    HeatmapRowLabel,
+    HeatmapCaption,
     ZoneCell,
     SituationTable,
     OutcomeColumns,
@@ -31,8 +34,12 @@ const SITUATION_LABEL: Record<string, string> = {
     two_strike: 'Two strikes',
 };
 
-// 3x3 strike-zone cells in display order (top-left → bottom-right)
+// 3x3 strike-zone cells in display order (top-left → bottom-right). The
+// underlying zone IDs are batter-relative (mirrored for LHH on the API side),
+// so the right column always corresponds to "inside" and the left to "away."
 const ZONE_GRID: string[] = ['TL', 'TM', 'TR', 'ML', 'MM', 'MR', 'BL', 'BM', 'BR'];
+const COL_LABELS = ['Away', 'Mid', 'In'];
+const ROW_LABELS = ['High', 'Mid', 'Low'];
 
 interface Props {
     gameId: string;
@@ -189,18 +196,32 @@ const OpponentAttackSummary: React.FC<Props> = ({ gameId }) => {
 const ZoneHeatmap: React.FC<{ histogram: ZoneHistogram }> = ({ histogram }) => {
     const max = Math.max(0, ...ZONE_GRID.map((z) => histogram[z] || 0));
     return (
-        <Grid3x3>
-            {ZONE_GRID.map((z) => {
-                const count = histogram[z] || 0;
-                const intensity = max > 0 ? count / max : 0;
-                return (
-                    <ZoneCell key={z} $intensity={intensity} title={`${z}: ${count} pitches`}>
-                        <span>{z}</span>
-                        <span className="count">{count}</span>
-                    </ZoneCell>
-                );
-            })}
-        </Grid3x3>
+        <div>
+            <HeatmapWrap>
+                {/* Column headers row */}
+                <span />
+                {COL_LABELS.map((label) => (
+                    <HeatmapColLabel key={`col-${label}`}>{label}</HeatmapColLabel>
+                ))}
+                {/* Three data rows, each prefixed with a row label */}
+                {[0, 1, 2].map((row) => (
+                    <React.Fragment key={`row-${row}`}>
+                        <HeatmapRowLabel>{ROW_LABELS[row]}</HeatmapRowLabel>
+                        {[0, 1, 2].map((col) => {
+                            const z = ZONE_GRID[row * 3 + col];
+                            const count = histogram[z] || 0;
+                            const intensity = max > 0 ? count / max : 0;
+                            return (
+                                <ZoneCell key={z} $intensity={intensity} title={`${count} pitches`}>
+                                    {count}
+                                </ZoneCell>
+                            );
+                        })}
+                    </React.Fragment>
+                ))}
+            </HeatmapWrap>
+            <HeatmapCaption>Right column = inside to the hitter (LHH at-bats are mirrored).</HeatmapCaption>
+        </div>
     );
 };
 

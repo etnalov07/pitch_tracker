@@ -1430,7 +1430,7 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
         for (const row of rows) {
             totalPitches++;
             const ptype = row.pitch_type || 'other';
-            const zone = resolveZone(row);
+            const zone = resolveBatterRelativeZone(row);
 
             // Team-wide
             teamTypeCounts.set(ptype, (teamTypeCounts.get(ptype) || 0) + 1);
@@ -1781,6 +1781,29 @@ const UNKNOWN_ZONE = 'UNK';
 function resolveZone(row: { location_x: any; location_y: any; target_zone: any }): string {
     if (row.location_x != null && row.location_y != null) {
         const z = getZoneForPitch(parseFloat(row.location_x), parseFloat(row.location_y));
+        if (z) return z;
+    }
+    if (row.target_zone) return row.target_zone;
+    return UNKNOWN_ZONE;
+}
+
+/**
+ * Resolve a batter-relative zone: mirror x for LHH so the postgame attack
+ * heatmap reads as if every hitter were RHH (right column = inside, left
+ * column = away). Switch hitters are treated as RHH for v1 (TODO: derive
+ * effective side from opposing pitcher's throws).
+ */
+function resolveBatterRelativeZone(row: {
+    location_x: any;
+    location_y: any;
+    target_zone: any;
+    bats?: 'R' | 'L' | 'S' | string | null;
+}): string {
+    if (row.location_x != null && row.location_y != null) {
+        let x = parseFloat(row.location_x);
+        const y = parseFloat(row.location_y);
+        if (row.bats === 'L') x = 1 - x;
+        const z = getZoneForPitch(x, y);
         if (z) return z;
     }
     if (row.target_zone) return row.target_zone;

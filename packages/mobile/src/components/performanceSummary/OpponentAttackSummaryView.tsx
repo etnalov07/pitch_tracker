@@ -12,7 +12,12 @@ const SITUATION_LABEL: Record<string, string> = {
     two_strike: 'Two strikes',
 };
 
+// 3x3 strike-zone cells in display order. The underlying zone IDs are
+// batter-relative on the API side (LHH at-bats mirrored), so the right
+// column always corresponds to "inside" and the left to "away."
 const ZONE_GRID = ['TL', 'TM', 'TR', 'ML', 'MM', 'MR', 'BL', 'BM', 'BR'];
+const COL_LABELS = ['Away', 'Mid', 'In'];
+const ROW_LABELS = ['High', 'Mid', 'Low'];
 
 const BUCKET_LABEL: Record<string, string> = {
     hit: 'Hits',
@@ -135,7 +140,11 @@ const OpponentAttackSummaryView: React.FC<Props> = ({ gameId }) => {
                 </ScrollView>
 
                 <SectionTitle text="Attack zones" color={theme.colors.onSurface} />
-                <ZoneHeatmap histogram={summary.zone_histogram} textColor={theme.colors.onSurface} />
+                <ZoneHeatmap
+                    histogram={summary.zone_histogram}
+                    textColor={theme.colors.onSurface}
+                    mutedColor={theme.colors.onSurfaceVariant}
+                />
 
                 <SectionTitle text="By count situation" color={theme.colors.onSurface} />
                 <SituationListView
@@ -172,22 +181,42 @@ const SectionTitle: React.FC<{ text: string; color: string }> = ({ text, color }
     </Text>
 );
 
-const ZoneHeatmap: React.FC<{ histogram: ZoneHistogram; textColor: string }> = ({ histogram, textColor }) => {
+const ZoneHeatmap: React.FC<{ histogram: ZoneHistogram; textColor: string; mutedColor: string }> = ({
+    histogram,
+    textColor,
+    mutedColor,
+}) => {
     const max = Math.max(0, ...ZONE_GRID.map((z) => histogram[z] || 0));
     return (
-        <View style={styles.grid}>
-            {ZONE_GRID.map((z) => {
-                const count = histogram[z] || 0;
-                const intensity = max > 0 ? count / max : 0;
-                const cellColor = `rgba(220, 38, 38, ${0.08 + intensity * 0.6})`;
-                const labelColor = intensity > 0.55 ? '#ffffff' : textColor;
-                return (
-                    <View key={z} style={[styles.gridCell, { backgroundColor: cellColor }]}>
-                        <Text style={[styles.gridLabel, { color: labelColor }]}>{z}</Text>
-                        <Text style={[styles.gridCount, { color: labelColor }]}>{count}</Text>
-                    </View>
-                );
-            })}
+        <View>
+            <View style={styles.gridHeaderRow}>
+                <View style={styles.gridRowLabel} />
+                {COL_LABELS.map((label) => (
+                    <Text key={`col-${label}`} style={[styles.gridAxisLabel, { color: mutedColor }]}>
+                        {label}
+                    </Text>
+                ))}
+            </View>
+            {[0, 1, 2].map((row) => (
+                <View key={`row-${row}`} style={styles.gridDataRow}>
+                    <Text style={[styles.gridRowLabel, { color: mutedColor }]}>{ROW_LABELS[row]}</Text>
+                    {[0, 1, 2].map((col) => {
+                        const z = ZONE_GRID[row * 3 + col];
+                        const count = histogram[z] || 0;
+                        const intensity = max > 0 ? count / max : 0;
+                        const cellColor = `rgba(220, 38, 38, ${0.08 + intensity * 0.6})`;
+                        const labelColor = intensity > 0.55 ? '#ffffff' : textColor;
+                        return (
+                            <View key={z} style={[styles.gridCell, { backgroundColor: cellColor }]}>
+                                <Text style={[styles.gridCount, { color: labelColor }]}>{count}</Text>
+                            </View>
+                        );
+                    })}
+                </View>
+            ))}
+            <Text style={[styles.gridCaption, { color: mutedColor }]}>
+                Right column = inside to the hitter (LHH at-bats are mirrored).
+            </Text>
         </View>
     );
 };
@@ -289,7 +318,7 @@ const HitterAccordion: React.FC<{ hitter: PerHitterAttack; textColor: string; mu
                     ))}
                 </ScrollView>
                 <SectionTitle text="Attack zones" color={textColor} />
-                <ZoneHeatmap histogram={hitter.zone_histogram} textColor={textColor} />
+                <ZoneHeatmap histogram={hitter.zone_histogram} textColor={textColor} mutedColor={mutedColor} />
                 <SectionTitle text="What worked / what got out" color={textColor} />
                 <OutcomeView outcomes={[...hitter.what_worked, ...hitter.what_got_out]} textColor={textColor} />
             </View>
@@ -326,11 +355,32 @@ const styles = StyleSheet.create({
     mixChip: {
         marginRight: 4,
     },
-    grid: {
+    gridHeaderRow: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        width: 3 * 56 + 2 * 4,
+        alignItems: 'center',
         gap: 4,
+        marginBottom: 4,
+    },
+    gridDataRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginBottom: 4,
+    },
+    gridRowLabel: {
+        width: 36,
+        textAlign: 'right',
+        paddingRight: 4,
+        fontSize: 10,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+    },
+    gridAxisLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        width: 56,
+        textAlign: 'center',
     },
     gridCell: {
         width: 56,
@@ -341,12 +391,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    gridLabel: {
-        fontSize: 11,
-    },
     gridCount: {
-        fontSize: 14,
+        fontSize: 18,
         fontWeight: '700',
+    },
+    gridCaption: {
+        fontSize: 11,
+        fontStyle: 'italic',
+        marginTop: 4,
     },
     situationRow: {
         flexDirection: 'row',

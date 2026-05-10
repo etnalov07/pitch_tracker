@@ -93,12 +93,30 @@ export const PitchMixChip = styled.div`
     }
 `;
 
-export const Grid3x3 = styled.div`
+export const HeatmapWrap = styled.div`
     display: grid;
-    grid-template-columns: repeat(3, 56px);
-    grid-auto-rows: 56px;
+    grid-template-columns: 32px repeat(3, 56px);
+    grid-template-rows: 24px repeat(3, 56px);
     gap: 4px;
     width: fit-content;
+    align-items: center;
+`;
+
+export const HeatmapColLabel = styled.div`
+    font-size: ${theme.fontSize.xs};
+    font-weight: ${theme.fontWeight.semibold};
+    color: ${theme.colors.gray[500]};
+    text-align: center;
+    text-transform: uppercase;
+`;
+
+export const HeatmapRowLabel = styled.div`
+    font-size: ${theme.fontSize.xs};
+    font-weight: ${theme.fontWeight.semibold};
+    color: ${theme.colors.gray[500]};
+    text-align: right;
+    text-transform: uppercase;
+    padding-right: 4px;
 `;
 
 export const ZoneCell = styled.div<{ $intensity: number }>`
@@ -106,16 +124,18 @@ export const ZoneCell = styled.div<{ $intensity: number }>`
     border: 1px solid ${theme.colors.gray[300]};
     border-radius: ${theme.borderRadius.sm};
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     color: ${(p) => (p.$intensity > 0.55 ? '#ffffff' : theme.colors.gray[800])};
-    font-size: ${theme.fontSize.xs};
+    font-size: ${theme.fontSize.lg};
+    font-weight: ${theme.fontWeight.bold};
+`;
 
-    .count {
-        font-weight: ${theme.fontWeight.bold};
-        font-size: ${theme.fontSize.base};
-    }
+export const HeatmapCaption = styled.div`
+    font-size: ${theme.fontSize.xs};
+    color: ${theme.colors.gray[500]};
+    margin-top: 4px;
+    font-style: italic;
 `;
 
 export const SituationTable = styled.table`
