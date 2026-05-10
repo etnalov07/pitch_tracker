@@ -61,3 +61,7 @@ Resend was already wired in (used by team invites today). Two missing flows:
 - PDF / chart attachments on the report email.
 - Verified-email-gated features (password reset etc.).
 - Rate limiting on the report endpoint beyond the 25-recipient cap.
+
+## Follow-ups
+
+- **Lint fix in `EmailReportModal.tsx`**: CRA build failed on `catch (e: any)` (`@typescript-eslint/no-explicit-any`). Replaced with `catch (e)` + a narrow inline cast `(e as { response?: { data?: { error?: string } } })` to read the axios error message. No behavior change.

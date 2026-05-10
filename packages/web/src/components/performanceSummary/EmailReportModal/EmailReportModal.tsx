@@ -134,8 +134,10 @@ const EmailReportModal: React.FC<Props> = ({ gameId, onClose }) => {
         try {
             const recipients = await performanceSummaryService.emailPostGameReport(gameId, candidates);
             setSent(recipients);
-        } catch (e: any) {
-            setError(e?.response?.data?.error || 'Failed to send. Try again.');
+        } catch (e) {
+            const message =
+                (e as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to send. Try again.';
+            setError(message);
         } finally {
             setSending(false);
         }
