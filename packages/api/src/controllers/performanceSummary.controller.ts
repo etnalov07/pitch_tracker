@@ -152,6 +152,26 @@ export class PerformanceSummaryController {
             next(error);
         }
     }
+
+    async getOpponentAttackSummary(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { gameId } = req.params;
+            const summary = await performanceSummaryService.getOpponentAttackSummary(gameId as string);
+            res.status(200).json({ summary });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async regenerateTeamOffenseNarrative(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { gameId } = req.params;
+            const summary = await performanceSummaryService.regenerateTeamOffenseNarrative(gameId as string);
+            res.status(200).json({ summary });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new PerformanceSummaryController();

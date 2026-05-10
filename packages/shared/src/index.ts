@@ -1050,7 +1050,7 @@ export interface SeasonCallAnalytics {
 // Performance Summary
 // ============================================================================
 
-export type SummarySourceType = 'game' | 'bullpen' | 'scouting';
+export type SummarySourceType = 'game' | 'bullpen' | 'scouting' | 'team_offense';
 export type MetricRating = 'highlight' | 'concern' | 'neutral';
 
 export interface PerformanceMetric {
@@ -1060,6 +1060,15 @@ export interface PerformanceMetric {
     historical_avg: number | null;
     rating: MetricRating;
     delta_from_avg: number | null;
+}
+
+export interface PitcherZoneOutcome {
+    zone: string;
+    whiff_pct: number;
+    called_strike_pct: number;
+    hard_contact_pct: number;
+    weak_contact_pct: number;
+    total_pitches: number;
 }
 
 export interface PitchTypeSummary {
@@ -1072,6 +1081,7 @@ export interface PitchTypeSummary {
     top_velocity: number | null;
     target_accuracy_percentage: number | null;
     rating: MetricRating;
+    per_zone_outcomes?: PitcherZoneOutcome[];
 }
 
 export interface PerformanceSummary {
@@ -1135,6 +1145,66 @@ export interface BatterBreakdown {
     position?: string;
     team_side?: 'home' | 'away';
     at_bats: BatterAtBatSummary[];
+}
+
+// ============================================================================
+// Team Offense Summary (postgame: how the opponent attacked our hitters)
+// ============================================================================
+
+export type CountSituation = 'first_pitch' | 'hitter_count' | 'pitcher_count' | 'two_strike';
+export type OutcomeBucket = 'hit' | 'walk' | 'strikeout' | 'weak_contact_out' | 'hard_contact_out';
+
+export interface PitchTypeMix {
+    pitch_type: string;
+    count: number;
+    pct: number;
+}
+
+export interface ZoneHistogram {
+    [zone: string]: number;
+}
+
+export interface CountSituationStat {
+    situation: CountSituation;
+    pitch_type_mix: PitchTypeMix[];
+    total: number;
+}
+
+export interface OutcomePitchSlice {
+    pitch_type: string;
+    zone: string;
+    count: number;
+}
+
+export interface OutcomePitchGroup {
+    bucket: OutcomeBucket;
+    pitches: OutcomePitchSlice[];
+    total: number;
+}
+
+export interface PerHitterAttack {
+    batter_id: string;
+    batter_name: string;
+    bats: HandednessType;
+    batting_order: number;
+    at_bats_count: number;
+    pitch_type_mix: PitchTypeMix[];
+    zone_histogram: ZoneHistogram;
+    count_situations: CountSituationStat[];
+    outcomes: { hits: number; walks: number; strikeouts: number; outs_in_play: number };
+    what_worked: OutcomePitchGroup[];
+    what_got_out: OutcomePitchGroup[];
+}
+
+export interface TeamOffenseSummary {
+    game_id: string;
+    pitch_type_mix: PitchTypeMix[];
+    zone_histogram: ZoneHistogram;
+    count_situations: CountSituationStat[];
+    team_outcomes: OutcomePitchGroup[];
+    per_hitter: PerHitterAttack[];
+    narrative?: string | null;
+    narrative_generated_at?: string | null;
 }
 
 // ============================================================================

@@ -353,6 +353,72 @@ const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regene
                                 ))}
                         </tbody>
                     </StatsTable>
+
+                    {/* Per-zone effectiveness — what worked / what got hit by zone */}
+                    {summary.pitch_type_breakdown.some((pt) => (pt.per_zone_outcomes?.length ?? 0) > 0) && (
+                        <>
+                            <SectionTitle style={{ marginTop: 12 }}>What worked / what got hit (by zone)</SectionTitle>
+                            <div style={{ display: 'grid', gap: 12 }}>
+                                {summary.pitch_type_breakdown
+                                    .filter((pt) => (pt.per_zone_outcomes?.length ?? 0) > 0)
+                                    .map((pt) => {
+                                        const zones = pt.per_zone_outcomes || [];
+                                        const best = [...zones]
+                                            .sort((a, b) => b.whiff_pct + b.called_strike_pct - (a.whiff_pct + a.called_strike_pct))
+                                            .slice(0, 3);
+                                        const hurt = [...zones].sort((a, b) => b.hard_contact_pct - a.hard_contact_pct).slice(0, 3);
+                                        return (
+                                            <div
+                                                key={pt.pitch_type}
+                                                style={{
+                                                    border: '1px solid #e5e7eb',
+                                                    borderRadius: 8,
+                                                    padding: 10,
+                                                    background: '#f9fafb',
+                                                }}
+                                            >
+                                                <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                                                    {formatPitchType(pt.pitch_type)}
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                                    <div>
+                                                        <div style={{ fontSize: 12, color: '#166534', marginBottom: 4 }}>
+                                                            Worked best
+                                                        </div>
+                                                        {best.length === 0 ? (
+                                                            <div style={{ fontSize: 12, color: '#9ca3af' }}>—</div>
+                                                        ) : (
+                                                            best.map((z) => (
+                                                                <div key={z.zone} style={{ fontSize: 12 }}>
+                                                                    {z.zone}: whiff {z.whiff_pct}% / called {z.called_strike_pct}% (
+                                                                    {z.total_pitches})
+                                                                </div>
+                                                            ))
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontSize: 12, color: '#dc2626', marginBottom: 4 }}>
+                                                            Got hit
+                                                        </div>
+                                                        {hurt.filter((z) => z.hard_contact_pct > 0).length === 0 ? (
+                                                            <div style={{ fontSize: 12, color: '#9ca3af' }}>None — clean</div>
+                                                        ) : (
+                                                            hurt
+                                                                .filter((z) => z.hard_contact_pct > 0)
+                                                                .map((z) => (
+                                                                    <div key={z.zone} style={{ fontSize: 12 }}>
+                                                                        {z.zone}: hits {z.hard_contact_pct}% ({z.total_pitches})
+                                                                    </div>
+                                                                ))
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+                        </>
+                    )}
                 </>
             )}
 

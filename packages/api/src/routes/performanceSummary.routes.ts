@@ -14,6 +14,14 @@ router.get(
     '/game/:gameId/my-team-batter-breakdown',
     performanceSummaryController.getMyTeamBatterBreakdown.bind(performanceSummaryController)
 );
+router.get(
+    '/game/:gameId/opponent-attack',
+    performanceSummaryController.getOpponentAttackSummary.bind(performanceSummaryController)
+);
+router.post(
+    '/team-offense/:gameId/regenerate-narrative',
+    performanceSummaryController.regenerateTeamOffenseNarrative.bind(performanceSummaryController)
+);
 
 // Get or generate summary for a game or bullpen session
 router.get('/:sourceType/:sourceId', performanceSummaryController.getOrGenerateSummary.bind(performanceSummaryController));

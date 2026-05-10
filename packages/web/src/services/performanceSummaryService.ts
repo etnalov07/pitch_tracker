@@ -1,4 +1,4 @@
-import { PerformanceSummary, SummarySourceType, BatterBreakdown } from '@pitch-tracker/shared';
+import { PerformanceSummary, SummarySourceType, BatterBreakdown, TeamOffenseSummary } from '@pitch-tracker/shared';
 import api from './api';
 
 export const performanceSummaryService = {
@@ -42,5 +42,17 @@ export const performanceSummaryService = {
             `/performance-summaries/game/${gameId}/my-team-batter-breakdown`
         );
         return response.data.breakdown;
+    },
+
+    getOpponentAttackSummary: async (gameId: string): Promise<TeamOffenseSummary> => {
+        const response = await api.get<{ summary: TeamOffenseSummary }>(`/performance-summaries/game/${gameId}/opponent-attack`);
+        return response.data.summary;
+    },
+
+    regenerateTeamOffenseNarrative: async (gameId: string): Promise<TeamOffenseSummary> => {
+        const response = await api.post<{ summary: TeamOffenseSummary }>(
+            `/performance-summaries/team-offense/${gameId}/regenerate-narrative`
+        );
+        return response.data.summary;
     },
 };

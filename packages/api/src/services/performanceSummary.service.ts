@@ -1,14 +1,24 @@
 import { SUMMARY_TARGET_ACCURACY_THRESHOLD, isTargetHit } from '../utils/pitchLocation';
+import { getZoneForPitch } from '../utils/heatZones';
 import { query, transaction } from '../config/database';
 import {
     PerformanceSummary,
     PerformanceMetric,
     PitchTypeSummary,
+    PitcherZoneOutcome,
     MetricRating,
     SummarySourceType,
     BatterBreakdown,
     BatterAtBatSummary,
     BatterAtBatPitch,
+    TeamOffenseSummary,
+    PerHitterAttack,
+    PitchTypeMix,
+    ZoneHistogram,
+    CountSituationStat,
+    CountSituation,
+    OutcomePitchGroup,
+    OutcomeBucket,
 } from '../types';
 
 // Fixed coaching benchmarks
@@ -47,6 +57,7 @@ interface RawStats {
         top_velocity: number | null;
         target_accuracy_percentage: number | null;
         velocities: number[];
+        per_zone_outcomes?: PitcherZoneOutcome[];
     }[];
 }
 
@@ -379,6 +390,18 @@ export class PerformanceSummaryService {
             [pitcherId, gameId, SUMMARY_TARGET_ACCURACY_THRESHOLD]
         );
 
+        // Per-zone outcomes: for each (pitch_type, zone) compute whiff / called-strike /
+        // hard-contact (in_play that became hits) / weak-contact (in_play that became outs).
+        const zoneRowsResult = await query(
+            `SELECT p.pitch_type, p.pitch_result, p.location_x, p.location_y, ab.result AS ab_result
+             FROM pitches p
+             LEFT JOIN at_bats ab ON ab.id = p.at_bat_id
+             WHERE p.pitcher_id = $1 AND p.game_id = $2
+               AND p.location_x IS NOT NULL AND p.location_y IS NOT NULL`,
+            [pitcherId, gameId]
+        );
+        const zoneOutcomesByType = computeZoneOutcomes(zoneRowsResult.rows);
+
         return {
             total_pitches: totalPitches,
             strikes,
@@ -403,6 +426,7 @@ export class PerformanceSummaryService {
                 target_accuracy_percentage:
                     parseInt(r.targeted) > 0 ? Math.round((parseInt(r.accurate) / parseInt(r.targeted)) * 100) : null,
                 velocities: (r.velocities || []).map(Number),
+                per_zone_outcomes: zoneOutcomesByType.get(r.pitch_type) || [],
             })),
         };
     }
@@ -1095,6 +1119,7 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
                 top_velocity: pt.top_velocity,
                 target_accuracy_percentage: pt.target_accuracy_percentage,
                 rating,
+                per_zone_outcomes: pt.per_zone_outcomes,
             };
         });
     }
@@ -1328,6 +1353,319 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
     }
 
     // ========================================================================
+    // Team Offense Summary (postgame: how the opponent attacked our hitters)
+    // ========================================================================
+
+    async getOpponentAttackSummary(gameId: string): Promise<TeamOffenseSummary> {
+        const result = await query(
+            `WITH active_lineup AS (
+                SELECT DISTINCT ON (player_id) player_id, batting_order
+                FROM my_team_lineup
+                WHERE game_id = $1
+                ORDER BY player_id, batting_order
+            )
+            SELECT
+                ab.batter_id,
+                p.first_name || ' ' || p.last_name AS batter_name,
+                COALESCE(al.batting_order, ab.batting_order) AS batting_order,
+                COALESCE(p.bats, 'R') AS bats,
+                ab.id AS at_bat_id,
+                ab.result AS at_bat_result,
+                pt.pitch_type,
+                pt.pitch_result,
+                pt.balls_before,
+                pt.strikes_before,
+                pt.location_x,
+                pt.location_y,
+                pt.target_zone
+             FROM at_bats ab
+             JOIN players p ON p.id = ab.batter_id
+             JOIN pitches pt ON pt.at_bat_id = ab.id
+             LEFT JOIN active_lineup al ON al.player_id = ab.batter_id
+             WHERE ab.game_id = $1
+               AND ab.batter_id IS NOT NULL
+             ORDER BY COALESCE(al.batting_order, ab.batting_order) NULLS LAST,
+                      ab.created_at, pt.pitch_number`,
+            [gameId]
+        );
+
+        const rows = result.rows;
+
+        // Team-wide aggregates
+        const teamTypeCounts = new Map<string, number>();
+        const teamZoneCounts: ZoneHistogram = {};
+        const teamSituationCounts: Record<CountSituation, Map<string, number>> = {
+            first_pitch: new Map(),
+            hitter_count: new Map(),
+            pitcher_count: new Map(),
+            two_strike: new Map(),
+        };
+        const teamSituationTotals: Record<CountSituation, number> = {
+            first_pitch: 0,
+            hitter_count: 0,
+            pitcher_count: 0,
+            two_strike: 0,
+        };
+        const teamOutcomeMap = new Map<OutcomeBucket, Map<string, number>>();
+
+        // Per-hitter aggregates
+        type HitterAcc = {
+            batter_id: string;
+            batter_name: string;
+            bats: 'R' | 'L' | 'S';
+            batting_order: number;
+            at_bat_ids: Set<string>;
+            type_counts: Map<string, number>;
+            zone_counts: ZoneHistogram;
+            situations: Record<CountSituation, Map<string, number>>;
+            situation_totals: Record<CountSituation, number>;
+            outcomes: { hits: number; walks: number; strikeouts: number; outs_in_play: number };
+            outcome_pitch_counts: Map<OutcomeBucket, Map<string, number>>;
+            ab_outcome_counted: Set<string>;
+        };
+        const hitterMap = new Map<string, HitterAcc>();
+
+        let totalPitches = 0;
+
+        for (const row of rows) {
+            totalPitches++;
+            const ptype = row.pitch_type || 'other';
+            const zone = resolveZone(row);
+
+            // Team-wide
+            teamTypeCounts.set(ptype, (teamTypeCounts.get(ptype) || 0) + 1);
+            teamZoneCounts[zone] = (teamZoneCounts[zone] || 0) + 1;
+            const sit = bucketSituation(row.balls_before, row.strikes_before);
+            teamSituationCounts[sit].set(ptype, (teamSituationCounts[sit].get(ptype) || 0) + 1);
+            teamSituationTotals[sit]++;
+
+            const bucket = bucketOutcomeForPitch(row);
+            if (bucket) {
+                const key = `${ptype}|${zone}`;
+                if (!teamOutcomeMap.has(bucket)) teamOutcomeMap.set(bucket, new Map());
+                const m = teamOutcomeMap.get(bucket)!;
+                m.set(key, (m.get(key) || 0) + 1);
+            }
+
+            // Per-hitter
+            let hitter = hitterMap.get(row.batter_id);
+            if (!hitter) {
+                hitter = {
+                    batter_id: row.batter_id,
+                    batter_name: row.batter_name,
+                    bats: (row.bats as 'R' | 'L' | 'S') || 'R',
+                    batting_order: row.batting_order || 0,
+                    at_bat_ids: new Set(),
+                    type_counts: new Map(),
+                    zone_counts: {},
+                    situations: {
+                        first_pitch: new Map(),
+                        hitter_count: new Map(),
+                        pitcher_count: new Map(),
+                        two_strike: new Map(),
+                    },
+                    situation_totals: { first_pitch: 0, hitter_count: 0, pitcher_count: 0, two_strike: 0 },
+                    outcomes: { hits: 0, walks: 0, strikeouts: 0, outs_in_play: 0 },
+                    outcome_pitch_counts: new Map(),
+                    ab_outcome_counted: new Set(),
+                };
+                hitterMap.set(row.batter_id, hitter);
+            }
+            hitter.at_bat_ids.add(row.at_bat_id);
+            hitter.type_counts.set(ptype, (hitter.type_counts.get(ptype) || 0) + 1);
+            hitter.zone_counts[zone] = (hitter.zone_counts[zone] || 0) + 1;
+            hitter.situations[sit].set(ptype, (hitter.situations[sit].get(ptype) || 0) + 1);
+            hitter.situation_totals[sit]++;
+
+            if (bucket) {
+                const key = `${ptype}|${zone}`;
+                if (!hitter.outcome_pitch_counts.has(bucket)) hitter.outcome_pitch_counts.set(bucket, new Map());
+                const m = hitter.outcome_pitch_counts.get(bucket)!;
+                m.set(key, (m.get(key) || 0) + 1);
+            }
+
+            // Tally per-at-bat outcome counts only once per at-bat
+            if (!hitter.ab_outcome_counted.has(row.at_bat_id)) {
+                const abResult: string | null = row.at_bat_result;
+                if (abResult) {
+                    if (['single', 'double', 'triple', 'home_run'].includes(abResult)) hitter.outcomes.hits++;
+                    else if (['walk', 'hit_by_pitch'].includes(abResult)) hitter.outcomes.walks++;
+                    else if (['strikeout', 'strikeout_dropped'].includes(abResult)) hitter.outcomes.strikeouts++;
+                    else if (
+                        ['groundout', 'flyout', 'popout', 'lineout', 'fielders_choice', 'sacrifice_fly', 'sacrifice_bunt'].includes(
+                            abResult
+                        )
+                    )
+                        hitter.outcomes.outs_in_play++;
+                }
+                hitter.ab_outcome_counted.add(row.at_bat_id);
+            }
+        }
+
+        const pitchTypeMix = mixFromCounts(teamTypeCounts, totalPitches);
+        const countSituations: CountSituationStat[] = (
+            ['first_pitch', 'hitter_count', 'pitcher_count', 'two_strike'] as CountSituation[]
+        ).map((s) => ({
+            situation: s,
+            pitch_type_mix: mixFromCounts(teamSituationCounts[s], teamSituationTotals[s]),
+            total: teamSituationTotals[s],
+        }));
+        const teamOutcomes: OutcomePitchGroup[] = bucketGroupsFromMap(teamOutcomeMap);
+
+        const perHitter: PerHitterAttack[] = Array.from(hitterMap.values())
+            .sort((a, b) => a.batting_order - b.batting_order)
+            .map((h) => {
+                const hitterTotal = Array.from(h.type_counts.values()).reduce((sum, c) => sum + c, 0);
+                const hitterSituations: CountSituationStat[] = (
+                    ['first_pitch', 'hitter_count', 'pitcher_count', 'two_strike'] as CountSituation[]
+                ).map((s) => ({
+                    situation: s,
+                    pitch_type_mix: mixFromCounts(h.situations[s], h.situation_totals[s]),
+                    total: h.situation_totals[s],
+                }));
+
+                // Split outcome groups: hits + walks → what worked; strikeouts + outs_in_play → what got out
+                const workedMap = new Map<OutcomeBucket, Map<string, number>>();
+                const outMap = new Map<OutcomeBucket, Map<string, number>>();
+                for (const [bucket, m] of h.outcome_pitch_counts.entries()) {
+                    if (bucket === 'hit' || bucket === 'walk') workedMap.set(bucket, m);
+                    else outMap.set(bucket, m);
+                }
+
+                return {
+                    batter_id: h.batter_id,
+                    batter_name: h.batter_name,
+                    bats: h.bats,
+                    batting_order: h.batting_order,
+                    at_bats_count: h.at_bat_ids.size,
+                    pitch_type_mix: mixFromCounts(h.type_counts, hitterTotal),
+                    zone_histogram: h.zone_counts,
+                    count_situations: hitterSituations,
+                    outcomes: h.outcomes,
+                    what_worked: bucketGroupsFromMap(workedMap),
+                    what_got_out: bucketGroupsFromMap(outMap),
+                };
+            });
+
+        const summary: TeamOffenseSummary = {
+            game_id: gameId,
+            pitch_type_mix: pitchTypeMix,
+            zone_histogram: teamZoneCounts,
+            count_situations: countSituations,
+            team_outcomes: teamOutcomes,
+            per_hitter: perHitter,
+        };
+
+        // Try to attach a cached narrative; generate one if missing.
+        const narrativeRow = await query(
+            `SELECT narrative, narrative_generated_at FROM performance_summaries
+             WHERE source_type = 'team_offense' AND source_id = $1 AND pitcher_id IS NULL
+             LIMIT 1`,
+            [gameId]
+        );
+        if (narrativeRow.rows.length > 0 && narrativeRow.rows[0].narrative) {
+            summary.narrative = narrativeRow.rows[0].narrative;
+            summary.narrative_generated_at = narrativeRow.rows[0].narrative_generated_at;
+        } else {
+            // Fire-and-forget; UI can refresh / call regenerate to get the narrative.
+            this.generateTeamOffenseNarrative(gameId, summary).catch((err) =>
+                console.error('Team offense narrative generation failed:', err)
+            );
+        }
+
+        return summary;
+    }
+
+    async regenerateTeamOffenseNarrative(gameId: string): Promise<TeamOffenseSummary> {
+        const summary = await this.getOpponentAttackSummary(gameId);
+        await this.generateTeamOffenseNarrative(gameId, summary);
+        // Re-fetch the cached narrative to return the freshest version
+        const refreshed = await this.getOpponentAttackSummary(gameId);
+        return refreshed;
+    }
+
+    private async generateTeamOffenseNarrative(gameId: string, summary: TeamOffenseSummary): Promise<void> {
+        const apiKey = process.env.ANTHROPIC_API_KEY;
+        if (!apiKey) return;
+
+        try {
+            const Anthropic = (await import('@anthropic-ai/sdk')).default;
+            const client = new Anthropic({ apiKey });
+
+            const topMix = summary.pitch_type_mix.slice(0, 5);
+            const topZones = Object.entries(summary.zone_histogram)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+            const totals = summary.team_outcomes.reduce<Record<OutcomeBucket, number>>(
+                (acc, g) => {
+                    acc[g.bucket] = g.total;
+                    return acc;
+                },
+                { hit: 0, walk: 0, strikeout: 0, weak_contact_out: 0, hard_contact_out: 0 }
+            );
+
+            const userPrompt = `Postgame opponent-attack summary for our hitters:
+
+Pitch-type mix (top): ${topMix.map((m) => `${m.pitch_type} ${m.pct}%`).join(', ') || 'n/a'}
+Top attack zones: ${topZones.map(([z, c]) => `${z}:${c}`).join(', ') || 'n/a'}
+Outcomes: hits=${totals.hit}, walks=${totals.walk}, strikeouts=${totals.strikeout}, weak-contact outs=${totals.weak_contact_out}, hard-contact outs=${totals.hard_contact_out}
+Hitters: ${summary.per_hitter.length}
+
+By count situation (top pitch type %):
+${summary.count_situations
+    .map(
+        (c) =>
+            `- ${c.situation}: ${
+                c.pitch_type_mix
+                    .slice(0, 3)
+                    .map((m) => `${m.pitch_type} ${m.pct}%`)
+                    .join(', ') || 'no data'
+            }`
+    )
+    .join('\n')}
+
+Write a 2-4 sentence postgame coaching paragraph for the hitting team explaining how the opponent attacked us, what got them out, and what worked. Reference specific pitch types/zones. No bullet points, natural paragraph.`;
+
+            const response = await client.messages.create({
+                model: 'claude-haiku-4-5-20251001',
+                max_tokens: 320,
+                system: 'You are an experienced hitting coach writing a brief postgame summary for the offense. Be honest and specific. Reference numbers. 2-4 sentences, no headers or bullets.',
+                messages: [{ role: 'user', content: userPrompt }],
+            });
+
+            const narrative = response.content[0].type === 'text' ? response.content[0].text : null;
+            if (!narrative) return;
+
+            // Resolve a team_id for the row (home_team_id of the game).
+            const gameRow = await query('SELECT home_team_id FROM games WHERE id = $1', [gameId]);
+            const teamId = gameRow.rows[0]?.home_team_id;
+            if (!teamId) return;
+
+            // Upsert the cached row. The team_offense source_type stores pitcher_id NULL.
+            const existing = await query(
+                `SELECT id FROM performance_summaries
+                 WHERE source_type = 'team_offense' AND source_id = $1 AND pitcher_id IS NULL
+                 LIMIT 1`,
+                [gameId]
+            );
+            if (existing.rows.length > 0) {
+                await query(
+                    'UPDATE performance_summaries SET narrative = $1, narrative_generated_at = NOW(), updated_at = NOW() WHERE id = $2',
+                    [narrative, existing.rows[0].id]
+                );
+            } else {
+                await query(
+                    `INSERT INTO performance_summaries (source_type, source_id, pitcher_id, team_id, narrative, narrative_generated_at)
+                     VALUES ('team_offense', $1, NULL, $2, $3, NOW())`,
+                    [gameId, teamId, narrative]
+                );
+            }
+        } catch (err) {
+            console.error('AI team offense narrative generation failed:', err);
+        }
+    }
+
+    // ========================================================================
     // AI Narrative
     // ========================================================================
 
@@ -1432,6 +1770,131 @@ function stddev(arr: number[]): number {
     const m = mean(arr);
     const variance = arr.reduce((sum, v) => sum + Math.pow(v - m, 2), 0) / (arr.length - 1);
     return Math.round(Math.sqrt(variance) * 10) / 10;
+}
+
+// ============================================================================
+// Team-offense / zone-outcome helpers
+// ============================================================================
+
+const UNKNOWN_ZONE = 'UNK';
+
+function resolveZone(row: { location_x: any; location_y: any; target_zone: any }): string {
+    if (row.location_x != null && row.location_y != null) {
+        const z = getZoneForPitch(parseFloat(row.location_x), parseFloat(row.location_y));
+        if (z) return z;
+    }
+    if (row.target_zone) return row.target_zone;
+    return UNKNOWN_ZONE;
+}
+
+function bucketSituation(balls: number, strikes: number): CountSituation {
+    if (balls === 0 && strikes === 0) return 'first_pitch';
+    if (strikes === 2) return 'two_strike';
+    // Hitter's counts: more balls than strikes (favoring hitter)
+    if (balls > strikes) return 'hitter_count';
+    return 'pitcher_count';
+}
+
+/**
+ * Map a single pitch to an outcome bucket based on the at-bat result.
+ * Only the AB-ending pitches contribute to "what worked / what got out" — but
+ * we use pitch_result === 'in_play' as the marker pitch for hit/out splits, and
+ * the strikeout pitch as the marker for strikeouts. Returns null for pitches
+ * that aren't the deciding pitch of the at-bat.
+ */
+function bucketOutcomeForPitch(row: { pitch_result: string | null; at_bat_result: string | null }): OutcomeBucket | null {
+    const ab = row.at_bat_result;
+    const pr = row.pitch_result;
+    if (!ab) return null;
+    if (['single', 'double', 'triple', 'home_run'].includes(ab)) {
+        return pr === 'in_play' ? 'hit' : null;
+    }
+    if (['walk'].includes(ab)) {
+        return pr === 'ball' ? 'walk' : null;
+    }
+    if (['hit_by_pitch'].includes(ab)) {
+        return pr === 'hit_by_pitch' ? 'walk' : null;
+    }
+    if (['strikeout', 'strikeout_dropped'].includes(ab)) {
+        return pr === 'swinging_strike' || pr === 'called_strike' ? 'strikeout' : null;
+    }
+    if (['groundout', 'flyout', 'popout', 'lineout', 'fielders_choice', 'sacrifice_fly', 'sacrifice_bunt'].includes(ab)) {
+        return pr === 'in_play' ? 'weak_contact_out' : null;
+    }
+    return null;
+}
+
+function mixFromCounts(counts: Map<string, number>, total: number): PitchTypeMix[] {
+    if (total === 0) return [];
+    return Array.from(counts.entries())
+        .map(([pitch_type, count]) => ({
+            pitch_type,
+            count,
+            pct: Math.round((count / total) * 100),
+        }))
+        .sort((a, b) => b.count - a.count);
+}
+
+function bucketGroupsFromMap(map: Map<OutcomeBucket, Map<string, number>>): OutcomePitchGroup[] {
+    const groups: OutcomePitchGroup[] = [];
+    for (const [bucket, slices] of map.entries()) {
+        const pitches = Array.from(slices.entries())
+            .map(([key, count]) => {
+                const [pitch_type, zone] = key.split('|');
+                return { pitch_type, zone, count };
+            })
+            .sort((a, b) => b.count - a.count);
+        const total = pitches.reduce((sum, p) => sum + p.count, 0);
+        groups.push({ bucket, pitches, total });
+    }
+    return groups;
+}
+
+/**
+ * Compute per-(pitch_type, zone) outcome percentages for a pitcher's pitches.
+ * Returns Map keyed by pitch_type with an array of PitcherZoneOutcome.
+ */
+function computeZoneOutcomes(rows: any[]): Map<string, PitcherZoneOutcome[]> {
+    type Bucket = { whiff: number; called: number; hard: number; weak: number; total: number };
+    const grid = new Map<string, Map<string, Bucket>>();
+
+    for (const row of rows) {
+        const ptype = row.pitch_type || 'other';
+        const zone = resolveZone({ location_x: row.location_x, location_y: row.location_y, target_zone: null });
+        if (!grid.has(ptype)) grid.set(ptype, new Map());
+        const inner = grid.get(ptype)!;
+        if (!inner.has(zone)) inner.set(zone, { whiff: 0, called: 0, hard: 0, weak: 0, total: 0 });
+        const b = inner.get(zone)!;
+        b.total++;
+        if (row.pitch_result === 'swinging_strike') b.whiff++;
+        else if (row.pitch_result === 'called_strike') b.called++;
+        else if (row.pitch_result === 'in_play') {
+            const ab = row.ab_result;
+            if (['single', 'double', 'triple', 'home_run'].includes(ab)) b.hard++;
+            else if (
+                ['groundout', 'flyout', 'popout', 'lineout', 'fielders_choice', 'sacrifice_fly', 'sacrifice_bunt'].includes(ab)
+            )
+                b.weak++;
+        }
+    }
+
+    const out = new Map<string, PitcherZoneOutcome[]>();
+    for (const [ptype, inner] of grid.entries()) {
+        const arr: PitcherZoneOutcome[] = [];
+        for (const [zone, b] of inner.entries()) {
+            arr.push({
+                zone,
+                whiff_pct: b.total > 0 ? Math.round((b.whiff / b.total) * 100) : 0,
+                called_strike_pct: b.total > 0 ? Math.round((b.called / b.total) * 100) : 0,
+                hard_contact_pct: b.total > 0 ? Math.round((b.hard / b.total) * 100) : 0,
+                weak_contact_pct: b.total > 0 ? Math.round((b.weak / b.total) * 100) : 0,
+                total_pitches: b.total,
+            });
+        }
+        arr.sort((a, b) => b.total_pitches - a.total_pitches);
+        out.set(ptype, arr);
+    }
+    return out;
 }
 
 export default new PerformanceSummaryService();

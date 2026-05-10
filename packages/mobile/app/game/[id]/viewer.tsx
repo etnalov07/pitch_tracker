@@ -11,7 +11,7 @@ import {
     fetchOpposingPitchers,
 } from '../../../src/state';
 import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
-import { BatterBreakdownView } from '../../../src/components/performanceSummary';
+import { BatterBreakdownView, OpponentAttackSummaryView } from '../../../src/components/performanceSummary';
 import PerformanceSummaryView from '../../../src/components/performanceSummary/PerformanceSummaryView';
 import { performanceSummaryApi } from '../../../src/state/performanceSummary/api/performanceSummaryApi';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
@@ -257,13 +257,17 @@ function SummaryTab({ gameId }: { gameId: string }) {
     if (loading) return <ActivityIndicator style={styles.centered} />;
     if (!summary)
         return (
-            <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
-                No performance data available for this game.
-            </Text>
+            <View>
+                <OpponentAttackSummaryView gameId={gameId} />
+                <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
+                    No pitcher performance data available for this game.
+                </Text>
+            </View>
         );
 
     return (
         <View>
+            <OpponentAttackSummaryView gameId={gameId} />
             {summaries.length > 1 && (
                 <ScrollView
                     horizontal

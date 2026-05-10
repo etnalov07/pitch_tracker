@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import CountBreakdownPanel from '../../components/live/CountBreakdownPanel';
 import PitcherStats from '../../components/live/PitcherStats';
 import ViewerTendenciesTab from '../../components/live/ViewerTendenciesTab';
-import { BatterBreakdownPanel, PerformanceSummaryCard } from '../../components/performanceSummary';
+import { BatterBreakdownPanel, OpponentAttackSummary, PerformanceSummaryCard } from '../../components/performanceSummary';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { performanceSummaryService } from '../../services/performanceSummaryService';
 import { gamesApi } from '../../state/games/api/gamesApi';
@@ -272,9 +272,10 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 )}
                 {activeTab === 'summary' && (
                     <SummaryWrapper>
+                        <OpponentAttackSummary gameId={game.id} />
                         {summaryLoading && <LoadingText>Loading performance summary…</LoadingText>}
                         {!summaryLoading && pitcherSummaries.length === 0 && (
-                            <LoadingText>No performance data available for this game.</LoadingText>
+                            <LoadingText>No pitcher performance data available for this game.</LoadingText>
                         )}
                         {pitcherSummaries.length > 1 && (
                             <PitcherTabRow>
