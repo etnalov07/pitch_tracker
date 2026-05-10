@@ -1,9 +1,6 @@
 import { TeamOffenseSummary, OutcomePitchGroup, CountSituationStat, ZoneHistogram } from '@pitch-tracker/shared';
 import React, { useEffect, useRef, useState } from 'react';
 import { performanceSummaryService } from '../../../services/performanceSummaryService';
-
-const NARRATIVE_POLL_INTERVAL_MS = 3000;
-const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
 import {
     Card,
     HeaderRow,
@@ -29,6 +26,9 @@ import {
     OutcomeStats,
     Empty,
 } from './styles';
+
+const NARRATIVE_POLL_INTERVAL_MS = 3000;
+const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
 
 const SITUATION_LABEL: Record<string, string> = {
     first_pitch: 'First pitch',
