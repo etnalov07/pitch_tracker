@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import App from './App';
-import { TeamThemeProvider } from './contexts';
+import { TeamThemeProvider, ThemeModeProvider } from './contexts';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 import { store } from './state';
@@ -11,9 +11,11 @@ const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 root.render(
     <React.StrictMode>
         <Provider store={store}>
-            <TeamThemeProvider>
-                <App />
-            </TeamThemeProvider>
+            <ThemeModeProvider>
+                <TeamThemeProvider>
+                    <App />
+                </TeamThemeProvider>
+            </ThemeModeProvider>
         </Provider>
     </React.StrictMode>
 );

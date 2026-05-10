@@ -100,7 +100,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 function RootLayoutContent() {
     const colorScheme = useColorScheme();
-    const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+    const themeMode = useAppSelector((state) => state.settings.themeMode);
+    const effectiveScheme = themeMode === 'system' ? colorScheme : themeMode;
+    const theme = effectiveScheme === 'dark' ? darkTheme : lightTheme;
 
     return (
         <PaperProvider theme={theme}>

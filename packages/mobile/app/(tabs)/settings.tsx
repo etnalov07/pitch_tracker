@@ -1,10 +1,18 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
-import { Text, List, Divider, Button, useTheme, Avatar, Switch, ActivityIndicator } from 'react-native-paper';
+import { Text, List, Divider, Button, useTheme, Avatar, Switch, ActivityIndicator, SegmentedButtons } from 'react-native-paper';
 import Constants from 'expo-constants';
 import * as Speech from 'expo-speech';
 import * as Haptics from '../../src/utils/haptics';
-import { useAppSelector, useAppDispatch, logoutUser, setPitchCallingEnabled, setVelocityEnabled } from '../../src/state';
+import {
+    useAppSelector,
+    useAppDispatch,
+    logoutUser,
+    setPitchCallingEnabled,
+    setVelocityEnabled,
+    setThemeMode,
+    type ThemeMode,
+} from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
 import { useBluetoothAudio } from '../../src/utils/bluetoothAudio';
 import { activateBTAudio } from '../../src/utils/pitchCallAudio';
@@ -17,7 +25,7 @@ export default function SettingsScreen() {
     const theme = useTheme();
     const { user } = useAppSelector((state) => state.auth);
     const { isOnline, isSyncing, pendingCount, lastSyncTime } = useAppSelector((state) => state.offline);
-    const { pitchCallingEnabled, velocityEnabled } = useAppSelector((state) => state.settings);
+    const { pitchCallingEnabled, velocityEnabled, themeMode } = useAppSelector((state) => state.settings);
     const { isTablet } = useDeviceType();
     const [syncing, setSyncing] = useState(false);
     const { connected: btConnected, deviceName: btDeviceName, isChecking: btChecking } = useBluetoothAudio();
@@ -91,15 +99,15 @@ export default function SettingsScreen() {
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <View style={[styles.content, isTablet && styles.contentTablet]}>
                 {/* Profile Section */}
-                <View style={styles.profileSection}>
+                <View style={[styles.profileSection, { backgroundColor: theme.colors.surface }]}>
                     <Avatar.Text size={80} label={getInitials()} style={{ backgroundColor: theme.colors.primary }} />
                     <Text variant="headlineSmall" style={styles.userName}>
                         {user?.first_name} {user?.last_name}
                     </Text>
-                    <Text variant="bodyMedium" style={styles.userEmail}>
+                    <Text variant="bodyMedium" style={[styles.userEmail, { color: theme.colors.onSurfaceVariant }]}>
                         {user?.email}
                     </Text>
                 </View>
@@ -125,6 +133,28 @@ export default function SettingsScreen() {
                             /* TODO */
                         }}
                     />
+                </List.Section>
+
+                <Divider style={styles.divider} />
+
+                <List.Section>
+                    <List.Subheader>Appearance</List.Subheader>
+                    <View style={styles.appearanceContainer}>
+                        <Text variant="bodyMedium" style={[styles.appearanceHelp, { color: theme.colors.onSurfaceVariant }]}>
+                            Choose how PitchChart looks. &quot;System&quot; matches your device.
+                        </Text>
+                        <SegmentedButtons
+                            value={themeMode}
+                            onValueChange={(v) => {
+                                dispatch(setThemeMode(v as ThemeMode));
+                            }}
+                            buttons={[
+                                { value: 'light', label: 'Light', icon: 'white-balance-sunny' },
+                                { value: 'dark', label: 'Dark', icon: 'weather-night' },
+                                { value: 'system', label: 'System', icon: 'cellphone-cog' },
+                            ]}
+                        />
+                    </View>
                 </List.Section>
 
                 <Divider style={styles.divider} />
@@ -299,7 +329,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     content: {
         flex: 1,
@@ -312,18 +341,23 @@ const styles = StyleSheet.create({
     profileSection: {
         alignItems: 'center',
         paddingVertical: 32,
-        backgroundColor: '#ffffff',
     },
     userName: {
         marginTop: 16,
         fontWeight: 'bold',
     },
     userEmail: {
-        color: '#6b7280',
         marginTop: 4,
     },
     divider: {
         marginVertical: 8,
+    },
+    appearanceContainer: {
+        paddingHorizontal: 16,
+        paddingBottom: 8,
+    },
+    appearanceHelp: {
+        marginBottom: 12,
     },
     logoutSection: {
         padding: 24,

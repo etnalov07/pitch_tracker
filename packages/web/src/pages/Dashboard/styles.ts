@@ -64,6 +64,25 @@ export const LogoutButton = styled.button({
     },
 });
 
+export const SettingsButton = styled.button({
+    background: 'rgba(255, 255, 255, 0.2)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    color: 'white',
+    width: '32px',
+    height: '32px',
+    borderRadius: theme.borderRadius.md,
+    cursor: 'pointer',
+    fontSize: theme.fontSize.lg,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s',
+
+    '&:hover': {
+        background: 'rgba(255, 255, 255, 0.3)',
+    },
+});
+
 export const MainContent = styled.main({
     maxWidth: '1200px',
     margin: '0 auto',

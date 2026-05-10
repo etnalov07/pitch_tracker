@@ -21,6 +21,7 @@ import PitcherProfile from './pages/PitcherProfile';
 import ScoutingLineup from './pages/ScoutingLineup';
 import ScoutingReport from './pages/ScoutingReport';
 import ScoutingReports from './pages/ScoutingReports';
+import Settings from './pages/Settings';
 import TeamDetail from './pages/TeamDetail/TeamDetail';
 import Teams from './pages/Teams/Teams';
 import TeamSettings from './pages/TeamSettings';
@@ -219,6 +220,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <GameHistory />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/settings"
+                    element={
+                        <ProtectedRoute>
+                            <Settings />
                         </ProtectedRoute>
                     }
                 />

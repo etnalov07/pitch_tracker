@@ -12,6 +12,7 @@ import {
     WelcomeText,
     HeaderRight,
     LogoutButton,
+    SettingsButton,
     MainContent,
     QuickActions,
     ActionCard,
@@ -198,6 +199,9 @@ const Dashboard: React.FC = () => {
                 </HeaderLeft>
                 <HeaderRight>
                     {primaryRole && <RoleBadge>{primaryRole === 'owner' ? 'Coach' : primaryRole} Mode</RoleBadge>}
+                    <SettingsButton onClick={() => navigate('/settings')} title="Settings" aria-label="Settings">
+                        ⚙
+                    </SettingsButton>
                     <LogoutButton onClick={handleLogout}>Sign Out</LogoutButton>
                 </HeaderRight>
             </Header>
