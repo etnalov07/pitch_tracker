@@ -88,14 +88,14 @@ const DiamondModal: React.FC<DiamondModalProps> = ({
                 <HitTypeSelector>
                     <HitTypeButton
                         active={hitType === 'fly_ball'}
-                        hitColor={theme.colors.primary[500]}
+                        hitColor={theme.accents.blue}
                         onClick={() => onHitTypeChange('fly_ball')}
                     >
                         Fly Ball
                     </HitTypeButton>
                     <HitTypeButton
                         active={hitType === 'line_drive'}
-                        hitColor={theme.colors.red[500]}
+                        hitColor={theme.accents.red}
                         onClick={() => onHitTypeChange('line_drive')}
                     >
                         Line Drive

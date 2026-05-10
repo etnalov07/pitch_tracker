@@ -805,7 +805,7 @@ const LiveGame: React.FC = () => {
                                         <ResultButton
                                             active={pitchResult === 'in_play'}
                                             onClick={() => setPitchResult('in_play')}
-                                            color={theme.colors.primary[600]}
+                                            color={theme.accents.green}
                                         >
                                             In Play
                                         </ResultButton>

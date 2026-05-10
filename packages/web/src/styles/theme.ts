@@ -77,6 +77,16 @@ export const theme = {
         border: 'var(--surface-border)',
         borderStrong: 'var(--surface-border-strong)',
     },
+    accents: {
+        blue: 'var(--accent-blue)',
+        blueHover: 'var(--accent-blue-hover)',
+        red: 'var(--accent-red)',
+        redHover: 'var(--accent-red-hover)',
+        green: 'var(--accent-green)',
+        greenHover: 'var(--accent-green-hover)',
+        violet: 'var(--accent-violet)',
+        violetHover: 'var(--accent-violet-hover)',
+    },
     spacing: {
         xs: '0.1875rem', // 3px
         sm: '0.25rem', // 4px

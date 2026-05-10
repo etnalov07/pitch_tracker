@@ -74,6 +74,18 @@
     --header-bg-start: #243b53;
     --header-bg-end: #0b1f3a;
 
+    /* Accent tokens — for CTA backgrounds. Unlike the brand palette, these do
+       NOT invert in dark mode (the regular palette inverts so 600/700/800 read
+       as text-on-dark, which leaves them too pale to use as button fills). */
+    --accent-blue: #2563eb;
+    --accent-blue-hover: #1d4ed8;
+    --accent-red: #dc2626;
+    --accent-red-hover: #b91c1c;
+    --accent-green: #16a34a;
+    --accent-green-hover: #15803d;
+    --accent-violet: #7c3aed;
+    --accent-violet-hover: #6d28d9;
+
     /* Shadows — light */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -173,6 +185,16 @@
        doesn't bleed into headers that pair this gradient with white text. */
     --header-bg-start: #243b53;
     --header-bg-end: #0b1f3a;
+
+    /* Accent tokens — lift slightly so CTAs pop on dark surfaces */
+    --accent-blue: #3b82f6;
+    --accent-blue-hover: #2563eb;
+    --accent-red: #ef4444;
+    --accent-red-hover: #dc2626;
+    --accent-green: #22c55e;
+    --accent-green-hover: #16a34a;
+    --accent-violet: #8b5cf6;
+    --accent-violet-hover: #7c3aed;
 
     /* Shadows — stronger and tinted darker since dark UIs need more separation */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);

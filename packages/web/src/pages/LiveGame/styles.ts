@@ -263,7 +263,7 @@ export const LogButton = styled.button({
     flex: 1,
     width: '100%',
     padding: theme.spacing.sm,
-    backgroundColor: theme.colors.primary[600],
+    backgroundColor: theme.accents.blue,
     color: 'white',
     border: 'none',
     borderRadius: theme.borderRadius.sm,
@@ -274,7 +274,7 @@ export const LogButton = styled.button({
     marginTop: theme.spacing.md,
 
     '&:hover:not(:disabled)': {
-        backgroundColor: theme.colors.primary[700],
+        backgroundColor: theme.accents.blueHover,
     },
 
     '&:disabled': {
@@ -591,7 +591,7 @@ export const TopBarRight = styled.div({
 
 export const EndGameButton = styled.button({
     padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-    backgroundColor: theme.colors.red[600],
+    backgroundColor: theme.accents.red,
     color: 'white',
     border: 'none',
     borderRadius: theme.borderRadius.md,
@@ -601,7 +601,7 @@ export const EndGameButton = styled.button({
     transition: 'background-color 0.2s',
 
     '&:hover': {
-        backgroundColor: theme.colors.red[700],
+        backgroundColor: theme.accents.redHover,
     },
 });
 
@@ -783,7 +783,7 @@ export const DiamondModalOverlay = styled.div({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.78)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -794,7 +794,8 @@ export const DiamondModal = styled.div({
     backgroundColor: theme.surfaces.card,
     padding: theme.spacing.xl,
     borderRadius: theme.borderRadius.xl,
-    boxShadow: theme.shadows.xl,
+    border: `1px solid ${theme.surfaces.border}`,
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
     maxWidth: '500px',
     width: '90%',
     maxHeight: '90vh',
@@ -837,9 +838,9 @@ export const HitTypeSelector = styled.div({
 export const HitTypeButton = styled.button<{ active: boolean; hitColor: string }>((props) => ({
     flex: 1,
     padding: theme.spacing.sm,
-    backgroundColor: props.active ? props.hitColor : theme.colors.gray[100],
+    backgroundColor: props.active ? props.hitColor : theme.surfaces.card,
     color: props.active ? 'white' : theme.colors.gray[700],
-    border: `2px solid ${props.active ? props.hitColor : theme.colors.gray[300]}`,
+    border: `2px solid ${props.active ? props.hitColor : theme.surfaces.border}`,
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
@@ -847,7 +848,8 @@ export const HitTypeButton = styled.button<{ active: boolean; hitColor: string }
     transition: 'all 0.2s',
 
     '&:hover': {
-        backgroundColor: props.active ? props.hitColor : theme.colors.gray[200],
+        backgroundColor: props.active ? props.hitColor : theme.colors.gray[100],
+        borderColor: props.active ? props.hitColor : theme.surfaces.borderStrong,
     },
 }));
 
@@ -870,9 +872,11 @@ export const DiamondResultSection = styled.div({
 });
 
 export const DiamondResultTitle = styled.div({
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.gray[700],
+    color: theme.colors.gray[500],
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
     marginBottom: theme.spacing.sm,
 });
 
@@ -884,25 +888,26 @@ export const DiamondResultGrid = styled.div({
 
 export const DiamondResultButton = styled.button<{ isOut?: boolean; disabled?: boolean }>((props) => ({
     padding: theme.spacing.sm,
-    backgroundColor: props.disabled ? theme.colors.gray[100] : props.isOut ? theme.colors.red[50] : theme.colors.green[50],
+    backgroundColor: props.disabled ? theme.surfaces.card : props.isOut ? theme.colors.red[50] : theme.colors.green[50],
     color: props.disabled ? theme.colors.gray[400] : props.isOut ? theme.colors.red[700] : theme.colors.green[700],
-    border: `1px solid ${props.disabled ? theme.colors.gray[200] : props.isOut ? theme.colors.red[200] : theme.colors.green[200]}`,
+    border: `1px solid ${props.disabled ? theme.surfaces.border : props.isOut ? theme.colors.red[300] : theme.colors.green[300]}`,
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.medium,
     cursor: props.disabled ? 'not-allowed' : 'pointer',
     transition: 'all 0.2s',
-    opacity: props.disabled ? 0.6 : 1,
+    opacity: props.disabled ? 0.45 : 1,
 
-    '&:hover': {
-        backgroundColor: props.disabled ? theme.colors.gray[100] : props.isOut ? theme.colors.red[100] : theme.colors.green[100],
+    '&:hover:not(:disabled)': {
+        backgroundColor: props.isOut ? theme.colors.red[100] : theme.colors.green[100],
+        borderColor: props.isOut ? theme.colors.red[400] : theme.colors.green[400],
     },
 }));
 
 export const OpenDiamondButton = styled.button({
     width: '100%',
     padding: theme.spacing.md,
-    backgroundColor: theme.colors.primary[600],
+    backgroundColor: theme.accents.violet,
     color: 'white',
     border: 'none',
     borderRadius: theme.borderRadius.md,
@@ -917,7 +922,7 @@ export const OpenDiamondButton = styled.button({
     gap: theme.spacing.sm,
 
     '&:hover': {
-        backgroundColor: theme.colors.primary[700],
+        backgroundColor: theme.accents.violetHover,
     },
 });
 
@@ -1095,9 +1100,9 @@ export const PitchTypeGrid = styled.div({
 
 export const PitchTypeButton = styled.button<{ active?: boolean }>((props) => ({
     padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-    backgroundColor: props.active ? theme.colors.primary[600] : theme.colors.gray[50],
+    backgroundColor: props.active ? theme.accents.blue : theme.colors.gray[50],
     color: props.active ? 'white' : theme.colors.gray[700],
-    border: `1px solid ${props.active ? theme.colors.primary[600] : theme.colors.gray[200]}`,
+    border: `1px solid ${props.active ? theme.accents.blue : theme.colors.gray[200]}`,
     borderRadius: theme.borderRadius.sm,
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.medium,
@@ -1105,8 +1110,8 @@ export const PitchTypeButton = styled.button<{ active?: boolean }>((props) => ({
     transition: 'all 0.15s',
 
     '&:hover': {
-        backgroundColor: props.active ? theme.colors.primary[700] : theme.colors.gray[100],
-        borderColor: props.active ? theme.colors.primary[700] : theme.colors.gray[300],
+        backgroundColor: props.active ? theme.accents.blueHover : theme.colors.gray[100],
+        borderColor: props.active ? theme.accents.blueHover : theme.colors.gray[300],
     },
 }));
 
