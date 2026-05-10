@@ -1867,7 +1867,7 @@ export default function LiveGameScreen() {
                     icon="run-fast"
                     compact
                 >
-                    SB / WP / PB / BLK
+                    Runner Adv
                 </Button>
                 <Button
                     mode="outlined"

@@ -501,7 +501,7 @@ const LiveGame: React.FC = () => {
                                             cursor: 'pointer',
                                         }}
                                     >
-                                        SB / WP / PB / BLK
+                                        Runner Adv
                                     </button>
                                     <button
                                         onClick={() => {
