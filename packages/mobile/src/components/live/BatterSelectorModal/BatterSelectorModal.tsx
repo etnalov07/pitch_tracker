@@ -168,7 +168,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                 </Text>
                 <ScrollView style={styles.playerList} keyboardShouldPersistTaps="handled">
                     {activeBatters.length === 0 && !formMode ? (
-                        <Text variant="bodyMedium" style={styles.emptyText}>
+                        <Text variant="bodyMedium" style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
                             No opponent lineup found. Set up the opponent lineup before starting.
                         </Text>
                     ) : (
@@ -183,8 +183,10 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                                         <Text style={styles.batterOrderText}>{batter.batting_order}</Text>
                                     </View>
                                     <View style={styles.playerOptionInfo}>
-                                        <Text style={styles.playerOptionName}>{batter.player_name}</Text>
-                                        <Text style={styles.playerOptionDetail}>
+                                        <Text style={[styles.playerOptionName, { color: theme.colors.onSurface }]}>
+                                            {batter.player_name}
+                                        </Text>
+                                        <Text style={[styles.playerOptionDetail, { color: theme.colors.onSurfaceVariant }]}>
                                             {batter.position || 'Unknown'}
                                             {batter.bats ? ` · Bats ${batter.bats}` : ''}
                                         </Text>
@@ -212,11 +214,11 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
 
                 {formMode ? (
                     <View style={[styles.addForm, { backgroundColor: theme.colors.surfaceVariant }]}>
-                        <Text variant="titleSmall" style={styles.formTitle}>
+                        <Text variant="titleSmall" style={[styles.formTitle, { color: theme.colors.onSurface }]}>
                             {formTitle}
                         </Text>
                         {formMode === 'substitute' && editingBatter && (
-                            <Text variant="bodySmall" style={styles.subLabel}>
+                            <Text variant="bodySmall" style={[styles.subLabel, { color: theme.colors.onSurfaceVariant }]}>
                                 Replacing: {editingBatter.player_name} (#{editingBatter.batting_order})
                             </Text>
                         )}
@@ -269,7 +271,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                                 style={styles.formInputSmall}
                             />
                         </View>
-                        <Text variant="labelMedium" style={styles.batsLabel}>
+                        <Text variant="labelMedium" style={[styles.batsLabel, { color: theme.colors.onSurface }]}>
                             Bats
                         </Text>
                         <SegmentedButtons
@@ -328,8 +330,8 @@ const styles = StyleSheet.create({
     },
     playerOptionSelected: { backgroundColor: '#eff6ff' },
     playerOptionInfo: { flex: 1, gap: 2 },
-    playerOptionName: { fontSize: 16, fontWeight: '600', color: '#111827' },
-    playerOptionDetail: { fontSize: 13, color: '#6b7280' },
+    playerOptionName: { fontSize: 16, fontWeight: '600' },
+    playerOptionDetail: { fontSize: 13 },
     batterOptionRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     batterOrder: {
         width: 32,
@@ -342,7 +344,7 @@ const styles = StyleSheet.create({
     batterOrderText: { fontSize: 14, fontWeight: 'bold', color: '#374151' },
     actionButtons: { flexDirection: 'row', marginLeft: 'auto' },
     actionIcon: { margin: 0 },
-    emptyText: { textAlign: 'center', color: '#6b7280', padding: 24 },
+    emptyText: { textAlign: 'center', padding: 24 },
     addForm: {
         marginTop: 12,
         padding: 12,
@@ -351,12 +353,12 @@ const styles = StyleSheet.create({
         borderColor: '#e5e7eb',
         gap: 8,
     },
-    formTitle: { color: '#111827' },
-    subLabel: { color: '#6b7280', fontStyle: 'italic' },
+    formTitle: {},
+    subLabel: { fontStyle: 'italic' },
     formInput: {},
     formRow: { flexDirection: 'row', gap: 8 },
     formInputSmall: { flex: 1 },
-    batsLabel: { marginTop: 4, color: '#374151' },
+    batsLabel: { marginTop: 4 },
     segmented: { marginBottom: 4 },
     formActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },
     addButton: { marginTop: 12 },

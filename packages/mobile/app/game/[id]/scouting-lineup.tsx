@@ -136,13 +136,13 @@ export default function ScoutingLineupScreen() {
 
         return (
             <View>
-                <Text variant="bodySmall" style={styles.helpText}>
+                <Text variant="bodySmall" style={[styles.helpText, { color: theme.colors.onSurfaceVariant }]}>
                     Enter {teamName}&apos;s starting lineup. Leave rows blank for players you don&apos;t know yet.
                 </Text>
 
                 {/* Starting Pitcher */}
                 <View style={[styles.pitcherSection, { backgroundColor: theme.colors.surfaceVariant }]}>
-                    <Text variant="titleSmall" style={styles.sectionTitle}>
+                    <Text variant="titleSmall" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                         Starting Pitcher
                     </Text>
                     <TextInput
@@ -165,7 +165,7 @@ export default function ScoutingLineupScreen() {
                             dense
                         />
                         <View style={styles.throwsContainer}>
-                            <Text variant="bodySmall" style={styles.throwsLabel}>
+                            <Text variant="bodySmall" style={[styles.throwsLabel, { color: theme.colors.onSurfaceVariant }]}>
                                 Throws
                             </Text>
                             <SegmentedButtons
@@ -179,14 +179,20 @@ export default function ScoutingLineupScreen() {
                                         label: 'R',
                                         checkedColor: '#ffffff',
                                         style: pitcherThrows === 'R' ? styles.batsSelected : styles.batsUnselected,
-                                        labelStyle: pitcherThrows === 'R' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                        labelStyle:
+                                            pitcherThrows === 'R'
+                                                ? styles.batsLabelSelected
+                                                : [styles.batsLabelUnselected, { color: theme.colors.onSurface }],
                                     },
                                     {
                                         value: 'L',
                                         label: 'L',
                                         checkedColor: '#ffffff',
                                         style: pitcherThrows === 'L' ? styles.batsSelected : styles.batsUnselected,
-                                        labelStyle: pitcherThrows === 'L' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                        labelStyle:
+                                            pitcherThrows === 'L'
+                                                ? styles.batsLabelSelected
+                                                : [styles.batsLabelUnselected, { color: theme.colors.onSurface }],
                                     },
                                 ]}
                                 style={styles.batsToggle}
@@ -197,7 +203,7 @@ export default function ScoutingLineupScreen() {
                 </View>
 
                 {/* Batting Order */}
-                <Text variant="titleSmall" style={styles.sectionTitle}>
+                <Text variant="titleSmall" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                     Batting Order
                 </Text>
                 {lineup.map((entry, index) => (
@@ -263,21 +269,30 @@ export default function ScoutingLineupScreen() {
                                             label: 'R',
                                             checkedColor: '#ffffff',
                                             style: entry.bats === 'R' ? styles.batsSelected : styles.batsUnselected,
-                                            labelStyle: entry.bats === 'R' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                            labelStyle:
+                                                entry.bats === 'R'
+                                                    ? styles.batsLabelSelected
+                                                    : [styles.batsLabelUnselected, { color: theme.colors.onSurface }],
                                         },
                                         {
                                             value: 'L',
                                             label: 'L',
                                             checkedColor: '#ffffff',
                                             style: entry.bats === 'L' ? styles.batsSelected : styles.batsUnselected,
-                                            labelStyle: entry.bats === 'L' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                            labelStyle:
+                                                entry.bats === 'L'
+                                                    ? styles.batsLabelSelected
+                                                    : [styles.batsLabelUnselected, { color: theme.colors.onSurface }],
                                         },
                                         {
                                             value: 'S',
                                             label: 'S',
                                             checkedColor: '#ffffff',
                                             style: entry.bats === 'S' ? styles.batsSelected : styles.batsUnselected,
-                                            labelStyle: entry.bats === 'S' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                            labelStyle:
+                                                entry.bats === 'S'
+                                                    ? styles.batsLabelSelected
+                                                    : [styles.batsLabelUnselected, { color: theme.colors.onSurface }],
                                         },
                                     ]}
                                     style={styles.batsToggle}
@@ -335,13 +350,13 @@ export default function ScoutingLineupScreen() {
                 <View style={{ flex: 1 }}>
                     <Text variant="titleLarge">Scouting Lineup</Text>
                     {game && (
-                        <Text variant="bodySmall" style={{ color: '#6b7280' }}>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                             {game.opponent_name ?? 'Away'} @ {game.scouting_home_team ?? 'Home'}
                         </Text>
                     )}
                 </View>
                 <TouchableOpacity onPress={goToGame} style={styles.skipButton}>
-                    <Text style={styles.skipText}>Skip</Text>
+                    <Text style={[styles.skipText, { color: theme.colors.onSurfaceVariant }]}>Skip</Text>
                 </TouchableOpacity>
             </View>
 
@@ -362,14 +377,20 @@ export default function ScoutingLineupScreen() {
                                 label: `Away${awaySaved ? ' ✓' : ''}`,
                                 checkedColor: '#ffffff',
                                 style: activeSide === 'away' ? styles.tabSelected : styles.tabUnselected,
-                                labelStyle: activeSide === 'away' ? styles.tabLabelSelected : styles.tabLabelUnselected,
+                                labelStyle:
+                                    activeSide === 'away'
+                                        ? styles.tabLabelSelected
+                                        : [styles.tabLabelUnselected, { color: theme.colors.onSurface }],
                             },
                             {
                                 value: 'home',
                                 label: `Home${homeSaved ? ' ✓' : ''}`,
                                 checkedColor: '#ffffff',
                                 style: activeSide === 'home' ? styles.tabSelected : styles.tabUnselected,
-                                labelStyle: activeSide === 'home' ? styles.tabLabelSelected : styles.tabLabelUnselected,
+                                labelStyle:
+                                    activeSide === 'home'
+                                        ? styles.tabLabelSelected
+                                        : [styles.tabLabelUnselected, { color: theme.colors.onSurface }],
                             },
                         ]}
                         style={styles.tabToggle}
@@ -398,7 +419,6 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
     },
     skipText: {
-        color: '#6b7280',
         fontSize: 14,
     },
     content: {
@@ -417,11 +437,9 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     tabLabelUnselected: {
-        color: '#374151',
         fontWeight: '500',
     },
     helpText: {
-        color: '#6b7280',
         marginBottom: 12,
     },
     pitcherSection: {
@@ -433,7 +451,6 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontWeight: '600',
-        color: '#1f2937',
         marginBottom: 8,
     },
     pitcherBottomRow: {
@@ -447,7 +464,6 @@ const styles = StyleSheet.create({
     },
     throwsContainer: { flex: 1 },
     throwsLabel: {
-        color: '#6b7280',
         marginBottom: 4,
     },
     row: {
@@ -484,7 +500,7 @@ const styles = StyleSheet.create({
     batsSelected: { backgroundColor: '#1d4ed8' },
     batsUnselected: {},
     batsLabelSelected: { color: '#ffffff', fontWeight: '700' },
-    batsLabelUnselected: { color: '#374151', fontWeight: '500' },
+    batsLabelUnselected: { fontWeight: '500' },
     actions: {
         marginTop: 20,
         gap: 8,

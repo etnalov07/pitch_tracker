@@ -51,7 +51,7 @@ const CountBreakdownModal: React.FC<Props> = ({ visible, onDismiss, gameId, pitc
                 {loading ? (
                     <ActivityIndicator style={{ marginVertical: 24 }} />
                 ) : !data || buckets.every((k) => data[k].total === 0) ? (
-                    <Text variant="bodySmall" style={styles.emptyText}>
+                    <Text variant="bodySmall" style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
                         No pitches recorded yet.
                     </Text>
                 ) : (
@@ -62,10 +62,10 @@ const CountBreakdownModal: React.FC<Props> = ({ visible, onDismiss, gameId, pitc
                             return (
                                 <View key={key} style={[styles.bucket, { backgroundColor: theme.colors.surfaceVariant }]}>
                                     <View style={styles.bucketHeader}>
-                                        <Text variant="labelMedium" style={styles.bucketLabel}>
+                                        <Text variant="labelMedium" style={[styles.bucketLabel, { color: theme.colors.onSurface }]}>
                                             {BUCKET_LABELS[key]}
                                         </Text>
-                                        <Text variant="bodyMedium" style={styles.bucketTotal}>
+                                        <Text variant="bodyMedium" style={[styles.bucketTotal, { color: theme.colors.onSurface }]}>
                                             {bucket.total} pitches
                                         </Text>
                                         <Text
@@ -90,10 +90,16 @@ const CountBreakdownModal: React.FC<Props> = ({ visible, onDismiss, gameId, pitc
                                         .slice(0, 4)
                                         .map((t) => (
                                             <View key={t.pitch_type} style={styles.typeRow}>
-                                                <Text variant="bodySmall" style={styles.typeLabel}>
+                                                <Text
+                                                    variant="bodySmall"
+                                                    style={[styles.typeLabel, { color: theme.colors.onSurfaceVariant }]}
+                                                >
                                                     {t.pitch_type}
                                                 </Text>
-                                                <Text variant="bodySmall" style={styles.typeStats}>
+                                                <Text
+                                                    variant="bodySmall"
+                                                    style={[styles.typeStats, { color: theme.colors.onSurfaceVariant }]}
+                                                >
                                                     {t.count} ({t.strike_percentage}%K)
                                                 </Text>
                                             </View>
@@ -126,7 +132,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     emptyText: {
-        color: '#9ca3af',
         fontStyle: 'italic',
         textAlign: 'center',
         marginVertical: 16,
@@ -147,11 +152,9 @@ const styles = StyleSheet.create({
     },
     bucketLabel: {
         fontWeight: '600',
-        color: '#374151',
         flex: 1,
     },
     bucketTotal: {
-        color: '#111827',
         fontWeight: '600',
     },
     strikeRate: {
@@ -162,12 +165,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 1,
     },
-    typeLabel: {
-        color: '#6b7280',
-    },
-    typeStats: {
-        color: '#6b7280',
-    },
+    typeLabel: {},
+    typeStats: {},
     closeButton: {
         marginTop: 12,
     },

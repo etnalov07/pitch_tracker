@@ -31,13 +31,13 @@ const TeamAtBatModal: React.FC<TeamAtBatModalProps> = ({
             <Text variant="titleLarge" style={styles.modalTitle}>
                 Your Team At Bat
             </Text>
-            <Text style={styles.infoText}>
+            <Text style={[styles.infoText, { color: theme.colors.onSurface }]}>
                 {inningHalf === 'top' ? 'Top' : 'Bottom'} of Inning {inning}
                 {'\n'}Enter your team's runs scored
             </Text>
-            <Text style={styles.runsLabel}>Runs Scored</Text>
+            <Text style={[styles.runsLabel, { color: theme.colors.onSurfaceVariant }]}>Runs Scored</Text>
             <TextInput
-                style={styles.runsInput}
+                style={[styles.runsInput, { color: theme.colors.onSurface }]}
                 value={teamRunsScored}
                 onChangeText={onRunsChange}
                 keyboardType="number-pad"
@@ -54,8 +54,8 @@ const styles = StyleSheet.create({
     modal: { margin: 20, padding: 20, borderRadius: 12, maxHeight: '80%' },
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
     modalTitle: { marginBottom: 16, textAlign: 'center' },
-    infoText: { fontSize: 16, color: '#374151', textAlign: 'center', marginBottom: 16, lineHeight: 24 },
-    runsLabel: { fontSize: 14, color: '#6b7280', marginBottom: 8 },
+    infoText: { fontSize: 16, textAlign: 'center', marginBottom: 16, lineHeight: 24 },
+    runsLabel: { fontSize: 14, marginBottom: 8 },
     runsInput: {
         borderWidth: 1,
         borderColor: '#d1d5db',
@@ -65,7 +65,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: 'bold',
         marginBottom: 16,
-        color: '#111827',
     },
     confirmButton: { marginTop: 4 },
 });

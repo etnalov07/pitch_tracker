@@ -122,29 +122,50 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact =
 
                 {pitchTypes.length > 0 && (
                     <View style={styles.breakdownSection}>
-                        <Text variant="labelMedium" style={styles.breakdownTitle}>
+                        <Text variant="labelMedium" style={[styles.breakdownTitle, { color: theme.colors.onSurfaceVariant }]}>
                             By Pitch Type
                         </Text>
                         <View style={styles.tableHeader}>
-                            <Text variant="labelSmall" style={[styles.cellType, styles.headerText]}>
+                            <Text
+                                variant="labelSmall"
+                                style={[styles.cellType, styles.headerText, { color: theme.colors.onSurfaceVariant }]}
+                            >
                                 Type
                             </Text>
-                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                            <Text
+                                variant="labelSmall"
+                                style={[styles.cellNum, styles.headerText, { color: theme.colors.onSurfaceVariant }]}
+                            >
                                 #
                             </Text>
-                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                            <Text
+                                variant="labelSmall"
+                                style={[styles.cellNum, styles.headerText, { color: theme.colors.onSurfaceVariant }]}
+                            >
                                 Ball
                             </Text>
-                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                            <Text
+                                variant="labelSmall"
+                                style={[styles.cellNum, styles.headerText, { color: theme.colors.onSurfaceVariant }]}
+                            >
                                 Strike
                             </Text>
-                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                            <Text
+                                variant="labelSmall"
+                                style={[styles.cellNum, styles.headerText, { color: theme.colors.onSurfaceVariant }]}
+                            >
                                 %
                             </Text>
-                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                            <Text
+                                variant="labelSmall"
+                                style={[styles.cellNum, styles.headerText, { color: theme.colors.onSurfaceVariant }]}
+                            >
                                 Top
                             </Text>
-                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                            <Text
+                                variant="labelSmall"
+                                style={[styles.cellNum, styles.headerText, { color: theme.colors.onSurfaceVariant }]}
+                            >
                                 Avg
                             </Text>
                         </View>
@@ -230,7 +251,6 @@ const styles = StyleSheet.create({
     },
     breakdownTitle: {
         marginBottom: 12,
-        color: '#6b7280',
     },
     tableHeader: {
         flexDirection: 'row',
@@ -252,9 +272,7 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: 'right',
     },
-    headerText: {
-        color: '#6b7280',
-    },
+    headerText: {},
     strikeCell: {
         color: '#10b981',
         fontWeight: '600',

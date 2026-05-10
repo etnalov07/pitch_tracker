@@ -141,7 +141,7 @@ export default function NewGameScreen() {
                         <Text variant="titleMedium" style={styles.emptyTitle}>
                             No Teams Found
                         </Text>
-                        <Text variant="bodyMedium" style={styles.emptyText}>
+                        <Text variant="bodyMedium" style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
                             You need to create a team before starting a game.
                         </Text>
                         <Button mode="contained" onPress={() => router.push('/teams')} style={styles.emptyButton}>
@@ -151,7 +151,7 @@ export default function NewGameScreen() {
                 ) : (
                     <>
                         {/* Your Team */}
-                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                        <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                             Your Team
                         </Text>
                         <View style={styles.chipGrid}>
@@ -174,7 +174,7 @@ export default function NewGameScreen() {
                         {/* Home / Away — hidden in scouting mode */}
                         {!isScoutingMode && (
                             <>
-                                <Text variant="labelLarge" style={styles.sectionLabel}>
+                                <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                                     Your team is playing:
                                 </Text>
                                 <SegmentedButtons
@@ -193,7 +193,7 @@ export default function NewGameScreen() {
                         )}
 
                         {/* Lineup Size */}
-                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                        <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                             Lineup Size
                         </Text>
                         <SegmentedButtons
@@ -212,7 +212,7 @@ export default function NewGameScreen() {
                         />
 
                         {/* Total Innings */}
-                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                        <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                             Innings
                         </Text>
                         <SegmentedButtons
@@ -231,7 +231,7 @@ export default function NewGameScreen() {
                         />
 
                         {/* Charting Mode */}
-                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                        <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                             Charting Mode
                         </Text>
                         <SegmentedButtons
@@ -252,7 +252,7 @@ export default function NewGameScreen() {
                         {/* Scout Focus — shown only in scouting mode */}
                         {isScoutingMode && (
                             <>
-                                <Text variant="labelLarge" style={styles.sectionLabel}>
+                                <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                                     Scout Which Team
                                 </Text>
                                 <SegmentedButtons
@@ -324,6 +324,7 @@ export default function NewGameScreen() {
                                                 <Text
                                                     style={[
                                                         styles.opponentChipText,
+                                                        { color: theme.colors.onSurface },
                                                         opponentTeamId === opp.id && styles.opponentChipTextSelected,
                                                     ]}
                                                 >
@@ -406,7 +407,6 @@ const styles = StyleSheet.create({
         gap: 16,
     },
     sectionLabel: {
-        color: '#374151',
         marginBottom: 4,
     },
     chipGrid: {
@@ -434,7 +434,6 @@ const styles = StyleSheet.create({
     },
     opponentChipText: {
         fontSize: 13,
-        color: '#374151',
     },
     opponentChipTextSelected: {
         color: '#1d4ed8',
@@ -454,7 +453,6 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     emptyText: {
-        color: '#6b7280',
         textAlign: 'center',
         marginBottom: 16,
     },

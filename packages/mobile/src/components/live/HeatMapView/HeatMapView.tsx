@@ -1,6 +1,7 @@
 import { PitchLocationData } from '@pitch-tracker/shared';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import Svg, { Circle, Line, Rect } from 'react-native-svg';
 
 const PITCH_TYPE_COLORS: Record<string, string> = {
@@ -49,12 +50,15 @@ interface Props {
 }
 
 export default function HeatMapView({ pitches, bats }: Props) {
+    const theme = useTheme();
     const located = pitches.filter((p) => p.location_x != null && p.location_y != null);
     const typesPresent = [...new Set(located.map((p) => p.pitch_type))];
 
     return (
         <View style={styles.wrapper}>
-            <Text style={styles.label}>{bats === 'L' ? 'LHH' : 'RHH'} · Pitch Locations by Type</Text>
+            <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>
+                {bats === 'L' ? 'LHH' : 'RHH'} · Pitch Locations by Type
+            </Text>
             <Svg width={SIZE} height={SIZE}>
                 <Rect x={0} y={0} width={SIZE} height={SIZE} fill="#f5f5f0" />
                 {/* Waste area */}
@@ -101,22 +105,26 @@ export default function HeatMapView({ pitches, bats }: Props) {
                     {typesPresent.map((type) => (
                         <View key={type} style={styles.legendItem}>
                             <View style={[styles.dot, { backgroundColor: PITCH_TYPE_COLORS[type] ?? '#9ca3af' }]} />
-                            <Text style={styles.legendLabel}>{PITCH_TYPE_ABBREV[type] ?? type}</Text>
+                            <Text style={[styles.legendLabel, { color: theme.colors.onSurfaceVariant }]}>
+                                {PITCH_TYPE_ABBREV[type] ?? type}
+                            </Text>
                         </View>
                     ))}
                 </View>
             )}
-            {located.length === 0 && <Text style={styles.empty}>No pitch location data.</Text>}
+            {located.length === 0 && (
+                <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>No pitch location data.</Text>
+            )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     wrapper: { alignItems: 'center', gap: 6 },
-    label: { fontSize: 11, color: '#6b7280', fontStyle: 'italic' },
+    label: { fontSize: 11, fontStyle: 'italic' },
     legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', maxWidth: 210 },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
     dot: { width: 8, height: 8, borderRadius: 4 },
-    legendLabel: { fontSize: 10, color: '#6b7280' },
-    empty: { fontSize: 12, color: '#9ca3af', fontStyle: 'italic' },
+    legendLabel: { fontSize: 10 },
+    empty: { fontSize: 12, fontStyle: 'italic' },
 });

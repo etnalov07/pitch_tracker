@@ -10,10 +10,10 @@ export default function GameSetupScreen() {
     return (
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <Text variant="headlineSmall">Game Setup</Text>
-            <Text variant="bodyMedium" style={styles.placeholder}>
+            <Text variant="bodyMedium" style={[styles.placeholder, { color: theme.colors.onSurfaceVariant }]}>
                 Game ID: {id}
             </Text>
-            <Text variant="bodyMedium" style={styles.placeholder}>
+            <Text variant="bodyMedium" style={[styles.placeholder, { color: theme.colors.onSurfaceVariant }]}>
                 Setup screen coming soon...
             </Text>
         </View>
@@ -26,7 +26,6 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     placeholder: {
-        color: '#6b7280',
         marginTop: 8,
     },
 });

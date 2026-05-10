@@ -37,7 +37,7 @@ export default function InviteAcceptScreen() {
         return (
             <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
                 <ActivityIndicator size="large" />
-                <Text style={styles.loadingText}>Loading invite...</Text>
+                <Text style={[styles.loadingText, { color: theme.colors.onSurfaceVariant }]}>Loading invite...</Text>
             </View>
         );
     }
@@ -66,7 +66,7 @@ export default function InviteAcceptScreen() {
                 <Text variant="headlineSmall" style={styles.title}>
                     Team Invite
                 </Text>
-                <Text variant="bodyMedium" style={styles.subtitle}>
+                <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
                     You've been invited to join a team
                 </Text>
 
@@ -107,12 +107,13 @@ export default function InviteAcceptScreen() {
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
+    const theme = useTheme();
     return (
         <View style={styles.infoRow}>
-            <Text variant="bodySmall" style={styles.infoLabel}>
+            <Text variant="bodySmall" style={[styles.infoLabel, { color: theme.colors.onSurfaceVariant }]}>
                 {label}
             </Text>
-            <Text variant="bodyMedium" style={styles.infoValue}>
+            <Text variant="bodyMedium" style={[styles.infoValue, { color: theme.colors.onSurface }]}>
                 {value}
             </Text>
         </View>
@@ -142,12 +143,10 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         textAlign: 'center',
-        color: '#6b7280',
         marginBottom: 20,
     },
     loadingText: {
         marginTop: 12,
-        color: '#6b7280',
     },
     errorText: {
         color: '#dc2626',
@@ -175,12 +174,9 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#e5e7eb',
     },
-    infoLabel: {
-        color: '#6b7280',
-    },
+    infoLabel: {},
     infoValue: {
         fontWeight: '600',
-        color: '#111827',
     },
     acceptButton: {
         marginBottom: 12,

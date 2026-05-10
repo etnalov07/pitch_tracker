@@ -83,7 +83,7 @@ export default function JoinTeamScreen() {
 
                 {searchResults.length > 0 && (
                     <View style={styles.section}>
-                        <Text variant="titleMedium" style={styles.sectionTitle}>
+                        <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                             Search Results
                         </Text>
                         {searchResults.map((team) => (
@@ -92,7 +92,10 @@ export default function JoinTeamScreen() {
                                     <View style={styles.resultInfo}>
                                         <Text variant="titleSmall">{team.name}</Text>
                                         {team.city && (
-                                            <Text variant="bodySmall" style={styles.cityText}>
+                                            <Text
+                                                variant="bodySmall"
+                                                style={[styles.cityText, { color: theme.colors.onSurfaceVariant }]}
+                                            >
                                                 {team.city}
                                             </Text>
                                         )}
@@ -134,7 +137,9 @@ export default function JoinTeamScreen() {
                             </Card>
                         ))
                     ) : (
-                        <Text style={styles.emptyText}>No join requests yet. Search for a team above.</Text>
+                        <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
+                            No join requests yet. Search for a team above.
+                        </Text>
                     )}
                 </View>
             </ScrollView>
@@ -162,7 +167,6 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontWeight: '600',
         marginBottom: 12,
-        color: '#1f2937',
     },
     resultCard: {
         marginBottom: 8,
@@ -176,7 +180,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     cityText: {
-        color: '#6b7280',
         marginTop: 2,
     },
     requestCard: {
@@ -193,7 +196,6 @@ const styles = StyleSheet.create({
     statusChip: {},
     emptyText: {
         textAlign: 'center',
-        color: '#6b7280',
         padding: 20,
     },
     errorText: {

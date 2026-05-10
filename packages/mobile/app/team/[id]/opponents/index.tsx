@@ -61,7 +61,7 @@ export default function OpponentsScreen() {
         >
             <Card.Content>
                 <Text variant="titleMedium">{item.name}</Text>
-                <Text variant="bodySmall" style={styles.meta}>
+                <Text variant="bodySmall" style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
                     {[item.city, item.level].filter(Boolean).join(' · ')}
                     {item.games_played > 0 ? ` · ${item.games_played}G` : ''}
                 </Text>
@@ -78,7 +78,7 @@ export default function OpponentsScreen() {
                 {showForm && (
                     <Card style={styles.formCard}>
                         <Card.Content>
-                            <Text variant="titleSmall" style={styles.formLabel}>
+                            <Text variant="titleSmall" style={[styles.formLabel, { color: theme.colors.onSurface }]}>
                                 Team Name *
                             </Text>
                             <TextInput
@@ -88,7 +88,7 @@ export default function OpponentsScreen() {
                                 placeholder="Johnson High School"
                                 autoFocus
                             />
-                            <Text variant="titleSmall" style={styles.formLabel}>
+                            <Text variant="titleSmall" style={[styles.formLabel, { color: theme.colors.onSurface }]}>
                                 City
                             </Text>
                             <TextInput
@@ -97,7 +97,7 @@ export default function OpponentsScreen() {
                                 onChangeText={setCity}
                                 placeholder="Houston"
                             />
-                            <Text variant="titleSmall" style={styles.formLabel}>
+                            <Text variant="titleSmall" style={[styles.formLabel, { color: theme.colors.onSurface }]}>
                                 Level
                             </Text>
                             <TextInput
@@ -128,7 +128,7 @@ export default function OpponentsScreen() {
                     contentContainerStyle={styles.listContent}
                     ListEmptyComponent={
                         <View style={styles.empty}>
-                            <Text style={styles.emptyText}>
+                            <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
                                 No opponent teams yet. Tap + to add one and start building your scouting database.
                             </Text>
                         </View>
@@ -157,9 +157,9 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     listContent: { padding: 16, paddingBottom: 80 },
     card: { marginBottom: 12 },
-    meta: { color: '#6b7280', marginTop: 2 },
+    meta: { marginTop: 2 },
     formCard: { margin: 16, marginBottom: 0 },
-    formLabel: { marginTop: 8, marginBottom: 4, color: '#374151' },
+    formLabel: { marginTop: 8, marginBottom: 4 },
     input: {
         borderWidth: 1,
         borderColor: '#d1d5db',
@@ -170,6 +170,6 @@ const styles = StyleSheet.create({
     },
     formActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },
     empty: { alignItems: 'center', padding: 32 },
-    emptyText: { color: '#9ca3af', textAlign: 'center', fontSize: 14 },
+    emptyText: { textAlign: 'center', fontSize: 14 },
     fab: { position: 'absolute', right: 16, bottom: 16 },
 });

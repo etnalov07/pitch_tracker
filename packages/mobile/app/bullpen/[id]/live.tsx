@@ -217,11 +217,15 @@ export default function BullpenLiveScreen() {
                                     #{pitches.length + 1}
                                     {maxPitches !== null ? `/${maxPitches}` : ''}
                                 </Text>
-                                <Text variant="bodyMedium" style={styles.planPitchType}>
+                                <Text variant="bodyMedium" style={[styles.planPitchType, { color: theme.colors.onSurface }]}>
                                     {PITCH_TYPE_LABELS[currentPlanPitch.pitch_type] || currentPlanPitch.pitch_type}
                                 </Text>
                                 {currentPlanPitch.instruction && (
-                                    <Text variant="bodySmall" style={styles.planInstruction} numberOfLines={1}>
+                                    <Text
+                                        variant="bodySmall"
+                                        style={[styles.planInstruction, { color: theme.colors.onSurfaceVariant }]}
+                                        numberOfLines={1}
+                                    >
                                         {currentPlanPitch.instruction}
                                     </Text>
                                 )}
@@ -264,11 +268,11 @@ export default function BullpenLiveScreen() {
 
                 {/* Velocity input */}
                 <View style={styles.velocityRow}>
-                    <Text variant="labelMedium" style={styles.velocityLabel}>
+                    <Text variant="labelMedium" style={[styles.velocityLabel, { color: theme.colors.onSurface }]}>
                         Velocity (mph)
                     </Text>
                     <RNTextInput
-                        style={[styles.velocityInput, { backgroundColor: theme.colors.surface }]}
+                        style={[styles.velocityInput, { backgroundColor: theme.colors.surface, color: theme.colors.onSurface }]}
                         value={velocity}
                         onChangeText={setVelocity}
                         keyboardType="numeric"
@@ -299,7 +303,7 @@ export default function BullpenLiveScreen() {
                 <Text variant="titleLarge" style={styles.modalTitle}>
                     End Session
                 </Text>
-                <Text variant="bodyMedium" style={styles.modalSubtitle}>
+                <Text variant="bodyMedium" style={[styles.modalSubtitle, { color: theme.colors.onSurfaceVariant }]}>
                     {totalPitches} pitches logged
                 </Text>
                 <TextInput
@@ -341,9 +345,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
-    velocityLabel: {
-        color: '#374151',
-    },
+    velocityLabel: {},
     velocityInput: {
         flex: 1,
         height: 36,
@@ -354,7 +356,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         textAlign: 'center',
-        color: '#111827',
     },
     planCard: { marginBottom: 0 },
     planCardContent: { paddingVertical: 8, paddingHorizontal: 12 },
@@ -368,8 +369,8 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         overflow: 'hidden',
     },
-    planPitchType: { fontWeight: '600', color: '#111827' },
-    planInstruction: { color: '#6b7280', fontStyle: 'italic', flex: 1, minWidth: 80 },
+    planPitchType: { fontWeight: '600' },
+    planInstruction: { fontStyle: 'italic', flex: 1, minWidth: 80 },
     planProgress: { color: '#334e68', fontWeight: '600' },
     planCompleteText: { color: '#15803d', fontWeight: '600', textAlign: 'center' },
     limitReachedText: { color: '#C62828', fontWeight: '600', textAlign: 'center' },
@@ -381,7 +382,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     modalTitle: { marginBottom: 4 },
-    modalSubtitle: { color: '#6b7280', marginBottom: 16 },
+    modalSubtitle: { marginBottom: 16 },
     notesInput: { marginBottom: 16 },
     modalActions: {
         flexDirection: 'row',

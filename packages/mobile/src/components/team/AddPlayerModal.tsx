@@ -165,7 +165,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
                     style={styles.input}
                 />
 
-                <Text variant="labelMedium" style={styles.fieldLabel}>
+                <Text variant="labelMedium" style={[styles.fieldLabel, { color: theme.colors.onSurface }]}>
                     Primary Position
                 </Text>
                 <View style={styles.positionGrid}>
@@ -186,8 +186,8 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
                     ))}
                 </View>
 
-                <Text variant="labelMedium" style={styles.fieldLabel}>
-                    Secondary Position <Text style={styles.optional}>(optional)</Text>
+                <Text variant="labelMedium" style={[styles.fieldLabel, { color: theme.colors.onSurface }]}>
+                    Secondary Position <Text style={[styles.optional, { color: theme.colors.onSurfaceVariant }]}>(optional)</Text>
                 </Text>
                 <View style={styles.positionGrid}>
                     {POSITIONS.filter((pos) => pos !== primaryPosition).map((pos) => (
@@ -206,7 +206,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
                     ))}
                 </View>
 
-                <Text variant="labelMedium" style={styles.fieldLabel}>
+                <Text variant="labelMedium" style={[styles.fieldLabel, { color: theme.colors.onSurface }]}>
                     Bats
                 </Text>
                 <SegmentedButtons
@@ -225,7 +225,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
 
                 {isPitcher && (
                     <>
-                        <Text variant="labelMedium" style={styles.fieldLabel}>
+                        <Text variant="labelMedium" style={[styles.fieldLabel, { color: theme.colors.onSurface }]}>
                             Throws
                         </Text>
                         <SegmentedButtons
@@ -241,7 +241,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
                             style={styles.segmented}
                         />
 
-                        <Text variant="labelMedium" style={styles.fieldLabel}>
+                        <Text variant="labelMedium" style={[styles.fieldLabel, { color: theme.colors.onSurface }]}>
                             Pitch Types
                         </Text>
                         <View style={styles.pitchTypesGrid}>
@@ -303,10 +303,8 @@ const styles = StyleSheet.create({
     },
     fieldLabel: {
         marginBottom: 8,
-        color: '#374151',
     },
     optional: {
-        color: '#9ca3af',
         fontWeight: '400',
     },
     positionGrid: {

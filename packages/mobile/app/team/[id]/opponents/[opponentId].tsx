@@ -51,7 +51,7 @@ function PitcherCard({ pitcher, teamId }: { pitcher: OpponentPitcherProfile; tea
                 <View style={styles.rosterRow}>
                     <View>
                         <Text variant="titleSmall">{pitcher.pitcher_name}</Text>
-                        <Text variant="bodySmall" style={styles.meta}>
+                        <Text variant="bodySmall" style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
                             {pitcher.throws}HP · {pitcher.games_pitched}G
                         </Text>
                     </View>
@@ -60,9 +60,9 @@ function PitcherCard({ pitcher, teamId }: { pitcher: OpponentPitcherProfile; tea
                 {expanded && (
                     <View style={styles.tendenciesBox}>
                         {tendencies === 'loading' ? (
-                            <Text style={styles.meta}>Loading…</Text>
+                            <Text style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>Loading…</Text>
                         ) : !tendencies || tendencies.total_pitches === 0 ? (
-                            <Text style={styles.meta}>No pitch data yet.</Text>
+                            <Text style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>No pitch data yet.</Text>
                         ) : (
                             <>
                                 <View style={styles.statRow}>
@@ -76,10 +76,14 @@ function PitcherCard({ pitcher, teamId }: { pitcher: OpponentPitcherProfile; tea
                                     <StatCell label="OS%" value={fmt(tendencies.offspeed_pct)} />
                                 </View>
                                 {tendencies.early_count_fastball_pct != null && (
-                                    <Text style={styles.note}>Early count: {fmt(tendencies.early_count_fastball_pct)} FB</Text>
+                                    <Text style={[styles.note, { color: theme.colors.onSurfaceVariant }]}>
+                                        Early count: {fmt(tendencies.early_count_fastball_pct)} FB
+                                    </Text>
                                 )}
                                 {tendencies.two_strike_offspeed_pct != null && (
-                                    <Text style={styles.note}>Two-strike: {fmt(tendencies.two_strike_offspeed_pct)} offspeed</Text>
+                                    <Text style={[styles.note, { color: theme.colors.onSurfaceVariant }]}>
+                                        Two-strike: {fmt(tendencies.two_strike_offspeed_pct)} offspeed
+                                    </Text>
                                 )}
                                 <Button
                                     mode="text"
@@ -100,10 +104,11 @@ function PitcherCard({ pitcher, teamId }: { pitcher: OpponentPitcherProfile; tea
 }
 
 function StatCell({ label, value }: { label: string; value: string }) {
+    const theme = useTheme();
     return (
         <View style={styles.statCell}>
-            <Text style={styles.statValue}>{value}</Text>
-            <Text style={styles.statLabel}>{label}</Text>
+            <Text style={[styles.statValue, { color: theme.colors.onSurface }]}>{value}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>{label}</Text>
         </View>
     );
 }
@@ -145,29 +150,33 @@ export default function OpponentDetailScreen() {
                     )}
                 </View>
 
-                <Text variant="titleMedium" style={styles.sectionTitle}>
+                <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                     Pitchers
                 </Text>
                 {selectedOpponent.pitchers.length === 0 ? (
-                    <Text style={styles.empty}>No pitchers yet — they appear after charting games vs. this team.</Text>
+                    <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>
+                        No pitchers yet — they appear after charting games vs. this team.
+                    </Text>
                 ) : (
                     selectedOpponent.pitchers.map((p) => <PitcherCard key={p.id} pitcher={p} teamId={teamId!} />)
                 )}
 
                 <Divider style={{ marginVertical: 16 }} />
 
-                <Text variant="titleMedium" style={styles.sectionTitle}>
+                <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                     Batters
                 </Text>
                 {selectedOpponent.batters.length === 0 ? (
-                    <Text style={styles.empty}>No batters yet — they appear after entering opponent lineups.</Text>
+                    <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>
+                        No batters yet — they appear after entering opponent lineups.
+                    </Text>
                 ) : (
                     <Card style={styles.rosterCard}>
                         {selectedOpponent.batters.map((b, idx) => (
                             <React.Fragment key={b.id}>
                                 <Card.Content style={styles.rosterRow}>
                                     <Text variant="bodyMedium">{b.player_name}</Text>
-                                    <Text style={styles.meta}>{b.bats}HH</Text>
+                                    <Text style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>{b.bats}HH</Text>
                                 </Card.Content>
                                 {idx < selectedOpponent.batters.length - 1 && <Divider />}
                             </React.Fragment>
@@ -191,15 +200,15 @@ const styles = StyleSheet.create({
         paddingVertical: 3,
         borderRadius: 12,
     },
-    sectionTitle: { color: '#374151', marginBottom: 8 },
+    sectionTitle: { marginBottom: 8 },
     rosterCard: { marginBottom: 10 },
     rosterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    meta: { color: '#6b7280', fontSize: 12 },
+    meta: { fontSize: 12 },
     tendenciesBox: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
     statRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
     statCell: { alignItems: 'center', minWidth: 64 },
-    statValue: { fontSize: 18, fontWeight: '700', color: '#111827' },
-    statLabel: { fontSize: 11, color: '#6b7280', marginTop: 1 },
-    note: { fontSize: 12, color: '#4b5563', marginBottom: 4 },
-    empty: { color: '#9ca3af', fontSize: 13, fontStyle: 'italic', marginBottom: 8 },
+    statValue: { fontSize: 18, fontWeight: '700' },
+    statLabel: { fontSize: 11, marginTop: 1 },
+    note: { fontSize: 12, marginBottom: 4 },
+    empty: { fontSize: 13, fontStyle: 'italic', marginBottom: 8 },
 });

@@ -40,7 +40,7 @@ export default function LoginScreen() {
                     <Text variant="headlineMedium" style={styles.title}>
                         PitchChart
                     </Text>
-                    <Text variant="bodyMedium" style={styles.subtitle}>
+                    <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
                         Sign in to your account
                     </Text>
 
@@ -128,7 +128,6 @@ const styles = StyleSheet.create({
     subtitle: {
         textAlign: 'center',
         marginBottom: 24,
-        color: '#6b7280',
     },
     input: {
         marginBottom: 16,

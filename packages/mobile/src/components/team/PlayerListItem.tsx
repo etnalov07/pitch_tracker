@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, IconButton } from 'react-native-paper';
+import { Text, IconButton, useTheme } from 'react-native-paper';
 import { PlayerWithPitchTypes } from '@pitch-tracker/shared';
 
 interface PlayerListItemProps {
@@ -24,31 +24,36 @@ function positionLabel(player: PlayerWithPitchTypes): string {
     return hand;
 }
 
-const PlayerListItem: React.FC<PlayerListItemProps> = ({ player, onEdit, onDelete }) => (
-    <View style={styles.rosterRow}>
-        <Text style={styles.rosterJersey}>{player.jersey_number != null ? `#${player.jersey_number}` : '-'}</Text>
-        <View style={styles.rosterNameCol}>
-            <Text style={styles.rosterName} numberOfLines={1}>
-                {player.first_name} {player.last_name}
+const PlayerListItem: React.FC<PlayerListItemProps> = ({ player, onEdit, onDelete }) => {
+    const theme = useTheme();
+    return (
+        <View style={styles.rosterRow}>
+            <Text style={[styles.rosterJersey, { color: theme.colors.onSurface }]}>
+                {player.jersey_number != null ? `#${player.jersey_number}` : '-'}
             </Text>
+            <View style={styles.rosterNameCol}>
+                <Text style={[styles.rosterName, { color: theme.colors.onSurface }]} numberOfLines={1}>
+                    {player.first_name} {player.last_name}
+                </Text>
+            </View>
+            <Text style={[styles.rosterType, { color: theme.colors.onSurfaceVariant }]}>{positionLabel(player)}</Text>
+            <IconButton
+                icon="pencil-outline"
+                size={18}
+                iconColor={theme.colors.onSurfaceVariant}
+                onPress={() => onEdit(player)}
+                style={styles.actionButton}
+            />
+            <IconButton
+                icon="trash-can-outline"
+                size={18}
+                iconColor={theme.colors.onSurfaceVariant}
+                onPress={() => onDelete(player)}
+                style={styles.actionButton}
+            />
         </View>
-        <Text style={styles.rosterType}>{positionLabel(player)}</Text>
-        <IconButton
-            icon="pencil-outline"
-            size={18}
-            iconColor="#6b7280"
-            onPress={() => onEdit(player)}
-            style={styles.actionButton}
-        />
-        <IconButton
-            icon="trash-can-outline"
-            size={18}
-            iconColor="#9ca3af"
-            onPress={() => onDelete(player)}
-            style={styles.actionButton}
-        />
-    </View>
-);
+    );
+};
 
 const styles = StyleSheet.create({
     rosterRow: {
@@ -61,7 +66,6 @@ const styles = StyleSheet.create({
         width: 40,
         fontSize: 14,
         fontWeight: '700',
-        color: '#374151',
     },
     rosterNameCol: {
         flex: 1,
@@ -69,13 +73,11 @@ const styles = StyleSheet.create({
     rosterName: {
         fontSize: 15,
         fontWeight: '500',
-        color: '#111827',
     },
     rosterType: {
         minWidth: 52,
         fontSize: 13,
         fontWeight: '600',
-        color: '#6b7280',
         textAlign: 'center',
     },
     actionButton: {

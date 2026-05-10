@@ -1,6 +1,7 @@
 import { PitchLocationData, TendencyBucket } from '@pitch-tracker/shared';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import Svg, { Circle, Line, Rect } from 'react-native-svg';
 
 const PITCH_TYPE_COLORS: Record<string, string> = {
@@ -65,6 +66,7 @@ interface Props {
 }
 
 export default function BatterTendenciesView({ pitches, bats }: Props) {
+    const theme = useTheme();
     const bucketed: Record<TendencyBucket, PitchLocationData[]> = {
         first_pitch: [],
         hitter_count: [],
@@ -83,7 +85,7 @@ export default function BatterTendenciesView({ pitches, bats }: Props) {
 
     return (
         <View style={styles.wrapper}>
-            <Text style={styles.label}>{handLabel} · Tendencies by Count</Text>
+            <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>{handLabel} · Tendencies by Count</Text>
             <View style={styles.bucketGrid}>
                 {BUCKET_ORDER.map((bucket) => (
                     <BucketCell key={bucket} label={BUCKET_LABELS[bucket]} pitches={bucketed[bucket]} />
@@ -94,18 +96,22 @@ export default function BatterTendenciesView({ pitches, bats }: Props) {
                     {typesPresent.map((type) => (
                         <View key={type} style={styles.legendItem}>
                             <View style={[styles.dot, { backgroundColor: PITCH_TYPE_COLORS[type] ?? '#9ca3af' }]} />
-                            <Text style={styles.legendLabel}>{PITCH_TYPE_ABBREV[type] ?? type}</Text>
+                            <Text style={[styles.legendLabel, { color: theme.colors.onSurfaceVariant }]}>
+                                {PITCH_TYPE_ABBREV[type] ?? type}
+                            </Text>
                         </View>
                     ))}
                 </View>
             )}
-            <Text style={styles.hintText}>○ target · ● actual (color = pitch type)</Text>
+            <Text style={[styles.hintText, { color: theme.colors.onSurfaceVariant }]}>
+                ○ target · ● actual (color = pitch type)
+            </Text>
             {unbucketed > 0 && (
-                <Text style={styles.hintText}>
+                <Text style={[styles.hintText, { color: theme.colors.onSurfaceVariant }]}>
                     {unbucketed} pitch{unbucketed === 1 ? '' : 'es'} without count data omitted
                 </Text>
             )}
-            {pitches.length === 0 && <Text style={styles.empty}>No pitch data.</Text>}
+            {pitches.length === 0 && <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>No pitch data.</Text>}
         </View>
     );
 }
@@ -116,6 +122,7 @@ interface BucketCellProps {
 }
 
 function BucketCell({ label, pitches }: BucketCellProps) {
+    const theme = useTheme();
     const located = pitches.filter((p) => p.location_x != null && p.location_y != null);
     const targeted = pitches.filter((p) => p.target_location_x != null && p.target_location_y != null);
 
@@ -126,8 +133,8 @@ function BucketCell({ label, pitches }: BucketCellProps) {
 
     return (
         <View style={styles.cell}>
-            <Text style={styles.cellLabel}>{label}</Text>
-            <Text style={styles.cellTotal}>
+            <Text style={[styles.cellLabel, { color: theme.colors.onSurface }]}>{label}</Text>
+            <Text style={[styles.cellTotal, { color: theme.colors.onSurfaceVariant }]}>
                 {total} pitch{total === 1 ? '' : 'es'}
             </Text>
             <Svg width={SIZE} height={SIZE}>
@@ -181,12 +188,12 @@ function BucketCell({ label, pitches }: BucketCellProps) {
             </Svg>
             <View style={styles.cellTypeList}>
                 {topTypes.length === 0 ? (
-                    <Text style={styles.cellTypeEmpty}>—</Text>
+                    <Text style={[styles.cellTypeEmpty, { color: theme.colors.onSurfaceVariant }]}>—</Text>
                 ) : (
                     topTypes.map(([type, count]) => (
                         <View key={type} style={styles.cellTypeRow}>
                             <View style={[styles.dot, { backgroundColor: PITCH_TYPE_COLORS[type] ?? '#9ca3af' }]} />
-                            <Text style={styles.cellTypeText}>
+                            <Text style={[styles.cellTypeText, { color: theme.colors.onSurface }]}>
                                 {PITCH_TYPE_ABBREV[type] ?? type} {Math.round((count / total) * 100)}%
                             </Text>
                         </View>
@@ -199,19 +206,19 @@ function BucketCell({ label, pitches }: BucketCellProps) {
 
 const styles = StyleSheet.create({
     wrapper: { alignItems: 'center', gap: 6, alignSelf: 'stretch' },
-    label: { fontSize: 11, color: '#6b7280', fontStyle: 'italic' },
+    label: { fontSize: 11, fontStyle: 'italic' },
     bucketGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
     cell: { alignItems: 'center', gap: 2, minWidth: 110 },
-    cellLabel: { fontSize: 10, fontWeight: '600', color: '#374151' },
-    cellTotal: { fontSize: 9, color: '#9ca3af' },
+    cellLabel: { fontSize: 10, fontWeight: '600' },
+    cellTotal: { fontSize: 9 },
     cellTypeList: { alignItems: 'center', gap: 1, marginTop: 2, minHeight: 36 },
     cellTypeRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-    cellTypeText: { fontSize: 9, color: '#374151' },
-    cellTypeEmpty: { fontSize: 9, color: '#9ca3af', fontStyle: 'italic' },
+    cellTypeText: { fontSize: 9 },
+    cellTypeEmpty: { fontSize: 9, fontStyle: 'italic' },
     legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', maxWidth: 360 },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
     dot: { width: 8, height: 8, borderRadius: 4 },
-    legendLabel: { fontSize: 10, color: '#6b7280' },
-    hintText: { fontSize: 9, color: '#9ca3af', fontStyle: 'italic' },
-    empty: { fontSize: 12, color: '#9ca3af', fontStyle: 'italic' },
+    legendLabel: { fontSize: 10 },
+    hintText: { fontSize: 9, fontStyle: 'italic' },
+    empty: { fontSize: 12, fontStyle: 'italic' },
 });

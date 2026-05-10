@@ -37,7 +37,7 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
 
             {gamePitchers.length > 0 && (
                 <>
-                    <Text variant="titleSmall" style={styles.sectionLabel}>
+                    <Text variant="titleSmall" style={[styles.sectionLabel, { color: theme.colors.onSurfaceVariant }]}>
                         In-Game Pitchers
                     </Text>
                     {gamePitchers
@@ -49,10 +49,12 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
                                 onPress={() => onSelectExistingPitcher(gp)}
                             >
                                 <View style={styles.playerOptionInfo}>
-                                    <Text style={styles.playerOptionName}>
+                                    <Text style={[styles.playerOptionName, { color: theme.colors.onSurface }]}>
                                         {gp.player.first_name} {gp.player.last_name}
                                     </Text>
-                                    <Text style={styles.playerOptionDetail}>#{gp.player.jersey_number} · Active</Text>
+                                    <Text style={[styles.playerOptionDetail, { color: theme.colors.onSurfaceVariant }]}>
+                                        #{gp.player.jersey_number} · Active
+                                    </Text>
                                 </View>
                             </Pressable>
                         ))}
@@ -60,12 +62,12 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
                 </>
             )}
 
-            <Text variant="titleSmall" style={styles.sectionLabel}>
+            <Text variant="titleSmall" style={[styles.sectionLabel, { color: theme.colors.onSurfaceVariant }]}>
                 Available Pitchers
             </Text>
             <ScrollView style={styles.playerList} keyboardShouldPersistTaps="handled">
                 {teamPlayers.length === 0 ? (
-                    <Text variant="bodyMedium" style={styles.emptyText}>
+                    <Text variant="bodyMedium" style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
                         No players found. Add players to your team first.
                     </Text>
                 ) : (
@@ -79,10 +81,15 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
                                 disabled={alreadyInGame}
                             >
                                 <View style={styles.playerOptionInfo}>
-                                    <Text style={[styles.playerOptionName, alreadyInGame && styles.disabledText]}>
+                                    <Text
+                                        style={[
+                                            styles.playerOptionName,
+                                            { color: alreadyInGame ? theme.colors.onSurfaceVariant : theme.colors.onSurface },
+                                        ]}
+                                    >
                                         {player.first_name} {player.last_name}
                                     </Text>
-                                    <Text style={styles.playerOptionDetail}>
+                                    <Text style={[styles.playerOptionDetail, { color: theme.colors.onSurfaceVariant }]}>
                                         #{player.jersey_number} · {player.primary_position}
                                         {player.throws ? ` · ${player.throws === 'R' ? 'RHP' : 'LHP'}` : ''}
                                         {alreadyInGame ? ' · Already Active' : ''}
@@ -105,7 +112,7 @@ const styles = StyleSheet.create({
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
     modalTitle: { marginBottom: 16 },
     modalClose: { marginTop: 8 },
-    sectionLabel: { color: '#6b7280', marginBottom: 8, marginTop: 4 },
+    sectionLabel: { marginBottom: 8, marginTop: 4 },
     sectionDivider: { marginVertical: 12 },
     playerList: { flexGrow: 1, flexShrink: 1 },
     playerOption: {
@@ -118,10 +125,10 @@ const styles = StyleSheet.create({
     playerOptionSelected: { backgroundColor: '#eff6ff' },
     playerOptionDisabled: { opacity: 0.5 },
     playerOptionInfo: { gap: 2 },
-    playerOptionName: { fontSize: 16, fontWeight: '600', color: '#111827' },
-    playerOptionDetail: { fontSize: 13, color: '#6b7280' },
-    disabledText: { color: '#9ca3af' },
-    emptyText: { textAlign: 'center', color: '#6b7280', padding: 24 },
+    playerOptionName: { fontSize: 16, fontWeight: '600' },
+    playerOptionDetail: { fontSize: 13 },
+    disabledText: {},
+    emptyText: { textAlign: 'center', padding: 24 },
 });
 
 export default PitcherSelectorModal;

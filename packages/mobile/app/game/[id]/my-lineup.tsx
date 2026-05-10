@@ -138,7 +138,7 @@ export default function MyTeamLineupScreen() {
                 <View style={{ flex: 1 }}>
                     <Text variant="titleLarge">My Team Lineup</Text>
                     {game?.opponent_name && (
-                        <Text variant="bodySmall" style={{ color: '#6b7280' }}>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                             vs {game.opponent_name}
                         </Text>
                     )}
@@ -150,10 +150,10 @@ export default function MyTeamLineupScreen() {
                 <ActivityIndicator style={{ marginVertical: 40 }} />
             ) : (
                 <ScrollView contentContainerStyle={styles.content}>
-                    <Text variant="titleMedium" style={styles.sectionTitle}>
+                    <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                         Starting Pitcher
                     </Text>
-                    <Text variant="bodySmall" style={styles.helpText}>
+                    <Text variant="bodySmall" style={[styles.helpText, { color: theme.colors.onSurfaceVariant }]}>
                         Select your starting pitcher for this game.
                     </Text>
                     <Menu
@@ -201,10 +201,10 @@ export default function MyTeamLineupScreen() {
                         ))}
                     </Menu>
 
-                    <Text variant="titleMedium" style={[styles.sectionTitle, { marginTop: 24 }]}>
+                    <Text variant="titleMedium" style={[styles.sectionTitle, { marginTop: 24, color: theme.colors.onSurface }]}>
                         Batting Order
                     </Text>
-                    <Text variant="bodySmall" style={styles.helpText}>
+                    <Text variant="bodySmall" style={[styles.helpText, { color: theme.colors.onSurfaceVariant }]}>
                         Select your team's batting order from your roster.
                     </Text>
 
@@ -321,8 +321,8 @@ const styles = StyleSheet.create({
         borderBottomColor: '#e5e7eb',
     },
     content: { padding: 16, paddingBottom: 40 },
-    sectionTitle: { fontWeight: '600', color: '#111827', marginBottom: 4 },
-    helpText: { color: '#6b7280', marginBottom: 12 },
+    sectionTitle: { fontWeight: '600', marginBottom: 4 },
+    helpText: { marginBottom: 12 },
     pitcherButton: { width: '100%', marginBottom: 4 },
     row: { flexDirection: 'row', marginBottom: 12, alignItems: 'flex-start' },
     orderBadge: {

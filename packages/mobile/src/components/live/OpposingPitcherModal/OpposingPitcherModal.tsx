@@ -67,7 +67,7 @@ const OpposingPitcherModal: React.FC<Props> = ({
 
                 <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
                     {opposingPitchers.length === 0 && !showForm && (
-                        <Text variant="bodySmall" style={styles.emptyText}>
+                        <Text variant="bodySmall" style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
                             No opposing pitchers added yet.
                         </Text>
                     )}
@@ -181,7 +181,6 @@ const styles = StyleSheet.create({
         maxHeight: 200,
     },
     emptyText: {
-        color: '#9ca3af',
         fontStyle: 'italic',
         textAlign: 'center',
         marginVertical: 12,

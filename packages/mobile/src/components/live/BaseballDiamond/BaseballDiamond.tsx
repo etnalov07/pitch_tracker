@@ -165,7 +165,7 @@ const BaseballDiamond: React.FC<BaseballDiamondProps> = ({
             {/* Outs indicator */}
             {showLabels && (
                 <View style={styles.outsContainer}>
-                    <Text variant="labelSmall" style={styles.outsLabel}>
+                    <Text variant="labelSmall" style={[styles.outsLabel, { color: theme.colors.onSurfaceVariant }]}>
                         OUTS
                     </Text>
                     <View style={styles.outsRow}>
@@ -190,7 +190,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     outsLabel: {
-        color: '#6b7280',
         fontSize: 10,
         marginBottom: 4,
     },

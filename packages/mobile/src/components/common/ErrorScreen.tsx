@@ -38,7 +38,7 @@ const ErrorScreen: React.FC<ErrorScreenProps> = ({
             <Text variant="titleLarge" style={styles.title}>
                 {title}
             </Text>
-            <Text variant="bodyMedium" style={styles.message}>
+            <Text variant="bodyMedium" style={[styles.message, { color: theme.colors.onSurfaceVariant }]}>
                 {message}
             </Text>
             <View style={styles.actions}>
@@ -73,7 +73,6 @@ const styles = StyleSheet.create({
     },
     message: {
         marginTop: 8,
-        color: '#6b7280',
         textAlign: 'center',
         maxWidth: 300,
     },

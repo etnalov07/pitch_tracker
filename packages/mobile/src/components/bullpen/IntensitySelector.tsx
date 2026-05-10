@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 import * as Haptics from '../../utils/haptics';
 import { BullpenIntensity } from '@pitch-tracker/shared';
 
@@ -17,6 +17,7 @@ const INTENSITIES: { value: BullpenIntensity; label: string; effort: string; col
 ];
 
 const IntensitySelector: React.FC<IntensitySelectorProps> = ({ selected, onSelect, disabled = false }) => {
+    const theme = useTheme();
     const handleSelect = (intensity: BullpenIntensity) => {
         if (disabled) return;
         Haptics.selectionAsync();
@@ -25,7 +26,7 @@ const IntensitySelector: React.FC<IntensitySelectorProps> = ({ selected, onSelec
 
     return (
         <View style={styles.container}>
-            <Text variant="labelMedium" style={styles.label}>
+            <Text variant="labelMedium" style={[styles.label, { color: theme.colors.onSurface }]}>
                 Intensity
             </Text>
             <View style={styles.row}>
@@ -58,7 +59,6 @@ const styles = StyleSheet.create({
     },
     label: {
         marginBottom: 8,
-        color: '#374151',
     },
     row: {
         flexDirection: 'row',

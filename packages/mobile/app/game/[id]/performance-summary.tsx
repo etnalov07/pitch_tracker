@@ -482,7 +482,10 @@ export default function GamePerformanceSummaryScreen() {
                     <View style={{ width: 48 }} />
                 </View>
                 <View style={styles.centered}>
-                    <Text variant="bodyLarge" style={{ color: '#6b7280', textAlign: 'center', marginBottom: 8 }}>
+                    <Text
+                        variant="bodyLarge"
+                        style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginBottom: 8 }}
+                    >
                         {error
                             ? 'Failed to load summary'
                             : `No ${isScoutingMode ? 'scouting report' : 'performance summary'} available.`}
@@ -541,8 +544,22 @@ export default function GamePerformanceSummaryScreen() {
                                 ]}
                                 onPress={() => setActivePitcherIdx(idx)}
                             >
-                                <Text style={[styles.pitcherTabText, active && styles.pitcherTabTextActive]}>{firstName}</Text>
-                                <Text style={[styles.pitcherTabPitches, active && styles.pitcherTabPitchesActive]}>
+                                <Text
+                                    style={[
+                                        styles.pitcherTabText,
+                                        { color: theme.colors.onSurface },
+                                        active && styles.pitcherTabTextActive,
+                                    ]}
+                                >
+                                    {firstName}
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.pitcherTabPitches,
+                                        { color: theme.colors.onSurfaceVariant },
+                                        active && styles.pitcherTabPitchesActive,
+                                    ]}
+                                >
                                     {s.total_pitches}P
                                 </Text>
                             </TouchableOpacity>
@@ -615,14 +632,12 @@ const styles = StyleSheet.create({
     pitcherTabText: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#374151',
     },
     pitcherTabTextActive: {
         color: '#ffffff',
     },
     pitcherTabPitches: {
         fontSize: 10,
-        color: '#9ca3af',
         marginTop: 1,
     },
     pitcherTabPitchesActive: {

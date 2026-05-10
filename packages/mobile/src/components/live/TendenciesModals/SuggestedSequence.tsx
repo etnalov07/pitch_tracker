@@ -25,7 +25,7 @@ const PITCH_COLORS: Record<string, string> = {
 const SuggestedSequence: React.FC<SuggestedSequenceProps> = ({ sequence }) => {
     const theme = useTheme();
     if (sequence.length === 0) {
-        return <Text style={styles.empty}>Insufficient data</Text>;
+        return <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>Insufficient data</Text>;
     }
     return (
         <View style={styles.container}>
@@ -39,9 +39,16 @@ const SuggestedSequence: React.FC<SuggestedSequenceProps> = ({ sequence }) => {
                         <View style={styles.info}>
                             <View style={styles.topRow}>
                                 <Text style={[styles.pitchType, { color }]}>{pitch.pitch_type}</Text>
-                                <Text style={[styles.zone, { backgroundColor: theme.colors.background }]}>{pitch.zone_label}</Text>
+                                <Text
+                                    style={[
+                                        styles.zone,
+                                        { backgroundColor: theme.colors.background, color: theme.colors.onSurfaceVariant },
+                                    ]}
+                                >
+                                    {pitch.zone_label}
+                                </Text>
                             </View>
-                            <Text style={styles.rationale}>{pitch.rationale}</Text>
+                            <Text style={[styles.rationale, { color: theme.colors.onSurfaceVariant }]}>{pitch.rationale}</Text>
                         </View>
                     </View>
                 );
@@ -52,7 +59,7 @@ const SuggestedSequence: React.FC<SuggestedSequenceProps> = ({ sequence }) => {
 
 const styles = StyleSheet.create({
     container: { gap: 6 },
-    empty: { color: '#9ca3af', fontSize: 13, paddingVertical: 8 },
+    empty: { fontSize: 13, paddingVertical: 8 },
     row: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -74,12 +81,11 @@ const styles = StyleSheet.create({
     pitchType: { fontSize: 13, fontWeight: '600', textTransform: 'capitalize' },
     zone: {
         fontSize: 11,
-        color: '#6b7280',
         paddingHorizontal: 5,
         paddingVertical: 1,
         borderRadius: 4,
     },
-    rationale: { fontSize: 11, color: '#6b7280', marginTop: 2 },
+    rationale: { fontSize: 11, marginTop: 2 },
 });
 
 export default SuggestedSequence;

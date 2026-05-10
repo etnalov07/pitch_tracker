@@ -26,7 +26,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ icon = 'inbox-outline', title, 
                 {title}
             </Text>
             {message && (
-                <Text variant="bodyMedium" style={styles.message}>
+                <Text variant="bodyMedium" style={[styles.message, { color: theme.colors.onSurfaceVariant }]}>
                     {message}
                 </Text>
             )}
@@ -53,7 +53,6 @@ const styles = StyleSheet.create({
     },
     message: {
         marginTop: 8,
-        color: '#6b7280',
         textAlign: 'center',
         maxWidth: 280,
     },

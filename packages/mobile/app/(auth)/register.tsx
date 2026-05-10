@@ -64,7 +64,7 @@ export default function RegisterScreen() {
                     <Text variant="headlineMedium" style={styles.title}>
                         Create Account
                     </Text>
-                    <Text variant="bodyMedium" style={styles.subtitle}>
+                    <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
                         Join PitchChart
                     </Text>
 
@@ -93,7 +93,7 @@ export default function RegisterScreen() {
                         />
                     </View>
 
-                    <Text variant="bodyMedium" style={styles.roleLabel}>
+                    <Text variant="bodyMedium" style={[styles.roleLabel, { color: theme.colors.onSurface }]}>
                         I am a...
                     </Text>
                     <SegmentedButtons
@@ -205,7 +205,6 @@ const styles = StyleSheet.create({
     subtitle: {
         textAlign: 'center',
         marginBottom: 24,
-        color: '#6b7280',
     },
     nameRow: {
         flexDirection: 'row',
@@ -216,7 +215,6 @@ const styles = StyleSheet.create({
     },
     roleLabel: {
         marginBottom: 8,
-        color: '#374151',
         fontWeight: '500',
     },
     segmentedButtons: {

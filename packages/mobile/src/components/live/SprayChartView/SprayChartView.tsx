@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import { ContactType, FieldLocation, SprayChartData } from '@pitch-tracker/shared';
 
@@ -105,6 +105,7 @@ interface Props {
 }
 
 export default function SprayChartView({ sprayData, currentGameId }: Props) {
+    const theme = useTheme();
     const plays = sprayData.filter((p) => p.field_location);
     const typesPresent = Array.from(new Set(plays.map((p) => p.contact_type).filter((t): t is ContactType => Boolean(t))));
 
@@ -128,7 +129,7 @@ export default function SprayChartView({ sprayData, currentGameId }: Props) {
 
     return (
         <View style={styles.wrapper}>
-            <Text style={styles.title}>Spray Chart</Text>
+            <Text style={[styles.title, { color: theme.colors.onSurfaceVariant }]}>Spray Chart</Text>
             <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
                 {/* Off-field background */}
                 <Rect x={0} y={0} width={SIZE} height={SIZE} fill="#d1fae5" />
@@ -223,7 +224,7 @@ export default function SprayChartView({ sprayData, currentGameId }: Props) {
                 {(typesPresent.length === 0 ? (Object.keys(CONTACT_TYPE_COLOR) as ContactType[]) : typesPresent).map((t) => (
                     <View key={t} style={styles.legendItem}>
                         <View style={[styles.legendDot, { backgroundColor: CONTACT_TYPE_COLOR[t] }]} />
-                        <Text style={styles.legendLabel}>{CONTACT_TYPE_LABEL[t]}</Text>
+                        <Text style={[styles.legendLabel, { color: theme.colors.onSurfaceVariant }]}>{CONTACT_TYPE_LABEL[t]}</Text>
                     </View>
                 ))}
             </View>
@@ -232,7 +233,7 @@ export default function SprayChartView({ sprayData, currentGameId }: Props) {
                     {gamesPresent.map((g) => (
                         <View key={g.game_id} style={styles.legendItem}>
                             <View style={[styles.legendRing, { borderColor: gameColorById[g.game_id] }]} />
-                            <Text style={styles.legendLabel}>
+                            <Text style={[styles.legendLabel, { color: theme.colors.onSurfaceVariant }]}>
                                 {formatGameDate(g.game_date)}
                                 {currentGameId === g.game_id ? ' (this game)' : ''}
                             </Text>
@@ -240,7 +241,9 @@ export default function SprayChartView({ sprayData, currentGameId }: Props) {
                     ))}
                 </View>
             )}
-            {plays.length === 0 && <Text style={styles.empty}>No batted ball data yet.</Text>}
+            {plays.length === 0 && (
+                <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>No batted ball data yet.</Text>
+            )}
         </View>
     );
 }
@@ -252,7 +255,6 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 11,
-        color: '#6b7280',
         fontStyle: 'italic',
         marginBottom: 4,
     },
@@ -283,11 +285,9 @@ const styles = StyleSheet.create({
     },
     legendLabel: {
         fontSize: 9,
-        color: '#6b7280',
     },
     empty: {
         fontSize: 12,
-        color: '#9ca3af',
         marginTop: 8,
         fontStyle: 'italic',
     },

@@ -31,16 +31,18 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
             <Text variant="titleLarge" style={styles.modalTitle} testID="inning-change-modal">
                 Inning Over
             </Text>
-            <Text style={styles.inningChangeText}>
+            <Text style={[styles.inningChangeText, { color: theme.colors.onSurface }]}>
                 3 outs recorded.{'\n'}
                 {inningChangeInfo && `End of ${inningChangeInfo.half === 'top' ? 'Top' : 'Bottom'} ${inningChangeInfo.inning}`}
             </Text>
             {showRunsInput && (
                 <>
-                    <Text style={styles.runsLabel}>Opponent runs scored this inning:</Text>
+                    <Text style={[styles.runsLabel, { color: theme.colors.onSurfaceVariant }]}>
+                        Opponent runs scored this inning:
+                    </Text>
                     <TextInput
                         testID="inning-change-runs-input"
-                        style={styles.runsInput}
+                        style={[styles.runsInput, { color: theme.colors.onSurface }]}
                         value={teamRunsScored}
                         onChangeText={onRunsChange}
                         keyboardType="number-pad"
@@ -59,8 +61,8 @@ const styles = StyleSheet.create({
     modal: { margin: 20, padding: 20, borderRadius: 12, maxHeight: '80%' },
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
     modalTitle: { marginBottom: 16 },
-    inningChangeText: { fontSize: 16, color: '#374151', textAlign: 'center', marginBottom: 16, lineHeight: 24 },
-    runsLabel: { fontSize: 14, color: '#6b7280', marginBottom: 8 },
+    inningChangeText: { fontSize: 16, textAlign: 'center', marginBottom: 16, lineHeight: 24 },
+    runsLabel: { fontSize: 14, marginBottom: 8 },
     runsInput: {
         borderWidth: 1,
         borderColor: '#d1d5db',
@@ -70,7 +72,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontWeight: 'bold',
         marginBottom: 16,
-        color: '#111827',
     },
     inningChangeButton: { marginTop: 4 },
 });

@@ -74,14 +74,25 @@ export default function TeamDetailScreen() {
 
         return (
             <View style={styles.section}>
-                <Text variant="titleMedium" style={styles.sectionTitle}>
+                <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
                     {title} ({playerList.length})
                 </Text>
                 <Card style={styles.rosterCard}>
                     <View style={[styles.rosterHeader, { backgroundColor: theme.colors.surfaceVariant }]}>
-                        <Text style={[styles.rosterHeaderText, styles.rosterJersey]}>#</Text>
-                        <Text style={[styles.rosterHeaderText, styles.rosterNameCol]}>Name</Text>
-                        <Text style={[styles.rosterHeaderText, { minWidth: 52, textAlign: 'center' }]}>Pos</Text>
+                        <Text style={[styles.rosterHeaderText, styles.rosterJersey, { color: theme.colors.onSurfaceVariant }]}>
+                            #
+                        </Text>
+                        <Text style={[styles.rosterHeaderText, styles.rosterNameCol, { color: theme.colors.onSurfaceVariant }]}>
+                            Name
+                        </Text>
+                        <Text
+                            style={[
+                                styles.rosterHeaderText,
+                                { minWidth: 52, textAlign: 'center', color: theme.colors.onSurfaceVariant },
+                            ]}
+                        >
+                            Pos
+                        </Text>
                         <View style={{ width: 68 }} />
                     </View>
                     <Divider />
@@ -113,7 +124,7 @@ export default function TeamDetailScreen() {
                         <Card.Content>
                             <Text variant="headlineSmall">{selectedTeam?.name}</Text>
                             {(selectedTeam?.team_type || selectedTeam?.season || selectedTeam?.year) && (
-                                <Text variant="bodyMedium" style={styles.teamSeason}>
+                                <Text variant="bodyMedium" style={[styles.teamSeason, { color: theme.colors.onSurfaceVariant }]}>
                                     {[
                                         selectedTeam?.team_type === 'high_school'
                                             ? 'High School'
@@ -249,7 +260,6 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     teamSeason: {
-        color: '#6b7280',
         marginTop: 4,
     },
     teamStats: {
@@ -265,7 +275,6 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         marginBottom: 8,
-        color: '#374151',
     },
     rosterCard: {
         overflow: 'hidden',
@@ -279,7 +288,6 @@ const styles = StyleSheet.create({
     rosterHeaderText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#6b7280',
         textTransform: 'uppercase',
     },
     rosterJersey: {

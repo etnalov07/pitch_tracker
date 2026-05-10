@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import * as Haptics from '../../../utils/haptics';
 import { PitchCallResult } from '@pitch-tracker/shared';
 
@@ -16,6 +17,7 @@ const RESULTS: { id: PitchCallResult; label: string; color: string }[] = [
 ];
 
 const CallResultButtons: React.FC<CallResultButtonsProps> = ({ onResult, disabled = false }) => {
+    const theme = useTheme();
     const handlePress = (result: PitchCallResult) => {
         if (disabled) return;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -24,7 +26,7 @@ const CallResultButtons: React.FC<CallResultButtonsProps> = ({ onResult, disable
 
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>LOG RESULT</Text>
+            <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>LOG RESULT</Text>
             <View style={styles.row}>
                 {RESULTS.map(({ id, label, color }) => (
                     <Pressable
@@ -46,7 +48,6 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 11,
         fontWeight: '600',
-        color: '#9ca3af',
         letterSpacing: 1,
         marginBottom: 8,
     },

@@ -63,7 +63,7 @@ export default function BullpenSummaryScreen() {
                 <Card style={styles.card}>
                     <Card.Content>
                         <View style={styles.overviewRow}>
-                            <Text variant="bodyMedium" style={styles.dateText}>
+                            <Text variant="bodyMedium" style={[styles.dateText, { color: theme.colors.onSurfaceVariant }]}>
                                 {formatDate(summary.date)}
                             </Text>
                             <Chip
@@ -76,7 +76,7 @@ export default function BullpenSummaryScreen() {
                         </View>
 
                         {summary.plan_name && (
-                            <Text variant="bodySmall" style={styles.planText}>
+                            <Text variant="bodySmall" style={[styles.planText, { color: theme.colors.onSurfaceVariant }]}>
                                 Plan: {summary.plan_name}
                             </Text>
                         )}
@@ -86,26 +86,26 @@ export default function BullpenSummaryScreen() {
                         <View style={styles.statsGrid}>
                             <View style={styles.statItem}>
                                 <Text style={styles.statValue}>{summary.total_pitches}</Text>
-                                <Text style={styles.statLabel}>Total Pitches</Text>
+                                <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Total Pitches</Text>
                             </View>
                             <View style={styles.statItem}>
                                 <Text style={[styles.statValue, { color: '#22c55e' }]}>{summary.strikes}</Text>
-                                <Text style={styles.statLabel}>Strikes</Text>
+                                <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Strikes</Text>
                             </View>
                             <View style={styles.statItem}>
-                                <Text style={[styles.statValue, { color: '#6b7280' }]}>{summary.balls}</Text>
-                                <Text style={styles.statLabel}>Balls</Text>
+                                <Text style={[styles.statValue, { color: theme.colors.onSurfaceVariant }]}>{summary.balls}</Text>
+                                <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Balls</Text>
                             </View>
                             <View style={styles.statItem}>
                                 <Text style={[styles.statValue, { color: '#486581' }]}>{summary.strike_percentage}%</Text>
-                                <Text style={styles.statLabel}>Strike %</Text>
+                                <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Strike %</Text>
                             </View>
                             {summary.target_accuracy_percentage != null && (
                                 <View style={styles.statItem}>
                                     <Text style={[styles.statValue, { color: '#8b5cf6' }]}>
                                         {summary.target_accuracy_percentage}%
                                     </Text>
-                                    <Text style={styles.statLabel}>Accuracy</Text>
+                                    <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Accuracy</Text>
                                 </View>
                             )}
                         </View>
@@ -123,11 +123,13 @@ export default function BullpenSummaryScreen() {
 
                             {/* Table Header */}
                             <View style={styles.tableHeader}>
-                                <Text style={[styles.tableHeaderText, { flex: 2 }]}>Type</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 1 }]}>#</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 1 }]}>K</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 1 }]}>B</Text>
-                                <Text style={[styles.tableHeaderText, { flex: 1 }]}>Vel</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 2, color: theme.colors.onSurfaceVariant }]}>
+                                    Type
+                                </Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1, color: theme.colors.onSurfaceVariant }]}>#</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1, color: theme.colors.onSurfaceVariant }]}>K</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1, color: theme.colors.onSurfaceVariant }]}>B</Text>
+                                <Text style={[styles.tableHeaderText, { flex: 1, color: theme.colors.onSurfaceVariant }]}>Vel</Text>
                             </View>
 
                             {summary.pitch_type_breakdown
@@ -139,7 +141,9 @@ export default function BullpenSummaryScreen() {
                                         </Text>
                                         <Text style={[styles.tableCell, { flex: 1 }]}>{pt.count}</Text>
                                         <Text style={[styles.tableCell, { flex: 1, color: '#22c55e' }]}>{pt.strikes}</Text>
-                                        <Text style={[styles.tableCell, { flex: 1, color: '#6b7280' }]}>{pt.balls}</Text>
+                                        <Text style={[styles.tableCell, { flex: 1, color: theme.colors.onSurfaceVariant }]}>
+                                            {pt.balls}
+                                        </Text>
                                         <Text style={[styles.tableCell, { flex: 1 }]}>
                                             {pt.top_velocity != null ? `${pt.top_velocity}` : '-'}
                                         </Text>
@@ -212,11 +216,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 8,
     },
-    dateText: {
-        color: '#6b7280',
-    },
+    dateText: {},
     planText: {
-        color: '#6b7280',
         marginBottom: 8,
     },
     divider: {
@@ -238,7 +239,6 @@ const styles = StyleSheet.create({
     },
     statLabel: {
         fontSize: 10,
-        color: '#9ca3af',
         fontWeight: '500',
     },
     sectionTitle: {
@@ -253,7 +253,6 @@ const styles = StyleSheet.create({
     tableHeaderText: {
         fontSize: 11,
         fontWeight: '600',
-        color: '#6b7280',
     },
     tableRow: {
         flexDirection: 'row',

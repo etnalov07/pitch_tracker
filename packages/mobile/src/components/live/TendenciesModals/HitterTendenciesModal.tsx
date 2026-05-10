@@ -81,10 +81,10 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
             <View style={styles.header}>
                 <View>
                     <Text style={styles.title}>Hitter Tendencies</Text>
-                    <Text style={styles.subtitle}>{batterName}</Text>
+                    <Text style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>{batterName}</Text>
                 </View>
                 <TouchableOpacity onPress={onDismiss} style={[styles.closeBtn, { backgroundColor: theme.colors.background }]}>
-                    <Text style={styles.closeBtnText}>✕</Text>
+                    <Text style={[styles.closeBtnText, { color: theme.colors.onSurface }]}>✕</Text>
                 </TouchableOpacity>
             </View>
 
@@ -92,7 +92,9 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
                 {scouting && (
                     <View style={styles.scoutingBox}>
                         <Text style={styles.scoutingHeading}>📋 SCOUTING REPORT</Text>
-                        {scouting.batter.notes ? <Text style={styles.scoutingNotes}>{scouting.batter.notes}</Text> : null}
+                        {scouting.batter.notes ? (
+                            <Text style={[styles.scoutingNotes, { color: theme.colors.onSurface }]}>{scouting.batter.notes}</Text>
+                        ) : null}
                         {scouting.batter.pitch_vulnerabilities && scouting.batter.pitch_vulnerabilities.length > 0 && (
                             <View style={styles.scoutingChips}>
                                 {scouting.batter.pitch_vulnerabilities.map((v) => (
@@ -130,18 +132,20 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
                             ].map((s) => (
                                 <View key={s.label} style={[styles.statBox, { backgroundColor: theme.colors.surfaceVariant }]}>
                                     <Text style={styles.statValue}>{s.value}</Text>
-                                    <Text style={styles.statLabel}>{s.label}</Text>
+                                    <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>{s.label}</Text>
                                 </View>
                             ))}
                         </View>
 
-                        <Text style={styles.sectionTitle}>ZONE WEAKNESS MAP (swing rate)</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.colors.onSurfaceVariant }]}>
+                            ZONE WEAKNESS MAP (swing rate)
+                        </Text>
                         <View style={styles.zoneRow}>
                             <TendencyZoneGrid cells={zoneGridCells} highColor="#ef4444" lowColor="#dcfce7" />
                             <View style={styles.legend}>
                                 <View style={styles.legendItem}>
                                     <View style={[styles.legendSwatch, { backgroundColor: '#ef4444' }]} />
-                                    <Text style={styles.legendText}>High swing</Text>
+                                    <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>High swing</Text>
                                 </View>
                                 <View style={styles.legendItem}>
                                     <View
@@ -150,28 +154,38 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
                                             { backgroundColor: '#dcfce7', borderWidth: 1, borderColor: '#d1d5db' },
                                         ]}
                                     />
-                                    <Text style={styles.legendText}>Low swing</Text>
+                                    <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>Low swing</Text>
                                 </View>
                             </View>
                         </View>
 
                         {data.pitch_type_vulnerability.length > 0 && (
                             <>
-                                <Text style={[styles.sectionTitle, { marginTop: 16 }]}>PITCH VULNERABILITY (whiff %)</Text>
+                                <Text style={[styles.sectionTitle, { marginTop: 16, color: theme.colors.onSurfaceVariant }]}>
+                                    PITCH VULNERABILITY (whiff %)
+                                </Text>
                                 {data.pitch_type_vulnerability.slice(0, 5).map((p) => (
                                     <View key={p.pitch_type} style={styles.vulnRow}>
-                                        <Text style={styles.vulnType}>{p.pitch_type}</Text>
+                                        <Text style={[styles.vulnType, { color: theme.colors.onSurfaceVariant }]}>
+                                            {p.pitch_type}
+                                        </Text>
                                         <View style={[styles.vulnBarBg, { backgroundColor: theme.colors.background }]}>
                                             <View style={[styles.vulnBar, { width: `${p.whiff_pct}%` }]} />
                                         </View>
-                                        <Text style={styles.vulnPct}>{p.whiff_pct}%</Text>
-                                        <Text style={styles.vulnN}>n={p.times_seen}</Text>
+                                        <Text style={[styles.vulnPct, { color: theme.colors.onSurfaceVariant }]}>
+                                            {p.whiff_pct}%
+                                        </Text>
+                                        <Text style={[styles.vulnN, { color: theme.colors.onSurfaceVariant }]}>
+                                            n={p.times_seen}
+                                        </Text>
                                     </View>
                                 ))}
                             </>
                         )}
 
-                        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>SUGGESTED ATTACK SEQUENCE</Text>
+                        <Text style={[styles.sectionTitle, { marginTop: 16, color: theme.colors.onSurfaceVariant }]}>
+                            SUGGESTED ATTACK SEQUENCE
+                        </Text>
                         <SuggestedSequence sequence={data.suggested_sequence} />
                     </>
                 )}
@@ -196,7 +210,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#e5e7eb',
     },
     title: { fontSize: 17, fontWeight: '700', color: '#0B1F3A' },
-    subtitle: { fontSize: 13, color: '#6b7280', marginTop: 2 },
+    subtitle: { fontSize: 13, marginTop: 2 },
     closeBtn: {
         width: 28,
         height: 28,
@@ -204,7 +218,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    closeBtnText: { fontSize: 14, color: '#374151' },
+    closeBtnText: { fontSize: 14 },
     scroll: { flex: 1 },
     scrollContent: { padding: 16 },
     noData: { padding: 20, backgroundColor: '#fefce8', borderRadius: 8 },
@@ -217,11 +231,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     statValue: { fontSize: 15, fontWeight: '700', color: '#1d4ed8' },
-    statLabel: { fontSize: 10, color: '#9ca3af', marginTop: 2, textAlign: 'center' },
+    statLabel: { fontSize: 10, marginTop: 2, textAlign: 'center' },
     sectionTitle: {
         fontSize: 10,
         fontWeight: '700',
-        color: '#9ca3af',
         letterSpacing: 0.8,
         textTransform: 'uppercase',
         marginBottom: 8,
@@ -230,13 +243,13 @@ const styles = StyleSheet.create({
     legend: { gap: 6, paddingTop: 4 },
     legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     legendSwatch: { width: 12, height: 12, borderRadius: 2 },
-    legendText: { fontSize: 10, color: '#6b7280' },
+    legendText: { fontSize: 10 },
     vulnRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
-    vulnType: { width: 64, fontSize: 11, color: '#4b5563', textTransform: 'capitalize' },
+    vulnType: { width: 64, fontSize: 11, textTransform: 'capitalize' },
     vulnBarBg: { flex: 1, height: 12, borderRadius: 6, overflow: 'hidden' },
     vulnBar: { height: '100%', backgroundColor: '#f87171', borderRadius: 6 },
-    vulnPct: { width: 28, fontSize: 11, color: '#6b7280', textAlign: 'right' },
-    vulnN: { width: 36, fontSize: 10, color: '#9ca3af' },
+    vulnPct: { width: 28, fontSize: 11, textAlign: 'right' },
+    vulnN: { width: 36, fontSize: 10 },
     scoutingBox: {
         padding: 12,
         backgroundColor: '#eff6ff',
@@ -252,7 +265,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.8,
         marginBottom: 6,
     },
-    scoutingNotes: { fontSize: 13, color: '#1f2937', marginBottom: 6 },
+    scoutingNotes: { fontSize: 13, marginBottom: 6 },
     scoutingChips: { flexDirection: 'row', flexWrap: 'wrap' },
     scoutingChip: { marginRight: 4, marginBottom: 4 },
 });

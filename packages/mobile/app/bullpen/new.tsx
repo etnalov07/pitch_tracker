@@ -133,7 +133,7 @@ export default function NewBullpenScreen() {
                 {/* Team Selection (only when multiple teams and no teamId param) */}
                 {!teamIdParam && teams.length > 1 && (
                     <>
-                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                        <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                             Select Team
                         </Text>
                         <View style={styles.pitcherGrid}>
@@ -156,13 +156,13 @@ export default function NewBullpenScreen() {
                 )}
 
                 {/* Pitcher Selection */}
-                <Text variant="labelLarge" style={styles.sectionLabel}>
+                <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                     Select Pitcher
                 </Text>
                 {loadingTeams || loadingPlayers ? (
                     <ActivityIndicator style={{ marginVertical: 20 }} />
                 ) : pitchers.length === 0 ? (
-                    <Text style={styles.emptyText}>No pitchers found on this team</Text>
+                    <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>No pitchers found on this team</Text>
                 ) : (
                     <View style={styles.pitcherGrid}>
                         {pitchers.map((player) => {
@@ -192,7 +192,7 @@ export default function NewBullpenScreen() {
                 {/* Plan Selection */}
                 {selectedPitcher && (
                     <>
-                        <Text variant="labelLarge" style={styles.sectionLabel}>
+                        <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                             Bullpen Plan (optional)
                         </Text>
                         {plansLoading ? (
@@ -278,7 +278,6 @@ const styles = StyleSheet.create({
         gap: 16,
     },
     sectionLabel: {
-        color: '#374151',
         marginBottom: 4,
     },
     pitcherGrid: {
@@ -290,7 +289,6 @@ const styles = StyleSheet.create({
         marginBottom: 0,
     },
     emptyText: {
-        color: '#9ca3af',
         textAlign: 'center',
         paddingVertical: 20,
     },

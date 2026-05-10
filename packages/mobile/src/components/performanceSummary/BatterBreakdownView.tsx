@@ -189,8 +189,8 @@ function BatterRow({ batter, pitcherId }: BatterRowProps) {
                     <Text style={styles.batterOrderNum}>{batter.batting_order}</Text>
                 </View>
                 <View style={styles.batterInfo}>
-                    <Text style={styles.batterName}>{batter.batter_name}</Text>
-                    <Text style={styles.batterMeta}>
+                    <Text style={[styles.batterName, { color: theme.colors.onSurface }]}>{batter.batter_name}</Text>
+                    <Text style={[styles.batterMeta, { color: theme.colors.onSurfaceVariant }]}>
                         {batter.position ?? '—'} · {batter.bats}HH · {batter.at_bats.length} AB · {totalPitches}P
                     </Text>
                 </View>
@@ -203,15 +203,23 @@ function BatterRow({ batter, pitcherId }: BatterRowProps) {
                     ]}
                     activeOpacity={0.7}
                 >
-                    <Text style={[styles.chartsToggleText, showCharts && styles.chartsToggleTextActive]}>📊 Charts</Text>
+                    <Text
+                        style={[
+                            styles.chartsToggleText,
+                            { color: theme.colors.onSurfaceVariant },
+                            showCharts && styles.chartsToggleTextActive,
+                        ]}
+                    >
+                        📊 Charts
+                    </Text>
                 </TouchableOpacity>
-                <Text style={styles.expandChevron}>{expanded ? '▲' : '▽'}</Text>
+                <Text style={[styles.expandChevron, { color: theme.colors.onSurfaceVariant }]}>{expanded ? '▲' : '▽'}</Text>
             </TouchableOpacity>
 
             {showCharts && (
                 <View style={styles.chartContainer}>
                     {chartsLoading ? (
-                        <Text style={styles.chartLoading}>Loading charts…</Text>
+                        <Text style={[styles.chartLoading, { color: theme.colors.onSurfaceVariant }]}>Loading charts…</Text>
                     ) : (
                         <BatterTendenciesView pitches={pitchLocations ?? []} bats={batter.bats} />
                     )}
@@ -223,11 +231,15 @@ function BatterRow({ batter, pitcherId }: BatterRowProps) {
                     {batter.at_bats.map((ab, abIdx) => (
                         <View key={ab.at_bat_id} style={styles.atBatBlock}>
                             <View style={styles.atBatHeader}>
-                                <Text style={styles.atBatInning}>{formatInning(ab.inning_number, ab.inning_half)}</Text>
-                                <Text style={styles.atBatResult}>
+                                <Text style={[styles.atBatInning, { color: theme.colors.onSurface }]}>
+                                    {formatInning(ab.inning_number, ab.inning_half)}
+                                </Text>
+                                <Text style={[styles.atBatResult, { color: theme.colors.onSurface }]}>
                                     {formatAtBatResult(ab.result, ab.fielded_by_position, ab.pitches)}
                                 </Text>
-                                <Text style={styles.atBatPitchCount}>{ab.pitches.length} pitches</Text>
+                                <Text style={[styles.atBatPitchCount, { color: theme.colors.onSurfaceVariant }]}>
+                                    {ab.pitches.length} pitches
+                                </Text>
                             </View>
                             <View style={styles.pitchRow}>
                                 {ab.pitches.map((pitch) => (
@@ -251,6 +263,7 @@ interface Props {
 }
 
 export default function BatterBreakdownView({ breakdown, title = 'Batter Breakdown', pitcherId, gameId }: Props) {
+    const theme = useTheme();
     if (breakdown.length === 0) {
         return (
             <Card style={styles.card}>
@@ -259,7 +272,7 @@ export default function BatterBreakdownView({ breakdown, title = 'Batter Breakdo
                         {title}
                     </Text>
                     <Divider style={styles.divider} />
-                    <Text style={styles.empty}>No batter data available.</Text>
+                    <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>No batter data available.</Text>
                 </Card.Content>
             </Card>
         );
@@ -285,17 +298,19 @@ export default function BatterBreakdownView({ breakdown, title = 'Batter Breakdo
                         return (
                             <View key={result} style={styles.legendItem}>
                                 <View style={[styles.legendDot, { backgroundColor: c.bg, borderColor: c.text }]} />
-                                <Text style={styles.legendLabel}>{label}</Text>
+                                <Text style={[styles.legendLabel, { color: theme.colors.onSurfaceVariant }]}>{label}</Text>
                             </View>
                         );
                     })}
                     <View style={styles.legendItem}>
                         <View style={[styles.legendDot, styles.endingLegendDot]} />
-                        <Text style={styles.legendLabel}>AB End</Text>
+                        <Text style={[styles.legendLabel, { color: theme.colors.onSurfaceVariant }]}>AB End</Text>
                     </View>
                 </View>
                 <Divider style={styles.divider} />
-                <Text style={styles.pitchDotHint}>Count · Type · Result · Vel · Target</Text>
+                <Text style={[styles.pitchDotHint, { color: theme.colors.onSurfaceVariant }]}>
+                    Count · Type · Result · Vel · Target
+                </Text>
                 {[...breakdown]
                     .sort((a, b) => a.batting_order - b.batting_order)
                     .map((batter, idx) => (
@@ -341,17 +356,14 @@ const styles = StyleSheet.create({
     },
     legendLabel: {
         fontSize: 10,
-        color: '#6b7280',
     },
     pitchDotHint: {
         fontSize: 10,
-        color: '#9ca3af',
         marginBottom: 12,
         fontStyle: 'italic',
     },
     empty: {
         fontSize: 13,
-        color: '#9ca3af',
     },
     batterRow: {
         paddingVertical: 4,
@@ -381,15 +393,12 @@ const styles = StyleSheet.create({
     batterName: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#111827',
     },
     batterMeta: {
         fontSize: 11,
-        color: '#6b7280',
     },
     expandChevron: {
         fontSize: 11,
-        color: '#9ca3af',
     },
     chartsToggle: {
         paddingVertical: 2,
@@ -405,7 +414,6 @@ const styles = StyleSheet.create({
     },
     chartsToggleText: {
         fontSize: 10,
-        color: '#6b7280',
     },
     chartsToggleTextActive: {
         color: '#1d4ed8',
@@ -433,18 +441,15 @@ const styles = StyleSheet.create({
     atBatInning: {
         fontSize: 11,
         fontWeight: '600',
-        color: '#374151',
         minWidth: 52,
     },
     atBatResult: {
         fontSize: 11,
         fontWeight: '700',
-        color: '#374151',
         flex: 1,
     },
     atBatPitchCount: {
         fontSize: 10,
-        color: '#9ca3af',
     },
     pitchRow: {
         flexDirection: 'row',
@@ -515,7 +520,6 @@ const styles = StyleSheet.create({
     },
     chartLoading: {
         fontSize: 12,
-        color: '#9ca3af',
         fontStyle: 'italic',
         marginTop: 16,
     },

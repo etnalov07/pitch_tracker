@@ -27,7 +27,7 @@ const SituationalCallsRow: React.FC<SituationalCallsRowProps> = ({ shakeCount = 
     const theme = useTheme();
     return (
         <View style={styles.row}>
-            <Text style={styles.label}>SITUATIONAL</Text>
+            <Text style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>SITUATIONAL</Text>
             {SITUATIONAL_CALLS.map((call) => (
                 <TouchableOpacity
                     key={call.type}
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
         marginTop: 4,
         flexWrap: 'wrap',
     },
-    label: { fontSize: 9, color: '#9ca3af', fontWeight: '700', minWidth: 56 },
+    label: { fontSize: 9, fontWeight: '700', minWidth: 56 },
     btn: {
         paddingVertical: 4,
         paddingHorizontal: 8,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, Divider, Chip, Button } from 'react-native-paper';
+import { Text, Card, Divider, Chip, Button, useTheme } from 'react-native-paper';
 import { PerformanceSummary, MetricRating, BatterBreakdown } from '@pitch-tracker/shared';
 import BatterBreakdownView from './BatterBreakdownView';
 
@@ -19,6 +19,7 @@ interface Props {
 }
 
 export default function PerformanceSummaryView({ summary, batterBreakdown, onRegenerate, regenerating, isScoutingMode }: Props) {
+    const theme = useTheme();
     const narrativeTitle = isScoutingMode ? 'Scout Summary' : 'Coach Summary';
     const highlightsTitle = isScoutingMode ? 'Key Observations' : 'Highlights';
     const concernsTitle = isScoutingMode ? 'Matchup Concerns' : 'Areas to Improve';
@@ -33,11 +34,11 @@ export default function PerformanceSummaryView({ summary, batterBreakdown, onReg
                     </Text>
                     <Divider style={styles.divider} />
                     {summary.narrative ? (
-                        <Text variant="bodyMedium" style={styles.narrative}>
+                        <Text variant="bodyMedium" style={[styles.narrative, { color: theme.colors.onSurface }]}>
                             {summary.narrative}
                         </Text>
                     ) : (
-                        <Text variant="bodySmall" style={styles.narrativePlaceholder}>
+                        <Text variant="bodySmall" style={[styles.narrativePlaceholder, { color: theme.colors.onSurfaceVariant }]}>
                             AI summary generating...
                         </Text>
                     )}
@@ -54,30 +55,30 @@ export default function PerformanceSummaryView({ summary, batterBreakdown, onReg
                     <View style={styles.statsGrid}>
                         <View style={styles.statItem}>
                             <Text style={styles.statValue}>{summary.total_pitches}</Text>
-                            <Text style={styles.statLabel}>Pitches</Text>
+                            <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Pitches</Text>
                         </View>
                         <View style={styles.statItem}>
                             <Text style={[styles.statValue, { color: '#22c55e' }]}>{summary.strikes}</Text>
-                            <Text style={styles.statLabel}>Strikes</Text>
+                            <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Strikes</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statValue, { color: '#6b7280' }]}>{summary.balls}</Text>
-                            <Text style={styles.statLabel}>Balls</Text>
+                            <Text style={[styles.statValue, { color: theme.colors.onSurfaceVariant }]}>{summary.balls}</Text>
+                            <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Balls</Text>
                         </View>
                         <View style={styles.statItem}>
                             <Text style={[styles.statValue, { color: '#486581' }]}>{summary.strike_percentage}%</Text>
-                            <Text style={styles.statLabel}>Strike %</Text>
+                            <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Strike %</Text>
                         </View>
                         {summary.target_accuracy_percentage != null && (
                             <View style={styles.statItem}>
                                 <Text style={[styles.statValue, { color: '#8b5cf6' }]}>{summary.target_accuracy_percentage}%</Text>
-                                <Text style={styles.statLabel}>Accuracy</Text>
+                                <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Accuracy</Text>
                             </View>
                         )}
                         {summary.batters_faced != null && (
                             <View style={styles.statItem}>
                                 <Text style={styles.statValue}>{summary.batters_faced}</Text>
-                                <Text style={styles.statLabel}>Batters</Text>
+                                <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Batters</Text>
                             </View>
                         )}
                     </View>
@@ -89,7 +90,7 @@ export default function PerformanceSummaryView({ summary, batterBreakdown, onReg
                                 const colors = RATING_COLORS[m.rating];
                                 return (
                                     <View key={m.metric_name} style={styles.metricRow}>
-                                        <Text style={styles.metricName}>{m.metric_name}</Text>
+                                        <Text style={[styles.metricName, { color: theme.colors.onSurface }]}>{m.metric_name}</Text>
                                         <View style={styles.metricRight}>
                                             <Chip
                                                 compact
@@ -122,11 +123,11 @@ export default function PerformanceSummaryView({ summary, batterBreakdown, onReg
                         </Text>
                         <Divider style={styles.divider} />
                         <View style={styles.tableHeader}>
-                            <Text style={[styles.tableHeaderText, { flex: 2 }]}>Type</Text>
-                            <Text style={[styles.tableHeaderText, { flex: 1 }]}>#</Text>
-                            <Text style={[styles.tableHeaderText, { flex: 1 }]}>K%</Text>
-                            <Text style={[styles.tableHeaderText, { flex: 1 }]}>Vel</Text>
-                            <Text style={[styles.tableHeaderText, { flex: 1 }]}>Rating</Text>
+                            <Text style={[styles.tableHeaderText, { flex: 2, color: theme.colors.onSurfaceVariant }]}>Type</Text>
+                            <Text style={[styles.tableHeaderText, { flex: 1, color: theme.colors.onSurfaceVariant }]}>#</Text>
+                            <Text style={[styles.tableHeaderText, { flex: 1, color: theme.colors.onSurfaceVariant }]}>K%</Text>
+                            <Text style={[styles.tableHeaderText, { flex: 1, color: theme.colors.onSurfaceVariant }]}>Vel</Text>
+                            <Text style={[styles.tableHeaderText, { flex: 1, color: theme.colors.onSurfaceVariant }]}>Rating</Text>
                         </View>
                         {summary.pitch_type_breakdown
                             .sort((a, b) => b.count - a.count)
@@ -167,7 +168,7 @@ export default function PerformanceSummaryView({ summary, batterBreakdown, onReg
                         </Text>
                         <Divider style={styles.divider} />
                         {summary.highlights.map((h, i) => (
-                            <Text key={i} style={styles.bulletItem}>
+                            <Text key={i} style={[styles.bulletItem, { color: theme.colors.onSurface }]}>
                                 {'\u2022'} {h}
                             </Text>
                         ))}
@@ -184,7 +185,7 @@ export default function PerformanceSummaryView({ summary, batterBreakdown, onReg
                         </Text>
                         <Divider style={styles.divider} />
                         {summary.concerns.map((c, i) => (
-                            <Text key={i} style={styles.bulletItem}>
+                            <Text key={i} style={[styles.bulletItem, { color: theme.colors.onSurface }]}>
                                 {'\u2022'} {c}
                             </Text>
                         ))}
@@ -228,11 +229,9 @@ const styles = StyleSheet.create({
     narrative: {
         fontStyle: 'italic',
         lineHeight: 22,
-        color: '#374151',
     },
     narrativePlaceholder: {
         fontStyle: 'italic',
-        color: '#9ca3af',
     },
     statsGrid: {
         flexDirection: 'row',
@@ -251,7 +250,6 @@ const styles = StyleSheet.create({
     },
     statLabel: {
         fontSize: 10,
-        color: '#9ca3af',
         fontWeight: '500',
     },
     metricsSection: {
@@ -265,7 +263,6 @@ const styles = StyleSheet.create({
     },
     metricName: {
         fontSize: 13,
-        color: '#374151',
     },
     metricRight: {
         flexDirection: 'row',
@@ -285,7 +282,6 @@ const styles = StyleSheet.create({
     tableHeaderText: {
         fontSize: 11,
         fontWeight: '600',
-        color: '#6b7280',
     },
     tableRow: {
         flexDirection: 'row',
@@ -300,7 +296,6 @@ const styles = StyleSheet.create({
     bulletItem: {
         fontSize: 13,
         lineHeight: 22,
-        color: '#374151',
         paddingLeft: 4,
     },
     regenerateButton: {

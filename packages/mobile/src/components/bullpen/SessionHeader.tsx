@@ -50,19 +50,19 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
             <View style={styles.statsRow}>
                 <View style={styles.stat}>
                     <Text style={styles.statValue}>{totalPitches}</Text>
-                    <Text style={styles.statLabel}>Pitches</Text>
+                    <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Pitches</Text>
                 </View>
                 <View style={styles.stat}>
                     <Text style={[styles.statValue, { color: '#22c55e' }]}>{strikes}</Text>
-                    <Text style={styles.statLabel}>Strikes</Text>
+                    <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Strikes</Text>
                 </View>
                 <View style={styles.stat}>
-                    <Text style={[styles.statValue, { color: '#6b7280' }]}>{balls}</Text>
-                    <Text style={styles.statLabel}>Balls</Text>
+                    <Text style={[styles.statValue, { color: theme.colors.onSurfaceVariant }]}>{balls}</Text>
+                    <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Balls</Text>
                 </View>
                 <View style={styles.stat}>
                     <Text style={[styles.statValue, { color: '#486581' }]}>{strikePercentage}%</Text>
-                    <Text style={styles.statLabel}>Strike %</Text>
+                    <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Strike %</Text>
                 </View>
             </View>
         </View>
@@ -108,7 +108,6 @@ const styles = StyleSheet.create({
     },
     statLabel: {
         fontSize: 10,
-        color: '#9ca3af',
         fontWeight: '500',
     },
 });

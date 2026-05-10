@@ -248,7 +248,9 @@ export default function LineupScreen() {
                                             checkedColor: '#ffffff',
                                             style: pitcherThrows === 'R' ? styles.batsSelected : styles.batsUnselected,
                                             labelStyle:
-                                                pitcherThrows === 'R' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                                pitcherThrows === 'R'
+                                                    ? styles.batsLabelSelected
+                                                    : [styles.batsLabelUnselected, { color: theme.colors.onSurface }],
                                         },
                                         {
                                             value: 'L',
@@ -256,7 +258,9 @@ export default function LineupScreen() {
                                             checkedColor: '#ffffff',
                                             style: pitcherThrows === 'L' ? styles.batsSelected : styles.batsUnselected,
                                             labelStyle:
-                                                pitcherThrows === 'L' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                                pitcherThrows === 'L'
+                                                    ? styles.batsLabelSelected
+                                                    : [styles.batsLabelUnselected, { color: theme.colors.onSurface }],
                                         },
                                     ]}
                                     style={styles.batsToggle}
@@ -360,7 +364,9 @@ export default function LineupScreen() {
                                                 checkedColor: '#ffffff',
                                                 style: entry.bats === 'R' ? styles.batsSelected : styles.batsUnselected,
                                                 labelStyle:
-                                                    entry.bats === 'R' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                                    entry.bats === 'R'
+                                                        ? styles.batsLabelSelected
+                                                        : [styles.batsLabelUnselected, { color: theme.colors.onSurface }],
                                             },
                                             {
                                                 value: 'L',
@@ -368,7 +374,9 @@ export default function LineupScreen() {
                                                 checkedColor: '#ffffff',
                                                 style: entry.bats === 'L' ? styles.batsSelected : styles.batsUnselected,
                                                 labelStyle:
-                                                    entry.bats === 'L' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                                    entry.bats === 'L'
+                                                        ? styles.batsLabelSelected
+                                                        : [styles.batsLabelUnselected, { color: theme.colors.onSurface }],
                                             },
                                             {
                                                 value: 'S',
@@ -376,7 +384,9 @@ export default function LineupScreen() {
                                                 checkedColor: '#ffffff',
                                                 style: entry.bats === 'S' ? styles.batsSelected : styles.batsUnselected,
                                                 labelStyle:
-                                                    entry.bats === 'S' ? styles.batsLabelSelected : styles.batsLabelUnselected,
+                                                    entry.bats === 'S'
+                                                        ? styles.batsLabelSelected
+                                                        : [styles.batsLabelUnselected, { color: theme.colors.onSurface }],
                                             },
                                         ]}
                                         style={styles.batsToggle}
@@ -518,7 +528,6 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     batsLabelUnselected: {
-        color: '#374151',
         fontWeight: '500',
     },
     actions: {

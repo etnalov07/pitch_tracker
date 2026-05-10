@@ -49,56 +49,60 @@ function PitcherStatsTab({
     }, [pitcherId, gameId, refreshTrigger]);
 
     if (loading) return <ActivityIndicator style={styles.centered} />;
-    if (!stats) return <Text style={styles.emptyText}>No pitches recorded yet.</Text>;
+    if (!stats) return <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>No pitches recorded yet.</Text>;
 
     const strikeRate = stats.total_pitches > 0 ? Math.round((stats.strikes / stats.total_pitches) * 100) : 0;
     const sortedTypes = Object.entries(stats.pitch_type_breakdown).sort(([, a], [, b]) => b.total - a.total);
 
     return (
         <View style={[styles.statsCard, { backgroundColor: theme.colors.surface }]}>
-            <Text style={styles.statsCardTitle}>{pitcherName}'s Stats</Text>
+            <Text style={[styles.statsCardTitle, { color: theme.colors.onSurface }]}>{pitcherName}'s Stats</Text>
             <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                     <Text style={[styles.statValue, { color: '#1d4ed8' }]}>{stats.total_pitches}</Text>
-                    <Text style={styles.statLabel}>Pitches</Text>
+                    <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Pitches</Text>
                 </View>
                 <View style={styles.statItem}>
                     <Text style={[styles.statValue, { color: '#16a34a' }]}>{stats.strikes}</Text>
-                    <Text style={styles.statLabel}>Strikes</Text>
+                    <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Strikes</Text>
                 </View>
                 <View style={styles.statItem}>
                     <Text style={[styles.statValue, { color: '#dc2626' }]}>{stats.balls}</Text>
-                    <Text style={styles.statLabel}>Balls</Text>
+                    <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Balls</Text>
                 </View>
                 <View style={styles.statItem}>
-                    <Text style={[styles.statValue, { color: '#6b7280' }]}>{strikeRate}%</Text>
-                    <Text style={styles.statLabel}>K%</Text>
+                    <Text style={[styles.statValue, { color: theme.colors.onSurfaceVariant }]}>{strikeRate}%</Text>
+                    <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>K%</Text>
                 </View>
             </View>
             {sortedTypes.length > 0 && (
                 <View style={styles.pitchMixTable}>
                     <View style={styles.pitchMixHeader}>
-                        <Text style={[styles.pitchMixCell, { flex: 2 }]}>Type</Text>
-                        <Text style={styles.pitchMixCell}>#</Text>
-                        <Text style={styles.pitchMixCell}>Ball</Text>
-                        <Text style={styles.pitchMixCell}>K</Text>
-                        <Text style={styles.pitchMixCell}>K%</Text>
-                        <Text style={styles.pitchMixCell}>Top</Text>
-                        <Text style={styles.pitchMixCell}>Avg</Text>
+                        <Text style={[styles.pitchMixCell, { flex: 2, color: theme.colors.onSurface }]}>Type</Text>
+                        <Text style={[styles.pitchMixCell, { color: theme.colors.onSurface }]}>#</Text>
+                        <Text style={[styles.pitchMixCell, { color: theme.colors.onSurface }]}>Ball</Text>
+                        <Text style={[styles.pitchMixCell, { color: theme.colors.onSurface }]}>K</Text>
+                        <Text style={[styles.pitchMixCell, { color: theme.colors.onSurface }]}>K%</Text>
+                        <Text style={[styles.pitchMixCell, { color: theme.colors.onSurface }]}>Top</Text>
+                        <Text style={[styles.pitchMixCell, { color: theme.colors.onSurface }]}>Avg</Text>
                     </View>
                     {sortedTypes.map(([type, d]) => {
                         const pct = d.total > 0 ? Math.round((d.strikes / d.total) * 100) : 0;
                         return (
                             <View key={type} style={styles.pitchMixRow}>
-                                <Text style={[styles.pitchMixCell, { flex: 2, fontWeight: '600' }]}>
+                                <Text style={[styles.pitchMixCell, { flex: 2, fontWeight: '600', color: theme.colors.onSurface }]}>
                                     {type.charAt(0).toUpperCase() + type.slice(1)}
                                 </Text>
-                                <Text style={styles.pitchMixCell}>{d.total}</Text>
-                                <Text style={styles.pitchMixCell}>{d.balls}</Text>
+                                <Text style={[styles.pitchMixCell, { color: theme.colors.onSurface }]}>{d.total}</Text>
+                                <Text style={[styles.pitchMixCell, { color: theme.colors.onSurface }]}>{d.balls}</Text>
                                 <Text style={[styles.pitchMixCell, { color: '#16a34a' }]}>{d.strikes}</Text>
-                                <Text style={styles.pitchMixCell}>{pct}%</Text>
-                                <Text style={[styles.pitchMixCell, { color: '#6b7280' }]}>{d.top_velocity ?? '–'}</Text>
-                                <Text style={[styles.pitchMixCell, { color: '#6b7280' }]}>{d.avg_velocity ?? '–'}</Text>
+                                <Text style={[styles.pitchMixCell, { color: theme.colors.onSurface }]}>{pct}%</Text>
+                                <Text style={[styles.pitchMixCell, { color: theme.colors.onSurfaceVariant }]}>
+                                    {d.top_velocity ?? '–'}
+                                </Text>
+                                <Text style={[styles.pitchMixCell, { color: theme.colors.onSurfaceVariant }]}>
+                                    {d.avg_velocity ?? '–'}
+                                </Text>
                             </View>
                         );
                     })}
@@ -145,7 +149,7 @@ function CountBreakdownTab({
 
     if (loading) return <ActivityIndicator style={styles.centered} />;
     if (!data || buckets.every((k) => data[k].total === 0)) {
-        return <Text style={styles.emptyText}>No pitches recorded yet.</Text>;
+        return <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>No pitches recorded yet.</Text>;
     }
 
     return (
@@ -156,8 +160,8 @@ function CountBreakdownTab({
                 return (
                     <View key={key} style={[styles.countBucket, { backgroundColor: theme.colors.surfaceVariant }]}>
                         <View style={styles.countBucketHeader}>
-                            <Text style={styles.countBucketLabel}>{BUCKET_LABELS[key]}</Text>
-                            <Text style={styles.countBucketTotal}>{bucket.total} pitches</Text>
+                            <Text style={[styles.countBucketLabel, { color: theme.colors.onSurface }]}>{BUCKET_LABELS[key]}</Text>
+                            <Text style={[styles.countBucketTotal, { color: theme.colors.onSurface }]}>{bucket.total} pitches</Text>
                             <Text
                                 style={[
                                     styles.countStrikeRate,
@@ -179,8 +183,10 @@ function CountBreakdownTab({
                             .slice(0, 4)
                             .map((t) => (
                                 <View key={t.pitch_type} style={styles.countTypeRow}>
-                                    <Text style={styles.countTypeLabel}>{t.pitch_type}</Text>
-                                    <Text style={styles.countTypeStats}>
+                                    <Text style={[styles.countTypeLabel, { color: theme.colors.onSurfaceVariant }]}>
+                                        {t.pitch_type}
+                                    </Text>
+                                    <Text style={[styles.countTypeStats, { color: theme.colors.onSurfaceVariant }]}>
                                         {t.count} ({t.strike_percentage}% K)
                                     </Text>
                                 </View>
@@ -249,7 +255,12 @@ function SummaryTab({ gameId }: { gameId: string }) {
     };
 
     if (loading) return <ActivityIndicator style={styles.centered} />;
-    if (!summary) return <Text style={styles.emptyText}>No performance data available for this game.</Text>;
+    if (!summary)
+        return (
+            <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
+                No performance data available for this game.
+            </Text>
+        );
 
     return (
         <View>
@@ -266,7 +277,15 @@ function SummaryTab({ gameId }: { gameId: string }) {
                             style={[styles.pill, { backgroundColor: theme.colors.surface }, selectedIdx === i && styles.pillActive]}
                             onPress={() => setSelectedIdx(i)}
                         >
-                            <Text style={[styles.pillText, selectedIdx === i && styles.pillTextActive]}>{s.pitcher_name}</Text>
+                            <Text
+                                style={[
+                                    styles.pillText,
+                                    { color: theme.colors.onSurface },
+                                    selectedIdx === i && styles.pillTextActive,
+                                ]}
+                            >
+                                {s.pitcher_name}
+                            </Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -389,13 +408,13 @@ export default function ViewerScreen() {
 
             {/* Score strip */}
             <View style={[styles.scoreStrip, { backgroundColor: theme.colors.surface }]}>
-                <Text variant="bodySmall" style={styles.teamLabel}>
+                <Text variant="bodySmall" style={[styles.teamLabel, { color: theme.colors.onSurfaceVariant }]}>
                     {game.home_team_name ?? 'Home'}
                 </Text>
                 <Text variant="headlineSmall" style={styles.score}>
                     {game.home_score} – {game.away_score}
                 </Text>
-                <Text variant="bodySmall" style={styles.teamLabel}>
+                <Text variant="bodySmall" style={[styles.teamLabel, { color: theme.colors.onSurfaceVariant }]}>
                     {game.opponent_name ?? 'Away'}
                 </Text>
                 <Text variant="bodyMedium" style={styles.inning}>
@@ -412,7 +431,15 @@ export default function ViewerScreen() {
                             style={[styles.tabBtn, activeTab === tab.value && styles.tabBtnActive]}
                             onPress={() => setActiveTab(tab.value)}
                         >
-                            <Text style={[styles.tabBtnText, activeTab === tab.value && styles.tabBtnTextActive]}>{tab.label}</Text>
+                            <Text
+                                style={[
+                                    styles.tabBtnText,
+                                    { color: theme.colors.onSurfaceVariant },
+                                    activeTab === tab.value && styles.tabBtnTextActive,
+                                ]}
+                            >
+                                {tab.label}
+                            </Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -441,7 +468,13 @@ export default function ViewerScreen() {
                                             ]}
                                             onPress={() => setSelectedPitcherIdx(i)}
                                         >
-                                            <Text style={[styles.pillText, selectedPitcherIdx === i && styles.pillTextActive]}>
+                                            <Text
+                                                style={[
+                                                    styles.pillText,
+                                                    { color: theme.colors.onSurface },
+                                                    selectedPitcherIdx === i && styles.pillTextActive,
+                                                ]}
+                                            >
                                                 {name}
                                             </Text>
                                         </TouchableOpacity>
@@ -457,7 +490,9 @@ export default function ViewerScreen() {
                                 refreshTrigger={refreshTrigger}
                             />
                         ) : (
-                            <Text style={styles.emptyText}>No pitcher data available.</Text>
+                            <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>
+                                No pitcher data available.
+                            </Text>
                         )}
                     </>
                 )}
@@ -483,7 +518,13 @@ export default function ViewerScreen() {
                                             ]}
                                             onPress={() => setSelectedPitcherIdx(i)}
                                         >
-                                            <Text style={[styles.pillText, selectedPitcherIdx === i && styles.pillTextActive]}>
+                                            <Text
+                                                style={[
+                                                    styles.pillText,
+                                                    { color: theme.colors.onSurface },
+                                                    selectedPitcherIdx === i && styles.pillTextActive,
+                                                ]}
+                                            >
                                                 {name}
                                             </Text>
                                         </TouchableOpacity>
@@ -504,7 +545,11 @@ export default function ViewerScreen() {
                                         onPress={() => setCountsMode(m)}
                                     >
                                         <Text
-                                            style={[styles.countsModeBtnText, countsMode === m && styles.countsModeBtnTextActive]}
+                                            style={[
+                                                styles.countsModeBtnText,
+                                                { color: theme.colors.onSurfaceVariant },
+                                                countsMode === m && styles.countsModeBtnTextActive,
+                                            ]}
                                         >
                                             {m === 'our' ? 'Our Pitcher' : 'Opp Pitcher'}
                                         </Text>
@@ -529,7 +574,13 @@ export default function ViewerScreen() {
                                         ]}
                                         onPress={() => setSelectedOppPitcherIdx(i)}
                                     >
-                                        <Text style={[styles.pillText, selectedOppPitcherIdx === i && styles.pillTextActive]}>
+                                        <Text
+                                            style={[
+                                                styles.pillText,
+                                                { color: theme.colors.onSurface },
+                                                selectedOppPitcherIdx === i && styles.pillTextActive,
+                                            ]}
+                                        >
                                             {p.pitcher_name}
                                         </Text>
                                     </TouchableOpacity>
@@ -556,7 +607,11 @@ export default function ViewerScreen() {
                                         onPress={() => setBreakdownTab(t)}
                                     >
                                         <Text
-                                            style={[styles.breakdownTabText, breakdownTab === t && styles.breakdownTabTextActive]}
+                                            style={[
+                                                styles.breakdownTabText,
+                                                { color: theme.colors.onSurfaceVariant },
+                                                breakdownTab === t && styles.breakdownTabTextActive,
+                                            ]}
                                         >
                                             {t === 'opponent' ? 'Opponent Lineup' : 'Our Lineup'}
                                         </Text>
@@ -631,7 +686,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#e5e7eb',
     },
-    teamLabel: { color: '#6b7280' },
+    teamLabel: {},
     score: { fontWeight: '700', letterSpacing: 2 },
     inning: { color: '#1d4ed8', fontWeight: '600', marginLeft: 8 },
     tabBarWrap: {
@@ -656,7 +711,6 @@ const styles = StyleSheet.create({
     tabBtnText: {
         fontSize: 13,
         fontWeight: '500',
-        color: '#6b7280',
     },
     tabBtnTextActive: {
         color: '#1d4ed8',
@@ -665,7 +719,6 @@ const styles = StyleSheet.create({
     content: { flex: 1, padding: 12 },
     emptyText: {
         textAlign: 'center',
-        color: '#9ca3af',
         marginTop: 32,
         fontSize: 14,
         fontStyle: 'italic',
@@ -684,7 +737,6 @@ const styles = StyleSheet.create({
     statsCardTitle: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#111827',
         marginBottom: 16,
     },
     statsRow: {
@@ -697,7 +749,7 @@ const styles = StyleSheet.create({
     },
     statItem: { alignItems: 'center' },
     statValue: { fontSize: 24, fontWeight: '700' },
-    statLabel: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+    statLabel: { fontSize: 11, marginTop: 2 },
     pitchMixTable: { gap: 0 },
     pitchMixHeader: {
         flexDirection: 'row',
@@ -714,7 +766,6 @@ const styles = StyleSheet.create({
     pitchMixCell: {
         flex: 1,
         fontSize: 12,
-        color: '#374151',
         textAlign: 'center',
     },
 
@@ -736,17 +787,16 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 13,
         fontWeight: '600',
-        color: '#374151',
     },
-    countBucketTotal: { fontSize: 13, fontWeight: '600', color: '#111827' },
+    countBucketTotal: { fontSize: 13, fontWeight: '600' },
     countStrikeRate: { fontSize: 12, fontWeight: '600' },
     countTypeRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingVertical: 2,
     },
-    countTypeLabel: { fontSize: 12, color: '#6b7280' },
-    countTypeStats: { fontSize: 12, color: '#6b7280' },
+    countTypeLabel: { fontSize: 12 },
+    countTypeStats: { fontSize: 12 },
 
     // Breakdown
     breakdownContainer: { gap: 0 },
@@ -765,7 +815,7 @@ const styles = StyleSheet.create({
         marginBottom: -1,
     },
     breakdownTabBtnActive: { borderBottomColor: '#1d4ed8' },
-    breakdownTabText: { fontSize: 13, color: '#6b7280', fontWeight: '500' },
+    breakdownTabText: { fontSize: 13, fontWeight: '500' },
     breakdownTabTextActive: { color: '#1d4ed8', fontWeight: '600' },
 
     // Pitcher / opponent pitcher pill selectors
@@ -779,7 +829,7 @@ const styles = StyleSheet.create({
         borderColor: '#e5e7eb',
     },
     pillActive: { backgroundColor: '#1d4ed8', borderColor: '#1d4ed8' },
-    pillText: { fontSize: 13, fontWeight: '500', color: '#374151' },
+    pillText: { fontSize: 13, fontWeight: '500' },
     pillTextActive: { color: 'white', fontWeight: '600' },
 
     // Counts mode toggle (Our Pitcher / Opp Pitcher)
@@ -797,6 +847,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     countsModeBtnActive: { backgroundColor: '#1d4ed8' },
-    countsModeBtnText: { fontSize: 13, fontWeight: '500', color: '#6b7280' },
+    countsModeBtnText: { fontSize: 13, fontWeight: '500' },
     countsModeBtnTextActive: { color: 'white', fontWeight: '600' },
 });

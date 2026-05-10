@@ -1434,7 +1434,7 @@ export default function LiveGameScreen() {
                     <Text variant="headlineMedium" style={styles.roleSelectTitle}>
                         Join Game
                     </Text>
-                    <Text variant="bodyMedium" style={styles.roleSelectSubtitle}>
+                    <Text variant="bodyMedium" style={[styles.roleSelectSubtitle, { color: theme.colors.onSurfaceVariant }]}>
                         Select your role for this session
                     </Text>
                     <View style={styles.roleSelectButtons}>
@@ -1698,13 +1698,17 @@ export default function LiveGameScreen() {
                                             currentMyBatter?.id === p.id && styles.myBatterItemSelected,
                                         ]}
                                     >
-                                        <Text style={styles.myBatterOrder}>#{p.batting_order}</Text>
-                                        <Text style={styles.myBatterName}>
+                                        <Text style={[styles.myBatterOrder, { color: theme.colors.onSurface }]}>
+                                            #{p.batting_order}
+                                        </Text>
+                                        <Text style={[styles.myBatterName, { color: theme.colors.onSurface }]}>
                                             {p.player
                                                 ? `${p.player.first_name} ${p.player.last_name}`
                                                 : `Batter ${p.batting_order}`}
                                         </Text>
-                                        <Text style={styles.myBatterPos}>{p.position || p.player?.primary_position || ''}</Text>
+                                        <Text style={[styles.myBatterPos, { color: theme.colors.onSurfaceVariant }]}>
+                                            {p.position || p.player?.primary_position || ''}
+                                        </Text>
                                     </TouchableOpacity>
                                 ))}
                             {myTeamLineup.length === 0 && (
@@ -2646,7 +2650,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     roleSelectSubtitle: {
-        color: '#6b7280',
         marginBottom: 32,
         textAlign: 'center',
     },
@@ -2709,16 +2712,13 @@ const styles = StyleSheet.create({
     myBatterOrder: {
         width: 32,
         fontWeight: '700',
-        color: '#374151',
     },
     myBatterName: {
         flex: 1,
         fontSize: 15,
-        color: '#111827',
     },
     myBatterPos: {
         fontSize: 12,
-        color: '#6b7280',
         width: 36,
         textAlign: 'right',
     },

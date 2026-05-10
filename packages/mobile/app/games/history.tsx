@@ -12,6 +12,7 @@ function formatDate(dateString: string): string {
 }
 
 const GameRow: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress }) => {
+    const theme = useTheme();
     const homeScore = game.home_score ?? 0;
     const awayScore = game.away_score ?? 0;
     const isHome = game.is_home_game !== false;
@@ -25,12 +26,12 @@ const GameRow: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress 
             <Card style={styles.row}>
                 <Card.Content style={styles.rowContent}>
                     <View style={styles.rowLeft}>
-                        <Text style={styles.opponent}>
+                        <Text style={[styles.opponent, { color: theme.colors.onSurface }]}>
                             {game.charting_mode === 'scouting'
                                 ? `${game.opponent_name || 'Away'} @ ${game.scouting_home_team || 'Home'}`
                                 : `${isHome ? 'vs' : '@'} ${game.opponent_name || 'TBD'}`}
                         </Text>
-                        <Text style={styles.date}>{formatDate(game.game_date)}</Text>
+                        <Text style={[styles.date, { color: theme.colors.onSurfaceVariant }]}>{formatDate(game.game_date)}</Text>
                     </View>
                     <View style={styles.rowRight}>
                         <Text style={[styles.score, { color: won ? '#10b981' : tied ? '#6b7280' : '#ef4444' }]}>
@@ -83,11 +84,13 @@ export default function GameHistoryScreen() {
                     <ActivityIndicator style={{ marginTop: 40 }} color={theme.colors.primary} />
                 ) : completedGames.length === 0 ? (
                     <View style={styles.empty}>
-                        <Text style={styles.emptyText}>No completed games yet.</Text>
+                        <Text style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}>No completed games yet.</Text>
                     </View>
                 ) : (
                     <>
-                        <Text style={styles.count}>{completedGames.length} completed games</Text>
+                        <Text style={[styles.count, { color: theme.colors.onSurfaceVariant }]}>
+                            {completedGames.length} completed games
+                        </Text>
                         {completedGames.map((game) => (
                             <GameRow key={game.id} game={game} onPress={() => handlePress(game)} />
                         ))}
@@ -112,7 +115,6 @@ const styles = StyleSheet.create({
     },
     count: {
         fontSize: 13,
-        color: '#6b7280',
         marginBottom: 12,
     },
     row: {
@@ -135,11 +137,9 @@ const styles = StyleSheet.create({
     opponent: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#111827',
     },
     date: {
         fontSize: 12,
-        color: '#6b7280',
     },
     score: {
         fontSize: 16,
@@ -151,6 +151,5 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 14,
-        color: '#9ca3af',
     },
 });
