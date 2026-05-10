@@ -75,14 +75,18 @@ echo "    Base schema loaded"
 
 # ── 5. Apply migrations not yet in the snapshot ───────────────────────────────
 # Each migration uses IF NOT EXISTS / IF EXISTS guards — safe to re-run.
-echo "🔄  Applying pending migrations (022-027)..."
+echo "🔄  Applying pending migrations (022-031)..."
 for migration in \
   packages/api/src/migrations/022_pitches_nullable_pitcher.sql \
   packages/api/src/migrations/023_baserunner_event_types.sql \
   packages/api/src/migrations/024_performance_summaries_per_pitcher.sql \
   packages/api/src/migrations/025_scouting_mode.sql \
   packages/api/src/migrations/026_scouting_summary.sql \
-  packages/api/src/migrations/027_opponent_teams.sql
+  packages/api/src/migrations/027_opponent_teams.sql \
+  packages/api/src/migrations/028_opponent_lineup_starter_slot.sql \
+  packages/api/src/migrations/029_baserunner_thrown_out_on_hit.sql \
+  packages/api/src/migrations/030_pitch_prev_state_snapshot.sql \
+  packages/api/src/migrations/031_backfill_opponent_teams.sql
 do
   echo "    → $(basename "$migration")"
   owner -d "$DB" \

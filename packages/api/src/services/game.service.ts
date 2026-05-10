@@ -39,6 +39,14 @@ export class GameService {
         const resolvedLineupSize = Math.min(Math.max(lineup_size ?? 9, 9), 15);
         const resolvedTotalInnings = Math.min(Math.max(total_innings ?? 7, 1), 20);
 
+        // Auto-create opponent_teams row when the caller only provided a free-text opponent_name.
+        // Skip for scouting mode — opponent_name there is the away team in someone else's game.
+        let resolvedOpponentTeamId = opponent_team_id ?? null;
+        if (!resolvedOpponentTeamId && opponent_name && resolvedChartingMode !== 'scouting') {
+            const opponentTeam = await opponentTeamService.findOrCreate(home_team_id, opponent_name);
+            resolvedOpponentTeamId = opponentTeam.id;
+        }
+
         const gameId = uuidv4();
         const result = await query(
             `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size, total_innings, charting_mode, scouting_home_team, scouting_focus, opponent_team_id)
@@ -59,15 +67,15 @@ export class GameService {
                 resolvedChartingMode,
                 scouting_home_team ?? null,
                 scouting_focus ?? 'both',
-                opponent_team_id ?? null,
+                resolvedOpponentTeamId,
             ]
         );
 
         const game = result.rows[0];
 
-        if (opponent_team_id && game_date) {
+        if (resolvedOpponentTeamId && game_date) {
             opponentTeamService
-                .incrementGameCount(opponent_team_id, typeof game_date === 'string' ? game_date.slice(0, 10) : undefined)
+                .incrementGameCount(resolvedOpponentTeamId, typeof game_date === 'string' ? game_date.slice(0, 10) : undefined)
                 .catch(() => {});
         }
 

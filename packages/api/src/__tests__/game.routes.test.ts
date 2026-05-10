@@ -3,6 +3,16 @@ import { getAgent, authHeader, resetMocks, mockQuery, mockTransaction } from './
 // Mock uuid
 jest.mock('uuid', () => ({ v4: jest.fn(() => 'test-game-id') }));
 
+// Stub the auto-create-on-game-creation path. The roster path (getWithRoster) is
+// exercised separately and uses real DB mocks, so we leave it unmocked.
+jest.mock('../services/opponentTeam.service', () => {
+    const { OpponentTeamService } = jest.requireActual('../services/opponentTeam.service');
+    const service = new OpponentTeamService();
+    service.findOrCreate = jest.fn().mockResolvedValue({ id: 'mock-opp-id' });
+    service.incrementGameCount = jest.fn().mockResolvedValue(undefined);
+    return { __esModule: true, default: service, OpponentTeamService };
+});
+
 describe('Game Routes - /bt-api/games', () => {
     beforeEach(() => resetMocks());
 
