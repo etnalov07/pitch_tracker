@@ -1,6 +1,9 @@
 import { TeamOffenseSummary, OutcomePitchGroup, CountSituationStat, ZoneHistogram } from '@pitch-tracker/shared';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { performanceSummaryService } from '../../../services/performanceSummaryService';
+
+const NARRATIVE_POLL_INTERVAL_MS = 3000;
+const NARRATIVE_POLL_MAX_ATTEMPTS = 10;
 import {
     Card,
     HeaderRow,
@@ -50,11 +53,14 @@ const OpponentAttackSummary: React.FC<Props> = ({ gameId }) => {
     const [loading, setLoading] = useState(true);
     const [regenerating, setRegenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const pollAttemptsRef = useRef(0);
+    const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
         setError(null);
+        pollAttemptsRef.current = 0;
         performanceSummaryService
             .getOpponentAttackSummary(gameId)
             .then((s) => {
@@ -71,11 +77,39 @@ const OpponentAttackSummary: React.FC<Props> = ({ gameId }) => {
         };
     }, [gameId]);
 
+    // Poll until the AI narrative arrives. The first GET fires generation in
+    // the background server-side; subsequent fetches see the cached row.
+    useEffect(() => {
+        if (!summary || summary.narrative) {
+            pollAttemptsRef.current = 0;
+            if (pollTimerRef.current) {
+                clearTimeout(pollTimerRef.current);
+                pollTimerRef.current = null;
+            }
+            return;
+        }
+        if (pollAttemptsRef.current >= NARRATIVE_POLL_MAX_ATTEMPTS) return;
+        pollTimerRef.current = setTimeout(() => {
+            pollAttemptsRef.current += 1;
+            performanceSummaryService
+                .getOpponentAttackSummary(gameId)
+                .then((s) => setSummary(s))
+                .catch(() => {});
+        }, NARRATIVE_POLL_INTERVAL_MS);
+        return () => {
+            if (pollTimerRef.current) {
+                clearTimeout(pollTimerRef.current);
+                pollTimerRef.current = null;
+            }
+        };
+    }, [summary, gameId]);
+
     const handleRegenerate = async () => {
         setRegenerating(true);
         try {
             const refreshed = await performanceSummaryService.regenerateTeamOffenseNarrative(gameId);
             setSummary(refreshed);
+            pollAttemptsRef.current = 0;
         } catch {
             // surface in UI via narrative placeholder
         } finally {
