@@ -4,11 +4,11 @@ import { theme } from '../../styles/theme';
 // Styled Components
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
-    background: 'white',
+    background: theme.surfaces.card,
     padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
     display: 'flex',
     justifyContent: 'space-between',
@@ -50,7 +50,7 @@ export const Content = styled.main({
 });
 
 export const FormCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     boxShadow: theme.shadows.sm,
@@ -96,8 +96,8 @@ export const StepDot = styled.div<{ status: 'completed' | 'active' | 'pending' }
         border: `2px solid ${theme.colors.primary[600]}`,
     }),
     ...(props.status === 'active' && {
-        background: 'white',
-        color: theme.colors.primary[700],
+        background: theme.colors.primary[600],
+        color: 'white',
         border: `2px solid ${theme.colors.primary[600]}`,
         boxShadow: `0 0 0 4px ${theme.colors.primary[100]}`,
     }),
@@ -181,7 +181,7 @@ export const TeamSelect = styled.select({
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.base,
-    background: 'white',
+    background: theme.surfaces.card,
     cursor: 'pointer',
 
     '&:focus': {
@@ -218,7 +218,7 @@ export const ToggleOption = styled.button<{ active?: boolean }>((props) => ({
     fontWeight: theme.fontWeight.semibold,
     cursor: 'pointer',
     border: `1px solid ${theme.colors.primary[300]}`,
-    background: props.active ? theme.colors.primary[600] : 'white',
+    background: props.active ? theme.colors.primary[600] : theme.surfaces.card,
     color: props.active ? 'white' : theme.colors.primary[600],
     transition: 'all 0.15s ease',
 
@@ -253,7 +253,7 @@ export const ModeCard = styled.button<{ active?: boolean }>((props) => ({
     padding: `${theme.spacing.md} ${theme.spacing.lg}`,
     borderRadius: theme.borderRadius.lg,
     border: `2px solid ${props.active ? theme.colors.primary[500] : theme.colors.gray[200]}`,
-    background: props.active ? theme.colors.primary[50] : 'white',
+    background: props.active ? theme.colors.primary[50] : theme.surfaces.card,
     cursor: 'pointer',
     textAlign: 'left',
     transition: 'all 0.15s ease',
@@ -371,7 +371,7 @@ export const ConfirmDetailsList = styled.div({
     flexDirection: 'column',
     gap: theme.spacing.sm,
     textAlign: 'left',
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.lg,
     border: `1px solid ${theme.colors.primary[200]}`,
@@ -478,7 +478,7 @@ export const ErrorMessage = styled.div({
 });
 
 export const WarningCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing['2xl'],
     boxShadow: theme.shadows.sm,
