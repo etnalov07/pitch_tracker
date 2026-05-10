@@ -3,11 +3,11 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
-    background: 'white',
+    background: theme.surfaces.card,
     padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
     borderBottom: `1px solid ${theme.colors.gray[200]}`,
 });
@@ -70,7 +70,7 @@ export const Content = styled.main({
 });
 
 export const CareerStatsCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     boxShadow: theme.shadows.sm,
@@ -111,7 +111,7 @@ export const StatLabel = styled.div({
 });
 
 export const PitchTypesCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     boxShadow: theme.shadows.sm,
@@ -176,7 +176,7 @@ export const ErrorContainer = styled.div({
 });
 
 export const HeatZoneCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     boxShadow: theme.shadows.sm,
@@ -260,7 +260,7 @@ export const PitchTypeFilterLabel = styled.span({
 export const PitchTypeSelect = styled.select({
     padding: `${theme.spacing.sm} ${theme.spacing.md}`,
     paddingRight: theme.spacing.xl,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     color: theme.colors.gray[700],
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,

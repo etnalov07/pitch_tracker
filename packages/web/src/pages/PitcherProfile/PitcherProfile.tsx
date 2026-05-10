@@ -253,10 +253,10 @@ const PitcherProfile: React.FC = () => {
                     <HeatZoneContent>
                         <svg viewBox="0 0 300 300" style={{ width: '100%', maxWidth: '350px' }}>
                             {/* Background */}
-                            <rect x="0" y="0" width="300" height="300" fill="#f5f5f0" />
+                            <rect x="0" y="0" width="300" height="300" fill="var(--surface-elevated)" />
                             {/* Strike zone grid — coordinates match HeatZoneOverlay constants */}
                             <g transform="translate(105, 100)">
-                                <rect x="0" y="0" width="90" height="132" fill="rgba(255,255,255,0.85)" />
+                                <rect x="0" y="0" width="90" height="132" fill="var(--surface-card)" />
                                 {[0, 1, 2].map((row) =>
                                     [0, 1, 2].map((col) => (
                                         <rect
@@ -265,13 +265,21 @@ const PitcherProfile: React.FC = () => {
                                             y={row * 44}
                                             width={30}
                                             height={44}
-                                            fill="rgba(230, 230, 225, 0.6)"
-                                            stroke="#a0a0a0"
+                                            fill="var(--surface-border)"
+                                            stroke="var(--surface-border-strong)"
                                             strokeWidth="1"
                                         />
                                     ))
                                 )}
-                                <rect x="0" y="0" width="90" height="132" fill="none" stroke="#808080" strokeWidth="2" />
+                                <rect
+                                    x="0"
+                                    y="0"
+                                    width="90"
+                                    height="132"
+                                    fill="none"
+                                    stroke="var(--surface-text-subtle)"
+                                    strokeWidth="2"
+                                />
                             </g>
                             {/* Heat zone overlay */}
                             <HeatZoneOverlay zones={heatZones} visible={showHeatZones} />
