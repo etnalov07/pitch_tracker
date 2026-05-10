@@ -3,11 +3,11 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
-    background: 'white',
+    background: theme.surfaces.card,
     padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
     display: 'flex',
     justifyContent: 'space-between',
@@ -55,7 +55,7 @@ export const Content = styled.main({
 });
 
 export const FormCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     boxShadow: theme.shadows.sm,
@@ -78,9 +78,11 @@ export const Th = styled.th({
     textAlign: 'left',
     padding: theme.spacing.md,
     borderBottom: `2px solid ${theme.colors.gray[200]}`,
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.gray[600],
+    color: theme.colors.gray[500],
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
 });
 
 export const Td = styled.td({
@@ -126,7 +128,7 @@ export const Select = styled.select({
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.base,
-    background: 'white',
+    background: theme.surfaces.card,
     cursor: 'pointer',
 
     '&:focus': {
@@ -234,8 +236,9 @@ export const GameInfoText = styled.div({
 
 export const GameInfoSubtext = styled.div({
     fontSize: theme.fontSize.sm,
-    color: theme.colors.gray[600],
+    color: theme.colors.primary[600],
     marginTop: theme.spacing.xs,
+    fontWeight: theme.fontWeight.medium,
 });
 
 export const HelpText = styled.p({
