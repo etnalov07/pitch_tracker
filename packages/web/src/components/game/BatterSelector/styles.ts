@@ -15,7 +15,7 @@ export const Overlay = styled.div({
 });
 
 export const Modal = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     width: '100%',
@@ -64,7 +64,7 @@ export const BatterCard = styled.div<{ isNext?: boolean; isSubbed?: boolean }>((
     padding: theme.spacing.md,
     border: `2px solid ${props.isNext ? theme.colors.primary[500] : theme.colors.gray[200]}`,
     borderRadius: theme.borderRadius.md,
-    background: props.isSubbed ? theme.colors.gray[100] : props.isNext ? theme.colors.primary[50] : 'white',
+    background: props.isSubbed ? theme.colors.gray[100] : props.isNext ? theme.colors.primary[50] : theme.surfaces.card,
     cursor: props.isSubbed ? 'default' : 'pointer',
     textAlign: 'left' as const,
     width: '100%',
@@ -85,7 +85,7 @@ export const BatterCardActions = styled.div({
 
 export const SubActionButton = styled.button({
     padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     color: theme.colors.gray[700],
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.sm,
@@ -173,7 +173,7 @@ export const AddBatterButton = styled.button({
     padding: theme.spacing.md,
     border: `2px dashed ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,
-    background: 'white',
+    background: theme.surfaces.card,
     color: theme.colors.gray[600],
     cursor: 'pointer',
     marginTop: theme.spacing.md,
@@ -228,7 +228,7 @@ export const FormSelect = styled.select({
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.sm,
     fontSize: theme.fontSize.sm,
-    background: 'white',
+    background: theme.surfaces.card,
     outline: 'none',
 
     '&:focus': {
@@ -266,7 +266,7 @@ export const SaveButton = styled.button({
 
 export const CancelButton = styled.button({
     padding: `${theme.spacing.xs} ${theme.spacing.md}`,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     color: theme.colors.gray[600],
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.sm,

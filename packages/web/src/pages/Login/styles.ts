@@ -14,7 +14,7 @@ export const Container = styled.div({
 export const FormCard = styled.div({
     width: '100%',
     maxWidth: '450px',
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius['2xl'],
     boxShadow: theme.shadows.xl,
     padding: theme.spacing['2xl'],

@@ -3,7 +3,7 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
@@ -69,7 +69,7 @@ export const Content = styled.main({
 });
 
 export const Section = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
     padding: theme.spacing.xl,
@@ -189,7 +189,7 @@ export const PitchTypeSelect = styled.select({
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.sm,
     color: theme.colors.gray[800],
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     cursor: 'pointer',
     minWidth: '120px',
 
@@ -270,7 +270,7 @@ export const RemoveButton = styled(ActionButton)({
 export const AddPitchButton = styled.button({
     width: '100%',
     padding: theme.spacing.md,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     color: theme.colors.primary[600],
     border: `2px dashed ${theme.colors.primary[300]}`,
     borderRadius: theme.borderRadius.md,
@@ -289,7 +289,7 @@ export const StrikeZoneWrapper = styled.div({
     maxWidth: '300px',
     margin: `${theme.spacing.md} auto`,
     padding: theme.spacing.md,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.md,
     border: `1px solid ${theme.colors.primary[200]}`,
 });

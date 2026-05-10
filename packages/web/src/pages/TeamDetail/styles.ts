@@ -4,7 +4,7 @@ import { theme } from '../../styles/theme';
 // Styled Components
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
@@ -94,7 +94,7 @@ export const Content = styled.main({
 });
 
 export const FormCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     boxShadow: theme.shadows.sm,
@@ -151,7 +151,7 @@ export const Select = styled.select({
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.base,
-    background: 'white',
+    background: theme.surfaces.card,
     cursor: 'pointer',
 
     '&:focus': {
@@ -227,7 +227,7 @@ export const SectionTitle = styled.h2({
 
 export const RosterTable = styled.table({
     width: '100%',
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
     borderCollapse: 'collapse',
@@ -333,7 +333,7 @@ export const RemoveButton = styled.button({
 export const EmptyState = styled.div({
     textAlign: 'center',
     padding: theme.spacing.xl,
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
 });
@@ -416,7 +416,7 @@ export const ModalOverlay = styled.div({
 });
 
 export const ModalBox = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.xl,
     width: '100%',
@@ -520,7 +520,7 @@ export const MappingSelect = styled.select({
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.sm,
     fontSize: theme.fontSize.sm,
-    background: 'white',
+    background: theme.surfaces.card,
     width: '100%',
 });
 

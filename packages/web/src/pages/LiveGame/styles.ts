@@ -6,7 +6,7 @@ export const Container = styled.div({
     display: 'flex',
     flexDirection: 'column',
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 
     [`@media (min-width: ${theme.breakpoints.lg})`]: {
         display: 'grid',
@@ -15,7 +15,7 @@ export const Container = styled.div({
 });
 
 export const LeftPanel = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderBottom: `1px solid ${theme.colors.gray[200]}`,
     display: 'none', // Hidden on mobile by default
     flexDirection: 'column',
@@ -135,7 +135,7 @@ export const CountDisplay = styled.div({
     justifyContent: 'center',
     gap: theme.spacing.sm,
     padding: theme.spacing.xs,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.md,
     marginBottom: theme.spacing.xs,
     boxShadow: theme.shadows.sm,
@@ -183,7 +183,7 @@ export const StrikeZoneContainer = styled.div({
 
 export const PitchForm = styled.div({
     padding: theme.spacing.lg,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.xl,
     boxShadow: theme.shadows.md,
 });
@@ -291,7 +291,7 @@ export const LogRow = styled.div({
 
 export const UndoButton = styled.button({
     padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     color: theme.colors.red[700],
     border: `1px solid ${theme.colors.red[600]}`,
     borderRadius: theme.borderRadius.sm,
@@ -331,7 +331,7 @@ export const NoAtBatContainer = styled.div({
     alignItems: 'center',
     justifyContent: 'center',
     padding: theme.spacing['3xl'],
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.xl,
     boxShadow: theme.shadows.md,
 });
@@ -381,7 +381,7 @@ export const PlayerDisplay = styled.div({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: theme.spacing.sm,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
     gap: theme.spacing.sm,
@@ -624,7 +624,7 @@ export const ResumeGameButton = styled.button({
 export const StartGamePrompt = styled.div({
     textAlign: 'center',
     padding: theme.spacing['2xl'],
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.xl,
     boxShadow: theme.shadows.md,
     marginBottom: theme.spacing.xl,
@@ -713,7 +713,7 @@ export const InningChangeOverlay = styled.div({
 });
 
 export const InningChangeModal = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     padding: theme.spacing['2xl'],
     borderRadius: theme.borderRadius.xl,
     textAlign: 'center',
@@ -979,7 +979,7 @@ export const ToggleSwitchSlider = styled.span({
         width: '18px',
         left: '3px',
         bottom: '3px',
-        backgroundColor: 'white',
+        backgroundColor: theme.surfaces.card,
         transition: '0.2s',
         borderRadius: '50%',
         boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
@@ -998,7 +998,7 @@ export const StepIndicator = styled.div({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.md,
     boxShadow: theme.shadows.sm,
     marginBottom: theme.spacing.sm,
@@ -1062,7 +1062,7 @@ export const StepConnector = styled.div<{ completed?: boolean }>((props) => ({
 
 // Pitch Type Selector (prominent display)
 export const PitchTypeSelector = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.sm,
     boxShadow: theme.shadows.sm,
@@ -1135,7 +1135,7 @@ export const ZoneInstructionText = styled.div({
 
 // Current step highlight card
 export const CurrentStepCard = styled.div<{ stepColor?: string }>((props) => ({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     boxShadow: theme.shadows.sm,
@@ -1291,7 +1291,7 @@ export const DroppedThirdOverlay = styled.div({
 });
 
 export const DroppedThirdDialog = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.xl,
     padding: theme.spacing['2xl'],
     width: 320,

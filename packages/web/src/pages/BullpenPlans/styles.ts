@@ -3,7 +3,7 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
@@ -71,7 +71,7 @@ export const Content = styled.main({
 
 export const Table = styled.table({
     width: '100%',
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
     borderCollapse: 'collapse',
@@ -148,7 +148,7 @@ export const DeleteButton = styled.button({
 export const EmptyState = styled.div({
     textAlign: 'center',
     padding: theme.spacing.xl,
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
     color: theme.colors.gray[500],

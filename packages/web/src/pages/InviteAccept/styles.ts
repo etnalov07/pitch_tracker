@@ -13,7 +13,7 @@ export const Container = styled.div({
 export const Card = styled.div({
     width: '100%',
     maxWidth: '480px',
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius['2xl'],
     boxShadow: theme.shadows.xl,
     padding: theme.spacing['2xl'],

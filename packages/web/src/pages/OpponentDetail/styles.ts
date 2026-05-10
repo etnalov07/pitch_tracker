@@ -3,11 +3,11 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
-    background: 'white',
+    background: theme.surfaces.card,
     padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
     display: 'flex',
     justifyContent: 'space-between',
@@ -66,7 +66,7 @@ export const PrimaryButton = styled.button({
 });
 
 export const SecondaryButton = styled.button({
-    background: 'white',
+    background: theme.surfaces.card,
     border: `1px solid ${theme.colors.gray[300]}`,
     padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
     borderRadius: theme.borderRadius.md,
@@ -90,7 +90,7 @@ export const Content = styled.main({
 });
 
 export const Section = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     boxShadow: theme.shadows.sm,

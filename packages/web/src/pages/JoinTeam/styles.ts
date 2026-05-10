@@ -93,7 +93,7 @@ export const TeamResult = styled.div({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: theme.spacing.xl,
-    background: 'white',
+    background: theme.surfaces.card,
     border: `1px solid ${theme.colors.gray[200]}`,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
@@ -158,7 +158,7 @@ export const RequestItem = styled.div({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: theme.spacing.lg,
-    background: 'white',
+    background: theme.surfaces.card,
     border: `1px solid ${theme.colors.gray[200]}`,
     borderRadius: theme.borderRadius.md,
 });

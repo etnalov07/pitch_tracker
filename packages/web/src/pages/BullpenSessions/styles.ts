@@ -3,7 +3,7 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
@@ -72,7 +72,7 @@ export const FilterLabel = styled.span({
 export const FilterSelect = styled.select({
     padding: `${theme.spacing.sm} ${theme.spacing.md}`,
     paddingRight: theme.spacing.xl,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     color: theme.colors.gray[700],
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,
@@ -98,7 +98,7 @@ export const FilterSelect = styled.select({
 
 export const Table = styled.table({
     width: '100%',
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
     borderCollapse: 'collapse',
@@ -174,7 +174,7 @@ export const ViewButton = styled.button({
 export const EmptyState = styled.div({
     textAlign: 'center',
     padding: theme.spacing.xl,
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
     color: theme.colors.gray[500],

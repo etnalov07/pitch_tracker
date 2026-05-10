@@ -171,7 +171,7 @@ const Overlay = styled.div({
 const Modal = styled.div({
     width: '100%',
     maxWidth: '500px',
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.xl,
     boxShadow: theme.shadows.xl,
     padding: theme.spacing['2xl'],
@@ -222,7 +222,7 @@ const Select = styled.select({
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.base,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
 
     '&:focus': {
         outline: 'none',

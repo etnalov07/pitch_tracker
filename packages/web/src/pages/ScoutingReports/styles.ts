@@ -3,11 +3,11 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
-    background: 'white',
+    background: theme.surfaces.card,
     padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
     display: 'flex',
     justifyContent: 'space-between',
@@ -65,7 +65,7 @@ export const ReportGrid = styled.div({
 });
 
 export const ReportCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     boxShadow: theme.shadows.sm,
@@ -88,7 +88,7 @@ export const ReportMeta = styled.div({
 });
 
 export const EmptyState = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing['2xl'],
     textAlign: 'center',
@@ -96,7 +96,7 @@ export const EmptyState = styled.div({
 });
 
 export const FormCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     padding: theme.spacing.xl,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
@@ -137,7 +137,7 @@ export const FormActions = styled.div({
 });
 
 export const CancelButton = styled.button({
-    background: 'white',
+    background: theme.surfaces.card,
     border: `1px solid ${theme.colors.gray[300]}`,
     padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
     borderRadius: theme.borderRadius.md,

@@ -56,7 +56,7 @@ const SituationalCallsRow: React.FC<SituationalCallsRowProps> = ({ shakeCount = 
                         padding: '4px 8px',
                         borderRadius: theme.borderRadius.sm,
                         border: `1px solid ${call.color}`,
-                        background: 'white',
+                        background: theme.surfaces.card,
                         color: call.color,
                         fontSize: '11px',
                         fontWeight: theme.fontWeight.bold,

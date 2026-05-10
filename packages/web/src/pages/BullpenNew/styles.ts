@@ -3,7 +3,7 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
@@ -48,7 +48,7 @@ export const Content = styled.main({
 });
 
 export const Section = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
     padding: theme.spacing.xl,
@@ -74,7 +74,7 @@ export const PitcherButton = styled.button<{ selected?: boolean }>((props) => ({
     alignItems: 'center',
     gap: theme.spacing.sm,
     padding: theme.spacing.md,
-    backgroundColor: props.selected ? theme.colors.primary[50] : 'white',
+    backgroundColor: props.selected ? theme.colors.primary[50] : theme.surfaces.card,
     color: props.selected ? theme.colors.primary[700] : theme.colors.gray[700],
     border: `2px solid ${props.selected ? theme.colors.primary[500] : theme.colors.gray[200]}`,
     borderRadius: theme.borderRadius.md,
@@ -119,7 +119,7 @@ export const IntensityButton = styled.button<{ selected?: boolean; intensity: 'l
     return {
         flex: 1,
         padding: theme.spacing.md,
-        backgroundColor: props.selected ? c.bg : 'white',
+        backgroundColor: props.selected ? c.bg : theme.surfaces.card,
         color: props.selected ? c.text : theme.colors.gray[600],
         border: `2px solid ${props.selected ? c.border : theme.colors.gray[200]}`,
         borderRadius: theme.borderRadius.md,

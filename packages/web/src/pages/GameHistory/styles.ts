@@ -4,11 +4,11 @@ import { theme } from '../../styles/theme';
 // Styled Components
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
-    background: 'white',
+    background: theme.surfaces.card,
     padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
     display: 'flex',
     justifyContent: 'space-between',
@@ -70,7 +70,7 @@ export const FilterBar = styled.div({
     display: 'flex',
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.xl,
-    background: 'white',
+    background: theme.surfaces.card,
     padding: theme.spacing.sm,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
@@ -94,7 +94,7 @@ export const FilterButton = styled.button<{ active: boolean }>((props) => ({
 
 export const GamesTable = styled.table({
     width: '100%',
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
     borderCollapse: 'collapse',
@@ -255,7 +255,7 @@ export const DeleteButton = styled.button({
 export const EmptyState = styled.div({
     textAlign: 'center',
     padding: theme.spacing['3xl'],
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     boxShadow: theme.shadows.sm,
 });

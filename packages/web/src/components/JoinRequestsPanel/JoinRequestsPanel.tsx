@@ -103,7 +103,7 @@ const RequestItem = styled.div({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    background: 'white',
+    background: theme.surfaces.card,
     padding: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
     border: `1px solid ${theme.colors.gray[200]}`,
@@ -140,7 +140,7 @@ const LinkSelect = styled.select({
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.xs,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
 });
 
 const ApproveButton = styled.button({

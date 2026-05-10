@@ -3,11 +3,11 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
-    background: 'white',
+    background: theme.surfaces.card,
     padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
     display: 'flex',
     justifyContent: 'space-between',
@@ -66,7 +66,7 @@ export const TabRow = styled.div({
     display: 'flex',
     gap: 0,
     marginBottom: theme.spacing.xl,
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     border: `1px solid ${theme.colors.gray[200]}`,
     overflow: 'hidden',
@@ -88,7 +88,7 @@ export const TabButton = styled.button<{ active: boolean }>(({ active }) => ({
 }));
 
 export const FormCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     boxShadow: theme.shadows.sm,
@@ -201,7 +201,7 @@ export const PositionSelect = styled.select({
     fontSize: theme.fontSize.sm,
     width: '70px',
     color: theme.colors.gray[900],
-    background: 'white',
+    background: theme.surfaces.card,
     cursor: 'pointer',
 });
 

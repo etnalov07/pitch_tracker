@@ -15,7 +15,7 @@ export const Overlay = styled.div({
 });
 
 export const Modal = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     width: '100%',

@@ -58,7 +58,7 @@ export const TendencyItem = styled.div({
     alignItems: 'flex-start',
     gap: theme.spacing.sm,
     padding: theme.spacing.sm,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.sm,
     border: `1px solid ${theme.colors.gray[200]}`,
 });
@@ -103,7 +103,7 @@ export const MetricsGrid = styled.div({
 });
 
 export const MetricCard = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     padding: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
     border: `1px solid ${theme.colors.gray[200]}`,
@@ -163,7 +163,7 @@ export const NotesList = styled.div({
 });
 
 export const NoteItem = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     padding: theme.spacing.sm,
     borderRadius: theme.borderRadius.sm,
     border: `1px solid ${theme.colors.gray[200]}`,

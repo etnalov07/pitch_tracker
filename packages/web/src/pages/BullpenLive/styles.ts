@@ -3,7 +3,7 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const SessionHeader = styled.header({
@@ -115,7 +115,7 @@ export const StepIndicator = styled.div({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.md,
     boxShadow: theme.shadows.sm,
     marginBottom: theme.spacing.sm,
@@ -169,7 +169,7 @@ export const StepConnector = styled.div<{ completed?: boolean }>((props) => ({
 
 // Pitch Type Grid
 export const PitchTypeSection = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     boxShadow: theme.shadows.sm,
@@ -229,7 +229,7 @@ export const StrikeZoneContainer = styled.div({
 
 export const PitchForm = styled.div({
     padding: theme.spacing.lg,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     borderRadius: theme.borderRadius.xl,
     boxShadow: theme.shadows.md,
 });
@@ -319,7 +319,7 @@ export const ModalOverlay = styled.div({
 });
 
 export const Modal = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     padding: theme.spacing['2xl'],
     borderRadius: theme.borderRadius.xl,
     boxShadow: theme.shadows.xl,
@@ -360,7 +360,7 @@ export const ModalActions = styled.div({
 export const ModalCancelButton = styled.button({
     flex: 1,
     padding: theme.spacing.sm,
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     color: theme.colors.gray[700],
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,

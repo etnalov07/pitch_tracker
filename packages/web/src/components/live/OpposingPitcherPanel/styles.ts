@@ -2,7 +2,7 @@ import styled from '@emotion/styled';
 import { theme } from '../../../styles/theme';
 
 export const Panel = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.md,
     boxShadow: theme.shadows.sm,
@@ -125,7 +125,7 @@ export const Select = styled.select({
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.sm,
     fontSize: theme.fontSize.sm,
-    background: 'white',
+    background: theme.surfaces.card,
     '&:focus': {
         outline: 'none',
         borderColor: theme.colors.primary[400],

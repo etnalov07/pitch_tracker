@@ -3,11 +3,11 @@ import { theme } from '../../styles/theme';
 
 export const Container = styled.div({
     minHeight: '100vh',
-    backgroundColor: theme.colors.gray[100],
+    backgroundColor: theme.surfaces.body,
 });
 
 export const Header = styled.header({
-    background: 'white',
+    background: theme.surfaces.card,
     padding: `${theme.spacing.lg} ${theme.spacing.xl}`,
     display: 'flex',
     justifyContent: 'space-between',
@@ -67,7 +67,7 @@ export const PrimaryButton = styled.button({
 });
 
 export const DangerButton = styled.button({
-    background: 'white',
+    background: theme.surfaces.card,
     color: theme.colors.red[600],
     border: `1px solid ${theme.colors.red[300]}`,
     padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
@@ -78,7 +78,7 @@ export const DangerButton = styled.button({
 });
 
 export const GhostButton = styled.button({
-    background: 'white',
+    background: theme.surfaces.card,
     color: theme.colors.gray[700],
     border: `1px solid ${theme.colors.gray[300]}`,
     padding: `${theme.spacing.sm} ${theme.spacing.md}`,
@@ -95,7 +95,7 @@ export const Content = styled.main({
 });
 
 export const Section = styled.section({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     marginBottom: theme.spacing.lg,
@@ -142,7 +142,7 @@ export const Select = styled.select({
     border: `1px solid ${theme.colors.gray[300]}`,
     borderRadius: theme.borderRadius.md,
     fontSize: theme.fontSize.sm,
-    background: 'white',
+    background: theme.surfaces.card,
 });
 
 export const Textarea = styled.textarea({
@@ -236,7 +236,7 @@ export const ModalOverlay = styled.div({
 });
 
 export const Modal = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.xl,
     maxWidth: 600,
