@@ -14,22 +14,121 @@ export interface Throwout {
     fielderSeq: number[];
 }
 
+export type RunnerOrigin = 'batter' | RunnerBase;
+export type AdvanceTarget = RunnerBase | 'home';
+
+export interface ErrorAdvancement {
+    fromBase: RunnerOrigin;
+    toBase: AdvanceTarget;
+}
+
 interface RunnerAdvancementModalProps {
     visible: boolean;
     onDismiss: () => void;
     currentRunners: BaseRunners;
     hitResult: string;
-    onConfirm: (newRunners: BaseRunners, runsScored: number, throwouts: Throwout[]) => void;
+    onConfirm: (newRunners: BaseRunners, runsScored: number, throwouts: Throwout[], errorAdvancements: ErrorAdvancement[]) => void;
 }
 
 const FROM_BASE_LABEL: Record<RunnerBase, string> = { first: '1st', second: '2nd', third: '3rd' };
 const TO_BASE_LABEL: Record<ThrowoutTargetBase, string> = { second: '2nd', third: '3rd', home: 'home' };
+const ORIGIN_LABEL: Record<RunnerOrigin, string> = { batter: 'Batter', first: '1st', second: '2nd', third: '3rd' };
+const TARGET_LABEL: Record<AdvanceTarget, string> = { first: '1st', second: '2nd', third: '3rd', home: 'home' };
+
+const BASE_ORDER: Record<RunnerOrigin | AdvanceTarget, number> = { batter: 0, first: 1, second: 2, third: 3, home: 4 };
 
 const VALID_TARGETS: Record<RunnerBase, ThrowoutTargetBase[]> = {
     first: ['second', 'third', 'home'],
     second: ['third', 'home'],
     third: ['home'],
 };
+
+/**
+ * The batter's "source base" for advancement matching. null when the play puts
+ * the batter out (sac fly/bunt or a generic out result).
+ */
+const batterSourceBase = (hitResult: string): AdvanceTarget | 'home' | null => {
+    switch (hitResult) {
+        case 'home_run':
+            return 'home';
+        case 'triple':
+            return 'third';
+        case 'double':
+            return 'second';
+        case 'single':
+        case 'walk':
+        case 'hit_by_pitch':
+        case 'strikeout_dropped':
+        case 'fielders_choice':
+            return 'first';
+        default:
+            return null;
+    }
+};
+
+/**
+ * Greedy left-to-right match of base-runner sources (leading first) to
+ * destinations (home counts × runsScored, then 3rd/2nd/1st in newRunners).
+ * Each source picks the leading-most available destination ≥ its starting base.
+ */
+const matchAdvancements = (
+    currentRunners: BaseRunners,
+    hitResult: string,
+    newRunners: BaseRunners,
+    runsScored: number
+): Array<{ fromBase: RunnerOrigin; toBase: AdvanceTarget }> => {
+    const sources: RunnerOrigin[] = [];
+    if (currentRunners.third) sources.push('third');
+    if (currentRunners.second) sources.push('second');
+    if (currentRunners.first) sources.push('first');
+    if (batterSourceBase(hitResult) !== null) sources.push('batter');
+
+    const destinations: AdvanceTarget[] = [];
+    for (let i = 0; i < runsScored; i++) destinations.push('home');
+    if (newRunners.third) destinations.push('third');
+    if (newRunners.second) destinations.push('second');
+    if (newRunners.first) destinations.push('first');
+
+    const advancements: Array<{ fromBase: RunnerOrigin; toBase: AdvanceTarget }> = [];
+    const taken = new Set<number>();
+    for (const src of sources) {
+        const minOrder = src === 'batter' ? BASE_ORDER.first : BASE_ORDER[src];
+        let bestIdx = -1;
+        for (let i = 0; i < destinations.length; i++) {
+            if (taken.has(i)) continue;
+            const destOrder = BASE_ORDER[destinations[i]];
+            if (destOrder < minOrder) continue;
+            if (bestIdx === -1 || BASE_ORDER[destinations[i]] > BASE_ORDER[destinations[bestIdx]]) {
+                bestIdx = i;
+            }
+        }
+        if (bestIdx !== -1) {
+            advancements.push({ fromBase: src, toBase: destinations[bestIdx] });
+            taken.add(bestIdx);
+        }
+    }
+    return advancements;
+};
+
+const computeExtraAdvancements = (
+    currentRunners: BaseRunners,
+    hitResult: string,
+    newRunners: BaseRunners,
+    runsScored: number
+): ErrorAdvancement[] => {
+    const actual = matchAdvancements(currentRunners, hitResult, newRunners, runsScored);
+    const { suggestedRunners, suggestedRuns } = getSuggestedAdvancement(currentRunners, hitResult);
+    const suggested = matchAdvancements(currentRunners, hitResult, suggestedRunners, suggestedRuns);
+    const suggestedByFrom = new Map(suggested.map((s) => [s.fromBase, s.toBase]));
+
+    return actual.filter((adv) => {
+        const sugDest = suggestedByFrom.get(adv.fromBase);
+        if (!sugDest) return false;
+        return BASE_ORDER[adv.toBase] > BASE_ORDER[sugDest];
+    });
+};
+
+const advancementKey = (a: ErrorAdvancement) => `${a.fromBase}->${a.toBase}`;
 
 /**
  * Modal for adjusting runner positions after a hit.
@@ -53,6 +152,7 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
     const [draftFromBase, setDraftFromBase] = useState<RunnerBase | null>(null);
     const [draftToBase, setDraftToBase] = useState<ThrowoutTargetBase | null>(null);
     const [draftFielderSeq, setDraftFielderSeq] = useState<number[]>([]);
+    const [errorFlags, setErrorFlags] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         if (visible) {
@@ -64,6 +164,7 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
             setDraftFromBase(null);
             setDraftToBase(null);
             setDraftFielderSeq([]);
+            setErrorFlags(new Set());
         }
     }, [visible, currentRunners, hitResult]);
 
@@ -75,9 +176,23 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
     const decrementRuns = () => setRunsScored((prev) => Math.max(0, prev - 1));
 
     const handleConfirm = () => {
-        onConfirm(newRunners, runsScored, throwouts);
+        const extras = computeExtraAdvancements(currentRunners, hitResult, newRunners, runsScored);
+        const flagged = extras.filter((adv) => errorFlags.has(advancementKey(adv)));
+        onConfirm(newRunners, runsScored, throwouts, flagged);
         onDismiss();
     };
+
+    const toggleErrorFlag = (adv: ErrorAdvancement) => {
+        const key = advancementKey(adv);
+        setErrorFlags((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
+
+    const extraAdvancements = computeExtraAdvancements(currentRunners, hitResult, newRunners, runsScored);
 
     const getHitLabel = (result: string): string => {
         switch (result) {
@@ -305,6 +420,35 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
                         </View>
                     )}
 
+                    {/* Extra advances on throw/error */}
+                    {extraAdvancements.length > 0 && (
+                        <View style={styles.errorSection}>
+                            <Text variant="titleSmall" style={styles.sectionTitle}>
+                                Advanced on throw / error
+                            </Text>
+                            <Text variant="bodySmall" style={styles.errorHint}>
+                                Tap any advance below that happened because of a throwing or fielding error.
+                            </Text>
+                            <View style={styles.errorList}>
+                                {extraAdvancements.map((adv) => {
+                                    const key = advancementKey(adv);
+                                    const selected = errorFlags.has(key);
+                                    return (
+                                        <Chip
+                                            key={key}
+                                            selected={selected}
+                                            onPress={() => toggleErrorFlag(adv)}
+                                            style={[styles.errorChip, selected && styles.errorChipActive]}
+                                            textStyle={selected ? styles.errorChipActiveText : undefined}
+                                        >
+                                            {ORIGIN_LABEL[adv.fromBase]} → {TARGET_LABEL[adv.toBase]}
+                                        </Chip>
+                                    );
+                                })}
+                            </View>
+                        </View>
+                    )}
+
                     {/* Actions */}
                     <View style={styles.actions}>
                         <Button mode="outlined" onPress={onDismiss} style={styles.button}>
@@ -449,6 +593,30 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'flex-end',
         gap: 8,
+    },
+    errorSection: {
+        marginBottom: 16,
+        padding: 12,
+        backgroundColor: colors.yellow[50],
+        borderRadius: 8,
+    },
+    errorHint: {
+        color: colors.gray[600],
+        marginBottom: 8,
+    },
+    errorList: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+    },
+    errorChip: {
+        backgroundColor: colors.gray[100],
+    },
+    errorChipActive: {
+        backgroundColor: colors.yellow[200],
+    },
+    errorChipActiveText: {
+        color: colors.yellow[800],
     },
     actions: {
         flexDirection: 'row',

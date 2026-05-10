@@ -255,6 +255,7 @@ export type BaserunnerEventType =
     | 'wild_pitch'
     | 'passed_ball'
     | 'balk'
+    | 'advance_on_throw'
     | 'thrown_out_advancing';
 
 export type RunnerBase = 'first' | 'second' | 'third';
@@ -265,7 +266,9 @@ export interface BaserunnerEvent {
     inning_id: string;
     at_bat_id?: string;
     event_type: BaserunnerEventType;
-    runner_base: RunnerBase;
+    // 'home' represents the batter as origin — used for advance_on_throw events
+    // where the batter took an extra base on a fielding/throwing error.
+    runner_base: RunnerBase | 'home';
     runner_to_base?: RunnerBase | 'home' | null;
     out_recorded: boolean;
     outs_before: number;

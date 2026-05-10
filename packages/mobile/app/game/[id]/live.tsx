@@ -93,7 +93,7 @@ import RunnerEventModal from '../../../src/components/live/RunnerEventModal';
 import OpposingPitcherModal from '../../../src/components/live/OpposingPitcherModal';
 import CountBreakdownModal from '../../../src/components/live/CountBreakdownModal';
 import type { CompletedAtBatEntry } from '../../../src/components/live';
-import type { Throwout } from '../../../src/components/live/RunnerAdvancementModal/RunnerAdvancementModal';
+import type { ErrorAdvancement, Throwout } from '../../../src/components/live/RunnerAdvancementModal/RunnerAdvancementModal';
 import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/components/common';
 import { HitLocation } from '../../../src/components/live/InPlayModal';
 
@@ -1173,7 +1173,12 @@ export default function LiveGameScreen() {
     );
 
     const handleRunnerAdvancementConfirm = useCallback(
-        async (newRunners: BaseRunners, runsScored: number, throwouts: Throwout[] = []) => {
+        async (
+            newRunners: BaseRunners,
+            runsScored: number,
+            throwouts: Throwout[] = [],
+            errorAdvancements: ErrorAdvancement[] = []
+        ) => {
             if (!pendingHitResult) return;
             try {
                 let lastOutsAfter = currentOuts;
@@ -1206,6 +1211,26 @@ export default function LiveGameScreen() {
                 } else {
                     dispatch(setBaseRunners(newRunners));
                     if (id) dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
+                }
+
+                // Record any extra advances on throw/error the user flagged. The
+                // base-runner state is already final, so each event passes
+                // new_base_runners to keep the service from re-deriving it.
+                if (errorAdvancements.length > 0 && id && currentInning) {
+                    for (const adv of errorAdvancements) {
+                        await dispatch(
+                            recordBaserunnerEvent({
+                                game_id: id,
+                                inning_id: currentInning.id,
+                                at_bat_id: currentAtBat?.id,
+                                event_type: 'advance_on_throw',
+                                runner_base: adv.fromBase === 'batter' ? 'home' : adv.fromBase,
+                                runner_to_base: adv.toBase,
+                                outs_before: lastOutsAfter,
+                                new_base_runners: newRunners,
+                            } as any)
+                        ).unwrap();
+                    }
                 }
 
                 await updateScoreForRuns(runsScored);
@@ -1277,7 +1302,7 @@ export default function LiveGameScreen() {
 
     const handleRecordAdvancement = useCallback(
         async (
-            eventType: 'stolen_base' | 'wild_pitch' | 'passed_ball' | 'balk',
+            eventType: 'stolen_base' | 'wild_pitch' | 'passed_ball' | 'balk' | 'advance_on_throw',
             fromBase: RunnerBase,
             newRunners: BaseRunners,
             runsScored: number,

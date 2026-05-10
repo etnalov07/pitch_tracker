@@ -2,7 +2,7 @@ import { query, transaction } from '../config/database';
 import { BaserunnerEvent, BaseRunners, RunnerBase } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
-const ADVANCEMENT_EVENT_TYPES = new Set(['stolen_base', 'wild_pitch', 'passed_ball', 'balk']);
+const ADVANCEMENT_EVENT_TYPES = new Set(['stolen_base', 'wild_pitch', 'passed_ball', 'balk', 'advance_on_throw']);
 
 const removeRunner = (runners: BaseRunners, base: RunnerBase): BaseRunners => ({
     ...runners,
@@ -91,7 +91,11 @@ export class BaserunnerEventService {
             if (new_base_runners) {
                 updatedRunners = new_base_runners;
             } else if (isAdvancement) {
-                if (runner_to_base) {
+                // advance_on_throw with origin='home' represents the batter — the
+                // base-runner state is already current; do not apply moveRunner.
+                if (runner_base === 'home') {
+                    updatedRunners = currentRunners;
+                } else if (runner_to_base) {
                     updatedRunners = moveRunner(currentRunners, runner_base as RunnerBase, runner_to_base as RunnerBase | 'home');
                 } else {
                     updatedRunners = currentRunners;

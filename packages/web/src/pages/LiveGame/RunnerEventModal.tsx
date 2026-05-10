@@ -3,7 +3,7 @@ import { BaseRunners, RunnerBase, BaserunnerEventType, getSuggestedAdvancement }
 import React, { useState, useEffect } from 'react';
 import { theme } from '../../styles/theme';
 
-type AdvancementEventType = 'stolen_base' | 'wild_pitch' | 'passed_ball' | 'balk';
+type AdvancementEventType = 'stolen_base' | 'wild_pitch' | 'passed_ball' | 'balk' | 'advance_on_throw';
 type OutEventType = 'caught_stealing' | 'pickoff' | 'interference' | 'passed_runner' | 'appeal_out' | 'other';
 
 interface RunnerEventModalProps {
@@ -27,6 +27,7 @@ const ADVANCEMENT_EVENTS: { type: AdvancementEventType; label: string; short: st
     { type: 'wild_pitch', label: 'Wild Pitch', short: 'WP' },
     { type: 'passed_ball', label: 'Passed Ball', short: 'PB' },
     { type: 'balk', label: 'Balk', short: 'BLK' },
+    { type: 'advance_on_throw', label: 'Advance on Throw / Error', short: 'TE' },
 ];
 
 const OUT_EVENTS: { type: OutEventType; label: string }[] = [

@@ -141,6 +141,14 @@ export const getSuggestedAdvancement = (currentRunners: BaseRunners, result: str
             if (currentRunners.first) newRunners.second = true;
             break;
 
+        case 'advance_on_throw':
+            // A throwing/fielding error sent runners up. Suggest one base each;
+            // user adjusts (e.g., 1st → 3rd) in the modal.
+            if (currentRunners.third) runs++;
+            if (currentRunners.second) newRunners.third = true;
+            if (currentRunners.first) newRunners.second = true;
+            break;
+
         case 'stolen_base':
             // Single runner advances — suggested positions are identical to current (caller selects which runner)
             return { suggestedRunners: { ...currentRunners }, suggestedRuns: 0 };

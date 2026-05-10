@@ -28,7 +28,7 @@ import {
 } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
 import { MyTeamLineupPlayer, OpponentLineupPlayer, GamePitcherWithPlayer, getOutsForResult } from '../../types';
-import type { Throwout } from './RunnerAdvancementModal';
+import type { ErrorAdvancement, Throwout } from './RunnerAdvancementModal';
 import { LiveGameState } from './useLiveGameState';
 
 export function useLiveGameActions(state: LiveGameState) {
@@ -579,7 +579,12 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
-    const handleRunnerAdvancementConfirm = async (newRunners: BaseRunners, runsScored: number, throwouts: Throwout[] = []) => {
+    const handleRunnerAdvancementConfirm = async (
+        newRunners: BaseRunners,
+        runsScored: number,
+        throwouts: Throwout[] = [],
+        errorAdvancements: ErrorAdvancement[] = []
+    ) => {
         if (!gameId || !game) return;
 
         try {
@@ -614,6 +619,27 @@ export function useLiveGameActions(state: LiveGameState) {
                 }
             } else {
                 await gamesApi.updateBaseRunners(gameId, newRunners);
+            }
+
+            // Record any extra advances on throw/error the user flagged. Pass
+            // new_base_runners on each so the service does not re-derive the
+            // already-final runner state.
+            if (errorAdvancements.length > 0 && currentInning) {
+                for (const adv of errorAdvancements) {
+                    await gamesApi.recordBaserunnerEvent({
+                        game_id: gameId,
+                        inning_id: currentInning.id,
+                        at_bat_id: currentAtBat?.id,
+                        event_type: 'advance_on_throw',
+                        runner_base: adv.fromBase === 'batter' ? 'home' : adv.fromBase,
+                        runner_to_base: adv.toBase,
+                        outs_before: lastOutsAfter,
+                        new_base_runners: newRunners,
+                    } as Partial<BaserunnerEvent> & {
+                        new_base_runners?: BaseRunners;
+                        runner_to_base?: string;
+                    });
+                }
             }
 
             setBaseRunners(newRunners);
@@ -698,7 +724,7 @@ export function useLiveGameActions(state: LiveGameState) {
     };
 
     const handleRecordAdvancement = async (
-        eventType: 'stolen_base' | 'wild_pitch' | 'passed_ball' | 'balk',
+        eventType: 'stolen_base' | 'wild_pitch' | 'passed_ball' | 'balk' | 'advance_on_throw',
         fromBase: RunnerBase,
         newRunners: BaseRunners,
         runsScored: number,
