@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-10
 - **Type:** docs
-- **Commit:** _(pending)_
+- **Commit:** `2d2af1a`
 - **Versions:** none (docs only)
 
 ## Context
