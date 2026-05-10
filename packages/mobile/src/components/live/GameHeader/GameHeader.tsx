@@ -14,6 +14,7 @@ interface GameHeaderProps {
     runners?: BaseRunners;
     pitchCount?: number;
     onPitcherPress?: () => void;
+    onPitcherStatsPress?: () => void;
     onBatterPress?: () => void;
     onRunnerPress?: (base: RunnerBase) => void;
     onSwapPress?: () => void;
@@ -29,6 +30,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
     runners = { first: false, second: false, third: false },
     pitchCount,
     onPitcherPress,
+    onPitcherStatsPress,
     onBatterPress,
     onRunnerPress,
     onSwapPress,
@@ -107,18 +109,30 @@ const GameHeader: React.FC<GameHeaderProps> = ({
 
             {/* Bottom row: Pitcher vs Batter */}
             <View style={styles.matchupSection}>
-                <Pressable
-                    style={[styles.playerInfo, onPitcherPress && styles.playerInfoTappable]}
-                    onPress={onPitcherPress}
-                    disabled={!onPitcherPress}
-                >
-                    <Text style={styles.playerLabel}>P</Text>
-                    <Text testID="game-header-pitcher-name" style={styles.playerName} numberOfLines={1}>
-                        {currentPitcher
-                            ? `${currentPitcher.first_name[0]}. ${currentPitcher.last_name}${pitchCount != null ? ` (${pitchCount})` : ''}`
-                            : 'Select'}
-                    </Text>
-                </Pressable>
+                <View style={styles.pitcherGroup}>
+                    <Pressable
+                        style={[styles.playerInfo, onPitcherPress && styles.playerInfoTappable]}
+                        onPress={onPitcherPress}
+                        disabled={!onPitcherPress}
+                    >
+                        <Text style={styles.playerLabel}>P</Text>
+                        <Text testID="game-header-pitcher-name" style={styles.playerName} numberOfLines={1}>
+                            {currentPitcher
+                                ? `${currentPitcher.first_name[0]}. ${currentPitcher.last_name}${pitchCount != null ? ` (${pitchCount})` : ''}`
+                                : 'Select'}
+                        </Text>
+                    </Pressable>
+                    {currentPitcher && onPitcherStatsPress && (
+                        <Pressable
+                            testID="game-header-pitcher-stats"
+                            style={styles.statsPill}
+                            onPress={onPitcherStatsPress}
+                            hitSlop={6}
+                        >
+                            <Text style={styles.statsPillText}>Stats</Text>
+                        </Pressable>
+                    )}
+                </View>
                 <Text style={styles.vs}>vs</Text>
                 <Pressable
                     testID="batter-selector-open"
@@ -234,6 +248,25 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    pitcherGroup: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+    },
+    statsPill: {
+        backgroundColor: 'rgba(255,255,255,0.18)',
+        borderRadius: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+    },
+    statsPillText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: '#ffffff',
+        letterSpacing: 0.4,
     },
     playerInfo: {
         flex: 1,

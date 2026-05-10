@@ -24,47 +24,40 @@ const PITCH_TYPE_LABELS: Record<PitchType, string> = {
     other: 'Other',
 };
 
+const STRIKE_RESULTS = new Set(['called_strike', 'swinging_strike', 'foul', 'in_play']);
+
+interface PitchTypeAggregate {
+    total: number;
+    strikes: number;
+    balls: number;
+    velocities: number[];
+}
+
 const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact = false }) => {
     const theme = useTheme();
 
     const totalPitches = pitches.length;
 
-    // Calculate strikes and balls
-    const strikes = pitches.filter(
-        (p) =>
-            p.pitch_result === 'called_strike' ||
-            p.pitch_result === 'swinging_strike' ||
-            p.pitch_result === 'foul' ||
-            p.pitch_result === 'in_play'
-    ).length;
+    const strikes = pitches.filter((p) => STRIKE_RESULTS.has(p.pitch_result)).length;
     const balls = pitches.filter((p) => p.pitch_result === 'ball').length;
 
     const strikePercentage = totalPitches > 0 ? strikes / totalPitches : 0;
 
-    // Group by pitch type
-    const pitchTypeBreakdown = pitches.reduce(
-        (acc, p) => {
-            const type = p.pitch_type;
-            if (!acc[type]) {
-                acc[type] = { total: 0, strikes: 0 };
-            }
-            acc[type].total++;
-            if (
-                p.pitch_result === 'called_strike' ||
-                p.pitch_result === 'swinging_strike' ||
-                p.pitch_result === 'foul' ||
-                p.pitch_result === 'in_play'
-            ) {
-                acc[type].strikes++;
-            }
-            return acc;
-        },
-        {} as Record<string, { total: number; strikes: number }>
-    );
+    const pitchTypeBreakdown = pitches.reduce<Record<string, PitchTypeAggregate>>((acc, p) => {
+        const type = p.pitch_type;
+        if (!acc[type]) {
+            acc[type] = { total: 0, strikes: 0, balls: 0, velocities: [] };
+        }
+        acc[type].total += 1;
+        if (STRIKE_RESULTS.has(p.pitch_result)) acc[type].strikes += 1;
+        if (p.pitch_result === 'ball') acc[type].balls += 1;
+        if (typeof p.velocity === 'number' && p.velocity > 0) acc[type].velocities.push(p.velocity);
+        return acc;
+    }, {});
 
     const pitchTypes = Object.entries(pitchTypeBreakdown)
         .sort((a, b) => b[1].total - a[1].total)
-        .slice(0, compact ? 3 : 5);
+        .slice(0, compact ? 3 : undefined);
 
     if (compact) {
         return (
@@ -94,7 +87,6 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact =
                     {pitcher ? `${pitcher.first_name} ${pitcher.last_name}` : 'Pitcher Stats'}
                 </Text>
 
-                {/* Overview Stats */}
                 <View style={styles.statsRow}>
                     <View style={styles.statItem}>
                         <Text variant="headlineMedium" style={{ color: theme.colors.primary }}>
@@ -116,7 +108,6 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact =
                     </View>
                 </View>
 
-                {/* Strike Percentage Bar */}
                 <View style={styles.progressSection}>
                     <View style={styles.progressHeader}>
                         <Text variant="labelMedium">Strike %</Text>
@@ -129,25 +120,67 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact =
                     />
                 </View>
 
-                {/* Pitch Type Breakdown */}
                 {pitchTypes.length > 0 && (
                     <View style={styles.breakdownSection}>
                         <Text variant="labelMedium" style={styles.breakdownTitle}>
-                            Pitch Mix
+                            By Pitch Type
                         </Text>
-                        {pitchTypes.map(([type, data]) => (
-                            <View key={type} style={styles.pitchTypeRow}>
-                                <Text variant="bodyMedium" style={styles.pitchTypeName}>
-                                    {PITCH_TYPE_LABELS[type as PitchType] || type}
-                                </Text>
-                                <View style={styles.pitchTypeStats}>
-                                    <Text variant="bodyMedium">{data.total}</Text>
-                                    <Text variant="bodySmall" style={styles.pitchTypePercentage}>
-                                        ({Math.round((data.strikes / data.total) * 100)}% K)
+                        <View style={styles.tableHeader}>
+                            <Text variant="labelSmall" style={[styles.cellType, styles.headerText]}>
+                                Type
+                            </Text>
+                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                                #
+                            </Text>
+                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                                Ball
+                            </Text>
+                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                                Strike
+                            </Text>
+                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                                %
+                            </Text>
+                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                                Top
+                            </Text>
+                            <Text variant="labelSmall" style={[styles.cellNum, styles.headerText]}>
+                                Avg
+                            </Text>
+                        </View>
+                        {pitchTypes.map(([type, data]) => {
+                            const pct = data.total > 0 ? Math.round((data.strikes / data.total) * 100) : 0;
+                            const top = data.velocities.length > 0 ? Math.round(Math.max(...data.velocities)) : null;
+                            const avg =
+                                data.velocities.length > 0
+                                    ? Math.round(data.velocities.reduce((s, v) => s + v, 0) / data.velocities.length)
+                                    : null;
+                            return (
+                                <View key={type} style={styles.tableRow}>
+                                    <Text variant="bodySmall" style={styles.cellType} numberOfLines={1}>
+                                        {PITCH_TYPE_LABELS[type as PitchType] || type}
+                                    </Text>
+                                    <Text variant="bodySmall" style={styles.cellNum}>
+                                        {data.total}
+                                    </Text>
+                                    <Text variant="bodySmall" style={styles.cellNum}>
+                                        {data.balls}
+                                    </Text>
+                                    <Text variant="bodySmall" style={[styles.cellNum, styles.strikeCell]}>
+                                        {data.strikes}
+                                    </Text>
+                                    <Text variant="bodySmall" style={styles.cellNum}>
+                                        {pct}
+                                    </Text>
+                                    <Text variant="bodySmall" style={[styles.cellNum, styles.velocityCell]}>
+                                        {top ?? '—'}
+                                    </Text>
+                                    <Text variant="bodySmall" style={[styles.cellNum, styles.velocityCell]}>
+                                        {avg ?? '—'}
                                     </Text>
                                 </View>
-                            </View>
-                        ))}
+                            );
+                        })}
                     </View>
                 )}
             </Card.Content>
@@ -201,22 +234,35 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         color: '#6b7280',
     },
-    pitchTypeRow: {
+    tableHeader: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 8,
+        paddingBottom: 6,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
+        marginBottom: 4,
     },
-    pitchTypeName: {
+    tableRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6,
+    },
+    cellType: {
+        flex: 1.6,
+    },
+    cellNum: {
         flex: 1,
+        textAlign: 'right',
     },
-    pitchTypeStats: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    pitchTypePercentage: {
+    headerText: {
         color: '#6b7280',
+    },
+    strikeCell: {
+        color: '#10b981',
+        fontWeight: '600',
+    },
+    velocityCell: {
+        color: '#3b82f6',
     },
 });
 

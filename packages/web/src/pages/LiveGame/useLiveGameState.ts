@@ -90,6 +90,7 @@ export function useLiveGameState() {
 
     // Baseball diamond modal for in-play recording
     const [showDiamondModal, setShowDiamondModal] = useState(false);
+    const [showPitcherStatsModal, setShowPitcherStatsModal] = useState(false);
     const [hitType, setHitType] = useState<HitType>('line_drive');
     const [hitLocation, setHitLocation] = useState<HitLocation | null>(null);
 
@@ -309,6 +310,8 @@ export function useLiveGameState() {
         // Diamond modal
         showDiamondModal,
         setShowDiamondModal,
+        showPitcherStatsModal,
+        setShowPitcherStatsModal,
         hitType,
         setHitType,
         hitLocation,

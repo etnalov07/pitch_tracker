@@ -86,6 +86,7 @@ import {
     PreviousAtBatsModal,
     PitcherTendenciesModal,
     HitterTendenciesModal,
+    PitcherStatsModal,
 } from '../../../src/components/live';
 import DoublePlayModal from '../../../src/components/live/DoublePlayModal';
 import RunnerEventModal from '../../../src/components/live/RunnerEventModal';
@@ -197,6 +198,7 @@ export default function LiveGameScreen() {
     const [showOpposingPitcherModal, setShowOpposingPitcherModal] = useState(false);
     const [myBatterModalVisible, setMyBatterModalVisible] = useState(false);
     const [showCountBreakdownModal, setShowCountBreakdownModal] = useState(false);
+    const [showPitcherStatsModal, setShowPitcherStatsModal] = useState(false);
     const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
 
     // Settings
@@ -1563,6 +1565,9 @@ export default function LiveGameScreen() {
                         : () => setPitcherModalVisible(true)
                     : undefined
             }
+            onPitcherStatsPress={
+                !isScoutingMode && gameMode === 'our_pitcher' && currentPitcher ? () => setShowPitcherStatsModal(true) : undefined
+            }
             onBatterPress={
                 game.status === 'in_progress'
                     ? isScoutingMode || gameMode !== 'opp_pitcher'
@@ -1800,6 +1805,13 @@ export default function LiveGameScreen() {
                     refreshTrigger={statsRefreshTrigger}
                 />
             )}
+            <PitcherStatsModal
+                visible={showPitcherStatsModal}
+                onDismiss={() => setShowPitcherStatsModal(false)}
+                pitcher={currentPitcher?.player ?? null}
+                pitcherId={currentPitcher?.player_id}
+                pitches={pitches}
+            />
         </Portal>
     );
 

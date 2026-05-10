@@ -16,6 +16,7 @@ import { theme } from '../../styles/theme';
 import DiamondModal from './DiamondModal';
 import DoublePlayModal from './DoublePlayModal';
 import InningChangeModal from './InningChangeModal';
+import PitcherStatsModal from './PitcherStatsModal';
 import RunnerAdvancementModal from './RunnerAdvancementModal';
 import RunnerEventModal from './RunnerEventModal';
 import {
@@ -136,6 +137,8 @@ const LiveGame: React.FC = () => {
         setTeamRunsScored,
         showDiamondModal,
         setShowDiamondModal,
+        showPitcherStatsModal,
+        setShowPitcherStatsModal,
         hitType,
         setHitType,
         hitLocation,
@@ -563,9 +566,14 @@ const LiveGame: React.FC = () => {
                             )}
                         </PlayerInfo>
                         {!isScoutingMode && gameMode !== 'opp_pitcher' && (
-                            <ChangeButton onClick={() => setShowPitcherSelector(true)}>
-                                {currentPitcher ? 'Change' : 'Select'}
-                            </ChangeButton>
+                            <>
+                                {currentPitcher && (
+                                    <ChangeButton onClick={() => setShowPitcherStatsModal(true)}>Stats</ChangeButton>
+                                )}
+                                <ChangeButton onClick={() => setShowPitcherSelector(true)}>
+                                    {currentPitcher ? 'Change' : 'Select'}
+                                </ChangeButton>
+                            </>
                         )}
                     </PlayerDisplay>
 
@@ -894,6 +902,16 @@ const LiveGame: React.FC = () => {
                         setShowDiamondModal(false);
                         setHitLocation(null);
                     }}
+                />
+            )}
+
+            {showPitcherStatsModal && currentPitcher && (
+                <PitcherStatsModal
+                    pitcherId={currentPitcher.player_id}
+                    gameId={gameId || ''}
+                    pitcherName={pitcherName}
+                    refreshTrigger={statsRefreshTrigger}
+                    onClose={() => setShowPitcherStatsModal(false)}
                 />
             )}
 
