@@ -30,7 +30,7 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-    background: white;
+    background: ${theme.surfaces.card};
     border-radius: 12px;
     padding: 24px;
     width: 90%;
@@ -96,7 +96,7 @@ const Chip = styled.button<{ $selected?: boolean }>`
     font-size: 13px;
     cursor: pointer;
     border: 1px solid ${(p) => (p.$selected ? theme.colors.red[400] : theme.colors.gray[300])};
-    background: ${(p) => (p.$selected ? theme.colors.red[50] : 'white')};
+    background: ${(p) => (p.$selected ? theme.colors.red[50] : theme.surfaces.card)};
     color: ${(p) => (p.$selected ? theme.colors.red[700] : theme.colors.gray[700])};
     &:hover {
         border-color: ${theme.colors.red[300]};
@@ -144,7 +144,7 @@ const Base = styled.div<{ $occupied?: boolean; $batter?: boolean }>`
     border-radius: 4px;
     border: 2px solid
         ${(p) => (p.$batter ? theme.colors.green[400] : p.$occupied ? theme.colors.primary[500] : theme.colors.gray[300])};
-    background: ${(p) => (p.$batter ? theme.colors.green[500] : p.$occupied ? theme.colors.primary[500] : 'white')};
+    background: ${(p) => (p.$batter ? theme.colors.green[500] : p.$occupied ? theme.colors.primary[500] : theme.surfaces.card)};
     color: ${(p) => (p.$occupied || p.$batter ? 'white' : theme.colors.gray[400])};
     font-size: 11px;
     font-weight: 700;
@@ -185,7 +185,7 @@ const ActionButton = styled.button<{ $variant?: 'red' | 'outline' }>`
     ${(p) => {
         if (p.$variant === 'red')
             return `background:${theme.colors.red[500]};color:white;border:none;&:hover{background:${theme.colors.red[600]};}&:disabled{background:${theme.colors.gray[300]};cursor:not-allowed;}`;
-        return `background:white;color:${theme.colors.gray[700]};border:1px solid ${theme.colors.gray[300]};&:hover{background:${theme.colors.gray[50]};}`;
+        return `background:${theme.surfaces.card};color:${theme.colors.gray[700]};border:1px solid ${theme.colors.gray[300]};&:hover{background:${theme.colors.gray[50]};}`;
     }}
 `;
 

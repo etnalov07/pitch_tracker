@@ -370,7 +370,7 @@ const LiveGame: React.FC = () => {
                                         position: 'absolute',
                                         top: '110%',
                                         right: 0,
-                                        background: 'white',
+                                        background: theme.surfaces.card,
                                         border: `1px solid ${theme.colors.gray[200]}`,
                                         borderRadius: '10px',
                                         boxShadow: theme.shadows.md,

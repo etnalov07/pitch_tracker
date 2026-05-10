@@ -55,7 +55,7 @@ const ClearButton = styled.button`
     padding: 4px 10px;
     border-radius: 6px;
     border: 1px solid ${theme.colors.gray[300]};
-    background: white;
+    background: ${theme.surfaces.card};
     color: ${theme.colors.gray[600]};
     cursor: pointer;
     font-size: 12px;
@@ -81,7 +81,7 @@ const PositionChip = styled.button<{ $order: number | null }>`
     padding: 8px 0;
     border-radius: 8px;
     border: 1px solid ${(props) => (props.$order != null ? theme.colors.primary[500] : theme.colors.gray[300])};
-    background: ${(props) => (props.$order != null ? theme.colors.primary[50] : 'white')};
+    background: ${(props) => (props.$order != null ? theme.colors.primary[50] : theme.surfaces.card)};
     color: ${(props) => (props.$order != null ? theme.colors.primary[700] : theme.colors.gray[700])};
     font-size: 13px;
     font-weight: 600;

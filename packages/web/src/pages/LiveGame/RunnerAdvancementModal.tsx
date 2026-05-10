@@ -37,7 +37,7 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-    background: white;
+    background: ${theme.surfaces.card};
     border-radius: 12px;
     padding: 24px;
     max-width: 480px;
@@ -96,7 +96,7 @@ const Chip = styled.button<{ $selected: boolean; $color?: 'green' | 'red' }>`
             return props.$color === 'red' ? theme.colors.red[500] : theme.colors.green[500];
         }};
     background: ${(props) => {
-        if (!props.$selected) return 'white';
+        if (!props.$selected) return theme.surfaces.card;
         return props.$color === 'red' ? theme.colors.red[50] : theme.colors.green[50];
     }};
     color: ${(props) => {
@@ -133,7 +133,7 @@ const RunsButton = styled.button`
     height: 36px;
     border-radius: 50%;
     border: 1px solid ${theme.colors.gray[300]};
-    background: white;
+    background: ${theme.surfaces.card};
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -179,7 +179,7 @@ const ThrowoutRow = styled.li`
     justify-content: space-between;
     gap: 8px;
     padding: 6px 10px;
-    background: white;
+    background: ${theme.surfaces.card};
     border-radius: 6px;
     font-size: 13px;
     color: ${theme.colors.gray[800]};
@@ -232,7 +232,7 @@ const SmallButton = styled.button<{ $variant?: 'primary' | 'outline' }>`
     ${(props) =>
         props.$variant === 'outline'
             ? `
-                background: white;
+                background: ${theme.surfaces.card};
                 color: ${theme.colors.gray[700]};
                 border: 1px solid ${theme.colors.gray[300]};
                 &:hover { background: ${theme.colors.gray[50]}; }
@@ -263,7 +263,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'outline' }>`
     ${(props) =>
         props.$variant === 'outline'
             ? `
-                background: white;
+                background: ${theme.surfaces.card};
                 color: ${theme.colors.gray[700]};
                 border: 1px solid ${theme.colors.gray[300]};
                 &:hover { background: ${theme.colors.gray[50]}; }

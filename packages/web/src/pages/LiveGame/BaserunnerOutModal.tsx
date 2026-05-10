@@ -40,7 +40,7 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-    background: white;
+    background: ${theme.surfaces.card};
     border-radius: 12px;
     padding: 24px;
     max-width: 400px;
@@ -82,7 +82,7 @@ const Chip = styled.button<{ $selected: boolean }>`
     padding: 8px 16px;
     border-radius: 20px;
     border: 1px solid ${(props) => (props.$selected ? theme.colors.primary[500] : theme.colors.gray[300])};
-    background: ${(props) => (props.$selected ? theme.colors.primary[50] : 'white')};
+    background: ${(props) => (props.$selected ? theme.colors.primary[50] : theme.surfaces.card)};
     color: ${(props) => (props.$selected ? theme.colors.primary[700] : theme.colors.gray[700])};
     cursor: pointer;
     font-size: 14px;
@@ -124,7 +124,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'outline' | 'danger' }>`
                 `;
             case 'outline':
                 return `
-                    background: white;
+                    background: ${theme.surfaces.card};
                     color: ${theme.colors.gray[700]};
                     border: 1px solid ${theme.colors.gray[300]};
                     &:hover { background: ${theme.colors.gray[50]}; }

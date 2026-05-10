@@ -25,7 +25,7 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-    background: white;
+    background: ${theme.surfaces.card};
     border-radius: 12px;
     padding: 24px;
     max-width: 360px;
@@ -71,7 +71,7 @@ const Button = styled.button<{ variant?: 'destructive' }>`
     padding: 10px 16px;
     border: 1px solid ${({ variant }) => (variant === 'destructive' ? theme.colors.red[600] : theme.colors.gray[300])};
     border-radius: 8px;
-    background: ${({ variant }) => (variant === 'destructive' ? theme.colors.red[600] : 'white')};
+    background: ${({ variant }) => (variant === 'destructive' ? theme.colors.red[600] : theme.surfaces.card)};
     color: ${({ variant }) => (variant === 'destructive' ? 'white' : theme.colors.gray[700])};
     font-weight: 600;
     cursor: pointer;

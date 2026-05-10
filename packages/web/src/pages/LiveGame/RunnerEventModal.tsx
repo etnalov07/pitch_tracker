@@ -57,7 +57,7 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-    background: white;
+    background: ${theme.surfaces.card};
     border-radius: 12px;
     padding: 24px;
     width: 90%;
@@ -113,7 +113,8 @@ const Chip = styled.button<{ $selected?: boolean; $color?: 'green' | 'red' }>`
     cursor: pointer;
     border: 1px solid
         ${(p) => (p.$selected ? (p.$color === 'red' ? theme.colors.red[400] : theme.colors.green[400]) : theme.colors.gray[300])};
-    background: ${(p) => (p.$selected ? (p.$color === 'red' ? theme.colors.red[50] : theme.colors.green[50]) : 'white')};
+    background: ${(p) =>
+        p.$selected ? (p.$color === 'red' ? theme.colors.red[50] : theme.colors.green[50]) : theme.surfaces.card};
     color: ${(p) =>
         p.$selected ? (p.$color === 'red' ? theme.colors.red[700] : theme.colors.green[700]) : theme.colors.gray[700]};
     &:hover {
@@ -154,7 +155,7 @@ const Base = styled.button<{ $occupied?: boolean; $interactive?: boolean }>`
     height: 28px;
     border-radius: 4px;
     border: 2px solid ${(p) => (p.$occupied ? theme.colors.primary[500] : theme.colors.gray[300])};
-    background: ${(p) => (p.$occupied ? theme.colors.primary[500] : 'white')};
+    background: ${(p) => (p.$occupied ? theme.colors.primary[500] : theme.surfaces.card)};
     color: ${(p) => (p.$occupied ? 'white' : theme.colors.gray[400])};
     font-size: 11px;
     font-weight: 700;
@@ -212,7 +213,7 @@ const ActionButton = styled.button<{ $variant?: 'green' | 'red' | 'outline' }>`
             return `background:${theme.colors.green[600]};color:white;border:none;&:hover{background:${theme.colors.green[700]};}&:disabled{background:${theme.colors.gray[300]};cursor:not-allowed;}`;
         if (p.$variant === 'red')
             return `background:${theme.colors.red[500]};color:white;border:none;&:hover{background:${theme.colors.red[600]};}&:disabled{background:${theme.colors.gray[300]};cursor:not-allowed;}`;
-        return `background:white;color:${theme.colors.gray[700]};border:1px solid ${theme.colors.gray[300]};&:hover{background:${theme.colors.gray[50]};}`;
+        return `background:${theme.surfaces.card};color:${theme.colors.gray[700]};border:1px solid ${theme.colors.gray[300]};&:hover{background:${theme.colors.gray[50]};}`;
     }}
 `;
 

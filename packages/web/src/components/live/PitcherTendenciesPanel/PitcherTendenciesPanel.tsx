@@ -56,7 +56,7 @@ const PitcherTendenciesPanel: React.FC<PitcherTendenciesPanelProps> = ({ pitcher
         >
             <div
                 style={{
-                    background: 'white',
+                    background: theme.surfaces.card,
                     borderRadius: theme.borderRadius.lg,
                     padding: 20,
                     maxWidth: 480,
@@ -108,7 +108,7 @@ const PitcherTendenciesPanel: React.FC<PitcherTendenciesPanelProps> = ({ pitcher
                                 padding: '5px 14px',
                                 borderRadius: theme.borderRadius.md,
                                 border: `1px solid ${batterHand === hand ? theme.colors.primary[600] : theme.colors.gray[300]}`,
-                                background: batterHand === hand ? theme.colors.primary[600] : 'white',
+                                background: batterHand === hand ? theme.colors.primary[600] : theme.surfaces.card,
                                 color: batterHand === hand ? 'white' : theme.colors.gray[600],
                                 fontWeight: theme.fontWeight.semibold,
                                 fontSize: theme.fontSize.sm,

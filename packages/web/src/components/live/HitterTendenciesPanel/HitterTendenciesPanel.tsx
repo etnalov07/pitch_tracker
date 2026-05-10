@@ -84,7 +84,7 @@ const HitterTendenciesPanel: React.FC<HitterTendenciesPanelProps> = ({
         >
             <div
                 style={{
-                    background: 'white',
+                    background: theme.surfaces.card,
                     borderRadius: theme.borderRadius.lg,
                     padding: 20,
                     maxWidth: 480,

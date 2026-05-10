@@ -791,7 +791,7 @@ export const DiamondModalOverlay = styled.div({
 });
 
 export const DiamondModal = styled.div({
-    backgroundColor: 'white',
+    backgroundColor: theme.surfaces.card,
     padding: theme.spacing.xl,
     borderRadius: theme.borderRadius.xl,
     boxShadow: theme.shadows.xl,
@@ -1237,7 +1237,7 @@ export const RoleSelectOverlay = styled.div({
 });
 
 export const RoleSelectCard = styled.div({
-    background: 'white',
+    background: theme.surfaces.card,
     borderRadius: theme.borderRadius.xl,
     padding: theme.spacing['3xl'],
     boxShadow: theme.shadows.xl,
