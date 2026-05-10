@@ -127,7 +127,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
         setSaving(true);
         try {
             await api.post<{ player: OpponentLineupPlayer }>(`/opponent-lineup/player/${editingBatter.id}/substitute`, {
-                new_player_name: newName.trim(),
+                player_name: newName.trim(),
                 inning_entered: parseInt(subInning, 10),
                 position: newPosition.trim() || null,
                 bats: newBats,
