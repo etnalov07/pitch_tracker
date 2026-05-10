@@ -70,65 +70,25 @@
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Dark mode — invert grays so styled-components using gray.50 (light bg) automatically
-   pick up a dark surface, and gray.900 (dark text) becomes a light text color. Brand
-   palettes (primary/green/red/yellow) lighten one or two steps for legibility on dark
-   backgrounds. */
-[data-theme='dark'] {
-    --color-primary-50: #0b1f3a;
-    --color-primary-100: #243b53;
-    --color-primary-200: #334e68;
-    --color-primary-300: #486581;
-    --color-primary-400: #627d98;
-    --color-primary-500: #829ab1;
-    --color-primary-600: #9fb3c8;
-    --color-primary-700: #bcccdc;
-    --color-primary-800: #d9e2ec;
-    --color-primary-900: #f0f4f8;
+/* Dark mode — only the gray scale inverts so light surfaces (gray.50/100) become
+   dark surfaces and dark text (gray.700-900) becomes light text. Brand palettes
+   (primary/green/red/yellow/orange) keep their light-mode values: the navy header
+   gradient stays dark for the hardcoded white text on top, and badge bg/text
+   pairs (e.g. green[100] bg + green[800] text) remain self-consistent.
 
+   Muted gray tiers (400/500) are pushed brighter than a strict inversion so
+   secondary text and metadata stay legible on dark backgrounds. */
+[data-theme='dark'] {
     --color-gray-50: #111827;
     --color-gray-100: #1f2937;
     --color-gray-200: #374151;
     --color-gray-300: #4b5563;
-    --color-gray-400: #6b7280;
-    --color-gray-500: #9ca3af;
-    --color-gray-600: #d1d5db;
-    --color-gray-700: #e5e7eb;
-    --color-gray-800: #f3f4f6;
-    --color-gray-900: #f9fafb;
-
-    --color-green-50: #052e16;
-    --color-green-100: #14532d;
-    --color-green-200: #166534;
-    --color-green-300: #15803d;
-    --color-green-400: #16a34a;
-    --color-green-500: #4ade80;
-    --color-green-600: #86efac;
-    --color-green-700: #bbf7d0;
-    --color-green-800: #dcfce7;
-
-    --color-red-50: #450a0a;
-    --color-red-100: #7f1d1d;
-    --color-red-200: #991b1b;
-    --color-red-300: #b91c1c;
-    --color-red-400: #c62828;
-    --color-red-500: #f87171;
-    --color-red-600: #fca5a5;
-    --color-red-700: #fecaca;
-    --color-red-800: #fee2e2;
-
-    --color-yellow-50: #422006;
-    --color-yellow-100: #713f12;
-    --color-yellow-200: #854d0e;
-    --color-yellow-300: #a16207;
-    --color-yellow-400: #ca8a04;
-    --color-yellow-500: #facc15;
-    --color-yellow-600: #fde047;
-    --color-yellow-700: #fef08a;
-    --color-yellow-800: #fef9c3;
-
-    --color-orange-500: #fb923c;
-    --color-orange-600: #fdba74;
+    --color-gray-400: #94a3b8;
+    --color-gray-500: #cbd5e1;
+    --color-gray-600: #e2e8f0;
+    --color-gray-700: #f1f5f9;
+    --color-gray-800: #f8fafc;
+    --color-gray-900: #ffffff;
 
     --surface-body: #0f172a;
     --surface-text: #f9fafb;
