@@ -139,6 +139,20 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     const [selectedLocation, setSelectedLocation] = useState<{ x: number; y: number } | null>(null);
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
+    // SVG fills/strokes don't auto-flip; pick a palette per mode so the canvas
+    // sits cleanly on the dark surface card without losing zone contrast.
+    const isDark = theme.dark;
+    const svgBackground = isDark ? colors.gray[800] : '#f5f5f0';
+    const plateShadow = isDark ? colors.gray[700] : '#e0e0d8';
+    const zoneOuterFill = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)';
+    const zoneCellFill = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(230, 230, 225, 0.6)';
+    const zoneCellStroke = isDark ? colors.gray[500] : '#a0a0a0';
+    const zoneOuterStroke = isDark ? colors.gray[400] : '#808080';
+    const wasteHintFill = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(200, 200, 195, 0.3)';
+    const wasteHintStroke = isDark ? colors.gray[500] : '#b0b0a8';
+    const wasteLabelFill = isDark ? colors.gray[300] : '#888';
+    const zoneLabelFill = isDark ? colors.gray[300] : '#999';
+
     // Reset selectedLocation when a new pitch is logged
     useEffect(() => {
         setSelectedLocation(null);
@@ -264,7 +278,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
     return (
         <View style={[compact ? compactStyles.container : styles.container, { backgroundColor: theme.colors.surface }]}>
-            {!compact && <Text style={styles.title}>Strike Zone</Text>}
+            {!compact && <Text style={[styles.title, { color: theme.colors.onSurface }]}>Strike Zone</Text>}
             <Pressable
                 testID="strike-zone-canvas"
                 onPress={handlePress}
@@ -275,11 +289,11 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                 <View onLayout={handleLayout} style={styles.svgContainer}>
                     <Svg viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`} style={styles.svg}>
                         {/* Background */}
-                        <Rect x="0" y="0" width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill="#f5f5f0" />
+                        <Rect x="0" y="0" width={VIEWBOX_WIDTH} height={VIEWBOX_HEIGHT} fill={svgBackground} />
 
                         {/* Home plate - reversed (point facing pitcher/up) */}
                         <G transform="translate(150, 272)">
-                            <Ellipse cx="0" cy="15" rx="45" ry="11" fill="#e0e0d8" />
+                            <Ellipse cx="0" cy="15" rx="45" ry="11" fill={plateShadow} />
                             <Path d="M -38 22 L 38 22 L 38 10 L 0 -5 L -38 10 Z" fill="#4db6ac" stroke="#26a69a" strokeWidth="2" />
                             <Path d="M -32 20 L 32 20 L 32 11 L 0 -2 L -32 11 Z" fill="#80cbc4" stroke="#4db6ac" strokeWidth="1" />
                             <Path d="M -26 17 L 26 17 L 26 12 L 0 1 L -26 12 Z" fill="white" stroke="#b0bec5" strokeWidth="1" />
@@ -303,14 +317,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                             y={y}
                                             width={w}
                                             height={h}
-                                            fill={
-                                                isSelected
-                                                    ? AMBER + '40'
-                                                    : isTargetMode
-                                                      ? 'rgba(200, 200, 195, 0.3)'
-                                                      : 'transparent'
-                                            }
-                                            stroke={isSelected ? AMBER : isTargetMode ? '#b0b0a8' : 'none'}
+                                            fill={isSelected ? AMBER + '40' : isTargetMode ? wasteHintFill : 'transparent'}
+                                            stroke={isSelected ? AMBER : isTargetMode ? wasteHintStroke : 'none'}
                                             strokeWidth={isSelected ? 2 : 1}
                                             strokeDasharray={isSelected ? '' : '3,2'}
                                             rx="3"
@@ -321,7 +329,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                             textAnchor="middle"
                                             fontSize="9"
                                             fontWeight="600"
-                                            fill={isSelected ? AMBER : isTargetMode ? '#888' : 'transparent'}
+                                            fill={isSelected ? AMBER : isTargetMode ? wasteLabelFill : 'transparent'}
                                         >
                                             {label}
                                         </SvgText>
@@ -331,7 +339,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
                         {/* Strike zone - 3x3 grid */}
                         <G transform={`translate(${ZONE_X}, ${ZONE_Y})`}>
-                            <Rect x="0" y="0" width={ZONE_WIDTH} height={ZONE_HEIGHT} fill="rgba(255,255,255,0.85)" />
+                            <Rect x="0" y="0" width={ZONE_WIDTH} height={ZONE_HEIGHT} fill={zoneOuterFill} />
 
                             {/* Grid cells */}
                             {strikeZoneGrid.map(({ zone, row, col }) => {
@@ -343,8 +351,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                             y={row * cellH}
                                             width={cellW}
                                             height={cellH}
-                                            fill={isSelected ? AMBER + '35' : 'rgba(230, 230, 225, 0.6)'}
-                                            stroke={isSelected ? AMBER : '#a0a0a0'}
+                                            fill={isSelected ? AMBER + '35' : zoneCellFill}
+                                            stroke={isSelected ? AMBER : zoneCellStroke}
                                             strokeWidth={isSelected ? 2 : 1}
                                         />
                                         {/* Zone label (show in target mode or when selected) */}
@@ -355,7 +363,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                                 textAnchor="middle"
                                                 fontSize="10"
                                                 fontWeight="700"
-                                                fill={isSelected ? AMBER : '#999'}
+                                                fill={isSelected ? AMBER : zoneLabelFill}
                                             >
                                                 {ZONE_LABELS[zone]}
                                             </SvgText>
@@ -371,7 +379,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                 width={ZONE_WIDTH}
                                 height={ZONE_HEIGHT}
                                 fill="none"
-                                stroke="#808080"
+                                stroke={zoneOuterStroke}
                                 strokeWidth="2"
                             />
                         </G>
@@ -464,13 +472,13 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
             {/* Clear target button */}
             {targetZone && onTargetClear && (
                 <Pressable
-                    style={styles.clearButton}
+                    style={[styles.clearButton, { backgroundColor: theme.colors.surfaceVariant }]}
                     onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         onTargetClear();
                     }}
                 >
-                    <Text style={styles.clearButtonText}>Clear Target</Text>
+                    <Text style={[styles.clearButtonText, { color: theme.colors.primary }]}>Clear Target</Text>
                 </Pressable>
             )}
 
@@ -479,30 +487,30 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                 <View style={styles.legend}>
                     <View style={styles.legendItem}>
                         <View style={[styles.legendDot, { backgroundColor: colors.green[500] }]} />
-                        <Text style={styles.legendText}>Strike</Text>
+                        <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>Strike</Text>
                     </View>
                     <View style={styles.legendItem}>
                         <View style={[styles.legendDot, { backgroundColor: colors.red[500] }]} />
-                        <Text style={styles.legendText}>Swing</Text>
+                        <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>Swing</Text>
                     </View>
                     <View style={styles.legendItem}>
                         <View style={[styles.legendDot, { backgroundColor: colors.gray[400] }]} />
-                        <Text style={styles.legendText}>Ball</Text>
+                        <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>Ball</Text>
                     </View>
                     <View style={styles.legendItem}>
                         <View style={[styles.legendDot, { backgroundColor: colors.yellow[500] }]} />
-                        <Text style={styles.legendText}>Foul</Text>
+                        <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>Foul</Text>
                     </View>
                     <View style={styles.legendItem}>
                         <View style={[styles.legendDot, { backgroundColor: colors.primary[600] }]} />
-                        <Text style={styles.legendText}>In Play</Text>
+                        <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>In Play</Text>
                     </View>
                 </View>
             )}
 
             {/* Instructions - only in non-compact mode */}
             {!compact && (
-                <Text style={styles.instructions}>
+                <Text style={[styles.instructions, { color: theme.colors.onSurfaceVariant }]}>
                     {onTargetZoneSelect
                         ? targetZone
                             ? 'Tap to set pitch location (long press to clear target)'

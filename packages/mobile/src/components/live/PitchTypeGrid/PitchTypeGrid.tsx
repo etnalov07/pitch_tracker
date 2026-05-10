@@ -59,13 +59,22 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
                                 key={type}
                                 style={[
                                     compactStyles.button,
+                                    !isSelected && { backgroundColor: theme.colors.surfaceVariant },
                                     isSelected && compactStyles.buttonSelected,
                                     disabled && compactStyles.buttonDisabled,
                                 ]}
                                 onPress={() => handleSelect(type)}
                                 disabled={disabled}
                             >
-                                <Text style={[compactStyles.abbrev, isSelected && compactStyles.textSelected]}>{abbrev}</Text>
+                                <Text
+                                    style={[
+                                        compactStyles.abbrev,
+                                        { color: theme.colors.onSurfaceVariant },
+                                        isSelected && compactStyles.textSelected,
+                                    ]}
+                                >
+                                    {abbrev}
+                                </Text>
                             </Pressable>
                         );
                     })}
@@ -76,19 +85,30 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
 
     return (
         <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
-            <Text style={styles.title}>Pitch Type</Text>
+            <Text style={[styles.title, { color: theme.colors.onSurface }]}>Pitch Type</Text>
             <View style={styles.grid}>
                 {pitchTypes.map(({ type, label, abbrev }) => {
                     const isSelected = selectedType === type;
                     return (
                         <Pressable
                             key={type}
-                            style={[styles.button, isSelected && styles.buttonSelected, disabled && styles.buttonDisabled]}
+                            style={[
+                                styles.button,
+                                !isSelected && { backgroundColor: theme.colors.surfaceVariant },
+                                isSelected && styles.buttonSelected,
+                                disabled && styles.buttonDisabled,
+                            ]}
                             onPress={() => handleSelect(type)}
                             disabled={disabled}
                         >
-                            <Text style={[styles.abbrev, isSelected && styles.textSelected]}>{abbrev}</Text>
-                            <Text style={[styles.label, isSelected && styles.textSelected]}>{label}</Text>
+                            <Text style={[styles.abbrev, { color: theme.colors.onSurface }, isSelected && styles.textSelected]}>
+                                {abbrev}
+                            </Text>
+                            <Text
+                                style={[styles.label, { color: theme.colors.onSurfaceVariant }, isSelected && styles.textSelected]}
+                            >
+                                {label}
+                            </Text>
                         </Pressable>
                     );
                 })}
