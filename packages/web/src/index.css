@@ -61,7 +61,18 @@
 
     /* Surface tokens for body / app shell */
     --surface-body: #ffffff;
+    --surface-card: #ffffff;
+    --surface-elevated: #f9fafb;
     --surface-text: #111827;
+    --surface-text-muted: #4b5563;
+    --surface-text-subtle: #6b7280;
+    --surface-border: #e5e7eb;
+    --surface-border-strong: #d1d5db;
+
+    /* Brand chrome (page headers) — stays navy in both modes so hardcoded
+       white text on top stays legible. */
+    --header-bg-start: #243b53;
+    --header-bg-end: #0b1f3a;
 
     /* Shadows — light */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -70,35 +81,156 @@
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Dark mode — only the gray scale inverts so light surfaces (gray.50/100) become
-   dark surfaces and dark text (gray.700-900) becomes light text. Brand palettes
-   (primary/green/red/yellow/orange) keep their light-mode values: the navy header
-   gradient stays dark for the hardcoded white text on top, and badge bg/text
-   pairs (e.g. green[100] bg + green[800] text) remain self-consistent.
+/* ----------------------------------------------------------------------------
+   Dark mode
 
-   Muted gray tiers (400/500) are pushed brighter than a strict inversion so
-   secondary text and metadata stay legible on dark backgrounds. */
+   Strategy: instead of a pure inversion (which caused poor contrast — e.g.
+   gray-500 muted text became too dim against gray-100 surfaces), we remap
+   each gray step so that components written against the light-mode semantics
+   keep their *intent*:
+
+     gray-50/100/200  → progressively lighter dark surfaces (backgrounds, cards)
+     gray-300/400     → borders / dividers
+     gray-500/600     → muted/subtle text (kept light enough to read at WCAG AA)
+     gray-700/800/900 → primary/heading text (near-white)
+
+   Brand palettes (primary, green, red, yellow) are *lifted* one or two steps
+   so 500/600 — the most commonly used "default" tokens — render as bright,
+   legible accents on the dark background instead of muddy dark blocks.
+---------------------------------------------------------------------------- */
 [data-theme='dark'] {
-    --color-gray-50: #111827;
-    --color-gray-100: #1f2937;
-    --color-gray-200: #374151;
-    --color-gray-300: #4b5563;
-    --color-gray-400: #94a3b8;
-    --color-gray-500: #cbd5e1;
-    --color-gray-600: #e2e8f0;
-    --color-gray-700: #f1f5f9;
-    --color-gray-800: #f8fafc;
-    --color-gray-900: #ffffff;
+    /* Primary (brand blue) — shift toward lighter shades for legibility on dark */
+    --color-primary-50: #1a2942;
+    --color-primary-100: #243b53;
+    --color-primary-200: #334e68;
+    --color-primary-300: #486581;
+    --color-primary-400: #627d98;
+    --color-primary-500: #829ab1;
+    --color-primary-600: #9fb3c8;
+    --color-primary-700: #bcccdc;
+    --color-primary-800: #d9e2ec;
+    --color-primary-900: #f0f4f8;
 
-    --surface-body: #0f172a;
-    --surface-text: #f9fafb;
+    /* Grays — surfaces stay dark, text stays light, with proper contrast steps */
+    --color-gray-50: #1a2231; /* lightest "background" surface */
+    --color-gray-100: #1f2937; /* card / panel surface */
+    --color-gray-200: #2d3748; /* subtle hover / divider */
+    --color-gray-300: #4b5563; /* border */
+    --color-gray-400: #6b7280; /* strong border / disabled */
+    --color-gray-500: #9ca3af; /* subtle text — was too dim before */
+    --color-gray-600: #cbd5e1; /* muted text — bumped for readability */
+    --color-gray-700: #e5e7eb; /* secondary text */
+    --color-gray-800: #f1f5f9; /* primary text */
+    --color-gray-900: #f9fafb; /* headings / strongest text */
 
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.55), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.45);
+    /* Greens — keep accents vibrant; lift mid-range for visibility */
+    --color-green-50: #0a2818;
+    --color-green-100: #14532d;
+    --color-green-200: #166534;
+    --color-green-300: #15803d;
+    --color-green-400: #22c55e;
+    --color-green-500: #4ade80;
+    --color-green-600: #86efac;
+    --color-green-700: #bbf7d0;
+    --color-green-800: #dcfce7;
+
+    /* Reds — keep error/alert colors readable, not washed out */
+    --color-red-50: #2a0a0a;
+    --color-red-100: #7f1d1d;
+    --color-red-200: #991b1b;
+    --color-red-300: #b91c1c;
+    --color-red-400: #ef4444;
+    --color-red-500: #f87171;
+    --color-red-600: #fca5a5;
+    --color-red-700: #fecaca;
+    --color-red-800: #fee2e2;
+
+    /* Yellows — careful here, pure yellow on dark needs to stay golden, not pale */
+    --color-yellow-50: #2a1f06;
+    --color-yellow-100: #713f12;
+    --color-yellow-200: #854d0e;
+    --color-yellow-300: #a16207;
+    --color-yellow-400: #eab308;
+    --color-yellow-500: #facc15;
+    --color-yellow-600: #fde047;
+    --color-yellow-700: #fef08a;
+    --color-yellow-800: #fef9c3;
+
+    --color-orange-500: #fb923c;
+    --color-orange-600: #fdba74;
+
+    /* Layered surfaces — gives depth instead of one flat dark color */
+    --surface-body: #0f172a; /* app background */
+    --surface-card: #1f2937; /* cards, panels */
+    --surface-elevated: #2d3748; /* modals, popovers, hover states */
+    --surface-text: #f1f5f9; /* primary body text — high contrast */
+    --surface-text-muted: #cbd5e1; /* secondary text */
+    --surface-text-subtle: #9ca3af; /* tertiary / placeholder */
+    --surface-border: #374151;
+    --surface-border-strong: #4b5563;
+
+    /* Brand chrome stays navy — overridden so the hardcoded inversion above
+       doesn't bleed into headers that pair this gradient with white text. */
+    --header-bg-start: #243b53;
+    --header-bg-end: #0b1f3a;
+
+    /* Shadows — stronger and tinted darker since dark UIs need more separation */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7), 0 4px 6px -2px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.75), 0 10px 10px -5px rgba(0, 0, 0, 0.55);
 
     color-scheme: dark;
+}
+
+/* Respect OS preference if no explicit theme is set */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']):not([data-theme='dark']) {
+        --color-primary-50: #1a2942;
+        --color-primary-100: #243b53;
+        --color-primary-200: #334e68;
+        --color-primary-300: #486581;
+        --color-primary-400: #627d98;
+        --color-primary-500: #829ab1;
+        --color-primary-600: #9fb3c8;
+        --color-primary-700: #bcccdc;
+        --color-primary-800: #d9e2ec;
+        --color-primary-900: #f0f4f8;
+
+        --color-gray-50: #1a2231;
+        --color-gray-100: #1f2937;
+        --color-gray-200: #2d3748;
+        --color-gray-300: #4b5563;
+        --color-gray-400: #6b7280;
+        --color-gray-500: #9ca3af;
+        --color-gray-600: #cbd5e1;
+        --color-gray-700: #e5e7eb;
+        --color-gray-800: #f1f5f9;
+        --color-gray-900: #f9fafb;
+
+        --color-green-400: #22c55e;
+        --color-green-500: #4ade80;
+        --color-green-600: #86efac;
+
+        --color-red-400: #ef4444;
+        --color-red-500: #f87171;
+        --color-red-600: #fca5a5;
+
+        --color-yellow-400: #eab308;
+        --color-yellow-500: #facc15;
+        --color-yellow-600: #fde047;
+
+        --surface-body: #0f172a;
+        --surface-card: #1f2937;
+        --surface-elevated: #2d3748;
+        --surface-text: #f1f5f9;
+        --surface-text-muted: #cbd5e1;
+        --surface-text-subtle: #9ca3af;
+        --surface-border: #374151;
+        --surface-border-strong: #4b5563;
+
+        color-scheme: dark;
+    }
 }
 
 * {
@@ -114,6 +246,9 @@ body {
         'Helvetica Neue', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
 }
 
 code {
@@ -130,4 +265,30 @@ input,
 select,
 textarea {
     font-family: inherit;
+    color: inherit;
+}
+
+/* Form controls in dark mode — native widgets need help */
+[data-theme='dark'] input,
+[data-theme='dark'] select,
+[data-theme='dark'] textarea {
+    background-color: var(--color-gray-100);
+    color: var(--surface-text);
+    border-color: var(--surface-border);
+}
+
+[data-theme='dark'] input::placeholder,
+[data-theme='dark'] textarea::placeholder {
+    color: var(--surface-text-subtle);
+}
+
+/* Selection — readable in both modes */
+::selection {
+    background-color: var(--color-primary-300);
+    color: var(--color-gray-900);
+}
+
+[data-theme='dark'] ::selection {
+    background-color: var(--color-primary-400);
+    color: var(--color-gray-50);
 }
