@@ -12,10 +12,12 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ message = 'Loading...', s
     const theme = useTheme();
 
     return (
-        <View style={[styles.container, fullScreen && styles.fullScreen]}>
+        <View
+            style={[styles.container, fullScreen && styles.fullScreen, fullScreen && { backgroundColor: theme.colors.background }]}
+        >
             <ActivityIndicator size={size} color={theme.colors.primary} />
             {message && (
-                <Text variant="bodyMedium" style={styles.message}>
+                <Text variant="bodyMedium" style={[styles.message, { color: theme.colors.onSurfaceVariant }]}>
                     {message}
                 </Text>
             )}
@@ -31,11 +33,9 @@ const styles = StyleSheet.create({
     },
     fullScreen: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     message: {
         marginTop: 16,
-        color: '#6b7280',
         textAlign: 'center',
     },
 });

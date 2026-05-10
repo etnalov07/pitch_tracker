@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, Chip } from 'react-native-paper';
+import { Text, Chip, useTheme } from 'react-native-paper';
 import { BullpenIntensity } from '@pitch-tracker/shared';
 
 interface SessionHeaderProps {
@@ -26,11 +26,12 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
     balls = 0,
     intensity,
 }) => {
+    const theme = useTheme();
     const colors = INTENSITY_COLORS[intensity];
     const strikePercentage = totalPitches > 0 ? Math.round((strikes / totalPitches) * 100) : 0;
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.topRow}>
                 <View style={styles.pitcherInfo}>
                     {jerseyNumber != null && <Text style={styles.jerseyNumber}>#{jerseyNumber}</Text>}
@@ -70,7 +71,6 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#ffffff',
         borderRadius: 8,
         padding: 10,
         borderWidth: 1,

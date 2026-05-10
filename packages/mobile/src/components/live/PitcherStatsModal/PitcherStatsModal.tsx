@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { Modal, Portal, Button } from 'react-native-paper';
+import { Modal, Portal, Button, useTheme } from 'react-native-paper';
 import { Pitch, Player } from '@pitch-tracker/shared';
 import PitcherStats from '../PitcherStats';
 
@@ -13,6 +13,7 @@ interface Props {
 }
 
 const PitcherStatsModal: React.FC<Props> = ({ visible, onDismiss, pitcher, pitcherId, pitches }) => {
+    const theme = useTheme();
     const filteredPitches = useMemo(() => {
         if (!pitcherId) return [];
         return pitches.filter((p) => p.pitcher_id === pitcherId);
@@ -20,7 +21,11 @@ const PitcherStatsModal: React.FC<Props> = ({ visible, onDismiss, pitcher, pitch
 
     return (
         <Portal>
-            <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.container}>
+            <Modal
+                visible={visible}
+                onDismiss={onDismiss}
+                contentContainerStyle={[styles.container, { backgroundColor: theme.colors.surface }]}
+            >
                 <ScrollView>
                     <PitcherStats pitcher={pitcher} pitches={filteredPitches} />
                 </ScrollView>
@@ -34,7 +39,6 @@ const PitcherStatsModal: React.FC<Props> = ({ visible, onDismiss, pitcher, pitch
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'white',
         margin: 24,
         borderRadius: 12,
         padding: 16,

@@ -146,12 +146,12 @@ export default function LineupScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <View style={styles.header}>
+            <View style={[styles.header, { borderBottomColor: theme.colors.surfaceVariant }]}>
                 <IconButton icon="arrow-left" onPress={() => router.back()} />
                 <View style={{ flex: 1 }}>
                     <Text variant="titleLarge">Opponent Lineup</Text>
                     {game?.opponent_name && (
-                        <Text variant="bodySmall" style={{ color: '#6b7280' }}>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                             vs {game.opponent_name}
                         </Text>
                     )}
@@ -163,12 +163,17 @@ export default function LineupScreen() {
                 <ActivityIndicator style={{ marginVertical: 40 }} />
             ) : (
                 <ScrollView contentContainerStyle={styles.content}>
-                    <Text variant="bodyMedium" style={styles.helpText}>
+                    <Text variant="bodyMedium" style={[styles.helpText, { color: theme.colors.onSurfaceVariant }]}>
                         Enter the opposing team's batting order. You can add or change players during the game.
                     </Text>
 
-                    <View style={styles.pitcherSection}>
-                        <Text variant="titleSmall" style={styles.pitcherSectionTitle}>
+                    <View
+                        style={[
+                            styles.pitcherSection,
+                            { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.outline },
+                        ]}
+                    >
+                        <Text variant="titleSmall" style={[styles.pitcherSectionTitle, { color: theme.colors.onSurface }]}>
                             Starting Pitcher
                         </Text>
                         <TextInput
@@ -182,20 +187,41 @@ export default function LineupScreen() {
                         />
                         {knownPitchers.length > 0 && (
                             <View style={styles.chipRow}>
-                                {knownPitchers.map((p) => (
-                                    <TouchableOpacity
-                                        key={p.id}
-                                        onPress={() => {
-                                            Haptics.selectionAsync();
-                                            setPitcherName(p.pitcher_name);
-                                        }}
-                                        style={[styles.chip, pitcherName === p.pitcher_name && styles.chipSelected]}
-                                    >
-                                        <Text style={[styles.chipText, pitcherName === p.pitcher_name && styles.chipTextSelected]}>
-                                            {p.pitcher_name}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
+                                {knownPitchers.map((p) => {
+                                    const selected = pitcherName === p.pitcher_name;
+                                    return (
+                                        <TouchableOpacity
+                                            key={p.id}
+                                            onPress={() => {
+                                                Haptics.selectionAsync();
+                                                setPitcherName(p.pitcher_name);
+                                            }}
+                                            style={[
+                                                styles.chip,
+                                                {
+                                                    borderColor: selected ? theme.colors.primary : theme.colors.outline,
+                                                    backgroundColor: selected
+                                                        ? theme.colors.primaryContainer
+                                                        : theme.colors.surfaceVariant,
+                                                },
+                                            ]}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.chipText,
+                                                    {
+                                                        color: selected
+                                                            ? theme.colors.onPrimaryContainer
+                                                            : theme.colors.onSurfaceVariant,
+                                                        fontWeight: selected ? '600' : 'normal',
+                                                    },
+                                                ]}
+                                            >
+                                                {p.pitcher_name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
                         )}
                         <View style={styles.pitcherBottomRow}>
@@ -209,7 +235,7 @@ export default function LineupScreen() {
                                 dense
                             />
                             <View style={styles.throwsContainer}>
-                                <Text variant="bodySmall" style={styles.throwsLabel}>
+                                <Text variant="bodySmall" style={[styles.throwsLabel, { color: theme.colors.onSurfaceVariant }]}>
                                     Throws
                                 </Text>
                                 <SegmentedButtons
@@ -240,14 +266,14 @@ export default function LineupScreen() {
                         </View>
                     </View>
 
-                    <Text variant="titleSmall" style={styles.battingOrderTitle}>
+                    <Text variant="titleSmall" style={[styles.battingOrderTitle, { color: theme.colors.onSurface }]}>
                         Batting Order
                     </Text>
 
                     {lineup.map((entry, index) => (
                         <View key={index} style={styles.row}>
-                            <View style={styles.orderBadge}>
-                                <Text variant="titleMedium" style={styles.orderText}>
+                            <View style={[styles.orderBadge, { backgroundColor: theme.colors.surfaceVariant }]}>
+                                <Text variant="titleMedium" style={[styles.orderText, { color: theme.colors.onSurfaceVariant }]}>
                                     {entry.batting_order}
                                 </Text>
                             </View>
@@ -269,9 +295,17 @@ export default function LineupScreen() {
                                                 <TouchableOpacity
                                                     key={b.id}
                                                     onPress={() => handleSelectKnownBatter(b, index)}
-                                                    style={styles.chip}
+                                                    style={[
+                                                        styles.chip,
+                                                        {
+                                                            borderColor: theme.colors.outline,
+                                                            backgroundColor: theme.colors.surfaceVariant,
+                                                        },
+                                                    ]}
                                                 >
-                                                    <Text style={styles.chipText}>{b.player_name}</Text>
+                                                    <Text style={[styles.chipText, { color: theme.colors.onSurfaceVariant }]}>
+                                                        {b.player_name}
+                                                    </Text>
                                                 </TouchableOpacity>
                                             ))}
                                         </View>
@@ -383,27 +417,22 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
         paddingVertical: 4,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
     },
     content: {
         padding: 16,
         paddingBottom: 40,
     },
     helpText: {
-        color: '#6b7280',
         marginBottom: 16,
     },
     pitcherSection: {
-        backgroundColor: '#f9fafb',
         borderRadius: 12,
         padding: 12,
         marginBottom: 20,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
     },
     pitcherSectionTitle: {
         fontWeight: '600',
-        color: '#1f2937',
         marginBottom: 8,
     },
     pitcherBottomRow: {
@@ -413,19 +442,16 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     jerseyInput: {
-        backgroundColor: '#ffffff',
         width: 90,
     },
     throwsContainer: {
         flex: 1,
     },
     throwsLabel: {
-        color: '#6b7280',
         marginBottom: 4,
     },
     battingOrderTitle: {
         fontWeight: '600',
-        color: '#1f2937',
         marginBottom: 12,
     },
     row: {
@@ -437,7 +463,6 @@ const styles = StyleSheet.create({
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: '#e5e7eb',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
@@ -445,13 +470,11 @@ const styles = StyleSheet.create({
     },
     orderText: {
         fontWeight: '700',
-        color: '#374151',
     },
     rowFields: {
         flex: 1,
     },
     nameInput: {
-        backgroundColor: '#ffffff',
         marginBottom: 4,
     },
     chipRow: {
@@ -468,20 +491,9 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#d1d5db',
-        backgroundColor: '#f3f4f6',
-    },
-    chipSelected: {
-        borderColor: '#2563eb',
-        backgroundColor: '#eff6ff',
     },
     chipText: {
         fontSize: 12,
-        color: '#374151',
-    },
-    chipTextSelected: {
-        color: '#1d4ed8',
-        fontWeight: '600',
     },
     bottomRow: {
         flexDirection: 'row',
@@ -500,9 +512,7 @@ const styles = StyleSheet.create({
     batsSelected: {
         backgroundColor: '#1d4ed8',
     },
-    batsUnselected: {
-        backgroundColor: '#ffffff',
-    },
+    batsUnselected: {},
     batsLabelSelected: {
         color: '#ffffff',
         fontWeight: '700',

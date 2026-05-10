@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Modal, Portal, Text, Button, TextInput, RadioButton, Divider, IconButton, List } from 'react-native-paper';
+import { Modal, Portal, Text, Button, TextInput, RadioButton, Divider, IconButton, List, useTheme } from 'react-native-paper';
 import { CreateOpposingPitcherParams, OpposingPitcher, ThrowingHand } from '@pitch-tracker/shared';
 
 interface Props {
@@ -26,6 +26,7 @@ const OpposingPitcherModal: React.FC<Props> = ({
     onDelete,
     opponentName,
 }) => {
+    const theme = useTheme();
     const [pitcherName, setPitcherName] = useState('');
     const [jerseyNumber, setJerseyNumber] = useState('');
     const [throws, setThrows] = useState<ThrowingHand>('R');
@@ -54,7 +55,11 @@ const OpposingPitcherModal: React.FC<Props> = ({
 
     return (
         <Portal>
-            <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.container}>
+            <Modal
+                visible={visible}
+                onDismiss={onDismiss}
+                contentContainerStyle={[styles.container, { backgroundColor: theme.colors.surface }]}
+            >
                 <Text variant="titleMedium" style={styles.title}>
                     Opposing Pitcher
                 </Text>
@@ -160,7 +165,6 @@ const OpposingPitcherModal: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'white',
         margin: 24,
         borderRadius: 12,
         padding: 20,
@@ -194,9 +198,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 12,
     },
-    input: {
-        backgroundColor: 'white',
-    },
+    input: {},
     handRow: {
         alignItems: 'center',
     },

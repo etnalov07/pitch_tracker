@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from 'react-native-paper';
 
 interface ZoneCell {
     zone: string;
@@ -42,11 +43,12 @@ function lerpColor(lo: string, hi: string, t: number): string {
 }
 
 const TendencyZoneGrid: React.FC<TendencyZoneGridProps> = ({ cells, highColor = '#1d4ed8', lowColor = '#dbeafe' }) => {
+    const theme = useTheme();
     const cellMap: Record<string, ZoneCell> = {};
     for (const c of cells) cellMap[c.zone] = c;
 
     return (
-        <View style={styles.grid}>
+        <View style={[styles.grid, { backgroundColor: theme.colors.surfaceVariant }]}>
             {STRIKE_ZONES.map((zone) => {
                 const cell = cellMap[zone];
                 const intensity = cell ? Math.min(1, Math.max(0, cell.value)) : 0;
@@ -75,7 +77,6 @@ const styles = StyleSheet.create({
         borderColor: '#9ca3af',
         borderRadius: 6,
         padding: 3,
-        backgroundColor: '#f9fafb',
         gap: 3,
     },
     cell: {

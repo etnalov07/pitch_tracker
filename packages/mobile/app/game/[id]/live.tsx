@@ -1468,7 +1468,7 @@ export default function LiveGameScreen() {
                 <Chip
                     selected={pitchTypeFilter === 'all'}
                     onPress={() => setPitchTypeFilter('all')}
-                    style={[styles.pitchFilterChip, pitchTypeFilter === 'all' && styles.pitchFilterChipActive]}
+                    style={[styles.pitchFilterChip, pitchTypeFilter === 'all' && { backgroundColor: theme.colors.primary }]}
                     textStyle={pitchTypeFilter === 'all' ? styles.pitchFilterChipTextActive : styles.pitchFilterChipText}
                     compact
                 >
@@ -1516,9 +1516,9 @@ export default function LiveGameScreen() {
         const totalBalls = Object.values(byType).reduce((s, v) => s + v.balls, 0);
         const entries = Object.entries(byType).sort((a, b) => b[1].count - a[1].count);
         return (
-            <View style={styles.breakdownTable}>
+            <View style={[styles.breakdownTable, { backgroundColor: theme.colors.surface }]}>
                 <Text style={styles.breakdownTitle}>Pitch Breakdown</Text>
-                <View style={[styles.breakdownRow, styles.breakdownHeader]}>
+                <View style={[styles.breakdownRow, { backgroundColor: theme.colors.surfaceVariant }]}>
                     <Text style={[styles.breakdownTypeCell, styles.breakdownHeaderText]}>Type</Text>
                     <Text style={[styles.breakdownNumCell, styles.breakdownHeaderText]}>#</Text>
                     <Text style={[styles.breakdownNumCell, styles.breakdownHeaderText]}>K</Text>
@@ -1537,7 +1537,7 @@ export default function LiveGameScreen() {
                         <Text style={styles.breakdownNumCell}>{Math.round((stats.count / total) * 100)}%</Text>
                     </View>
                 ))}
-                <View style={[styles.breakdownRow, styles.breakdownTotalRow]}>
+                <View style={[styles.breakdownRow, styles.breakdownTotalRow, { backgroundColor: theme.colors.surfaceVariant }]}>
                     <Text style={[styles.breakdownTypeCell, styles.breakdownTotalText]}>Total</Text>
                     <Text style={[styles.breakdownNumCell, styles.breakdownTotalText]}>{total}</Text>
                     <Text style={[styles.breakdownNumCell, styles.breakdownTotalText]}>{totalStrikes}</Text>
@@ -1678,7 +1678,7 @@ export default function LiveGameScreen() {
             />
             {myBatterModalVisible && (
                 <View style={styles.myBatterOverlay}>
-                    <View style={styles.myBatterModal}>
+                    <View style={[styles.myBatterModal, { backgroundColor: theme.colors.surface }]}>
                         <Text variant="titleMedium" style={{ marginBottom: 12 }}>
                             Select Your Batter
                         </Text>
@@ -1692,7 +1692,11 @@ export default function LiveGameScreen() {
                                             dispatch(setCurrentMyBatter(p));
                                             setMyBatterModalVisible(false);
                                         }}
-                                        style={[styles.myBatterItem, currentMyBatter?.id === p.id && styles.myBatterItemSelected]}
+                                        style={[
+                                            styles.myBatterItem,
+                                            { backgroundColor: theme.colors.surfaceVariant },
+                                            currentMyBatter?.id === p.id && styles.myBatterItemSelected,
+                                        ]}
                                     >
                                         <Text style={styles.myBatterOrder}>#{p.batting_order}</Text>
                                         <Text style={styles.myBatterName}>
@@ -1704,7 +1708,9 @@ export default function LiveGameScreen() {
                                     </TouchableOpacity>
                                 ))}
                             {myTeamLineup.length === 0 && (
-                                <Text style={{ color: '#6b7280', marginVertical: 16 }}>No lineup set up yet.</Text>
+                                <Text style={{ color: theme.colors.onSurfaceVariant, marginVertical: 16 }}>
+                                    No lineup set up yet.
+                                </Text>
                             )}
                         </ScrollView>
                         <Button onPress={() => setMyBatterModalVisible(false)} style={{ marginTop: 8 }}>
@@ -2081,7 +2087,11 @@ export default function LiveGameScreen() {
                         )}
                         {!isReadOnly && !isScoutingMode && pitchCallingEnabled && (
                             <View style={styles.shakeRow}>
-                                <TouchableOpacity onPress={handleShake} style={styles.shakeBtn} activeOpacity={0.7}>
+                                <TouchableOpacity
+                                    onPress={handleShake}
+                                    style={[styles.shakeBtn, { backgroundColor: theme.colors.surface }]}
+                                    activeOpacity={0.7}
+                                >
                                     <Text style={styles.shakeBtnText}>SHAKE</Text>
                                     {pendingShakeCount > 0 && (
                                         <View style={styles.shakeBadge}>
@@ -2308,7 +2318,11 @@ export default function LiveGameScreen() {
                 {/* 3b. Shake button */}
                 {!isReadOnly && !isScoutingMode && pitchCallingEnabled && (
                     <View style={styles.shakeRow}>
-                        <TouchableOpacity onPress={handleShake} style={styles.shakeBtn} activeOpacity={0.7}>
+                        <TouchableOpacity
+                            onPress={handleShake}
+                            style={[styles.shakeBtn, { backgroundColor: theme.colors.surface }]}
+                            activeOpacity={0.7}
+                        >
                             <Text style={styles.shakeBtnText}>SHAKE</Text>
                             {pendingShakeCount > 0 && (
                                 <View style={styles.shakeBadge}>
@@ -2398,12 +2412,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
         paddingVertical: 4,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: 'rgba(128,128,128,0.25)',
     },
     headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     headerRight: { flexDirection: 'row', alignItems: 'center' },
     tabletContent: { flex: 1, flexDirection: 'row' },
-    statsPanel: { width: 320, borderRightWidth: 1, borderRightColor: '#e5e7eb', padding: 16 },
+    statsPanel: { width: 320, borderRightWidth: 1, borderRightColor: 'rgba(128,128,128,0.25)', padding: 16 },
     statsPlaceholder: { marginTop: 16 },
     mainPanel: { flex: 1 },
     mainPanelContent: { padding: 16 },
@@ -2411,7 +2425,7 @@ const styles = StyleSheet.create({
     controlsHalf: { flex: 1 },
     phoneContent: { flex: 1 },
     phoneContentInner: { padding: 10, gap: 8 },
-    placeholder: { color: '#6b7280', marginTop: 4 },
+    placeholder: { marginTop: 4, opacity: 0.7 },
     logButton: { marginTop: 4 },
     logRow: { flexDirection: 'row', gap: 8, marginTop: 4, alignItems: 'center' },
     logButtonGrow: { flex: 1 },
@@ -2512,7 +2526,6 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         borderWidth: 1,
         borderColor: '#d97706',
-        backgroundColor: 'white',
     },
     shakeBtnText: {
         fontSize: 11,
@@ -2540,20 +2553,18 @@ const styles = StyleSheet.create({
     veloLabel: {
         fontSize: 13,
         fontWeight: '600' as const,
-        color: '#6b7280',
+        opacity: 0.7,
         letterSpacing: 0.5,
     },
     veloInput: {
         flex: 1,
         height: 40,
         borderWidth: 1,
-        borderColor: '#d1d5db',
+        borderColor: 'rgba(128,128,128,0.4)',
         borderRadius: 8,
         paddingHorizontal: 12,
         fontSize: 16,
         fontWeight: '600' as const,
-        color: '#1f2937',
-        backgroundColor: '#ffffff',
         textAlign: 'center' as const,
     },
     pitchFilterBar: {
@@ -2562,35 +2573,27 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
         paddingVertical: 6,
     },
-    pitchFilterChip: {
-        backgroundColor: '#f3f4f6',
-    },
-    pitchFilterChipActive: {
-        backgroundColor: '#1f2937',
-    },
+    pitchFilterChip: {},
     pitchFilterChipText: {
         fontSize: 12,
-        color: '#374151',
     },
     pitchFilterChipTextActive: {
         fontSize: 12,
         color: '#ffffff',
     },
     breakdownTable: {
-        backgroundColor: '#ffffff',
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: 'rgba(128,128,128,0.25)',
         overflow: 'hidden' as const,
     },
     breakdownTitle: {
         fontSize: 14,
         fontWeight: '700' as const,
-        color: '#1f2937',
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: 'rgba(128,128,128,0.25)',
     },
     breakdownRow: {
         flexDirection: 'row' as const,
@@ -2598,32 +2601,26 @@ const styles = StyleSheet.create({
         paddingVertical: 7,
         paddingHorizontal: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
-    },
-    breakdownHeader: {
-        backgroundColor: '#f9fafb',
+        borderBottomColor: 'rgba(128,128,128,0.15)',
     },
     breakdownHeaderText: {
         fontSize: 11,
         fontWeight: '700' as const,
-        color: '#6b7280',
+        opacity: 0.7,
         textTransform: 'uppercase' as const,
         letterSpacing: 0.5,
     },
     breakdownTypeCell: {
         flex: 2,
         fontSize: 13,
-        color: '#374151',
     },
     breakdownNumCell: {
         flex: 1,
         fontSize: 13,
-        color: '#374151',
         textAlign: 'center' as const,
     },
     breakdownText: {
         fontSize: 13,
-        color: '#374151',
     },
     typeColorDot: {
         width: 10,
@@ -2631,13 +2628,11 @@ const styles = StyleSheet.create({
         borderRadius: 5,
     },
     breakdownTotalRow: {
-        backgroundColor: '#f9fafb',
         borderBottomWidth: 0,
     },
     breakdownTotalText: {
         fontSize: 13,
         fontWeight: '700' as const,
-        color: '#1f2937',
     },
     roleSelectContainer: {
         flex: 1,
@@ -2695,7 +2690,6 @@ const styles = StyleSheet.create({
         zIndex: 999,
     },
     myBatterModal: {
-        backgroundColor: 'white',
         borderRadius: 12,
         padding: 20,
         width: '85%',
@@ -2708,7 +2702,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         borderRadius: 8,
         marginBottom: 4,
-        backgroundColor: '#f9fafb',
     },
     myBatterItemSelected: {
         backgroundColor: '#dbeafe',

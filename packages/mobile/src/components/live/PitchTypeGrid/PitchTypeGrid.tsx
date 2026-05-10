@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import * as Haptics from '../../../utils/haptics';
 import { PitchType } from '@pitch-tracker/shared';
 import { colors } from '../../../styles/theme';
@@ -34,6 +35,7 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
     disabled = false,
     compact = false,
 }) => {
+    const theme = useTheme();
     // Filter to only available pitch types if provided, otherwise show all.
     // Fallback to ALL_PITCH_TYPES if the filter produces nothing (guards against a type stored in
     // pitcher_pitch_types that isn't yet in ALL_PITCH_TYPES blanking out the selector).
@@ -48,7 +50,7 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
 
     if (compact) {
         return (
-            <View style={compactStyles.container}>
+            <View style={[compactStyles.container, { backgroundColor: theme.colors.surface }]}>
                 <View style={compactStyles.grid}>
                     {pitchTypes.map(({ type, abbrev }) => {
                         const isSelected = selectedType === type;
@@ -73,7 +75,7 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
             <Text style={styles.title}>Pitch Type</Text>
             <View style={styles.grid}>
                 {pitchTypes.map(({ type, label, abbrev }) => {
@@ -97,7 +99,6 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
 
 const compactStyles = StyleSheet.create({
     container: {
-        backgroundColor: '#ffffff',
         borderRadius: 8,
         paddingHorizontal: 8,
         paddingVertical: 6,
@@ -135,7 +136,6 @@ const compactStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#ffffff',
         borderRadius: 12,
         padding: 16,
     },

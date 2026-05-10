@@ -317,6 +317,7 @@ export default function NewGameScreen() {
                                                 }}
                                                 style={[
                                                     styles.opponentChip,
+                                                    { backgroundColor: theme.colors.surfaceVariant },
                                                     opponentTeamId === opp.id && styles.opponentChipSelected,
                                                 ]}
                                             >
@@ -419,16 +420,13 @@ const styles = StyleSheet.create({
     segmented: {
         marginBottom: 4,
     },
-    input: {
-        backgroundColor: '#ffffff',
-    },
+    input: {},
     opponentChip: {
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 16,
         borderWidth: 1,
         borderColor: '#d1d5db',
-        backgroundColor: '#f9fafb',
     },
     opponentChipSelected: {
         borderColor: '#2563eb',

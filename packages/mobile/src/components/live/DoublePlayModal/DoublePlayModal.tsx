@@ -134,7 +134,11 @@ const DoublePlayModal: React.FC<DoublePlayModalProps> = ({ visible, onDismiss, r
                                 <TouchableOpacity
                                     key={b.base}
                                     onPress={() => toggleRunner(b.base)}
-                                    style={[styles.chip, outRunners.includes(b.base) && styles.chipSelected]}
+                                    style={[
+                                        styles.chip,
+                                        { backgroundColor: theme.colors.surface },
+                                        outRunners.includes(b.base) && styles.chipSelected,
+                                    ]}
                                 >
                                     <Text style={[styles.chipText, outRunners.includes(b.base) && styles.chipTextSelected]}>
                                         {b.label}
@@ -214,7 +218,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         borderWidth: 1,
         borderColor: colors.gray[300],
-        backgroundColor: 'white',
     },
     chipSelected: {
         borderColor: colors.red[400],

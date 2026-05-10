@@ -78,7 +78,7 @@ export default function TeamDetailScreen() {
                     {title} ({playerList.length})
                 </Text>
                 <Card style={styles.rosterCard}>
-                    <View style={styles.rosterHeader}>
+                    <View style={[styles.rosterHeader, { backgroundColor: theme.colors.surfaceVariant }]}>
                         <Text style={[styles.rosterHeaderText, styles.rosterJersey]}>#</Text>
                         <Text style={[styles.rosterHeaderText, styles.rosterNameCol]}>Name</Text>
                         <Text style={[styles.rosterHeaderText, { minWidth: 52, textAlign: 'center' }]}>Pos</Text>
@@ -104,7 +104,7 @@ export default function TeamDetailScreen() {
                     headerBackTitle: 'Teams',
                 }}
             />
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 <ScrollView
                     contentContainerStyle={styles.scrollContent}
                     refreshControl={<RefreshControl refreshing={loading || playersLoading} onRefresh={loadData} />}
@@ -240,14 +240,12 @@ export default function TeamDetailScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     scrollContent: {
         padding: 16,
         paddingBottom: 80,
     },
     teamInfoCard: {
-        backgroundColor: '#ffffff',
         marginBottom: 16,
     },
     teamSeason: {
@@ -270,7 +268,6 @@ const styles = StyleSheet.create({
         color: '#374151',
     },
     rosterCard: {
-        backgroundColor: '#ffffff',
         overflow: 'hidden',
     },
     rosterHeader: {
@@ -278,7 +275,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 8,
         paddingHorizontal: 12,
-        backgroundColor: '#f9fafb',
     },
     rosterHeaderText: {
         fontSize: 12,

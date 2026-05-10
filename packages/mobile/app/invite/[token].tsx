@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Button, Surface, ActivityIndicator, Card } from 'react-native-paper';
+import { Text, Button, Surface, ActivityIndicator, Card, useTheme } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAppDispatch, useAppSelector, fetchInviteByToken, acceptInvite } from '../../src/state';
 
 export default function InviteAcceptScreen() {
+    const theme = useTheme();
     const { token } = useLocalSearchParams<{ token: string }>();
     const router = useRouter();
     const dispatch = useAppDispatch();
@@ -34,7 +35,7 @@ export default function InviteAcceptScreen() {
 
     if (loading) {
         return (
-            <View style={styles.centered}>
+            <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
                 <ActivityIndicator size="large" />
                 <Text style={styles.loadingText}>Loading invite...</Text>
             </View>
@@ -43,7 +44,7 @@ export default function InviteAcceptScreen() {
 
     if (accepted) {
         return (
-            <View style={styles.centered}>
+            <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
                 <Surface style={styles.surface} elevation={2}>
                     <Text variant="headlineSmall" style={styles.title}>
                         You're In!
@@ -60,7 +61,7 @@ export default function InviteAcceptScreen() {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView contentContainerStyle={[styles.container, { backgroundColor: theme.colors.background }]}>
             <Surface style={styles.surface} elevation={2}>
                 <Text variant="headlineSmall" style={styles.title}>
                     Team Invite
@@ -123,19 +124,16 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: 'center',
         padding: 20,
-        backgroundColor: '#f3f4f6',
     },
     centered: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 20,
-        backgroundColor: '#f3f4f6',
     },
     surface: {
         padding: 24,
         borderRadius: 12,
-        backgroundColor: '#ffffff',
     },
     title: {
         textAlign: 'center',
@@ -169,7 +167,6 @@ const styles = StyleSheet.create({
     },
     infoCard: {
         marginBottom: 20,
-        backgroundColor: '#f9fafb',
     },
     infoRow: {
         flexDirection: 'row',

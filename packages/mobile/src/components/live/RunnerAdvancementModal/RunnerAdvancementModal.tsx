@@ -216,7 +216,7 @@ const RunnerAdvancementModal: React.FC<RunnerAdvancementModalProps> = ({
                             {throwouts.length > 0 && (
                                 <View style={styles.throwoutList}>
                                     {throwouts.map((t, idx) => (
-                                        <View key={idx} style={styles.throwoutRow}>
+                                        <View key={idx} style={[styles.throwoutRow, { backgroundColor: theme.colors.surface }]}>
                                             <Text variant="bodySmall" style={styles.throwoutText}>
                                                 {FROM_BASE_LABEL[t.fromBase]} → out at {TO_BASE_LABEL[t.toBase]} (
                                                 {formatFielderSequence(t.fielderSeq)})
@@ -397,7 +397,6 @@ const styles = StyleSheet.create({
         gap: 8,
         paddingHorizontal: 10,
         paddingVertical: 4,
-        backgroundColor: 'white',
         borderRadius: 6,
     },
     throwoutText: {

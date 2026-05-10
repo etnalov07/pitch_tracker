@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Text, Button, Modal, TextInput, SegmentedButtons, Chip } from 'react-native-paper';
+import { Text, Button, Modal, TextInput, SegmentedButtons, Chip, useTheme } from 'react-native-paper';
 import * as Haptics from '../../utils/haptics';
 import { useAppDispatch, addPlayer, updatePlayer, setPlayerPitchTypes } from '../../state';
 import { PlayerWithPitchTypes, PlayerPosition, HandednessType, ThrowingHand } from '@pitch-tracker/shared';
@@ -30,6 +30,7 @@ interface AddPlayerModalProps {
 }
 
 const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, teamId, isTablet, editingPlayer }) => {
+    const theme = useTheme();
     const dispatch = useAppDispatch();
     const isEditing = !!editingPlayer;
 
@@ -128,7 +129,11 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
     };
 
     return (
-        <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
+        <Modal
+            visible={visible}
+            onDismiss={onDismiss}
+            contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }, isTablet && styles.modalTablet]}
+        >
             <ScrollView keyboardShouldPersistTaps="handled">
                 <Text variant="titleLarge" style={styles.modalTitle}>
                     {isEditing ? 'Edit Player' : 'Add Player'}
@@ -273,7 +278,6 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ visible, onDismiss, tea
 
 const styles = StyleSheet.create({
     modal: {
-        backgroundColor: '#ffffff',
         margin: 20,
         padding: 20,
         borderRadius: 12,

@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, Card, Divider } from 'react-native-paper';
+import { Text, Card, Divider, useTheme } from 'react-native-paper';
 import { BatterAtBatPitch, BatterBreakdown, PitchCallZone, PitchLocationData, PitchResult, PitchType } from '@pitch-tracker/shared';
 import { analyticsApi } from '../../state/analytics/api/analyticsApi';
 import BatterTendenciesView from './BatterTendenciesView';
@@ -157,6 +157,7 @@ interface BatterRowProps {
 }
 
 function BatterRow({ batter, pitcherId }: BatterRowProps) {
+    const theme = useTheme();
     const [expanded, setExpanded] = useState(true);
     const [showCharts, setShowCharts] = useState(false);
     const [pitchLocations, setPitchLocations] = useState<PitchLocationData[] | null>(null);
@@ -195,7 +196,11 @@ function BatterRow({ batter, pitcherId }: BatterRowProps) {
                 </View>
                 <TouchableOpacity
                     onPress={handleToggleCharts}
-                    style={[styles.chartsToggle, showCharts && styles.chartsToggleActive]}
+                    style={[
+                        styles.chartsToggle,
+                        { backgroundColor: theme.colors.background },
+                        showCharts && styles.chartsToggleActive,
+                    ]}
                     activeOpacity={0.7}
                 >
                     <Text style={[styles.chartsToggleText, showCharts && styles.chartsToggleTextActive]}>📊 Charts</Text>
@@ -305,9 +310,7 @@ export default function BatterBreakdownView({ breakdown, title = 'Batter Breakdo
 }
 
 const styles = StyleSheet.create({
-    card: {
-        backgroundColor: '#ffffff',
-    },
+    card: {},
     sectionTitle: {
         marginBottom: 8,
     },
@@ -394,7 +397,6 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         borderWidth: 1,
         borderColor: '#d1d5db',
-        backgroundColor: '#f3f4f6',
         marginRight: 4,
     },
     chartsToggleActive: {

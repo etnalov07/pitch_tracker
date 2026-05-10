@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import Svg, { Rect, Circle, G, Text as SvgText, Line, Path, Ellipse } from 'react-native-svg';
 import * as Haptics from '../../../utils/haptics';
 import { Pitch, PitchCallZone } from '@pitch-tracker/shared';
@@ -134,6 +135,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     pitcherThrows,
     colorBy = 'result',
 }) => {
+    const theme = useTheme();
     const [selectedLocation, setSelectedLocation] = useState<{ x: number; y: number } | null>(null);
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
@@ -261,7 +263,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     const PITCH_RADIUS = 13;
 
     return (
-        <View style={compact ? compactStyles.container : styles.container}>
+        <View style={[compact ? compactStyles.container : styles.container, { backgroundColor: theme.colors.surface }]}>
             {!compact && <Text style={styles.title}>Strike Zone</Text>}
             <Pressable
                 testID="strike-zone-canvas"
@@ -514,7 +516,6 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
 
 const compactStyles = StyleSheet.create({
     container: {
-        backgroundColor: '#ffffff',
         borderRadius: 8,
         padding: 4,
     },
@@ -529,7 +530,6 @@ const compactStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#ffffff',
         borderRadius: 12,
         padding: 16,
     },

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { TextInput, Button, Text, Surface, HelperText } from 'react-native-paper';
+import { TextInput, Button, Text, Surface, HelperText, useTheme } from 'react-native-paper';
 import { Link } from 'expo-router';
 import { useAppDispatch, useAppSelector, loginUser, clearAuthError } from '../../src/state';
 
 export default function LoginScreen() {
+    const theme = useTheme();
     const dispatch = useAppDispatch();
     const { loading, error } = useAppSelector((state) => state.auth);
 
@@ -30,7 +31,10 @@ export default function LoginScreen() {
     };
 
     return (
-        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <KeyboardAvoidingView
+            style={[styles.container, { backgroundColor: theme.colors.background }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <Surface style={styles.surface} elevation={2}>
                     <Text variant="headlineMedium" style={styles.title}>
@@ -106,7 +110,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     scrollContent: {
         flexGrow: 1,
@@ -116,7 +119,6 @@ const styles = StyleSheet.create({
     surface: {
         padding: 24,
         borderRadius: 12,
-        backgroundColor: '#ffffff',
     },
     title: {
         textAlign: 'center',

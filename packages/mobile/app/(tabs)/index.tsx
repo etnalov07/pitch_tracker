@@ -1,14 +1,14 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, Pressable, Alert } from 'react-native';
 import { Text, Card, Button, useTheme, FAB, ActivityIndicator, Chip } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import * as Haptics from '../../src/utils/haptics';
-import { useAppSelector, useAppDispatch, fetchAllGames, startGame } from '../../src/state';
+import { useAppSelector, useAppDispatch, fetchAllGames, startGame, deleteGame } from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
 import { SyncStatusBadge, EmptyState } from '../../src/components/common';
 import { Game } from '@pitch-tracker/shared';
 
-const GameCard: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress }) => {
+const GameCard: React.FC<{ game: Game; onPress: () => void; onLongPress: () => void }> = ({ game, onPress, onLongPress }) => {
     const theme = useTheme();
 
     const getStatusColor = () => {
@@ -16,9 +16,9 @@ const GameCard: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress
             case 'in_progress':
                 return theme.colors.primary;
             case 'completed':
-                return '#10b981';
+                return theme.colors.tertiary;
             default:
-                return '#6b7280';
+                return theme.colors.onSurfaceVariant;
         }
     };
 
@@ -41,8 +41,8 @@ const GameCard: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress
     };
 
     return (
-        <Pressable onPress={onPress}>
-            <Card style={styles.gameCard}>
+        <Pressable onPress={onPress} onLongPress={onLongPress} delayLongPress={400}>
+            <Card>
                 <Card.Content>
                     <View style={styles.gameHeader}>
                         <Text variant="titleMedium" numberOfLines={1} style={styles.gameTitle}>
@@ -55,7 +55,7 @@ const GameCard: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress
                         </Chip>
                     </View>
                     <View style={styles.gameDetails}>
-                        <Text variant="bodySmall" style={styles.gameDate}>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                             {formatDate(game.game_date)}
                         </Text>
                         {game.status !== 'scheduled' && (
@@ -65,7 +65,7 @@ const GameCard: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress
                         )}
                     </View>
                     {game.status === 'in_progress' && (
-                        <Text variant="bodySmall" style={styles.inningText}>
+                        <Text variant="bodySmall" style={[styles.inningText, { color: theme.colors.onSurfaceVariant }]}>
                             {game.inning_half === 'top' ? '▲' : '▼'} {game.current_inning || 1}
                         </Text>
                     )}
@@ -125,8 +125,35 @@ export default function DashboardScreen() {
         router.push('/game/new' as any);
     };
 
+    const handleDeleteGame = (game: Game) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        const opponent =
+            game.charting_mode === 'scouting'
+                ? `${game.opponent_name || 'Away'} @ ${game.scouting_home_team || 'Home'}`
+                : game.opponent_name || 'this game';
+        Alert.alert(
+            'Delete game?',
+            `Delete ${opponent}? This permanently removes all pitches, at-bats, lineups, and scoring data. This cannot be undone.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await dispatch(deleteGame(game.id)).unwrap();
+                        } catch (err) {
+                            const message = err instanceof Error ? err.message : 'Failed to delete game';
+                            Alert.alert('Delete failed', message);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={<RefreshControl refreshing={loading} onRefresh={loadGames} />}
@@ -141,12 +168,17 @@ export default function DashboardScreen() {
                 {/* Active Games Section */}
                 {activeGames.length > 0 && (
                     <View style={styles.section}>
-                        <Text variant="titleMedium" style={styles.sectionTitle}>
+                        <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
                             Active Games
                         </Text>
                         <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
                             {activeGames.map((game) => (
-                                <GameCard key={game.id} game={game} onPress={() => handleGamePress(game)} />
+                                <GameCard
+                                    key={game.id}
+                                    game={game}
+                                    onPress={() => handleGamePress(game)}
+                                    onLongPress={() => handleDeleteGame(game)}
+                                />
                             ))}
                         </View>
                     </View>
@@ -155,13 +187,18 @@ export default function DashboardScreen() {
                 {/* Scheduled Games Section */}
                 {scheduledGames.length > 0 && (
                     <View style={styles.section}>
-                        <Text variant="titleMedium" style={styles.sectionTitle}>
+                        <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
                             Upcoming Games
                         </Text>
                         <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
                             {scheduledGames.map((game) => (
-                                <Pressable key={game.id} onPress={() => handleGamePress(game)}>
-                                    <Card style={styles.gameCard}>
+                                <Pressable
+                                    key={game.id}
+                                    onPress={() => handleGamePress(game)}
+                                    onLongPress={() => handleDeleteGame(game)}
+                                    delayLongPress={400}
+                                >
+                                    <Card>
                                         <Card.Content>
                                             <View style={styles.gameHeader}>
                                                 <Text variant="titleMedium" numberOfLines={1} style={styles.gameTitle}>
@@ -169,7 +206,7 @@ export default function DashboardScreen() {
                                                         ? `${game.opponent_name || 'Away'} @ ${game.scouting_home_team || 'Home'}`
                                                         : `${game.is_home_game === false ? '@' : 'vs'} ${game.opponent_name || 'TBD'}`}
                                                 </Text>
-                                                <Text variant="bodySmall" style={styles.gameDate}>
+                                                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                                                     {new Date(game.game_date).toLocaleDateString('en-US', {
                                                         month: 'short',
                                                         day: 'numeric',
@@ -197,25 +234,25 @@ export default function DashboardScreen() {
 
                 {/* Stats Cards */}
                 <View style={[styles.cardGrid, isTablet && styles.cardGridTablet]}>
-                    <Card style={[styles.card, isTablet && styles.cardTablet]}>
+                    <Card style={isTablet ? styles.cardTablet : undefined}>
                         <Card.Title title="Games" />
                         <Card.Content>
                             <Text variant="displaySmall" style={{ color: theme.colors.primary }}>
                                 {games.length}
                             </Text>
-                            <Text variant="bodyMedium" style={styles.cardSubtext}>
+                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                                 {activeGames.length} active, {completedGames.length} completed
                             </Text>
                         </Card.Content>
                     </Card>
 
-                    <Card style={[styles.card, isTablet && styles.cardTablet]}>
+                    <Card style={isTablet ? styles.cardTablet : undefined}>
                         <Card.Title title="Scheduled" />
                         <Card.Content>
                             <Text variant="displaySmall" style={{ color: theme.colors.primary }}>
                                 {scheduledGames.length}
                             </Text>
-                            <Text variant="bodyMedium" style={styles.cardSubtext}>
+                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                                 Upcoming games
                             </Text>
                         </Card.Content>
@@ -252,23 +289,38 @@ export default function DashboardScreen() {
                 {recentGames.length > 0 && (
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Text variant="titleMedium" style={styles.sectionTitle}>
+                            <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onBackground }]}>
                                 Recent Games
                             </Text>
                             {completedGames.length > 5 && (
                                 <Pressable onPress={() => router.push('/games/history' as any)}>
-                                    <Text style={styles.viewAll}>View All ({completedGames.length})</Text>
+                                    <Text style={[styles.viewAll, { color: theme.colors.primary }]}>
+                                        View All ({completedGames.length})
+                                    </Text>
                                 </Pressable>
                             )}
                         </View>
                         <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
                             {recentGames.map((game) => (
-                                <GameCard key={game.id} game={game} onPress={() => handleGamePress(game)} />
+                                <GameCard
+                                    key={game.id}
+                                    game={game}
+                                    onPress={() => handleGamePress(game)}
+                                    onLongPress={() => handleDeleteGame(game)}
+                                />
                             ))}
                         </View>
                         {completedGames.length > 5 && (
-                            <Pressable style={styles.viewAllButton} onPress={() => router.push('/games/history' as any)}>
-                                <Text style={styles.viewAllButtonText}>View all {completedGames.length} games →</Text>
+                            <Pressable
+                                style={[
+                                    styles.viewAllButton,
+                                    { backgroundColor: theme.colors.primaryContainer, borderColor: theme.colors.primary },
+                                ]}
+                                onPress={() => router.push('/games/history' as any)}
+                            >
+                                <Text style={[styles.viewAllButtonText, { color: theme.colors.onPrimaryContainer }]}>
+                                    View all {completedGames.length} games →
+                                </Text>
                             </Pressable>
                         )}
                     </View>
@@ -301,7 +353,6 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     scrollContent: {
         padding: 16,
@@ -325,26 +376,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
     },
-    sectionTitle: {
-        color: '#374151',
-    },
+    sectionTitle: {},
     viewAll: {
         fontSize: 13,
-        color: '#3b82f6',
         fontWeight: '600',
     },
     viewAllButton: {
         marginTop: 12,
         alignItems: 'center',
         paddingVertical: 10,
-        backgroundColor: '#eff6ff',
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#bfdbfe',
     },
     viewAllButtonText: {
         fontSize: 13,
-        color: '#2563eb',
         fontWeight: '600',
     },
     gameList: {
@@ -353,9 +398,6 @@ const styles = StyleSheet.create({
     gameListTablet: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-    },
-    gameCard: {
-        backgroundColor: '#ffffff',
     },
     gameHeader: {
         flexDirection: 'row',
@@ -372,14 +414,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    gameDate: {
-        color: '#6b7280',
-    },
     score: {
         fontWeight: 'bold',
     },
     inningText: {
-        color: '#6b7280',
         marginTop: 4,
     },
     cardGrid: {
@@ -390,33 +428,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
     },
-    card: {
-        backgroundColor: '#ffffff',
-    },
     cardTablet: {
         flex: 1,
         minWidth: 280,
         maxWidth: '48%',
-    },
-    cardSubtext: {
-        color: '#6b7280',
-        marginTop: 4,
-    },
-    emptyCard: {
-        backgroundColor: '#ffffff',
-        marginTop: 20,
-    },
-    emptyContent: {
-        alignItems: 'center',
-        paddingVertical: 32,
-    },
-    emptyText: {
-        color: '#6b7280',
-        marginTop: 8,
-        textAlign: 'center',
-    },
-    emptyButton: {
-        marginTop: 16,
     },
     quickActions: {
         flexDirection: 'row',

@@ -1,12 +1,13 @@
 import { Link, Stack } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import { Text, Button, useTheme } from 'react-native-paper';
 
 export default function NotFoundScreen() {
+    const theme = useTheme();
     return (
         <>
             <Stack.Screen options={{ title: 'Oops!' }} />
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 <Text variant="headlineSmall" style={styles.title}>
                     This screen doesn't exist.
                 </Text>
@@ -27,7 +28,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 20,
-        backgroundColor: '#f3f4f6',
     },
     title: {
         marginBottom: 20,

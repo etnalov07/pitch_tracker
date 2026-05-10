@@ -29,7 +29,7 @@ const TeamCard: React.FC<{ team: Team; onPress: () => void }> = ({ team, onPress
 
     return (
         <Pressable onPress={onPress}>
-            <Card style={styles.teamCard}>
+            <Card>
                 <Card.Content style={styles.teamCardContent}>
                     <Avatar.Text
                         size={48}
@@ -41,7 +41,7 @@ const TeamCard: React.FC<{ team: Team; onPress: () => void }> = ({ team, onPress
                             {team.name}
                         </Text>
                         {meta && (
-                            <Text variant="bodySmall" style={styles.teamSeason}>
+                            <Text variant="bodySmall" style={[styles.teamSeason, { color: theme.colors.onSurfaceVariant }]}>
                                 {meta}
                             </Text>
                         )}
@@ -128,7 +128,7 @@ export default function TeamsScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <ScrollView
                 contentContainerStyle={[styles.scrollContent, teams.length === 0 && styles.scrollContentEmpty]}
                 refreshControl={<RefreshControl refreshing={loading} onRefresh={loadTeams} />}
@@ -168,7 +168,7 @@ export default function TeamsScreen() {
                                 <TeamCard key={team.id} team={team} onPress={() => handleTeamPress(team)} />
                             ))}
                             {filteredTeams.length === 0 && (
-                                <Text variant="bodyMedium" style={styles.noResults}>
+                                <Text variant="bodyMedium" style={[styles.noResults, { color: theme.colors.onSurfaceVariant }]}>
                                     No {TEAM_TYPE_LABELS[filterType] || ''} teams found
                                 </Text>
                             )}
@@ -197,7 +197,11 @@ export default function TeamsScreen() {
                 <Modal
                     visible={modalVisible}
                     onDismiss={() => setModalVisible(false)}
-                    contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}
+                    contentContainerStyle={[
+                        styles.modal,
+                        { backgroundColor: theme.colors.surface },
+                        isTablet && styles.modalTablet,
+                    ]}
                 >
                     <Text variant="titleLarge" style={styles.modalTitle}>
                         Create Team
@@ -210,7 +214,7 @@ export default function TeamsScreen() {
                         style={styles.input}
                         autoFocus
                     />
-                    <Text variant="labelMedium" style={styles.pickerLabel}>
+                    <Text variant="labelMedium" style={[styles.pickerLabel, { color: theme.colors.onSurfaceVariant }]}>
                         Team Type
                     </Text>
                     <View style={styles.chipRow}>
@@ -226,7 +230,7 @@ export default function TeamsScreen() {
                             </Button>
                         ))}
                     </View>
-                    <Text variant="labelMedium" style={styles.pickerLabel}>
+                    <Text variant="labelMedium" style={[styles.pickerLabel, { color: theme.colors.onSurfaceVariant }]}>
                         Season
                     </Text>
                     <View style={styles.chipRow}>
@@ -271,7 +275,6 @@ export default function TeamsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     scrollContent: {
         padding: 16,
@@ -292,7 +295,6 @@ const styles = StyleSheet.create({
     },
     noResults: {
         textAlign: 'center',
-        color: '#6b7280',
         paddingVertical: 24,
     },
     teamList: {
@@ -301,9 +303,6 @@ const styles = StyleSheet.create({
     teamListTablet: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-    },
-    teamCard: {
-        backgroundColor: '#ffffff',
     },
     teamCardContent: {
         flexDirection: 'row',
@@ -314,26 +313,7 @@ const styles = StyleSheet.create({
         marginLeft: 16,
     },
     teamSeason: {
-        color: '#6b7280',
         marginTop: 2,
-    },
-    emptyState: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: 60,
-    },
-    emptyTitle: {
-        marginBottom: 8,
-        textAlign: 'center',
-    },
-    emptyText: {
-        color: '#6b7280',
-        textAlign: 'center',
-        marginBottom: 24,
-    },
-    createButton: {
-        marginTop: 8,
     },
     fab: {
         position: 'absolute',
@@ -341,7 +321,6 @@ const styles = StyleSheet.create({
         bottom: 16,
     },
     modal: {
-        backgroundColor: '#ffffff',
         margin: 20,
         padding: 20,
         borderRadius: 12,
@@ -358,7 +337,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     pickerLabel: {
-        color: '#6b7280',
         marginBottom: 6,
         marginTop: 4,
     },

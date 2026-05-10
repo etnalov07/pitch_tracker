@@ -57,7 +57,7 @@ export default function GameDetailScreen() {
                 <View style={styles.centered}>
                     <Text variant="bodyLarge">Game not found</Text>
                     {error && (
-                        <Text variant="bodySmall" style={{ color: '#ef4444', marginTop: 8 }}>
+                        <Text variant="bodySmall" style={{ color: theme.colors.error, marginTop: 8 }}>
                             {error}
                         </Text>
                     )}
@@ -79,11 +79,11 @@ export default function GameDetailScreen() {
             case 'in_progress':
                 return theme.colors.primary;
             case 'completed':
-                return '#10b981';
+                return theme.colors.tertiary;
             case 'cancelled':
-                return '#ef4444';
+                return theme.colors.error;
             default:
-                return '#6b7280';
+                return theme.colors.onSurfaceVariant;
         }
     };
 
@@ -129,7 +129,7 @@ export default function GameDetailScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <View style={styles.header}>
+            <View style={[styles.header, { borderBottomColor: theme.colors.surfaceVariant }]}>
                 <IconButton icon="arrow-left" onPress={() => router.back()} />
                 <Text variant="titleLarge">Game Details</Text>
                 <View style={{ width: 48 }} />
@@ -137,19 +137,19 @@ export default function GameDetailScreen() {
 
             <ScrollView contentContainerStyle={styles.content}>
                 {/* Score Card */}
-                <Card style={styles.scoreCard}>
+                <Card>
                     <Card.Content>
                         <View style={styles.statusRow}>
                             <Chip compact textStyle={{ fontSize: 11, color: '#fff' }} style={{ backgroundColor: getStatusColor() }}>
                                 {getStatusLabel()}
                             </Chip>
                             {game.status === 'in_progress' && (
-                                <Text variant="bodySmall" style={styles.inningLabel}>
+                                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                                     {game.inning_half === 'top' ? '▲' : '▼'} Inning {game.current_inning}
                                 </Text>
                             )}
                             {game.status === 'completed' && (
-                                <Text variant="bodySmall" style={styles.inningLabel}>
+                                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                                     {game.current_inning} Innings
                                 </Text>
                             )}
@@ -174,7 +174,7 @@ export default function GameDetailScreen() {
                                 </Text>
                             </View>
 
-                            <Text variant="titleLarge" style={styles.vs}>
+                            <Text variant="titleLarge" style={[styles.vs, { color: theme.colors.onSurfaceVariant }]}>
                                 -
                             </Text>
 
@@ -195,23 +195,23 @@ export default function GameDetailScreen() {
                 </Card>
 
                 {/* Game Info Card */}
-                <Card style={styles.infoCard}>
+                <Card>
                     <Card.Content>
                         <Text variant="titleMedium" style={styles.sectionTitle}>
                             Game Info
                         </Text>
                         <Divider style={styles.divider} />
 
-                        <View style={styles.infoRow}>
-                            <Text variant="bodyMedium" style={styles.infoLabel}>
+                        <View style={[styles.infoRow, { borderBottomColor: theme.colors.surfaceVariant }]}>
+                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                                 Date
                             </Text>
                             <Text variant="bodyMedium">{formatDate(game.game_date)}</Text>
                         </View>
 
                         {game.game_time && (
-                            <View style={styles.infoRow}>
-                                <Text variant="bodyMedium" style={styles.infoLabel}>
+                            <View style={[styles.infoRow, { borderBottomColor: theme.colors.surfaceVariant }]}>
+                                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                                     Time
                                 </Text>
                                 <Text variant="bodyMedium">{game.game_time}</Text>
@@ -219,16 +219,16 @@ export default function GameDetailScreen() {
                         )}
 
                         {game.location && (
-                            <View style={styles.infoRow}>
-                                <Text variant="bodyMedium" style={styles.infoLabel}>
+                            <View style={[styles.infoRow, { borderBottomColor: theme.colors.surfaceVariant }]}>
+                                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                                     Location
                                 </Text>
                                 <Text variant="bodyMedium">{game.location}</Text>
                             </View>
                         )}
 
-                        <View style={styles.infoRow}>
-                            <Text variant="bodyMedium" style={styles.infoLabel}>
+                        <View style={[styles.infoRow, { borderBottomColor: theme.colors.surfaceVariant }]}>
+                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                                 Innings
                             </Text>
                             <Text variant="bodyMedium">{game.current_inning}</Text>
@@ -301,7 +301,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 4,
         paddingVertical: 4,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
     },
     centered: {
         flex: 1,
@@ -312,17 +311,11 @@ const styles = StyleSheet.create({
         padding: 16,
         gap: 16,
     },
-    scoreCard: {
-        backgroundColor: '#ffffff',
-    },
     statusRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: 16,
-    },
-    inningLabel: {
-        color: '#6b7280',
     },
     scoreRow: {
         flexDirection: 'row',
@@ -341,11 +334,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     vs: {
-        color: '#9ca3af',
         marginHorizontal: 16,
-    },
-    infoCard: {
-        backgroundColor: '#ffffff',
     },
     sectionTitle: {
         marginBottom: 8,
@@ -358,10 +347,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: 8,
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
-    },
-    infoLabel: {
-        color: '#6b7280',
     },
     actionButton: {
         marginTop: 8,

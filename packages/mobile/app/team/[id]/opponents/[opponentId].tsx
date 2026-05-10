@@ -109,6 +109,7 @@ function StatCell({ label, value }: { label: string; value: string }) {
 }
 
 export default function OpponentDetailScreen() {
+    const theme = useTheme();
     const { id: teamId, opponentId } = useLocalSearchParams<{ id: string; opponentId: string }>();
     const dispatch = useAppDispatch();
 
@@ -129,7 +130,7 @@ export default function OpponentDetailScreen() {
         <>
             <Stack.Screen options={{ title: selectedOpponent.name, headerBackTitle: 'Opponents' }} />
             <ScrollView
-                style={styles.container}
+                style={[styles.container, { backgroundColor: theme.colors.background }]}
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={<RefreshControl refreshing={detailLoading} onRefresh={load} />}
             >
@@ -179,7 +180,7 @@ export default function OpponentDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f3f4f6' },
+    container: { flex: 1 },
     scrollContent: { padding: 16, paddingBottom: 40 },
     metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
     badge: {
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     sectionTitle: { color: '#374151', marginBottom: 8 },
-    rosterCard: { backgroundColor: '#fff', marginBottom: 10 },
+    rosterCard: { marginBottom: 10 },
     rosterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     meta: { color: '#6b7280', fontSize: 12 },
     tendenciesBox: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#f3f4f6' },

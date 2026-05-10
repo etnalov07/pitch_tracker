@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import { SuggestedPitch } from '@pitch-tracker/shared';
 
 interface SuggestedSequenceProps {
@@ -22,6 +23,7 @@ const PITCH_COLORS: Record<string, string> = {
 };
 
 const SuggestedSequence: React.FC<SuggestedSequenceProps> = ({ sequence }) => {
+    const theme = useTheme();
     if (sequence.length === 0) {
         return <Text style={styles.empty}>Insufficient data</Text>;
     }
@@ -30,14 +32,14 @@ const SuggestedSequence: React.FC<SuggestedSequenceProps> = ({ sequence }) => {
             {sequence.map((pitch, i) => {
                 const color = PITCH_COLORS[pitch.pitch_type] || '#6b7280';
                 return (
-                    <View key={i} style={[styles.row, { borderLeftColor: color }]}>
+                    <View key={i} style={[styles.row, { borderLeftColor: color, backgroundColor: theme.colors.surfaceVariant }]}>
                         <View style={[styles.badge, { backgroundColor: color }]}>
                             <Text style={styles.badgeNum}>{i + 1}</Text>
                         </View>
                         <View style={styles.info}>
                             <View style={styles.topRow}>
                                 <Text style={[styles.pitchType, { color }]}>{pitch.pitch_type}</Text>
-                                <Text style={styles.zone}>{pitch.zone_label}</Text>
+                                <Text style={[styles.zone, { backgroundColor: theme.colors.background }]}>{pitch.zone_label}</Text>
                             </View>
                             <Text style={styles.rationale}>{pitch.rationale}</Text>
                         </View>
@@ -56,7 +58,6 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         gap: 8,
         padding: 8,
-        backgroundColor: '#f9fafb',
         borderRadius: 6,
         borderLeftWidth: 3,
     },
@@ -74,7 +75,6 @@ const styles = StyleSheet.create({
     zone: {
         fontSize: 11,
         color: '#6b7280',
-        backgroundColor: '#f3f4f6',
         paddingHorizontal: 5,
         paddingVertical: 1,
         borderRadius: 4,

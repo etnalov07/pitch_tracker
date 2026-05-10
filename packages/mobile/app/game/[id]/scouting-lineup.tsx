@@ -141,7 +141,7 @@ export default function ScoutingLineupScreen() {
                 </Text>
 
                 {/* Starting Pitcher */}
-                <View style={styles.pitcherSection}>
+                <View style={[styles.pitcherSection, { backgroundColor: theme.colors.surfaceVariant }]}>
                     <Text variant="titleSmall" style={styles.sectionTitle}>
                         Starting Pitcher
                     </Text>
@@ -411,9 +411,7 @@ const styles = StyleSheet.create({
     tabSelected: {
         backgroundColor: '#334e68',
     },
-    tabUnselected: {
-        backgroundColor: '#ffffff',
-    },
+    tabUnselected: {},
     tabLabelSelected: {
         color: '#ffffff',
         fontWeight: '700',
@@ -427,7 +425,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     pitcherSection: {
-        backgroundColor: '#f9fafb',
         borderRadius: 12,
         padding: 12,
         marginBottom: 20,
@@ -446,7 +443,6 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     jerseyInput: {
-        backgroundColor: '#ffffff',
         width: 90,
     },
     throwsContainer: { flex: 1 },
@@ -475,7 +471,6 @@ const styles = StyleSheet.create({
     },
     rowFields: { flex: 1 },
     nameInput: {
-        backgroundColor: '#ffffff',
         marginBottom: 4,
     },
     bottomRow: {
@@ -487,7 +482,7 @@ const styles = StyleSheet.create({
     positionLabel: { fontSize: 13 },
     batsToggle: { flex: 1 },
     batsSelected: { backgroundColor: '#1d4ed8' },
-    batsUnselected: { backgroundColor: '#ffffff' },
+    batsUnselected: {},
     batsLabelSelected: { color: '#ffffff', fontWeight: '700' },
     batsLabelUnselected: { color: '#374151', fontWeight: '500' },
     actions: {

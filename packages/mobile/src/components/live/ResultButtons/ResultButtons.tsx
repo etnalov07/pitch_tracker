@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import * as Haptics from '../../../utils/haptics';
 import { PitchResult } from '@pitch-tracker/shared';
 import { colors } from '../../../styles/theme';
@@ -21,6 +22,7 @@ const RESULTS: { type: PitchResult; label: string; compactLabel: string; color: 
 ];
 
 const ResultButtons: React.FC<ResultButtonsProps> = ({ selectedResult, onSelect, disabled = false, compact = false }) => {
+    const theme = useTheme();
     const handleSelect = (result: PitchResult) => {
         if (disabled) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -29,7 +31,7 @@ const ResultButtons: React.FC<ResultButtonsProps> = ({ selectedResult, onSelect,
 
     if (compact) {
         return (
-            <View style={compactStyles.container}>
+            <View style={[compactStyles.container, { backgroundColor: theme.colors.surface }]}>
                 <View style={compactStyles.row}>
                     {RESULTS.map(({ type, compactLabel, color, textColor }) => {
                         const isSelected = selectedResult === type;
@@ -55,7 +57,7 @@ const ResultButtons: React.FC<ResultButtonsProps> = ({ selectedResult, onSelect,
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
             <Text style={styles.title}>Result</Text>
             <View style={styles.row}>
                 {RESULTS.map(({ type, label, color, textColor }) => {
@@ -83,7 +85,6 @@ const ResultButtons: React.FC<ResultButtonsProps> = ({ selectedResult, onSelect,
 
 const compactStyles = StyleSheet.create({
     container: {
-        backgroundColor: '#ffffff',
         borderRadius: 8,
         paddingHorizontal: 8,
         paddingVertical: 6,
@@ -117,7 +118,6 @@ const compactStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#ffffff',
         borderRadius: 12,
         padding: 16,
     },

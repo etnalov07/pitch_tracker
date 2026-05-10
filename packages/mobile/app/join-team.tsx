@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, ScrollView } from 'react-native';
-import { Text, TextInput, Button, Surface, Card, Chip, Divider } from 'react-native-paper';
+import { Text, TextInput, Button, Surface, Card, Chip, Divider, useTheme } from 'react-native-paper';
 import { useRouter, Stack } from 'expo-router';
 import {
     useAppDispatch,
@@ -12,6 +12,7 @@ import {
 } from '../src/state';
 
 export default function JoinTeamScreen() {
+    const theme = useTheme();
     const router = useRouter();
     const dispatch = useAppDispatch();
     const { searchResults, myJoinRequests, error } = useAppSelector((state) => state.invites);
@@ -61,7 +62,7 @@ export default function JoinTeamScreen() {
     return (
         <>
             <Stack.Screen options={{ title: 'Find a Team', headerBackTitle: 'Back' }} />
-            <ScrollView style={styles.container}>
+            <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 {error && <Text style={styles.errorText}>{error}</Text>}
                 {successMessage && <Text style={styles.successText}>{successMessage}</Text>}
 
@@ -144,7 +145,6 @@ export default function JoinTeamScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
         padding: 16,
     },
     searchRow: {
@@ -155,7 +155,6 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         flex: 1,
-        backgroundColor: '#ffffff',
     },
     section: {
         marginBottom: 24,
@@ -167,7 +166,6 @@ const styles = StyleSheet.create({
     },
     resultCard: {
         marginBottom: 8,
-        backgroundColor: '#ffffff',
     },
     resultContent: {
         flexDirection: 'row',
@@ -183,7 +181,6 @@ const styles = StyleSheet.create({
     },
     requestCard: {
         marginBottom: 8,
-        backgroundColor: '#ffffff',
     },
     requestContent: {
         flexDirection: 'row',
@@ -193,9 +190,7 @@ const styles = StyleSheet.create({
     requestTeam: {
         fontWeight: '500',
     },
-    statusChip: {
-        backgroundColor: '#f3f4f6',
-    },
+    statusChip: {},
     emptyText: {
         textAlign: 'center',
         color: '#6b7280',

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Alert, Keyboard } from 'react-native';
-import { Text, Button, Modal, TextInput, SegmentedButtons, IconButton } from 'react-native-paper';
+import { Text, Button, Modal, TextInput, SegmentedButtons, IconButton, useTheme } from 'react-native-paper';
 import { OpponentLineupPlayer } from '@pitch-tracker/shared';
 import api from '../../../services/api';
 
@@ -31,6 +31,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
     onBatterAdded,
     currentInningNumber,
 }) => {
+    const theme = useTheme();
     const [formMode, setFormMode] = useState<FormMode | null>(null);
     const [editingBatter, setEditingBatter] = useState<OpponentLineupPlayer | null>(null);
     const [newName, setNewName] = useState('');
@@ -156,7 +157,11 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
     const saveDisabled = saving || !newName.trim() || (formMode === 'substitute' && !subInning.trim());
 
     return (
-        <Modal visible={visible} onDismiss={handleDismiss} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
+        <Modal
+            visible={visible}
+            onDismiss={handleDismiss}
+            contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }, isTablet && styles.modalTablet]}
+        >
             <Pressable onPress={Keyboard.dismiss} style={styles.modalInner} testID="batter-selector-modal">
                 <Text variant="titleLarge" style={styles.modalTitle}>
                     Select Batter
@@ -206,7 +211,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
                 </ScrollView>
 
                 {formMode ? (
-                    <View style={styles.addForm}>
+                    <View style={[styles.addForm, { backgroundColor: theme.colors.surfaceVariant }]}>
                         <Text variant="titleSmall" style={styles.formTitle}>
                             {formTitle}
                         </Text>
@@ -308,7 +313,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-    modal: { backgroundColor: '#ffffff', margin: 20, borderRadius: 12, maxHeight: '90%', minHeight: '50%' },
+    modal: { margin: 20, borderRadius: 12, maxHeight: '90%', minHeight: '50%' },
     modalInner: { padding: 20, flex: 1 },
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
     modalTitle: { marginBottom: 16 },
@@ -341,7 +346,6 @@ const styles = StyleSheet.create({
     addForm: {
         marginTop: 12,
         padding: 12,
-        backgroundColor: '#f9fafb',
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#e5e7eb',
@@ -349,9 +353,9 @@ const styles = StyleSheet.create({
     },
     formTitle: { color: '#111827' },
     subLabel: { color: '#6b7280', fontStyle: 'italic' },
-    formInput: { backgroundColor: '#ffffff' },
+    formInput: {},
     formRow: { flexDirection: 'row', gap: 8 },
-    formInputSmall: { flex: 1, backgroundColor: '#ffffff' },
+    formInputSmall: { flex: 1 },
     batsLabel: { marginTop: 4, color: '#374151' },
     segmented: { marginBottom: 4 },
     formActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },

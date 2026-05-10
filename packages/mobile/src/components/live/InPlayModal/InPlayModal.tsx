@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, IconButton } from 'react-native-paper';
+import { Text, IconButton, useTheme } from 'react-native-paper';
 import Svg, { Path, Circle, G, Line, Rect, Text as SvgText } from 'react-native-svg';
 import * as Haptics from '../../../utils/haptics';
 import { colors } from '../../../styles/theme';
@@ -82,6 +82,7 @@ function deriveFielderPosition(x: number, y: number): string | null {
 }
 
 const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult }) => {
+    const theme = useTheme();
     const [hitType, setHitType] = useState<HitType>('line_drive');
     const [hitLocation, setHitLocation] = useState<HitLocation | null>(null);
     const [selectedFielder, setSelectedFielder] = useState<string | null>(null);
@@ -139,7 +140,7 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
 
     return (
         <View style={styles.overlay}>
-            <View style={styles.modal}>
+            <View style={[styles.modal, { backgroundColor: theme.colors.surface }]}>
                 <View style={styles.header}>
                     <Text variant="titleLarge" style={styles.title}>
                         Record Play Result
@@ -393,7 +394,6 @@ const styles = StyleSheet.create({
         zIndex: 1000,
     },
     modal: {
-        backgroundColor: '#ffffff',
         borderRadius: 16,
         width: '92%',
         maxWidth: 400,

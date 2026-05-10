@@ -74,7 +74,7 @@ export default function OpponentsScreen() {
     return (
         <>
             <Stack.Screen options={{ title: 'Opponent Teams', headerBackTitle: 'Team' }} />
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 {showForm && (
                     <Card style={styles.formCard}>
                         <Card.Content>
@@ -82,7 +82,7 @@ export default function OpponentsScreen() {
                                 Team Name *
                             </Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.colors.surface }]}
                                 value={name}
                                 onChangeText={setName}
                                 placeholder="Johnson High School"
@@ -91,11 +91,21 @@ export default function OpponentsScreen() {
                             <Text variant="titleSmall" style={styles.formLabel}>
                                 City
                             </Text>
-                            <TextInput style={styles.input} value={city} onChangeText={setCity} placeholder="Houston" />
+                            <TextInput
+                                style={[styles.input, { backgroundColor: theme.colors.surface }]}
+                                value={city}
+                                onChangeText={setCity}
+                                placeholder="Houston"
+                            />
                             <Text variant="titleSmall" style={styles.formLabel}>
                                 Level
                             </Text>
-                            <TextInput style={styles.input} value={level} onChangeText={setLevel} placeholder="High School" />
+                            <TextInput
+                                style={[styles.input, { backgroundColor: theme.colors.surface }]}
+                                value={level}
+                                onChangeText={setLevel}
+                                placeholder="High School"
+                            />
                             <View style={styles.formActions}>
                                 <Button onPress={() => setShowForm(false)}>Cancel</Button>
                                 <Button
@@ -144,11 +154,11 @@ export default function OpponentsScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f3f4f6' },
+    container: { flex: 1 },
     listContent: { padding: 16, paddingBottom: 80 },
-    card: { marginBottom: 12, backgroundColor: '#fff' },
+    card: { marginBottom: 12 },
     meta: { color: '#6b7280', marginTop: 2 },
-    formCard: { margin: 16, marginBottom: 0, backgroundColor: '#fff' },
+    formCard: { margin: 16, marginBottom: 0 },
     formLabel: { marginTop: 8, marginBottom: 4, color: '#374151' },
     input: {
         borderWidth: 1,
@@ -156,7 +166,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 10,
         fontSize: 15,
-        backgroundColor: '#fff',
         marginBottom: 4,
     },
     formActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },

@@ -268,7 +268,7 @@ export default function BullpenLiveScreen() {
                         Velocity (mph)
                     </Text>
                     <RNTextInput
-                        style={styles.velocityInput}
+                        style={[styles.velocityInput, { backgroundColor: theme.colors.surface }]}
                         value={velocity}
                         onChangeText={setVelocity}
                         keyboardType="numeric"
@@ -291,7 +291,11 @@ export default function BullpenLiveScreen() {
             </ScrollView>
 
             {/* End Session Modal */}
-            <Modal visible={showEndModal} onDismiss={() => setShowEndModal(false)} contentContainerStyle={styles.modal}>
+            <Modal
+                visible={showEndModal}
+                onDismiss={() => setShowEndModal(false)}
+                contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+            >
                 <Text variant="titleLarge" style={styles.modalTitle}>
                     End Session
                 </Text>
@@ -350,7 +354,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         textAlign: 'center',
-        backgroundColor: '#ffffff',
         color: '#111827',
     },
     planCard: { marginBottom: 0 },
@@ -373,7 +376,6 @@ const styles = StyleSheet.create({
     logButton: { marginTop: 4 },
     logButtonContent: { paddingVertical: 6 },
     modal: {
-        backgroundColor: '#ffffff',
         margin: 20,
         padding: 20,
         borderRadius: 12,

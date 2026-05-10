@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     content: { padding: 16, paddingBottom: 40 },
     sectionTitle: { fontWeight: '600', color: '#111827', marginBottom: 4 },
     helpText: { color: '#6b7280', marginBottom: 12 },
-    pitcherButton: { backgroundColor: '#ffffff', width: '100%', marginBottom: 4 },
+    pitcherButton: { width: '100%', marginBottom: 4 },
     row: { flexDirection: 'row', marginBottom: 12, alignItems: 'flex-start' },
     orderBadge: {
         width: 32,
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     },
     orderText: { fontWeight: '700', color: '#374151' },
     rowFields: { flex: 1 },
-    playerButton: { backgroundColor: '#ffffff', marginBottom: 4, width: '100%' },
+    playerButton: { marginBottom: 4, width: '100%' },
     playerLabel: { fontSize: 13 },
     bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     positionButton: { minWidth: 60 },

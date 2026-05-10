@@ -74,7 +74,7 @@ export default function GameHistoryScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={<RefreshControl refreshing={loading} onRefresh={handleRefresh} />}
@@ -105,7 +105,6 @@ export const unstable_settings = {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     scrollContent: {
         padding: 16,
@@ -117,7 +116,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     row: {
-        backgroundColor: '#ffffff',
         marginBottom: 8,
     },
     rowContent: {

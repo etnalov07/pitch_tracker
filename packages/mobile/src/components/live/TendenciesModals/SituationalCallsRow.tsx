@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import { SituationalCallType } from '@pitch-tracker/shared';
 
 interface SitCall {
@@ -22,27 +23,30 @@ interface SituationalCallsRowProps {
     onCallSent?: (type: SituationalCallType) => void;
 }
 
-const SituationalCallsRow: React.FC<SituationalCallsRowProps> = ({ shakeCount = 0, disabled, onCallSent }) => (
-    <View style={styles.row}>
-        <Text style={styles.label}>SITUATIONAL</Text>
-        {SITUATIONAL_CALLS.map((call) => (
-            <TouchableOpacity
-                key={call.type}
-                onPress={() => !disabled && onCallSent && onCallSent(call.type)}
-                disabled={disabled}
-                style={[styles.btn, { borderColor: call.color }]}
-                activeOpacity={0.7}
-            >
-                <Text style={[styles.btnText, { color: call.color }]}>{call.abbrev}</Text>
-                {call.type === 'shake' && shakeCount > 0 && (
-                    <View style={[styles.badge, { backgroundColor: call.color }]}>
-                        <Text style={styles.badgeText}>{shakeCount}</Text>
-                    </View>
-                )}
-            </TouchableOpacity>
-        ))}
-    </View>
-);
+const SituationalCallsRow: React.FC<SituationalCallsRowProps> = ({ shakeCount = 0, disabled, onCallSent }) => {
+    const theme = useTheme();
+    return (
+        <View style={styles.row}>
+            <Text style={styles.label}>SITUATIONAL</Text>
+            {SITUATIONAL_CALLS.map((call) => (
+                <TouchableOpacity
+                    key={call.type}
+                    onPress={() => !disabled && onCallSent && onCallSent(call.type)}
+                    disabled={disabled}
+                    style={[styles.btn, { borderColor: call.color, backgroundColor: theme.colors.surface }]}
+                    activeOpacity={0.7}
+                >
+                    <Text style={[styles.btnText, { color: call.color }]}>{call.abbrev}</Text>
+                    {call.type === 'shake' && shakeCount > 0 && (
+                        <View style={[styles.badge, { backgroundColor: call.color }]}>
+                            <Text style={styles.badgeText}>{shakeCount}</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+            ))}
+        </View>
+    );
+};
 
 const styles = StyleSheet.create({
     row: {
@@ -61,7 +65,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         borderRadius: 6,
         borderWidth: 1,
-        backgroundColor: 'white',
         flexDirection: 'row',
         alignItems: 'center',
         gap: 3,

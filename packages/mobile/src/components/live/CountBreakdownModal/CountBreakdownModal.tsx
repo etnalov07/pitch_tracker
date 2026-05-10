@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Modal, Portal, Text, Divider, Button, ActivityIndicator } from 'react-native-paper';
+import { Modal, Portal, Text, Divider, Button, ActivityIndicator, useTheme } from 'react-native-paper';
 import { CountBucketBreakdown, TeamSide } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../state/games/api/gamesApi';
 
@@ -21,6 +21,7 @@ const BUCKET_LABELS: Record<string, string> = {
 };
 
 const CountBreakdownModal: React.FC<Props> = ({ visible, onDismiss, gameId, pitcherId, teamSide, refreshTrigger }) => {
+    const theme = useTheme();
     const [data, setData] = useState<CountBucketBreakdown | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -38,7 +39,11 @@ const CountBreakdownModal: React.FC<Props> = ({ visible, onDismiss, gameId, pitc
 
     return (
         <Portal>
-            <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.container}>
+            <Modal
+                visible={visible}
+                onDismiss={onDismiss}
+                contentContainerStyle={[styles.container, { backgroundColor: theme.colors.surface }]}
+            >
                 <Text variant="titleMedium" style={styles.title}>
                     Count Breakdown
                 </Text>
@@ -55,7 +60,7 @@ const CountBreakdownModal: React.FC<Props> = ({ visible, onDismiss, gameId, pitc
                             const bucket = data![key];
                             if (bucket.total === 0) return null;
                             return (
-                                <View key={key} style={styles.bucket}>
+                                <View key={key} style={[styles.bucket, { backgroundColor: theme.colors.surfaceVariant }]}>
                                     <View style={styles.bucketHeader}>
                                         <Text variant="labelMedium" style={styles.bucketLabel}>
                                             {BUCKET_LABELS[key]}
@@ -108,7 +113,6 @@ const CountBreakdownModal: React.FC<Props> = ({ visible, onDismiss, gameId, pitc
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'white',
         margin: 24,
         borderRadius: 12,
         padding: 20,
@@ -130,7 +134,6 @@ const styles = StyleSheet.create({
     bucket: {
         marginBottom: 16,
         padding: 12,
-        backgroundColor: '#f9fafb',
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#e5e7eb',

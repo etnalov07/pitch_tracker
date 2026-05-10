@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, TextInput } from 'react-native';
-import { Text, Button, Modal } from 'react-native-paper';
+import { Text, Button, Modal, useTheme } from 'react-native-paper';
 
 interface TeamAtBatModalProps {
     visible: boolean;
@@ -21,8 +21,13 @@ const TeamAtBatModal: React.FC<TeamAtBatModalProps> = ({
     onConfirm,
     isTablet,
 }) => {
+    const theme = useTheme();
     return (
-        <Modal visible={visible} onDismiss={() => {}} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
+        <Modal
+            visible={visible}
+            onDismiss={() => {}}
+            contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }, isTablet && styles.modalTablet]}
+        >
             <Text variant="titleLarge" style={styles.modalTitle}>
                 Your Team At Bat
             </Text>
@@ -46,7 +51,7 @@ const TeamAtBatModal: React.FC<TeamAtBatModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-    modal: { backgroundColor: '#ffffff', margin: 20, padding: 20, borderRadius: 12, maxHeight: '80%' },
+    modal: { margin: 20, padding: 20, borderRadius: 12, maxHeight: '80%' },
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
     modalTitle: { marginBottom: 16, textAlign: 'center' },
     infoText: { fontSize: 16, color: '#374151', textAlign: 'center', marginBottom: 16, lineHeight: 24 },

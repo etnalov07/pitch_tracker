@@ -218,9 +218,7 @@ const styles = StyleSheet.create({
         gap: 16,
         paddingBottom: 32,
     },
-    card: {
-        backgroundColor: '#ffffff',
-    },
+    card: {},
     sectionTitle: {
         marginBottom: 8,
     },

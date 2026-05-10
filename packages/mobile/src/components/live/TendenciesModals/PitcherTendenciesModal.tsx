@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Modal } from 'react-native-paper';
+import { Modal, useTheme } from 'react-native-paper';
 import { PitcherTendenciesLive } from '@pitch-tracker/shared';
 import { analyticsApi } from '../../../state/analytics/api/analyticsApi';
 import TendencyZoneGrid from './TendencyZoneGrid';
@@ -21,6 +21,7 @@ const PitcherTendenciesModal: React.FC<PitcherTendenciesModalProps> = ({
     pitcherName,
     initialBatterHand,
 }) => {
+    const theme = useTheme();
     const [batterHand, setBatterHand] = useState<'L' | 'R'>(initialBatterHand);
     const [data, setData] = useState<PitcherTendenciesLive | null>(null);
     const [loading, setLoading] = useState(false);
@@ -52,13 +53,17 @@ const PitcherTendenciesModal: React.FC<PitcherTendenciesModalProps> = ({
         })) || [];
 
     return (
-        <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
+        <Modal
+            visible={visible}
+            onDismiss={onDismiss}
+            contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+        >
             <View style={styles.header}>
                 <View>
                     <Text style={styles.title}>Pitcher Tendencies</Text>
                     <Text style={styles.subtitle}>{pitcherName}</Text>
                 </View>
-                <TouchableOpacity onPress={onDismiss} style={styles.closeBtn}>
+                <TouchableOpacity onPress={onDismiss} style={[styles.closeBtn, { backgroundColor: theme.colors.background }]}>
                     <Text style={styles.closeBtnText}>✕</Text>
                 </TouchableOpacity>
             </View>
@@ -69,7 +74,11 @@ const PitcherTendenciesModal: React.FC<PitcherTendenciesModalProps> = ({
                     <TouchableOpacity
                         key={hand}
                         onPress={() => setBatterHand(hand)}
-                        style={[styles.handBtn, batterHand === hand && styles.handBtnActive]}
+                        style={[
+                            styles.handBtn,
+                            { backgroundColor: theme.colors.surface },
+                            batterHand === hand && styles.handBtnActive,
+                        ]}
                     >
                         <Text style={[styles.handBtnText, batterHand === hand && styles.handBtnTextActive]}>vs. {hand}HH</Text>
                     </TouchableOpacity>
@@ -101,7 +110,7 @@ const PitcherTendenciesModal: React.FC<PitcherTendenciesModalProps> = ({
                         {data.pitch_mix.map((p) => (
                             <View key={p.pitch_type} style={styles.mixRow}>
                                 <Text style={styles.mixType}>{p.pitch_type}</Text>
-                                <View style={styles.mixBarBg}>
+                                <View style={[styles.mixBarBg, { backgroundColor: theme.colors.background }]}>
                                     <View style={[styles.mixBar, { width: `${p.usage_pct}%` }]} />
                                 </View>
                                 <Text style={styles.mixPct}>{p.usage_pct}%</Text>
@@ -126,7 +135,6 @@ const PitcherTendenciesModal: React.FC<PitcherTendenciesModalProps> = ({
 
 const styles = StyleSheet.create({
     modal: {
-        backgroundColor: 'white',
         margin: 16,
         borderRadius: 12,
         maxHeight: '85%',
@@ -146,7 +154,6 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: '#f3f4f6',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -158,7 +165,6 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         borderWidth: 1,
         borderColor: '#d1d5db',
-        backgroundColor: 'white',
     },
     handBtnActive: { backgroundColor: '#1d4ed8', borderColor: '#1d4ed8' },
     handBtnText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
@@ -177,7 +183,7 @@ const styles = StyleSheet.create({
     },
     mixRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
     mixType: { width: 64, fontSize: 11, color: '#4b5563', textTransform: 'capitalize' },
-    mixBarBg: { flex: 1, height: 12, backgroundColor: '#f3f4f6', borderRadius: 6, overflow: 'hidden' },
+    mixBarBg: { flex: 1, height: 12, borderRadius: 6, overflow: 'hidden' },
     mixBar: { height: '100%', backgroundColor: '#3b82f6', borderRadius: 6 },
     mixPct: { width: 28, fontSize: 11, color: '#6b7280', textAlign: 'right' },
     mixStats: { width: 80, fontSize: 10, color: '#9ca3af' },

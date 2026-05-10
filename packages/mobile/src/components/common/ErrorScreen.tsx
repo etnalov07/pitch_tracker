@@ -31,7 +31,9 @@ const ErrorScreen: React.FC<ErrorScreenProps> = ({
     };
 
     return (
-        <View style={[styles.container, fullScreen && styles.fullScreen]}>
+        <View
+            style={[styles.container, fullScreen && styles.fullScreen, fullScreen && { backgroundColor: theme.colors.background }]}
+        >
             <Icon source="alert-circle-outline" size={64} color={theme.colors.error} />
             <Text variant="titleLarge" style={styles.title}>
                 {title}
@@ -63,7 +65,6 @@ const styles = StyleSheet.create({
     },
     fullScreen: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     title: {
         marginTop: 16,

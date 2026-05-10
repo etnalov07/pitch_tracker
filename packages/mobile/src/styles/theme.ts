@@ -61,6 +61,20 @@ export const colors = {
     },
 };
 
+// Accent palette — for CTA backgrounds. Stays vibrant in both light and dark
+// modes (Paper's brand inversions leave 600-tier as too pale for button fills).
+// Mobile StyleSheet is static, so a single mid-vibrant palette serves both modes.
+export const accents = {
+    blue: '#3b82f6',
+    blueHover: '#2563eb',
+    red: '#dc2626',
+    redHover: '#b91c1c',
+    green: '#16a34a',
+    greenHover: '#15803d',
+    violet: '#7c3aed',
+    violetHover: '#6d28d9',
+};
+
 export const lightTheme = {
     ...MD3LightTheme,
     colors: {

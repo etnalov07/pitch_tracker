@@ -36,6 +36,7 @@ function PitcherStatsTab({
     pitcherName: string;
     refreshTrigger: number;
 }) {
+    const theme = useTheme();
     const [stats, setStats] = useState<PitcherGameStats | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -54,7 +55,7 @@ function PitcherStatsTab({
     const sortedTypes = Object.entries(stats.pitch_type_breakdown).sort(([, a], [, b]) => b.total - a.total);
 
     return (
-        <View style={styles.statsCard}>
+        <View style={[styles.statsCard, { backgroundColor: theme.colors.surface }]}>
             <Text style={styles.statsCardTitle}>{pitcherName}'s Stats</Text>
             <View style={styles.statsRow}>
                 <View style={styles.statItem}>
@@ -127,6 +128,7 @@ function CountBreakdownTab({
     opposingPitcherId?: string;
     refreshTrigger: number;
 }) {
+    const theme = useTheme();
     const [data, setData] = useState<CountBucketBreakdown | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -152,7 +154,7 @@ function CountBreakdownTab({
                 const bucket = data![key];
                 if (bucket.total === 0) return null;
                 return (
-                    <View key={key} style={styles.countBucket}>
+                    <View key={key} style={[styles.countBucket, { backgroundColor: theme.colors.surfaceVariant }]}>
                         <View style={styles.countBucketHeader}>
                             <Text style={styles.countBucketLabel}>{BUCKET_LABELS[key]}</Text>
                             <Text style={styles.countBucketTotal}>{bucket.total} pitches</Text>
@@ -193,6 +195,7 @@ function CountBreakdownTab({
 // ── Performance Summary ───────────────────────────────────────────────────────
 
 function SummaryTab({ gameId }: { gameId: string }) {
+    const theme = useTheme();
     const [summaries, setSummaries] = useState<PerformanceSummary[]>([]);
     const [selectedIdx, setSelectedIdx] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -260,7 +263,7 @@ function SummaryTab({ gameId }: { gameId: string }) {
                     {summaries.map((s, i) => (
                         <TouchableOpacity
                             key={s.id}
-                            style={[styles.pill, selectedIdx === i && styles.pillActive]}
+                            style={[styles.pill, { backgroundColor: theme.colors.surface }, selectedIdx === i && styles.pillActive]}
                             onPress={() => setSelectedIdx(i)}
                         >
                             <Text style={[styles.pillText, selectedIdx === i && styles.pillTextActive]}>{s.pitcher_name}</Text>
@@ -385,7 +388,7 @@ export default function ViewerScreen() {
             </View>
 
             {/* Score strip */}
-            <View style={styles.scoreStrip}>
+            <View style={[styles.scoreStrip, { backgroundColor: theme.colors.surface }]}>
                 <Text variant="bodySmall" style={styles.teamLabel}>
                     {game.home_team_name ?? 'Home'}
                 </Text>
@@ -401,7 +404,7 @@ export default function ViewerScreen() {
             </View>
 
             {/* Tab bar — horizontal scroll so 4 tabs fit on any screen */}
-            <View style={styles.tabBarWrap}>
+            <View style={[styles.tabBarWrap, { backgroundColor: theme.colors.surface }]}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabBar}>
                     {tabs.map((tab) => (
                         <TouchableOpacity
@@ -431,7 +434,11 @@ export default function ViewerScreen() {
                                     return (
                                         <TouchableOpacity
                                             key={p.id}
-                                            style={[styles.pill, selectedPitcherIdx === i && styles.pillActive]}
+                                            style={[
+                                                styles.pill,
+                                                { backgroundColor: theme.colors.surface },
+                                                selectedPitcherIdx === i && styles.pillActive,
+                                            ]}
                                             onPress={() => setSelectedPitcherIdx(i)}
                                         >
                                             <Text style={[styles.pillText, selectedPitcherIdx === i && styles.pillTextActive]}>
@@ -469,7 +476,11 @@ export default function ViewerScreen() {
                                     return (
                                         <TouchableOpacity
                                             key={p.id}
-                                            style={[styles.pill, selectedPitcherIdx === i && styles.pillActive]}
+                                            style={[
+                                                styles.pill,
+                                                { backgroundColor: theme.colors.surface },
+                                                selectedPitcherIdx === i && styles.pillActive,
+                                            ]}
                                             onPress={() => setSelectedPitcherIdx(i)}
                                         >
                                             <Text style={[styles.pillText, selectedPitcherIdx === i && styles.pillTextActive]}>
@@ -485,7 +496,11 @@ export default function ViewerScreen() {
                                 {(['our', 'opp'] as const).map((m) => (
                                     <TouchableOpacity
                                         key={m}
-                                        style={[styles.countsModeBtn, countsMode === m && styles.countsModeBtnActive]}
+                                        style={[
+                                            styles.countsModeBtn,
+                                            { backgroundColor: theme.colors.surfaceVariant },
+                                            countsMode === m && styles.countsModeBtnActive,
+                                        ]}
                                         onPress={() => setCountsMode(m)}
                                     >
                                         <Text
@@ -507,7 +522,11 @@ export default function ViewerScreen() {
                                 {opposingPitchers.map((p, i) => (
                                     <TouchableOpacity
                                         key={p.id}
-                                        style={[styles.pill, selectedOppPitcherIdx === i && styles.pillActive]}
+                                        style={[
+                                            styles.pill,
+                                            { backgroundColor: theme.colors.surface },
+                                            selectedOppPitcherIdx === i && styles.pillActive,
+                                        ]}
                                         onPress={() => setSelectedOppPitcherIdx(i)}
                                     >
                                         <Text style={[styles.pillText, selectedOppPitcherIdx === i && styles.pillTextActive]}>
@@ -609,7 +628,6 @@ const styles = StyleSheet.create({
         gap: 12,
         paddingVertical: 10,
         paddingHorizontal: 16,
-        backgroundColor: 'white',
         borderBottomWidth: 1,
         borderBottomColor: '#e5e7eb',
     },
@@ -617,7 +635,6 @@ const styles = StyleSheet.create({
     score: { fontWeight: '700', letterSpacing: 2 },
     inning: { color: '#1d4ed8', fontWeight: '600', marginLeft: 8 },
     tabBarWrap: {
-        backgroundColor: 'white',
         borderBottomWidth: 2,
         borderBottomColor: '#e5e7eb',
     },
@@ -656,7 +673,6 @@ const styles = StyleSheet.create({
 
     // Pitcher stats
     statsCard: {
-        backgroundColor: 'white',
         borderRadius: 12,
         padding: 16,
         shadowColor: '#000',
@@ -704,7 +720,6 @@ const styles = StyleSheet.create({
 
     // Count breakdown
     countBucket: {
-        backgroundColor: '#f9fafb',
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#e5e7eb',
@@ -760,7 +775,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 6,
         borderRadius: 20,
-        backgroundColor: '#f3f4f6',
         borderWidth: 1,
         borderColor: '#e5e7eb',
     },
@@ -781,7 +795,6 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 8,
         alignItems: 'center',
-        backgroundColor: '#f9fafb',
     },
     countsModeBtnActive: { backgroundColor: '#1d4ed8' },
     countsModeBtnText: { fontSize: 13, fontWeight: '500', color: '#6b7280' },

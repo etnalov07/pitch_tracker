@@ -525,7 +525,7 @@ export default function GamePerformanceSummaryScreen() {
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={styles.pitcherTabBar}
+                    style={[styles.pitcherTabBar, { backgroundColor: theme.colors.surfaceVariant }]}
                     contentContainerStyle={styles.pitcherTabContent}
                 >
                     {gamePitcherSummaries.map((s, idx) => {
@@ -534,7 +534,11 @@ export default function GamePerformanceSummaryScreen() {
                         return (
                             <TouchableOpacity
                                 key={s.pitcher_id}
-                                style={[styles.pitcherTab, active && styles.pitcherTabActive]}
+                                style={[
+                                    styles.pitcherTab,
+                                    { backgroundColor: theme.colors.surface },
+                                    active && styles.pitcherTabActive,
+                                ]}
                                 onPress={() => setActivePitcherIdx(idx)}
                             >
                                 <Text style={[styles.pitcherTabText, active && styles.pitcherTabTextActive]}>{firstName}</Text>
@@ -588,7 +592,6 @@ const styles = StyleSheet.create({
     pitcherTabBar: {
         borderBottomWidth: 1,
         borderBottomColor: '#e5e7eb',
-        backgroundColor: '#f9fafb',
         flexGrow: 0,
     },
     pitcherTabContent: {
@@ -604,7 +607,6 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         borderWidth: 1,
         borderColor: '#e5e7eb',
-        backgroundColor: '#ffffff',
     },
     pitcherTabActive: {
         backgroundColor: '#1e3a5f',

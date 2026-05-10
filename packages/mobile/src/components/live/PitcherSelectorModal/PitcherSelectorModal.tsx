@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { Text, Button, Modal, Divider } from 'react-native-paper';
+import { Text, Button, Modal, Divider, useTheme } from 'react-native-paper';
 import { Player, GamePitcherWithPlayer } from '@pitch-tracker/shared';
 
 interface PitcherSelectorModalProps {
@@ -24,8 +24,13 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
     onSelectNewPitcher,
     isTablet,
 }) => {
+    const theme = useTheme();
     return (
-        <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={[styles.modal, isTablet && styles.modalTablet]}>
+        <Modal
+            visible={visible}
+            onDismiss={onDismiss}
+            contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }, isTablet && styles.modalTablet]}
+        >
             <Text variant="titleLarge" style={styles.modalTitle}>
                 Select Pitcher
             </Text>
@@ -96,7 +101,7 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-    modal: { backgroundColor: '#ffffff', margin: 20, padding: 20, borderRadius: 12, maxHeight: '90%', minHeight: '50%' },
+    modal: { margin: 20, padding: 20, borderRadius: 12, maxHeight: '90%', minHeight: '50%' },
     modalTablet: { maxWidth: 400, alignSelf: 'center', width: '100%' },
     modalTitle: { marginBottom: 16 },
     modalClose: { marginTop: 8 },

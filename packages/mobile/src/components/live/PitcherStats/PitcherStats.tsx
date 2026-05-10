@@ -189,9 +189,7 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact =
 };
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#ffffff',
-    },
+    container: {},
     compactContainer: {
         padding: 8,
     },

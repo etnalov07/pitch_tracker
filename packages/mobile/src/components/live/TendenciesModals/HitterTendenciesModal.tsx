@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Modal, Chip } from 'react-native-paper';
+import { Modal, Chip, useTheme } from 'react-native-paper';
 import { HitterTendenciesLive } from '@pitch-tracker/shared';
 import { analyticsApi } from '../../../state/analytics/api/analyticsApi';
 import scoutingReportsApi, { LiveScoutingMatch } from '../../../state/scouting/api/scoutingReportsApi';
@@ -26,6 +26,7 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
     gameId,
     jerseyNumber,
 }) => {
+    const theme = useTheme();
     const [data, setData] = useState<HitterTendenciesLive | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
@@ -72,13 +73,17 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
     const formatRate = (v: number | null) => (v === null ? '—' : `${Math.round(v * 100)}%`);
 
     return (
-        <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
+        <Modal
+            visible={visible}
+            onDismiss={onDismiss}
+            contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+        >
             <View style={styles.header}>
                 <View>
                     <Text style={styles.title}>Hitter Tendencies</Text>
                     <Text style={styles.subtitle}>{batterName}</Text>
                 </View>
-                <TouchableOpacity onPress={onDismiss} style={styles.closeBtn}>
+                <TouchableOpacity onPress={onDismiss} style={[styles.closeBtn, { backgroundColor: theme.colors.background }]}>
                     <Text style={styles.closeBtnText}>✕</Text>
                 </TouchableOpacity>
             </View>
@@ -123,7 +128,7 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
                                 { label: '2-strike chase', value: formatRate(data.two_strike_chase_rate) },
                                 { label: 'Total pitches', value: String(data.total_pitches) },
                             ].map((s) => (
-                                <View key={s.label} style={styles.statBox}>
+                                <View key={s.label} style={[styles.statBox, { backgroundColor: theme.colors.surfaceVariant }]}>
                                     <Text style={styles.statValue}>{s.value}</Text>
                                     <Text style={styles.statLabel}>{s.label}</Text>
                                 </View>
@@ -156,7 +161,7 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
                                 {data.pitch_type_vulnerability.slice(0, 5).map((p) => (
                                     <View key={p.pitch_type} style={styles.vulnRow}>
                                         <Text style={styles.vulnType}>{p.pitch_type}</Text>
-                                        <View style={styles.vulnBarBg}>
+                                        <View style={[styles.vulnBarBg, { backgroundColor: theme.colors.background }]}>
                                             <View style={[styles.vulnBar, { width: `${p.whiff_pct}%` }]} />
                                         </View>
                                         <Text style={styles.vulnPct}>{p.whiff_pct}%</Text>
@@ -177,7 +182,6 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
 
 const styles = StyleSheet.create({
     modal: {
-        backgroundColor: 'white',
         margin: 16,
         borderRadius: 12,
         maxHeight: '85%',
@@ -197,7 +201,6 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: '#f3f4f6',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -210,7 +213,6 @@ const styles = StyleSheet.create({
     statBox: {
         flex: 1,
         padding: 10,
-        backgroundColor: '#f9fafb',
         borderRadius: 8,
         alignItems: 'center',
     },
@@ -231,7 +233,7 @@ const styles = StyleSheet.create({
     legendText: { fontSize: 10, color: '#6b7280' },
     vulnRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
     vulnType: { width: 64, fontSize: 11, color: '#4b5563', textTransform: 'capitalize' },
-    vulnBarBg: { flex: 1, height: 12, backgroundColor: '#f3f4f6', borderRadius: 6, overflow: 'hidden' },
+    vulnBarBg: { flex: 1, height: 12, borderRadius: 6, overflow: 'hidden' },
     vulnBar: { height: '100%', backgroundColor: '#f87171', borderRadius: 6 },
     vulnPct: { width: 28, fontSize: 11, color: '#6b7280', textAlign: 'right' },
     vulnN: { width: 36, fontSize: 10, color: '#9ca3af' },

@@ -1,7 +1,7 @@
 import { AtBat, Pitch, PITCH_CALL_ZONE_LABELS, PitchCallZone } from '@pitch-tracker/shared';
 import React, { useState } from 'react';
 import { Modal, View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text, IconButton } from 'react-native-paper';
+import { Text, IconButton, useTheme } from 'react-native-paper';
 import { colors } from '../../../styles/theme';
 
 export interface CompletedAtBatEntry {
@@ -75,6 +75,7 @@ const AtBatAccordion: React.FC<{ entry: CompletedAtBatEntry; abNumber: number; d
     abNumber,
     defaultOpen = false,
 }) => {
+    const theme = useTheme();
     const [expanded, setExpanded] = useState(defaultOpen);
     const resultLabel = AT_BAT_RESULT_LABELS[entry.result] || entry.result;
 
@@ -90,7 +91,7 @@ const AtBatAccordion: React.FC<{ entry: CompletedAtBatEntry; abNumber: number; d
             </TouchableOpacity>
 
             {expanded && (
-                <View style={styles.accordionContent}>
+                <View style={[styles.accordionContent, { backgroundColor: theme.colors.surface }]}>
                     {entry.pitches.map((pitch, idx) => (
                         <View key={pitch.id || idx} style={styles.pitchRow}>
                             <Text style={styles.pitchNum}>{idx + 1}</Text>
@@ -123,10 +124,11 @@ const AtBatAccordion: React.FC<{ entry: CompletedAtBatEntry; abNumber: number; d
 };
 
 const PreviousAtBatsModal: React.FC<Props> = ({ visible, onClose, batterName, completedAtBats }) => {
+    const theme = useTheme();
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
             <View style={styles.overlay}>
-                <View style={styles.container}>
+                <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
                     <View style={styles.header}>
                         <View>
                             <Text style={styles.title}>Previous At-Bats</Text>
@@ -162,7 +164,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     container: {
-        backgroundColor: '#ffffff',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         maxHeight: '80%',
@@ -241,7 +242,6 @@ const styles = StyleSheet.create({
     accordionContent: {
         paddingHorizontal: 14,
         paddingVertical: 10,
-        backgroundColor: '#ffffff',
         gap: 6,
     },
     pitchRow: {

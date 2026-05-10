@@ -205,9 +205,7 @@ const styles = StyleSheet.create({
         padding: 16,
         gap: 16,
     },
-    card: {
-        backgroundColor: '#ffffff',
-    },
+    card: {},
     overviewRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
