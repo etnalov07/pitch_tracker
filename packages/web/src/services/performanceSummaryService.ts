@@ -1,5 +1,12 @@
-import { PerformanceSummary, SummarySourceType, BatterBreakdown, TeamOffenseSummary } from '@pitch-tracker/shared';
+import {
+    PerformanceSummary,
+    PublicGameReport,
+    SummarySourceType,
+    BatterBreakdown,
+    TeamOffenseSummary,
+} from '@pitch-tracker/shared';
 import api from './api';
+import publicApi from './publicApi';
 
 export const performanceSummaryService = {
     getSummary: async (sourceType: SummarySourceType, sourceId: string, pitcherId?: string): Promise<PerformanceSummary> => {
@@ -62,5 +69,12 @@ export const performanceSummaryService = {
             { emails }
         );
         return response.data.recipients;
+    },
+
+    // Unauthenticated — used by the public /report/:gameId page. Calls
+    // through `publicApi` so we don't get bounced to /login on any error.
+    getPublicReport: async (gameId: string): Promise<PublicGameReport> => {
+        const response = await publicApi.get<{ report: PublicGameReport }>(`/performance-summaries/game/${gameId}/public-report`);
+        return response.data.report;
     },
 };

@@ -4,6 +4,11 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
+// Public, no-login report endpoint. Must be registered BEFORE the
+// authenticateToken middleware below so it stays open. UUID gameId is the
+// secret — same model as a Google Doc with "anyone with the link".
+router.get('/game/:gameId/public-report', performanceSummaryController.getPublicReport.bind(performanceSummaryController));
+
 router.use(authenticateToken);
 
 // Specific routes before parameterized to avoid conflicts

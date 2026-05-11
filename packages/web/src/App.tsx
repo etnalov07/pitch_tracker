@@ -18,6 +18,7 @@ import OpponentDetail from './pages/OpponentDetail';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
 import Opponents from './pages/Opponents';
 import PitcherProfile from './pages/PitcherProfile';
+import PublicReport from './pages/PublicReport';
 import ScoutingLineup from './pages/ScoutingLineup';
 import ScoutingReport from './pages/ScoutingReport';
 import ScoutingReports from './pages/ScoutingReports';
@@ -39,6 +40,7 @@ function App() {
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/invite/:token" element={<InviteAccept />} />
+                <Route path="/report/:gameId" element={<PublicReport />} />
                 <Route
                     path="/join-team"
                     element={

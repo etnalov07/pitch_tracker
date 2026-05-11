@@ -46,17 +46,29 @@ const ROW_LABELS = ['High', 'Mid', 'Low'];
 
 interface Props {
     gameId: string;
+    // If provided, skip the internal fetch — used by the public report page
+    // which has already loaded the combined payload via /public-report.
+    summary?: TeamOffenseSummary;
+    // Hide coach-only controls (Regenerate Narrative). Also disables the
+    // narrative poll, since unauthenticated visitors can't trigger
+    // generation and we don't want to spam the public endpoint.
+    readOnly?: boolean;
 }
 
-const OpponentAttackSummary: React.FC<Props> = ({ gameId }) => {
-    const [summary, setSummary] = useState<TeamOffenseSummary | null>(null);
-    const [loading, setLoading] = useState(true);
+const OpponentAttackSummary: React.FC<Props> = ({ gameId, summary: summaryProp, readOnly = false }) => {
+    const [summary, setSummary] = useState<TeamOffenseSummary | null>(summaryProp ?? null);
+    const [loading, setLoading] = useState(!summaryProp);
     const [regenerating, setRegenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const pollAttemptsRef = useRef(0);
     const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
+        if (summaryProp) {
+            setSummary(summaryProp);
+            setLoading(false);
+            return;
+        }
         let cancelled = false;
         setLoading(true);
         setError(null);
@@ -75,11 +87,13 @@ const OpponentAttackSummary: React.FC<Props> = ({ gameId }) => {
         return () => {
             cancelled = true;
         };
-    }, [gameId]);
+    }, [gameId, summaryProp]);
 
     // Poll until the AI narrative arrives. The first GET fires generation in
     // the background server-side; subsequent fetches see the cached row.
+    // Disabled in readOnly mode (public visitors can't trigger generation).
     useEffect(() => {
+        if (readOnly) return;
         if (!summary || summary.narrative) {
             pollAttemptsRef.current = 0;
             if (pollTimerRef.current) {
@@ -102,7 +116,7 @@ const OpponentAttackSummary: React.FC<Props> = ({ gameId }) => {
                 pollTimerRef.current = null;
             }
         };
-    }, [summary, gameId]);
+    }, [summary, gameId, readOnly]);
 
     const handleRegenerate = async () => {
         setRegenerating(true);
@@ -145,9 +159,11 @@ const OpponentAttackSummary: React.FC<Props> = ({ gameId }) => {
         <Card>
             <HeaderRow>
                 <Title>How the opponent attacked us</Title>
-                <RegenerateButton onClick={handleRegenerate} disabled={regenerating}>
-                    {regenerating ? 'Generating…' : summary.narrative ? 'Regenerate narrative' : 'Generate narrative'}
-                </RegenerateButton>
+                {!readOnly && (
+                    <RegenerateButton onClick={handleRegenerate} disabled={regenerating}>
+                        {regenerating ? 'Generating…' : summary.narrative ? 'Regenerate narrative' : 'Generate narrative'}
+                    </RegenerateButton>
+                )}
             </HeaderRow>
 
             {summary.narrative ? (

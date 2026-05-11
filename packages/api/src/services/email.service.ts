@@ -23,10 +23,9 @@ interface VerificationEmailParams {
 }
 
 interface PostGameReportEmailParams {
-    to: string[];
+    recipients: string[]; // BCC list — recipients don't see each other
     subject: string;
     content: PostGameReportContent;
-    pdfAttachment?: { filename: string; content: Buffer };
 }
 
 class EmailService {
@@ -210,7 +209,7 @@ class EmailService {
         }
     }
 
-    async sendPostGameReport({ to, subject, content, pdfAttachment }: PostGameReportEmailParams): Promise<boolean> {
+    async sendPostGameReport({ recipients, subject, content }: PostGameReportEmailParams): Promise<boolean> {
         const client = this.getClient();
         if (!client) {
             console.warn('Email not configured: RESEND_API_KEY is not set. Skipping post-game report email.');
@@ -222,10 +221,13 @@ class EmailService {
         try {
             await client.emails.send({
                 from: `${config.email.fromEmailName} <${config.email.fromEmail}>`,
-                to,
+                // BCC the actual recipients so they don't see each other's
+                // addresses. Resend requires a `to:` so use the sender as a
+                // visible no-op address (standard BCC-blast pattern).
+                to: config.email.fromEmail,
+                bcc: recipients,
                 subject,
                 html,
-                attachments: pdfAttachment ? [{ filename: pdfAttachment.filename, content: pdfAttachment.content }] : undefined,
             });
             return true;
         } catch (err) {
@@ -236,119 +238,47 @@ class EmailService {
 }
 
 function renderPostGameReportBody(content: PostGameReportContent): string {
-    const ipOuts = content.outcome_totals.weak_contact_outs + content.outcome_totals.hard_contact_outs;
-
-    const narrative = content.narrative
-        ? `<p style="margin:0 0 20px;padding:12px 16px;background-color:#f0f7ff;border-left:3px solid #2563eb;font-size:14px;color:#1a1a1a;line-height:1.55;font-style:italic;">${escapeHtml(content.narrative)}</p>`
-        : '';
-
-    const totalsRow = (
-        [
-            ['Hits', content.outcome_totals.hits],
-            ['Walks', content.outcome_totals.walks],
-            ['K', content.outcome_totals.strikeouts],
-            ['IP outs', ipOuts],
-        ] as Array<[string, number]>
-    )
+    const pitcherCards = content.per_pitcher
         .map(
-            ([label, val]) => `
-                <td align="center" style="padding:14px 8px;background-color:#f8f9fa;border:1px solid #e2e8f0;border-radius:6px;">
-                  <div style="font-size:22px;font-weight:700;color:#1e3a5f;line-height:1;">${val}</div>
-                  <div style="font-size:11px;font-weight:600;color:#6b7280;letter-spacing:0.5px;text-transform:uppercase;margin-top:6px;">${label}</div>
-                </td>`
+            (p) => `
+              <div style="margin:0 0 16px;padding:14px 16px;background-color:#f8f9fa;border:1px solid #e2e8f0;border-radius:6px;">
+                <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#1e3a5f;letter-spacing:0.3px;">${escapeHtml(p.pitcher_name)}</p>
+                ${
+                    p.narrative
+                        ? `<p style="margin:0;font-size:14px;color:#1a1a1a;line-height:1.55;">${escapeHtml(p.narrative)}</p>`
+                        : `<p style="margin:0;font-size:13px;color:#9ca3af;font-style:italic;">Narrative not yet generated. Open the full report to see the latest.</p>`
+                }
+              </div>`
         )
-        .join('<td style="width:8px;"></td>');
+        .join('');
 
-    const pitchMixSection =
-        content.pitch_mix.length > 0
-            ? sectionHtml(
-                  'Opponent pitch mix',
-                  tableHtml(
-                      ['Pitch type', '%'],
-                      content.pitch_mix.slice(0, 5).map((m) => [m.pitch_type, `${m.pct}%`])
-                  )
-              )
-            : '';
+    const teamNarrativeBlock = content.team_narrative
+        ? `<p style="margin:0;padding:14px 16px;background-color:#f0f7ff;border-left:3px solid #2563eb;font-size:14px;color:#1a1a1a;line-height:1.55;font-style:italic;">${escapeHtml(content.team_narrative)}</p>`
+        : `<p style="margin:0;padding:14px 16px;background-color:#f8f9fa;border-left:3px solid #e2e8f0;font-size:13px;color:#9ca3af;font-style:italic;">Team narrative not yet generated. Open the full report to see the latest.</p>`;
 
-    const perPitcherSection =
-        content.per_pitcher.length > 0
-            ? sectionHtml(
-                  'Our pitchers',
-                  tableHtml(
-                      ['Pitcher', 'P', 'Strike%', 'H', 'R'],
-                      content.per_pitcher.map((p) => [
-                          p.pitcher_name,
-                          String(p.total_pitches),
-                          `${p.strike_percentage}%`,
-                          p.hits_allowed != null ? String(p.hits_allowed) : '—',
-                          p.runs_allowed != null ? String(p.runs_allowed) : '—',
-                      ])
-                  )
-              )
-            : '';
-
-    const perHitterSection =
-        content.per_hitter.length > 0
-            ? sectionHtml(
-                  'Hitters',
-                  tableHtml(
-                      ['#', 'Hitter', 'PA', 'H', 'BB', 'K'],
-                      content.per_hitter.map((h) => [
-                          String(h.batting_order),
-                          h.batter_name,
-                          String(h.at_bats_count),
-                          String(h.hits),
-                          String(h.walks),
-                          String(h.strikeouts),
-                      ])
-                  )
-              )
-            : '';
+    const safeUrl = escapeHtml(content.public_report_url);
 
     return `
       <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Game</p>
-      <p style="margin:0 0 20px;font-size:18px;color:#1a1a1a;font-weight:700;">${escapeHtml(content.game_label)}</p>
-      ${narrative}
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-        <tr>${totalsRow}</tr>
-      </table>
-      ${pitchMixSection}
-      ${perPitcherSection}
-      ${perHitterSection}
-      <p style="margin:24px 0 0;font-size:12px;color:#9ca3af;text-align:center;">Generated by Pitch Chart on ${escapeHtml(content.generated_at)} — full chart attached as PDF.</p>
-    `;
-}
+      <p style="margin:0 0 24px;font-size:18px;color:#1a1a1a;font-weight:700;">${escapeHtml(content.game_label)}</p>
 
-function sectionHtml(label: string, inner: string): string {
-    return `
-      <p style="margin:0 0 6px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">${escapeHtml(label)}</p>
-      ${inner}
-    `;
-}
+      ${
+          pitcherCards
+              ? `<p style="margin:0 0 8px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Coaches Summary</p>${pitcherCards}`
+              : ''
+      }
 
-function tableHtml(headers: string[], rows: string[][]): string {
-    const headerCells = headers
-        .map(
-            (h, i) =>
-                `<th align="${i === 0 ? 'left' : 'right'}" style="padding:8px 10px;font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid #e2e8f0;">${escapeHtml(h)}</th>`
-        )
-        .join('');
-    const bodyRows = rows
-        .map(
-            (row) =>
-                `<tr>${row
-                    .map(
-                        (cell, i) =>
-                            `<td align="${i === 0 ? 'left' : 'right'}" style="padding:8px 10px;font-size:14px;color:#1a1a1a;border-bottom:1px solid #f1f5f9;">${escapeHtml(cell)}</td>`
-                    )
-                    .join('')}</tr>`
-        )
-        .join('');
-    return `
-      <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
-        <thead><tr>${headerCells}</tr></thead>
-        <tbody>${bodyRows}</tbody>
+      <p style="margin:24px 0 8px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">How they attacked us</p>
+      ${teamNarrativeBlock}
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:32px 0 8px;">
+        <tr>
+          <td align="center">
+            <a href="${safeUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:14px 36px;border-radius:6px;">View full report</a>
+          </td>
+        </tr>
       </table>
+      <p style="margin:8px 0 0;font-size:12px;color:#9ca3af;text-align:center;line-height:1.5;">Charts, attack-zone heatmap, and per-hitter breakdowns are in the full report:<br /><a href="${safeUrl}" style="color:#2563eb;text-decoration:none;">${safeUrl}</a></p>
     `;
 }
 

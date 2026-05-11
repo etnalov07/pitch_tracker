@@ -2,7 +2,7 @@ import { SUMMARY_TARGET_ACCURACY_THRESHOLD, isTargetHit } from '../utils/pitchLo
 import { getZoneForPitch } from '../utils/heatZones';
 import { query, transaction } from '../config/database';
 import emailService from './email.service';
-import { buildPostGameReportPdf } from './pdf/postGameReportPdf';
+import { config } from '../config/env';
 import {
     PerformanceSummary,
     PerformanceMetric,
@@ -22,6 +22,7 @@ import {
     OutcomePitchGroup,
     OutcomeBucket,
     PostGameReportContent,
+    PublicGameReport,
 } from '../types';
 
 // Fixed coaching benchmarks
@@ -1589,117 +1590,129 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
 
     /**
      * Email the postgame report to a manually-supplied recipient list. The
-     * email itself is the artifact: a rich inline HTML body for at-a-glance
-     * scanning plus a PDF attachment that mirrors the same content for
-     * archival/printing. No deep link — most recipients won't have accounts.
+     * email body carries only the AI coaching narratives (one per pitcher +
+     * the team-offense narrative). Recipients click through to a public,
+     * no-login report page for the full Summary tab content (charts, attack
+     * heatmap, per-hitter accordion, per-pitcher zone effectiveness).
      * Returns whether the send succeeded (false on send failure or no Resend
      * key configured).
      */
     async emailPostGameReport(gameId: string, recipients: string[]): Promise<boolean> {
         if (recipients.length === 0) return false;
 
-        const gameRow = await query(
-            `SELECT g.id, g.home_team_id, g.opponent_name, g.scouting_home_team, g.game_date, g.home_score, g.away_score,
-                    ht.name AS home_team_name,
-                    at.name AS away_team_name
+        const meta = await this.resolveGameMeta(gameId);
+        if (!meta) return false;
+
+        // Team narrative — block on synchronous generation if missing so the
+        // email body isn't sparse. The user might email immediately after a
+        // game, before the fire-and-forget generator completes.
+        let teamSummary = await this.getOpponentAttackSummary(gameId);
+        if (!teamSummary.narrative) {
+            try {
+                teamSummary = await this.regenerateTeamOffenseNarrative(gameId);
+            } catch (err) {
+                console.warn('Team narrative generation failed; sending without it:', err);
+            }
+        }
+
+        // Per-pitcher narratives — same deal: await missing ones inline.
+        const pitcherSummaries = await this.getAllGamePitcherSummaries(gameId, meta.home_team_id);
+        const perPitcher: PostGameReportContent['per_pitcher'] = [];
+        for (const ps of pitcherSummaries) {
+            let narrative = ps.narrative;
+            if (!narrative) {
+                try {
+                    const regen = await this.regenerateNarrative(ps.id);
+                    narrative = regen?.narrative ?? null;
+                } catch (err) {
+                    console.warn(`Pitcher narrative generation failed for ${ps.pitcher_name}:`, err);
+                }
+            }
+            perPitcher.push({ pitcher_name: ps.pitcher_name, narrative });
+        }
+
+        const scoreLabel = meta.score ? `${meta.score.home}-${meta.score.away}` : 'final';
+        const gameLabel = `${meta.home_team_name} vs. ${meta.opponent_name} — ${scoreLabel}${meta.game_date_mdy ? ` · ${meta.game_date_mdy}` : ''}`;
+
+        const content: PostGameReportContent = {
+            game_label: gameLabel,
+            public_report_url: `${config.invite.baseUrl}/report/${gameId}`,
+            team_narrative: teamSummary.narrative ?? null,
+            per_pitcher: perPitcher,
+        };
+
+        const subjectGame = `${meta.home_team_name} vs ${meta.opponent_name}`;
+        const subject = meta.game_date_mdy
+            ? `Postgame Report - ${subjectGame} - ${meta.game_date_mdy}`
+            : `Postgame Report - ${subjectGame}`;
+
+        return emailService.sendPostGameReport({
+            recipients,
+            subject,
+            content,
+        });
+    }
+
+    /**
+     * Combined payload for the public, no-login report page at
+     * /report/:gameId. Returns all the data the SPA Summary tab uses, in one
+     * round trip. No narrative generation is triggered here — the public
+     * visitor sees whatever's cached.
+     */
+    async getPublicGameReport(gameId: string): Promise<PublicGameReport | null> {
+        const meta = await this.resolveGameMeta(gameId);
+        if (!meta) return null;
+
+        const teamOffense = await this.getOpponentAttackSummary(gameId);
+        const pitchers = await this.getAllGamePitcherSummaries(gameId, meta.home_team_id);
+
+        const scoreLabel = meta.score ? `${meta.score.home}-${meta.score.away}` : 'final';
+        const gameLabel = `${meta.home_team_name} vs. ${meta.opponent_name} — ${scoreLabel}${meta.game_date_mdy ? ` · ${meta.game_date_mdy}` : ''}`;
+
+        return {
+            game_id: meta.game_id,
+            game_label: gameLabel,
+            home_team_name: meta.home_team_name,
+            opponent_name: meta.opponent_name,
+            game_date: meta.game_date_mdy,
+            score: meta.score,
+            team_offense: teamOffense,
+            pitchers,
+        };
+    }
+
+    /**
+     * Resolve the game's display metadata. Used by both the email path and the
+     * public-report endpoint so team-name resolution stays consistent.
+     */
+    private async resolveGameMeta(gameId: string): Promise<{
+        game_id: string;
+        home_team_id: string;
+        home_team_name: string;
+        opponent_name: string;
+        game_date_mdy: string | null;
+        score: { home: number; away: number } | null;
+    } | null> {
+        const result = await query(
+            `SELECT g.id, g.home_team_id, g.opponent_name, g.scouting_home_team, g.game_date,
+                    g.home_score, g.away_score,
+                    ht.name AS home_team_name, at.name AS away_team_name
              FROM games g
              LEFT JOIN teams ht ON g.home_team_id = ht.id
              LEFT JOIN teams at ON g.away_team_id = at.id
              WHERE g.id = $1`,
             [gameId]
         );
-        if (gameRow.rows.length === 0) return false;
-        const game = gameRow.rows[0];
-
-        // home_team_name is the real team for our-team games; scouting_home_team
-        // is the free-text label used in scouting mode where neither side is us.
-        const teamLabel = game.home_team_name || game.scouting_home_team || 'Home';
-        const opponentLabel = game.away_team_name || game.opponent_name || 'Opponent';
-        const scoreLabel = game.home_score != null && game.away_score != null ? `${game.home_score}-${game.away_score}` : 'final';
-        const gameLabel = `${teamLabel} vs. ${opponentLabel} — ${scoreLabel}${game.game_date ? ` · ${game.game_date}` : ''}`;
-
-        const offense = await this.getOpponentAttackSummary(gameId);
-        const totals = offense.team_outcomes.reduce<Record<string, number>>((acc, g) => {
-            acc[g.bucket] = g.total;
-            return acc;
-        }, {});
-
-        let perPitcher: PostGameReportContent['per_pitcher'] = [];
-        if (game.home_team_id) {
-            try {
-                const pitcherSummaries = await this.getAllGamePitcherSummaries(gameId, game.home_team_id);
-                perPitcher = pitcherSummaries
-                    .slice()
-                    .sort((a, b) => b.total_pitches - a.total_pitches)
-                    .map((ps) => ({
-                        pitcher_name: ps.pitcher_name,
-                        total_pitches: ps.total_pitches,
-                        strike_percentage: ps.strike_percentage,
-                        hits_allowed: ps.hits_allowed ?? null,
-                        runs_allowed: ps.runs_allowed ?? null,
-                    }));
-            } catch (err) {
-                // Pitcher rollup is a nice-to-have; don't fail the whole email
-                // if the summary fetch hiccups.
-                console.warn('Skipping pitcher summaries in report email:', err);
-            }
-        }
-
-        // Show everyone who batted: starters 1-9 in lineup order, then any
-        // subs / pinch hitters (batting_order 0 from the COALESCE fallback)
-        // alphabetical at the bottom.
-        const perHitter: PostGameReportContent['per_hitter'] = offense.per_hitter
-            .slice()
-            .sort((a, b) => {
-                const aOrder = a.batting_order > 0 ? a.batting_order : 99;
-                const bOrder = b.batting_order > 0 ? b.batting_order : 99;
-                if (aOrder !== bOrder) return aOrder - bOrder;
-                return a.batter_name.localeCompare(b.batter_name);
-            })
-            .map((h) => ({
-                batter_name: h.batter_name,
-                batting_order: h.batting_order,
-                at_bats_count: h.at_bats_count,
-                hits: h.outcomes.hits,
-                walks: h.outcomes.walks,
-                strikeouts: h.outcomes.strikeouts,
-            }));
-
-        const content: PostGameReportContent = {
-            game_label: gameLabel,
-            generated_at: new Date().toISOString().slice(0, 10),
-            narrative: offense.narrative ?? null,
-            outcome_totals: {
-                hits: totals.hit || 0,
-                walks: totals.walk || 0,
-                strikeouts: totals.strikeout || 0,
-                weak_contact_outs: totals.weak_contact_out || 0,
-                hard_contact_outs: totals.hard_contact_out || 0,
-            },
-            pitch_mix: offense.pitch_type_mix.slice(0, 5),
-            per_pitcher: perPitcher,
-            per_hitter: perHitter,
+        if (result.rows.length === 0) return null;
+        const row = result.rows[0];
+        return {
+            game_id: row.id,
+            home_team_id: row.home_team_id,
+            home_team_name: row.home_team_name || row.scouting_home_team || 'Home',
+            opponent_name: row.away_team_name || row.opponent_name || 'Opponent',
+            game_date_mdy: formatGameDateMDY(row.game_date),
+            score: row.home_score != null && row.away_score != null ? { home: row.home_score, away: row.away_score } : null,
         };
-
-        let pdfAttachment: { filename: string; content: Buffer } | undefined;
-        try {
-            const pdf = await buildPostGameReportPdf(content);
-            pdfAttachment = { filename: `pitch-chart-${gameId}.pdf`, content: pdf };
-        } catch (err) {
-            // Don't fail the email if the PDF chokes — the HTML body is still useful.
-            console.warn('PDF generation failed; sending without attachment:', err);
-        }
-
-        const datePart = formatGameDateMDY(game.game_date);
-        const subjectGame = `${teamLabel} vs ${opponentLabel}`;
-        const subject = datePart ? `Postgame Report - ${subjectGame} - ${datePart}` : `Postgame Report - ${subjectGame}`;
-
-        return emailService.sendPostGameReport({
-            to: recipients,
-            subject,
-            content,
-            pdfAttachment,
-        });
     }
 
     private async generateTeamOffenseNarrative(gameId: string, summary: TeamOffenseSummary): Promise<void> {

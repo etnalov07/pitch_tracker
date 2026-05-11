@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AuthRequest, SummarySourceType } from '../types';
 import performanceSummaryService from '../services/performanceSummary.service';
 import { query } from '../config/database';
@@ -168,6 +168,20 @@ export class PerformanceSummaryController {
             const { gameId } = req.params;
             const summary = await performanceSummaryService.regenerateTeamOffenseNarrative(gameId as string);
             res.status(200).json({ summary });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getPublicReport(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { gameId } = req.params;
+            const report = await performanceSummaryService.getPublicGameReport(gameId as string);
+            if (!report) {
+                res.status(404).json({ error: 'Game not found' });
+                return;
+            }
+            res.status(200).json({ report });
         } catch (error) {
             next(error);
         }

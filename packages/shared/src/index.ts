@@ -1207,36 +1207,27 @@ export interface TeamOffenseSummary {
     narrative_generated_at?: string | null;
 }
 
-// Shape consumed by both the postgame email HTML body and the attached PDF.
-// Built once in `emailPostGameReport`; rendered in `email.service` (HTML) and
-// `pdf/postGameReportPdf` (PDF) so both outputs stay aligned.
+// Shape consumed by the postgame email HTML body. The body is intentionally
+// lean: just the AI coaching narratives. The CTA links recipients to the
+// full live report (see `PublicGameReport`).
 export interface PostGameReportContent {
     game_label: string;
-    generated_at: string;
-    narrative?: string | null;
-    outcome_totals: {
-        hits: number;
-        walks: number;
-        strikeouts: number;
-        weak_contact_outs: number;
-        hard_contact_outs: number;
-    };
-    pitch_mix: PitchTypeMix[];
-    per_pitcher: Array<{
-        pitcher_name: string;
-        total_pitches: number;
-        strike_percentage: number;
-        hits_allowed: number | null;
-        runs_allowed: number | null;
-    }>;
-    per_hitter: Array<{
-        batter_name: string;
-        batting_order: number;
-        at_bats_count: number;
-        hits: number;
-        walks: number;
-        strikeouts: number;
-    }>;
+    public_report_url: string;
+    team_narrative: string | null;
+    per_pitcher: Array<{ pitcher_name: string; narrative: string | null }>;
+}
+
+// Combined payload returned by the public `/performance-summaries/game/:gameId/public-report`
+// endpoint. Renders the full Summary tab content for non-authenticated visitors.
+export interface PublicGameReport {
+    game_id: string;
+    game_label: string;
+    home_team_name: string;
+    opponent_name: string;
+    game_date: string | null; // formatted MM/DD/YYYY
+    score: { home: number; away: number } | null;
+    team_offense: TeamOffenseSummary;
+    pitchers: PerformanceSummary[];
 }
 
 // ============================================================================
