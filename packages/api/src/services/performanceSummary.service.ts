@@ -1,5 +1,6 @@
 import { SUMMARY_TARGET_ACCURACY_THRESHOLD, isTargetHit } from '../utils/pitchLocation';
-import { getNearestPitchCallZone, scoreAccuracy, PitchCallZone } from '@pitch-tracker/shared';
+import { getNearestPitchCallZone, scoreAccuracy } from '../utils/zoneAccuracy';
+import type { PitchCallZone } from '../types';
 import { getZoneForPitch } from '../utils/heatZones';
 import { query, transaction } from '../config/database';
 import emailService from './email.service';
