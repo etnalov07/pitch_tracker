@@ -1676,9 +1676,13 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
             console.warn('PDF generation failed; sending without attachment:', err);
         }
 
+        const datePart = formatGameDateMDY(game.game_date);
+        const subjectGame = `${teamLabel} vs ${opponentLabel}`;
+        const subject = datePart ? `Postgame Report - ${subjectGame} - ${datePart}` : `Postgame Report - ${subjectGame}`;
+
         return emailService.sendPostGameReport({
             to: recipients,
-            subject: `Postgame report — ${gameLabel}`,
+            subject,
             content,
             pdfAttachment,
         });
@@ -2018,6 +2022,26 @@ function computeZoneOutcomes(rows: any[]): Map<string, PitcherZoneOutcome[]> {
         out.set(ptype, arr);
     }
     return out;
+}
+
+// pg returns DATE columns as JS Date by default (constructed at midnight in
+// the server's local TZ). If anything ever overrides the type parser to keep
+// raw strings, handle that too. Anything else / nullish degrades to no date
+// suffix on the email subject.
+function formatGameDateMDY(d: unknown): string | null {
+    if (!d) return null;
+    if (d instanceof Date) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${month}/${day}/${year}`;
+    }
+    if (typeof d === 'string') {
+        const m = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!m) return null;
+        return `${m[2]}/${m[3]}/${m[1]}`;
+    }
+    return null;
 }
 
 export default new PerformanceSummaryService();
