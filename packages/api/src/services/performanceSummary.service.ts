@@ -1964,21 +1964,30 @@ function bucketSituation(balls: number, strikes: number): CountSituation {
  * the strikeout pitch as the marker for strikeouts. Returns null for pitches
  * that aren't the deciding pitch of the at-bat.
  */
-function bucketOutcomeForPitch(row: { pitch_result: string | null; at_bat_result: string | null }): OutcomeBucket | null {
+function bucketOutcomeForPitch(row: {
+    pitch_result: string | null;
+    at_bat_result: string | null;
+    balls_before: number | null;
+    strikes_before: number | null;
+}): OutcomeBucket | null {
     const ab = row.at_bat_result;
     const pr = row.pitch_result;
     if (!ab) return null;
     if (['single', 'double', 'triple', 'home_run'].includes(ab)) {
         return pr === 'in_play' ? 'hit' : null;
     }
-    if (['walk'].includes(ab)) {
-        return pr === 'ball' ? 'walk' : null;
+    if (ab === 'walk') {
+        // Only the 4th ball decides the at-bat — without this guard every ball
+        // in a walked AB gets bucketed, inflating walk counts ~4x.
+        return pr === 'ball' && row.balls_before === 3 ? 'walk' : null;
     }
-    if (['hit_by_pitch'].includes(ab)) {
+    if (ab === 'hit_by_pitch') {
         return pr === 'hit_by_pitch' ? 'walk' : null;
     }
-    if (['strikeout', 'strikeout_dropped'].includes(ab)) {
-        return pr === 'swinging_strike' || pr === 'called_strike' ? 'strikeout' : null;
+    if (ab === 'strikeout' || ab === 'strikeout_dropped') {
+        // Only strike three decides the at-bat — without this guard every called/
+        // swinging strike in a K gets bucketed, inflating strikeout counts.
+        return (pr === 'swinging_strike' || pr === 'called_strike') && row.strikes_before === 2 ? 'strikeout' : null;
     }
     if (['groundout', 'flyout', 'popout', 'lineout', 'fielders_choice', 'sacrifice_fly', 'sacrifice_bunt'].includes(ab)) {
         return pr === 'in_play' ? 'weak_contact_out' : null;
