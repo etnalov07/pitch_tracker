@@ -10,6 +10,7 @@ import OpposingPitcherPanel from '../../components/live/OpposingPitcherPanel';
 import PitcherStats from '../../components/live/PitcherStats';
 import PitcherTendenciesPanel from '../../components/live/PitcherTendenciesPanel';
 import StrikeZone from '../../components/live/StrikeZone';
+import BatterBreakdownModal from '../../components/liveGame/BatterBreakdownModal';
 import { useGameWebSocket } from '../../hooks/useGameWebSocket';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { theme } from '../../styles/theme';
@@ -105,6 +106,7 @@ const LiveGame: React.FC = () => {
     const actions = useLiveGameActions(state);
     const [showSettingsPanel, setShowSettingsPanel] = React.useState(false);
     const [showUndoPitch, setShowUndoPitch] = React.useState(false);
+    const [showBreakdown, setShowBreakdown] = React.useState(false);
 
     const {
         gameId,
@@ -357,6 +359,14 @@ const LiveGame: React.FC = () => {
                                 title="Open scouting report for this game"
                             >
                                 📋 Scouting
+                            </SwapButton>
+                        )}
+                        {gameId && (
+                            <SwapButton
+                                onClick={() => setShowBreakdown(true)}
+                                title="See how the current batter was attacked earlier this game"
+                            >
+                                🪧 Batter Breakdown
                             </SwapButton>
                         )}
                         {/* Settings gear — opens a small panel to toggle velocity + pitch calls */}
@@ -992,6 +1002,16 @@ const LiveGame: React.FC = () => {
                     pitcherName={pitcherName || 'Pitcher'}
                     initialBatterHand={(currentBatter?.bats as 'L' | 'R') || 'R'}
                     onClose={() => setShowPitcherTendencies(false)}
+                />
+            )}
+
+            {showBreakdown && gameId && (
+                <BatterBreakdownModal
+                    gameId={gameId}
+                    pitcherId={currentPitcher?.player_id}
+                    currentBatterId={currentBatter?.id}
+                    currentBatterName={currentBatter?.player_name}
+                    onClose={() => setShowBreakdown(false)}
                 />
             )}
 

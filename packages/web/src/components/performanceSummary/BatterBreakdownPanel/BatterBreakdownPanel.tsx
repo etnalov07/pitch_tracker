@@ -7,7 +7,7 @@ import {
     type PitchLocationData,
     type SprayChartData,
 } from '@pitch-tracker/shared';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { analyticsService } from '../../../services/analyticsService';
 import BatterHeatMapView from './BatterHeatMapView';
 import BatterSprayChartView from './BatterSprayChartView';
@@ -212,19 +212,28 @@ function BatterRow({
     gameId,
     opponentTeamId,
     opponentName,
+    scrollToBatterId,
 }: {
     batter: BatterBreakdown;
     pitcherId?: string;
     gameId?: string;
     opponentTeamId?: string;
     opponentName?: string;
+    scrollToBatterId?: string;
 }) {
     const [expanded, setExpanded] = useState(true);
     const [showCharts, setShowCharts] = useState(false);
     const [sprayData, setSprayData] = useState<SprayChartData[] | null>(null);
     const [pitchLocations, setPitchLocations] = useState<PitchLocationData[] | null>(null);
     const [chartsLoading, setChartsLoading] = useState(false);
+    const rowRef = useRef<HTMLDivElement>(null);
     const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
+
+    useEffect(() => {
+        if (scrollToBatterId && scrollToBatterId === batter.batter_id) {
+            rowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [scrollToBatterId, batter.batter_id]);
 
     const handleToggleCharts = useCallback(async () => {
         if (showCharts) {
@@ -254,7 +263,7 @@ function BatterRow({
     }, [showCharts, sprayData, batter.batter_id, gameId, pitcherId, opponentTeamId, opponentName]);
 
     return (
-        <BatterRowContainer>
+        <BatterRowContainer ref={rowRef}>
             <BatterHeader onClick={() => setExpanded((e) => !e)}>
                 <BatterOrderBadge>{batter.batting_order}</BatterOrderBadge>
                 <BatterNameBlock>
@@ -344,9 +353,19 @@ interface Props {
     opponentTeamId?: string;
     /** Fallback when opponent_team_id is null — match by free-text opponent name. */
     opponentName?: string;
+    /** Scroll this batter's row into view on mount (used by live-game modal). */
+    scrollToBatterId?: string;
 }
 
-const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading, pitcherId, gameId, opponentTeamId, opponentName }) => {
+const BatterBreakdownPanel: React.FC<Props> = ({
+    sections,
+    loading,
+    pitcherId,
+    gameId,
+    opponentTeamId,
+    opponentName,
+    scrollToBatterId,
+}) => {
     if (loading) {
         return <EmptyText>Loading batter breakdown…</EmptyText>;
     }
@@ -391,6 +410,7 @@ const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading, pitcherId, g
                                         gameId={gameId}
                                         opponentTeamId={opponentTeamId}
                                         opponentName={opponentName}
+                                        scrollToBatterId={scrollToBatterId}
                                     />
                                 ))}
                         </BatterList>

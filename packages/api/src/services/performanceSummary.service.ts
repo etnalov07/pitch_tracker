@@ -1200,12 +1200,12 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
                     SELECT MAX(p2.pitch_number) FROM pitches p2 WHERE p2.at_bat_id = ab.id
                 )) AS is_ab_ending
              FROM opponent_lineup ol
-             JOIN at_bats ab ON ab.opponent_batter_id = ol.id
-             JOIN innings i ON ab.inning_id = i.id
-             JOIN pitches p ON p.at_bat_id = ab.id
+             LEFT JOIN at_bats ab ON ab.opponent_batter_id = ol.id
+             LEFT JOIN innings i ON ab.inning_id = i.id
+             LEFT JOIN pitches p ON p.at_bat_id = ab.id
              LEFT JOIN plays pl ON pl.at_bat_id = ab.id
              WHERE ol.game_id = $1
-             ORDER BY ol.batting_order, i.inning_number,
+             ORDER BY ol.batting_order, i.inning_number NULLS FIRST,
                  CASE i.half WHEN 'top' THEN 0 ELSE 1 END,
                  ab.created_at, p.pitch_number`,
             [gameId]
@@ -1229,6 +1229,8 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
             }
             const batter = batterMap.get(row.batter_id)!;
 
+            if (!row.at_bat_id) continue;
+
             if (!atBatMap.has(row.at_bat_id)) {
                 const atBat: BatterAtBatSummary = {
                     at_bat_id: row.at_bat_id,
@@ -1242,6 +1244,8 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
                 batter.at_bats.push(atBat);
             }
             const atBat = atBatMap.get(row.at_bat_id)!;
+
+            if (row.pitch_number == null) continue;
 
             const pitch: BatterAtBatPitch = {
                 pitch_number: row.pitch_number,

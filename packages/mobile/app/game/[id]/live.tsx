@@ -34,6 +34,7 @@ import {
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
 import scoutingReportsApi from '../../../src/state/scouting/api/scoutingReportsApi';
+import { BatterBreakdownSheet } from '../../../src/components/batterBreakdown';
 import { speakPitchCall, activateBTAudio, forceDeactivateBTAudio } from '../../../src/utils/pitchCallAudio';
 import { startPassthrough, stopPassthrough, isPassthroughActive } from '../../../src/utils/walkieTalkie';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
@@ -128,6 +129,7 @@ export default function LiveGameScreen() {
     // Historical pitches for completed-game read-only view
     const [allGamePitches, setAllGamePitches] = useState<Pitch[]>([]);
     const [pitchTypeFilter, setPitchTypeFilter] = useState<string>('all');
+    const [showBreakdown, setShowBreakdown] = useState(false);
 
     // Local state for pitch entry
     const [selectedPitchType, setSelectedPitchType] = useState<PitchType | null>(null);
@@ -1913,6 +1915,13 @@ export default function LiveGameScreen() {
                                 }}
                             />
                         )}
+                        {id && (
+                            <IconButton
+                                icon="account-search"
+                                onPress={() => setShowBreakdown(true)}
+                                accessibilityLabel="Batter breakdown"
+                            />
+                        )}
                         {game.status === 'in_progress' ? (
                             <IconButton icon="flag-checkered" onPress={handleEndGame} />
                         ) : (
@@ -2191,6 +2200,15 @@ export default function LiveGameScreen() {
                     completedAtBats={previousAtBatsForCurrentBatter}
                 />
                 <InPlayModal visible={showInPlayModal} onDismiss={() => setShowInPlayModal(false)} onResult={handleInPlayResult} />
+                {id && (
+                    <BatterBreakdownSheet
+                        visible={showBreakdown}
+                        gameId={id}
+                        currentBatterId={currentBatter?.id}
+                        currentBatterName={currentBatter?.player_name}
+                        onClose={() => setShowBreakdown(false)}
+                    />
+                )}
             </SafeAreaView>
         );
     }
