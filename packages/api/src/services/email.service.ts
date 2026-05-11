@@ -290,7 +290,7 @@ function renderPostGameReportBody(content: PostGameReportContent): string {
     const perHitterSection =
         content.per_hitter.length > 0
             ? sectionHtml(
-                  'Per-hitter (top of order)',
+                  'Hitters',
                   tableHtml(
                       ['#', 'Hitter', 'PA', 'H', 'BB', 'K'],
                       content.per_hitter.map((h) => [

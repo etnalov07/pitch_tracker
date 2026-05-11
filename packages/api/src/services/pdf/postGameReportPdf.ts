@@ -99,7 +99,7 @@ function renderPerPitcher(doc: PDFKit.PDFDocument, rows: PostGameReportContent['
 }
 
 function renderPerHitter(doc: PDFKit.PDFDocument, rows: PostGameReportContent['per_hitter']): void {
-    sectionHeading(doc, 'Per-hitter (top of order)');
+    sectionHeading(doc, 'Hitters');
     drawTable(
         doc,
         ['#', 'Hitter', 'PA', 'H', 'BB', 'K'],
@@ -155,6 +155,11 @@ function drawTable(doc: PDFKit.PDFDocument, headers: string[], rows: string[][],
     doc.moveDown(0.3);
 
     rows.forEach((row) => {
+        // Manual page-break: positional text() calls bypass pdfkit's auto
+        // page-break, so a long roster would clip at the bottom of page 1.
+        if (doc.y + 16 > doc.page.height - doc.page.margins.bottom) {
+            doc.addPage();
+        }
         const rowY = doc.y;
         let cx = startX;
         doc.fillColor(COLOR_BODY).fontSize(11).font('Helvetica');

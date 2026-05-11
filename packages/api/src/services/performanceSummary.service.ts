@@ -1645,10 +1645,17 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
             }
         }
 
+        // Show everyone who batted: starters 1-9 in lineup order, then any
+        // subs / pinch hitters (batting_order 0 from the COALESCE fallback)
+        // alphabetical at the bottom.
         const perHitter: PostGameReportContent['per_hitter'] = offense.per_hitter
             .slice()
-            .sort((a, b) => a.batting_order - b.batting_order)
-            .slice(0, 6)
+            .sort((a, b) => {
+                const aOrder = a.batting_order > 0 ? a.batting_order : 99;
+                const bOrder = b.batting_order > 0 ? b.batting_order : 99;
+                if (aOrder !== bOrder) return aOrder - bOrder;
+                return a.batter_name.localeCompare(b.batter_name);
+            })
             .map((h) => ({
                 batter_name: h.batter_name,
                 batting_order: h.batting_order,
