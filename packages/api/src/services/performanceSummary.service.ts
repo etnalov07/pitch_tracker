@@ -2,7 +2,7 @@ import { SUMMARY_TARGET_ACCURACY_THRESHOLD, isTargetHit } from '../utils/pitchLo
 import { getZoneForPitch } from '../utils/heatZones';
 import { query, transaction } from '../config/database';
 import emailService from './email.service';
-import { config } from '../config/env';
+import { buildPostGameReportPdf } from './pdf/postGameReportPdf';
 import {
     PerformanceSummary,
     PerformanceMetric,
@@ -21,6 +21,7 @@ import {
     CountSituation,
     OutcomePitchGroup,
     OutcomeBucket,
+    PostGameReportContent,
 } from '../types';
 
 // Fixed coaching benchmarks
@@ -1587,17 +1588,18 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
     }
 
     /**
-     * Email the postgame report to a manually-supplied recipient list. Builds
-     * a small set of human-readable bullet summary lines from the existing
-     * aggregations (team offense + scoreline + outcome counts) and a deep
-     * link back to the web Summary tab. Returns whether the send succeeded
-     * (false on send failure or no Resend key configured).
+     * Email the postgame report to a manually-supplied recipient list. The
+     * email itself is the artifact: a rich inline HTML body for at-a-glance
+     * scanning plus a PDF attachment that mirrors the same content for
+     * archival/printing. No deep link — most recipients won't have accounts.
+     * Returns whether the send succeeded (false on send failure or no Resend
+     * key configured).
      */
     async emailPostGameReport(gameId: string, recipients: string[]): Promise<boolean> {
         if (recipients.length === 0) return false;
 
         const gameRow = await query(
-            `SELECT id, opponent_name, scouting_home_team, game_date, home_score, away_score
+            `SELECT id, home_team_id, opponent_name, scouting_home_team, game_date, home_score, away_score
              FROM games WHERE id = $1`,
             [gameId]
         );
@@ -1609,65 +1611,76 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
         const scoreLabel = game.home_score != null && game.away_score != null ? `${game.home_score}-${game.away_score}` : 'final';
         const gameLabel = `${teamLabel} vs. ${opponentLabel} — ${scoreLabel}${game.game_date ? ` · ${game.game_date}` : ''}`;
 
-        // Team-offense rollup gives us pitch-mix + outcome totals against our
-        // hitters. Per-pitcher summaries give us strike% / runs allowed.
         const offense = await this.getOpponentAttackSummary(gameId);
         const totals = offense.team_outcomes.reduce<Record<string, number>>((acc, g) => {
             acc[g.bucket] = g.total;
             return acc;
         }, {});
 
-        const lines: string[] = [];
-        if (offense.pitch_type_mix.length > 0) {
-            const topMix = offense.pitch_type_mix
-                .slice(0, 3)
-                .map((m) => `${m.pitch_type} ${m.pct}%`)
-                .join(', ');
-            lines.push(`Opponent pitch mix: ${topMix}`);
-        }
-        const k = totals.strikeout || 0;
-        const bb = totals.walk || 0;
-        const h = totals.hit || 0;
-        const ipOuts = (totals.weak_contact_out || 0) + (totals.hard_contact_out || 0);
-        if (k + bb + h + ipOuts > 0) {
-            lines.push(
-                `Our hitters: ${h} hit${h === 1 ? '' : 's'}, ${bb} walk${bb === 1 ? '' : 's'}, ${k} strikeout${k === 1 ? '' : 's'}, ${ipOuts} in-play out${ipOuts === 1 ? '' : 's'}`
-            );
-        }
-        if (offense.narrative) {
-            lines.push(offense.narrative);
-        }
-
-        // Pitcher rollup, if any pitcher summary exists for this game.
-        try {
-            const teamId = game.id
-                ? (await query('SELECT home_team_id FROM games WHERE id = $1', [gameId])).rows[0]?.home_team_id
-                : null;
-            if (teamId) {
-                const pitcherSummaries = await this.getAllGamePitcherSummaries(gameId, teamId);
-                for (const ps of pitcherSummaries) {
-                    lines.push(
-                        `${ps.pitcher_name}: ${ps.total_pitches} pitches, ${ps.strike_percentage}% strikes${ps.hits_allowed != null ? `, ${ps.hits_allowed} hits allowed` : ''}${ps.runs_allowed != null ? `, ${ps.runs_allowed} runs` : ''}`
-                    );
-                }
+        let perPitcher: PostGameReportContent['per_pitcher'] = [];
+        if (game.home_team_id) {
+            try {
+                const pitcherSummaries = await this.getAllGamePitcherSummaries(gameId, game.home_team_id);
+                perPitcher = pitcherSummaries
+                    .slice()
+                    .sort((a, b) => b.total_pitches - a.total_pitches)
+                    .map((ps) => ({
+                        pitcher_name: ps.pitcher_name,
+                        total_pitches: ps.total_pitches,
+                        strike_percentage: ps.strike_percentage,
+                        hits_allowed: ps.hits_allowed ?? null,
+                        runs_allowed: ps.runs_allowed ?? null,
+                    }));
+            } catch (err) {
+                // Pitcher rollup is a nice-to-have; don't fail the whole email
+                // if the summary fetch hiccups.
+                console.warn('Skipping pitcher summaries in report email:', err);
             }
+        }
+
+        const perHitter: PostGameReportContent['per_hitter'] = offense.per_hitter
+            .slice()
+            .sort((a, b) => a.batting_order - b.batting_order)
+            .slice(0, 6)
+            .map((h) => ({
+                batter_name: h.batter_name,
+                batting_order: h.batting_order,
+                at_bats_count: h.at_bats_count,
+                hits: h.outcomes.hits,
+                walks: h.outcomes.walks,
+                strikeouts: h.outcomes.strikeouts,
+            }));
+
+        const content: PostGameReportContent = {
+            game_label: gameLabel,
+            generated_at: new Date().toISOString().slice(0, 10),
+            narrative: offense.narrative ?? null,
+            outcome_totals: {
+                hits: totals.hit || 0,
+                walks: totals.walk || 0,
+                strikeouts: totals.strikeout || 0,
+                weak_contact_outs: totals.weak_contact_out || 0,
+                hard_contact_outs: totals.hard_contact_out || 0,
+            },
+            pitch_mix: offense.pitch_type_mix.slice(0, 5),
+            per_pitcher: perPitcher,
+            per_hitter: perHitter,
+        };
+
+        let pdfAttachment: { filename: string; content: Buffer } | undefined;
+        try {
+            const pdf = await buildPostGameReportPdf(content);
+            pdfAttachment = { filename: `pitch-chart-${gameId}.pdf`, content: pdf };
         } catch (err) {
-            // Pitcher rollup is a nice-to-have; don't fail the whole email if
-            // the summary fetch hiccups.
-            console.warn('Skipping pitcher summary lines in report email:', err);
+            // Don't fail the email if the PDF chokes — the HTML body is still useful.
+            console.warn('PDF generation failed; sending without attachment:', err);
         }
 
-        if (lines.length === 0) {
-            lines.push('Full report includes pitch-mix, attack-zone heatmap, and per-hitter breakdowns.');
-        }
-
-        const reportUrl = `${config.invite.baseUrl}/game/${gameId}`;
         return emailService.sendPostGameReport({
             to: recipients,
             subject: `Postgame report — ${gameLabel}`,
-            gameLabel,
-            summaryLines: lines,
-            reportUrl,
+            content,
+            pdfAttachment,
         });
     }
 

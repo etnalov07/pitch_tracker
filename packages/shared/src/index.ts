@@ -1207,6 +1207,38 @@ export interface TeamOffenseSummary {
     narrative_generated_at?: string | null;
 }
 
+// Shape consumed by both the postgame email HTML body and the attached PDF.
+// Built once in `emailPostGameReport`; rendered in `email.service` (HTML) and
+// `pdf/postGameReportPdf` (PDF) so both outputs stay aligned.
+export interface PostGameReportContent {
+    game_label: string;
+    generated_at: string;
+    narrative?: string | null;
+    outcome_totals: {
+        hits: number;
+        walks: number;
+        strikeouts: number;
+        weak_contact_outs: number;
+        hard_contact_outs: number;
+    };
+    pitch_mix: PitchTypeMix[];
+    per_pitcher: Array<{
+        pitcher_name: string;
+        total_pitches: number;
+        strike_percentage: number;
+        hits_allowed: number | null;
+        runs_allowed: number | null;
+    }>;
+    per_hitter: Array<{
+        batter_name: string;
+        batting_order: number;
+        at_bats_count: number;
+        hits: number;
+        walks: number;
+        strikeouts: number;
+    }>;
+}
+
 // ============================================================================
 // Opposing Pitcher Types
 // ============================================================================

@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { config } from '../config/env';
+import type { PostGameReportContent } from '../types';
 
 interface InviteEmailParams {
     to: string;
@@ -24,9 +25,8 @@ interface VerificationEmailParams {
 interface PostGameReportEmailParams {
     to: string[];
     subject: string;
-    gameLabel: string; // e.g., "AHS Eagles vs. North 4-2 — 2026-05-10"
-    summaryLines: string[]; // Human-readable bullet points for the body
-    reportUrl: string;
+    content: PostGameReportContent;
+    pdfAttachment?: { filename: string; content: Buffer };
 }
 
 class EmailService {
@@ -210,39 +210,14 @@ class EmailService {
         }
     }
 
-    async sendPostGameReport({ to, subject, gameLabel, summaryLines, reportUrl }: PostGameReportEmailParams): Promise<boolean> {
+    async sendPostGameReport({ to, subject, content, pdfAttachment }: PostGameReportEmailParams): Promise<boolean> {
         const client = this.getClient();
         if (!client) {
             console.warn('Email not configured: RESEND_API_KEY is not set. Skipping post-game report email.');
             return false;
         }
 
-        const bullets = summaryLines
-            .map((line) => `<li style="margin:4px 0;font-size:14px;color:#1a1a1a;line-height:1.5;">${escapeHtml(line)}</li>`)
-            .join('');
-
-        const html = baseShell(
-            'Postgame Report',
-            `
-              <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Game</p>
-              <p style="margin:0 0 20px;font-size:18px;color:#1a1a1a;font-weight:700;">${escapeHtml(gameLabel)}</p>
-              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8f9fa;border:1px solid #e2e8f0;border-radius:6px;margin:0 0 20px;">
-                <tr>
-                  <td style="padding:20px;">
-                    <ul style="margin:0;padding:0 0 0 20px;">${bullets}</ul>
-                  </td>
-                </tr>
-              </table>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center" style="padding:8px 0 16px;">
-                    <a href="${reportUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:14px 40px;border-radius:6px;">View full report</a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:24px 0 0;font-size:13px;color:#6b7280;text-align:center;">Charts, per-hitter breakdowns, and the opponent's attack plan are in the full report.</p>
-            `
-        );
+        const html = baseShell('Postgame Report', renderPostGameReportBody(content));
 
         try {
             await client.emails.send({
@@ -250,6 +225,7 @@ class EmailService {
                 to,
                 subject,
                 html,
+                attachments: pdfAttachment ? [{ filename: pdfAttachment.filename, content: pdfAttachment.content }] : undefined,
             });
             return true;
         } catch (err) {
@@ -257,6 +233,123 @@ class EmailService {
             return false;
         }
     }
+}
+
+function renderPostGameReportBody(content: PostGameReportContent): string {
+    const ipOuts = content.outcome_totals.weak_contact_outs + content.outcome_totals.hard_contact_outs;
+
+    const narrative = content.narrative
+        ? `<p style="margin:0 0 20px;padding:12px 16px;background-color:#f0f7ff;border-left:3px solid #2563eb;font-size:14px;color:#1a1a1a;line-height:1.55;font-style:italic;">${escapeHtml(content.narrative)}</p>`
+        : '';
+
+    const totalsRow = (
+        [
+            ['Hits', content.outcome_totals.hits],
+            ['Walks', content.outcome_totals.walks],
+            ['K', content.outcome_totals.strikeouts],
+            ['IP outs', ipOuts],
+        ] as Array<[string, number]>
+    )
+        .map(
+            ([label, val]) => `
+                <td align="center" style="padding:14px 8px;background-color:#f8f9fa;border:1px solid #e2e8f0;border-radius:6px;">
+                  <div style="font-size:22px;font-weight:700;color:#1e3a5f;line-height:1;">${val}</div>
+                  <div style="font-size:11px;font-weight:600;color:#6b7280;letter-spacing:0.5px;text-transform:uppercase;margin-top:6px;">${label}</div>
+                </td>`
+        )
+        .join('<td style="width:8px;"></td>');
+
+    const pitchMixSection =
+        content.pitch_mix.length > 0
+            ? sectionHtml(
+                  'Opponent pitch mix',
+                  tableHtml(
+                      ['Pitch type', '%'],
+                      content.pitch_mix.slice(0, 5).map((m) => [m.pitch_type, `${m.pct}%`])
+                  )
+              )
+            : '';
+
+    const perPitcherSection =
+        content.per_pitcher.length > 0
+            ? sectionHtml(
+                  'Our pitchers',
+                  tableHtml(
+                      ['Pitcher', 'P', 'Strike%', 'H', 'R'],
+                      content.per_pitcher.map((p) => [
+                          p.pitcher_name,
+                          String(p.total_pitches),
+                          `${p.strike_percentage}%`,
+                          p.hits_allowed != null ? String(p.hits_allowed) : '—',
+                          p.runs_allowed != null ? String(p.runs_allowed) : '—',
+                      ])
+                  )
+              )
+            : '';
+
+    const perHitterSection =
+        content.per_hitter.length > 0
+            ? sectionHtml(
+                  'Per-hitter (top of order)',
+                  tableHtml(
+                      ['#', 'Hitter', 'PA', 'H', 'BB', 'K'],
+                      content.per_hitter.map((h) => [
+                          String(h.batting_order),
+                          h.batter_name,
+                          String(h.at_bats_count),
+                          String(h.hits),
+                          String(h.walks),
+                          String(h.strikeouts),
+                      ])
+                  )
+              )
+            : '';
+
+    return `
+      <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Game</p>
+      <p style="margin:0 0 20px;font-size:18px;color:#1a1a1a;font-weight:700;">${escapeHtml(content.game_label)}</p>
+      ${narrative}
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+        <tr>${totalsRow}</tr>
+      </table>
+      ${pitchMixSection}
+      ${perPitcherSection}
+      ${perHitterSection}
+      <p style="margin:24px 0 0;font-size:12px;color:#9ca3af;text-align:center;">Generated by Pitch Chart on ${escapeHtml(content.generated_at)} — full chart attached as PDF.</p>
+    `;
+}
+
+function sectionHtml(label: string, inner: string): string {
+    return `
+      <p style="margin:0 0 6px;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">${escapeHtml(label)}</p>
+      ${inner}
+    `;
+}
+
+function tableHtml(headers: string[], rows: string[][]): string {
+    const headerCells = headers
+        .map(
+            (h, i) =>
+                `<th align="${i === 0 ? 'left' : 'right'}" style="padding:8px 10px;font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid #e2e8f0;">${escapeHtml(h)}</th>`
+        )
+        .join('');
+    const bodyRows = rows
+        .map(
+            (row) =>
+                `<tr>${row
+                    .map(
+                        (cell, i) =>
+                            `<td align="${i === 0 ? 'left' : 'right'}" style="padding:8px 10px;font-size:14px;color:#1a1a1a;border-bottom:1px solid #f1f5f9;">${escapeHtml(cell)}</td>`
+                    )
+                    .join('')}</tr>`
+        )
+        .join('');
+    return `
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
+        <thead><tr>${headerCells}</tr></thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    `;
 }
 
 /** Minimal HTML escaper for user-controlled strings in templates. */
