@@ -41,7 +41,7 @@ const GameLogTable: React.FC<GameLogTableProps> = ({
                     <Th align="center">Pitches</Th>
                     <Th align="center">B/S</Th>
                     <Th align="center">Strike %</Th>
-                    <Th align="center">Accuracy</Th>
+                    <Th align="center">Command</Th>
                     <Th align="center"></Th>
                 </tr>
             </thead>

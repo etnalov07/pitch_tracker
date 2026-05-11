@@ -290,7 +290,7 @@ const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regene
                 {summary.target_accuracy_percentage != null && (
                     <StatBox>
                         <StatValue style={{ color: '#8b5cf6' }}>{summary.target_accuracy_percentage}%</StatValue>
-                        <StatLabel>Accuracy</StatLabel>
+                        <StatLabel>Command Grade</StatLabel>
                     </StatBox>
                 )}
                 {summary.batters_faced != null && (

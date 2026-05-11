@@ -1,4 +1,5 @@
 import { SUMMARY_TARGET_ACCURACY_THRESHOLD, isTargetHit } from '../utils/pitchLocation';
+import { getNearestPitchCallZone, scoreAccuracy, PitchCallZone } from '@pitch-tracker/shared';
 import { getZoneForPitch } from '../utils/heatZones';
 import { query, transaction } from '../config/database';
 import emailService from './email.service';
@@ -298,28 +299,34 @@ export class PerformanceSummaryService {
     // ========================================================================
 
     private async gatherGameStats(gameId: string, pitcherId: string): Promise<RawStats> {
-        // Aggregate pitch stats
+        // Aggregate pitch stats. Accuracy is computed separately via the
+        // zone-based scoreAccuracy helper — see accuracyQuery below.
         const statsResult = await query(
             `SELECT
                 COUNT(*) as total_pitches,
                 COUNT(CASE WHEN pitch_result != 'ball' THEN 1 END) as strikes,
-                COUNT(CASE WHEN pitch_result = 'ball' THEN 1 END) as balls,
-                COUNT(CASE
-                    WHEN target_location_x IS NOT NULL AND target_location_y IS NOT NULL
-                    AND location_x IS NOT NULL AND location_y IS NOT NULL
-                    AND SQRT(POWER(location_x - target_location_x, 2) + POWER(location_y - target_location_y, 2)) <= $3
-                    THEN 1 END) as accurate_pitches,
-                COUNT(CASE WHEN target_location_x IS NOT NULL AND target_location_y IS NOT NULL THEN 1 END) as targeted_pitches
+                COUNT(CASE WHEN pitch_result = 'ball' THEN 1 END) as balls
              FROM pitches WHERE pitcher_id = $1 AND game_id = $2`,
-            [pitcherId, gameId, SUMMARY_TARGET_ACCURACY_THRESHOLD]
+            [pitcherId, gameId]
         );
 
         const s = statsResult.rows[0];
         const totalPitches = parseInt(s.total_pitches) || 0;
         const strikes = parseInt(s.strikes) || 0;
         const balls = parseInt(s.balls) || 0;
-        const targeted = parseInt(s.targeted_pitches) || 0;
-        const accurate = parseInt(s.accurate_pitches) || 0;
+
+        // Zone-based accuracy: pull every targeted pitch with a landing
+        // location, score each one via scoreAccuracy, and aggregate both
+        // globally and per pitch type.
+        const accuracyRowsResult = await query(
+            `SELECT pitch_type, target_zone, target_location_x, target_location_y, location_x, location_y
+             FROM pitches
+             WHERE pitcher_id = $1 AND game_id = $2
+               AND target_location_x IS NOT NULL AND target_location_y IS NOT NULL
+               AND location_x IS NOT NULL AND location_y IS NOT NULL`,
+            [pitcherId, gameId]
+        );
+        const accuracyAgg = aggregateAccuracy(accuracyRowsResult.rows);
 
         // First-pitch strike rate
         const fpsResult = await query(
@@ -373,7 +380,7 @@ export class PerformanceSummaryService {
             [pitcherId, gameId]
         );
 
-        // Pitch type breakdown
+        // Pitch type breakdown. Accuracy comes from accuracyAgg above.
         const ptResult = await query(
             `SELECT
                 pitch_type,
@@ -382,16 +389,10 @@ export class PerformanceSummaryService {
                 COUNT(CASE WHEN pitch_result = 'ball' THEN 1 END) as balls,
                 AVG(velocity) as avg_velocity,
                 MAX(velocity) as top_velocity,
-                ARRAY_AGG(velocity) FILTER (WHERE velocity IS NOT NULL) as velocities,
-                COUNT(CASE
-                    WHEN target_location_x IS NOT NULL AND target_location_y IS NOT NULL
-                    AND location_x IS NOT NULL AND location_y IS NOT NULL
-                    AND SQRT(POWER(location_x - target_location_x, 2) + POWER(location_y - target_location_y, 2)) <= $3
-                    THEN 1 END) as accurate,
-                COUNT(CASE WHEN target_location_x IS NOT NULL AND target_location_y IS NOT NULL THEN 1 END) as targeted
+                ARRAY_AGG(velocity) FILTER (WHERE velocity IS NOT NULL) as velocities
              FROM pitches WHERE pitcher_id = $1 AND game_id = $2
              GROUP BY pitch_type ORDER BY count DESC`,
-            [pitcherId, gameId, SUMMARY_TARGET_ACCURACY_THRESHOLD]
+            [pitcherId, gameId]
         );
 
         // Per-zone outcomes: for each (pitch_type, zone) compute whiff / called-strike /
@@ -411,7 +412,7 @@ export class PerformanceSummaryService {
             strikes,
             balls,
             strike_percentage: totalPitches > 0 ? Math.round((strikes / totalPitches) * 100) : 0,
-            target_accuracy_percentage: targeted > 0 ? Math.round((accurate / targeted) * 100) : null,
+            target_accuracy_percentage: accuracyAgg.overall,
             first_pitch_strike_pct: firstPitches > 0 ? Math.round((firstPitchStrikes / firstPitches) * 100) : null,
             three_ball_rate: totalAbs > 0 ? Math.round((threeBallAbs / totalAbs) * 100) : null,
             batters_faced: parseInt(battersResult.rows[0]?.batters_faced) || 0,
@@ -427,8 +428,7 @@ export class PerformanceSummaryService {
                 balls: parseInt(r.balls) || 0,
                 avg_velocity: r.avg_velocity ? parseFloat(parseFloat(r.avg_velocity).toFixed(1)) : null,
                 top_velocity: r.top_velocity ? parseFloat(r.top_velocity) : null,
-                target_accuracy_percentage:
-                    parseInt(r.targeted) > 0 ? Math.round((parseInt(r.accurate) / parseInt(r.targeted)) * 100) : null,
+                target_accuracy_percentage: accuracyAgg.byPitchType.get(r.pitch_type) ?? null,
                 velocities: (r.velocities || []).map(Number),
                 per_zone_outcomes: zoneOutcomesByType.get(r.pitch_type) || [],
             })),
@@ -455,39 +455,29 @@ export class PerformanceSummaryService {
         const strikes = pitches.filter((p: any) => ['called_strike', 'swinging_strike', 'foul'].includes(p.result)).length;
         const balls = pitches.filter((p: any) => p.result === 'ball').length;
 
-        // Target accuracy
-        const withTarget = pitches.filter(
-            (p: any) => p.target_x != null && p.target_y != null && p.actual_x != null && p.actual_y != null
+        // Zone-based command grade. Reshape bullpen pitches into the row
+        // shape aggregateAccuracy expects. Bullpen schema uses target_x /
+        // target_y / actual_x / actual_y (no stored target_zone), so target
+        // is always derived from coordinates.
+        const accuracyAgg = aggregateAccuracy(
+            pitches.map((p: any) => ({
+                pitch_type: p.pitch_type,
+                target_zone: null,
+                target_location_x: p.target_x,
+                target_location_y: p.target_y,
+                location_x: p.actual_x,
+                location_y: p.actual_y,
+            }))
         );
-        const accurateCount = withTarget.filter((p: any) =>
-            isTargetHit(p.target_x, p.target_y, p.actual_x, p.actual_y, SUMMARY_TARGET_ACCURACY_THRESHOLD)
-        ).length;
 
-        // Pitch type breakdown
-        const typeMap = new Map<
-            string,
-            { count: number; strikes: number; balls: number; velocities: number[]; accurate: number; targeted: number }
-        >();
+        // Pitch type breakdown (non-accuracy fields).
+        const typeMap = new Map<string, { count: number; strikes: number; balls: number; velocities: number[] }>();
         for (const p of pitches) {
-            const entry = typeMap.get(p.pitch_type) || {
-                count: 0,
-                strikes: 0,
-                balls: 0,
-                velocities: [],
-                accurate: 0,
-                targeted: 0,
-            };
+            const entry = typeMap.get(p.pitch_type) || { count: 0, strikes: 0, balls: 0, velocities: [] };
             entry.count++;
             if (['called_strike', 'swinging_strike', 'foul'].includes(p.result)) entry.strikes++;
             if (p.result === 'ball') entry.balls++;
             if (p.velocity != null) entry.velocities.push(Number(p.velocity));
-            if (p.target_x != null && p.target_y != null) {
-                entry.targeted++;
-                if (p.actual_x != null && p.actual_y != null) {
-                    if (isTargetHit(p.target_x, p.target_y, p.actual_x, p.actual_y, SUMMARY_TARGET_ACCURACY_THRESHOLD))
-                        entry.accurate++;
-                }
-            }
             typeMap.set(p.pitch_type, entry);
         }
 
@@ -496,7 +486,7 @@ export class PerformanceSummaryService {
             strikes,
             balls,
             strike_percentage: totalPitches > 0 ? Math.round((strikes / totalPitches) * 100) : 0,
-            target_accuracy_percentage: withTarget.length > 0 ? Math.round((accurateCount / withTarget.length) * 100) : null,
+            target_accuracy_percentage: accuracyAgg.overall,
             first_pitch_strike_pct: null,
             three_ball_rate: null,
             batters_faced: null,
@@ -515,7 +505,7 @@ export class PerformanceSummaryService {
                         ? Math.round((s.velocities.reduce((a, b) => a + b, 0) / s.velocities.length) * 10) / 10
                         : null,
                 top_velocity: s.velocities.length > 0 ? Math.max(...s.velocities) : null,
-                target_accuracy_percentage: s.targeted > 0 ? Math.round((s.accurate / s.targeted) * 100) : null,
+                target_accuracy_percentage: accuracyAgg.byPitchType.get(pitch_type) ?? null,
                 velocities: s.velocities,
             })),
         };
@@ -2023,6 +2013,62 @@ function bucketGroupsFromMap(map: Map<OutcomeBucket, Map<string, number>>): Outc
         groups.push({ bucket, pitches, total });
     }
     return groups;
+}
+
+/**
+ * Aggregate zone-based command-grade scores across a set of pitches.
+ *
+ * Each row needs `pitch_type` + target info (`target_zone` OR
+ * `target_location_x/y`) + actual landing coords (`location_x/y`). Rows
+ * missing any of those are skipped. The score for each pitch is the
+ * `scoreAccuracy` result (0 / 0.25 / 0.5 / 0.75 / 1) — see
+ * docs/plans/2026-05-11-zone-based-accuracy.md for the rule matrix.
+ *
+ * Returns the rounded percentage overall and per pitch type.
+ */
+function aggregateAccuracy(
+    rows: Array<{
+        pitch_type: string;
+        target_zone: PitchCallZone | null;
+        target_location_x: number | string | null;
+        target_location_y: number | string | null;
+        location_x: number | string | null;
+        location_y: number | string | null;
+    }>
+): { overall: number | null; byPitchType: Map<string, number> } {
+    let sum = 0;
+    let count = 0;
+    const byType = new Map<string, { sum: number; count: number }>();
+
+    for (const row of rows) {
+        // Resolve target zone: prefer stored zone, else derive from coords.
+        let targetZone: PitchCallZone | null = row.target_zone;
+        if (!targetZone) {
+            const tx = parseFloat(String(row.target_location_x));
+            const ty = parseFloat(String(row.target_location_y));
+            if (isNaN(tx) || isNaN(ty)) continue;
+            targetZone = getNearestPitchCallZone(tx, ty);
+        }
+        const lx = parseFloat(String(row.location_x));
+        const ly = parseFloat(String(row.location_y));
+        if (isNaN(lx) || isNaN(ly)) continue;
+        const actualZone = getNearestPitchCallZone(lx, ly);
+        const score = scoreAccuracy(targetZone, actualZone);
+
+        sum += score;
+        count += 1;
+        const t = byType.get(row.pitch_type) ?? { sum: 0, count: 0 };
+        t.sum += score;
+        t.count += 1;
+        byType.set(row.pitch_type, t);
+    }
+
+    const overall = count > 0 ? Math.round((sum / count) * 100) : null;
+    const byPitchType = new Map<string, number>();
+    for (const [type, agg] of byType.entries()) {
+        byPitchType.set(type, Math.round((agg.sum / agg.count) * 100));
+    }
+    return { overall, byPitchType };
 }
 
 /**

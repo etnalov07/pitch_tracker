@@ -72,7 +72,7 @@ export default function PerformanceSummaryView({ summary, batterBreakdown, onReg
                         {summary.target_accuracy_percentage != null && (
                             <View style={styles.statItem}>
                                 <Text style={[styles.statValue, { color: '#8b5cf6' }]}>{summary.target_accuracy_percentage}%</Text>
-                                <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Accuracy</Text>
+                                <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>Command Grade</Text>
                             </View>
                         )}
                         {summary.batters_faced != null && (

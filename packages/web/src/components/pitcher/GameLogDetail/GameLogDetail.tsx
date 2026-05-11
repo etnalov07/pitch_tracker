@@ -103,7 +103,7 @@ const GameLogDetail: React.FC<GameLogDetailProps> = ({ gameLog, onClose, onViewG
                                     <BTh align="center">Count</BTh>
                                     <BTh align="center">B/S</BTh>
                                     <BTh align="center">Strike %</BTh>
-                                    <BTh align="center">Accuracy</BTh>
+                                    <BTh align="center">Command</BTh>
                                     <BTh align="center">Top Vel</BTh>
                                     <BTh align="center">Avg Vel</BTh>
                                 </tr>

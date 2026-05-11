@@ -8,3 +8,4 @@
 | 2026-04-05 | Tendencies Buttons & Situational Call Types                    | Planned  | [tendencies-buttons-situational-calls](tendencies-buttons-situational-calls.md)       |
 | 2026-04-20 | Opposing Pitcher Charting, Multi-Device Sync, Count Breakdowns | Planned  | [pitchchart-new-features](pitchchart-new-features.md)                                 |
 | 2026-05-10 | Super User + Three Signup Modes (Coach / Player / Org Admin)   | Approved | [super-user-and-signup-modes](2026-05-10-super-user-and-signup-modes.md)              |
+| 2026-05-11 | Zone-based pitch accuracy scoring                              | Approved | [zone-based-accuracy](2026-05-11-zone-based-accuracy.md)                              |

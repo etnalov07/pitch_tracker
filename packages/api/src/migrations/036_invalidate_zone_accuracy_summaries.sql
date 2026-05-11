@@ -1,0 +1,22 @@
+-- Migration: Invalidate cached performance summaries after the zone-based
+-- accuracy rewrite.
+--
+-- target_accuracy_percentage moved from a binary Euclidean-threshold count
+-- (a pitch was "accurate" iff it was within SUMMARY_TARGET_ACCURACY_THRESHOLD
+-- of its target) to a partial-credit zone-grading score (1.0 / 0.75 / 0.50 /
+-- 0.25 / 0). The new scheme is column-anchored for in/out targets and
+-- row-anchored for mid-column targets — see
+-- docs/plans/2026-05-11-zone-based-accuracy.md for the full rule matrix.
+--
+-- Every cached summary in performance_summaries was computed against the old
+-- threshold. Its target_accuracy_percentage, pitch_type_breakdown
+-- per-type accuracy, metrics, highlights, concerns, and AI narrative are
+-- all derived from it and are therefore stale.
+--
+-- Deleting the rows forces lazy recomputation via
+-- PerformanceSummaryService.generateSummary on the next fetch, which rebuilds
+-- every derived field under the new algorithm. Applies to both
+-- source_type='game' (postgame pitcher summary) and source_type='bullpen'
+-- (post-bullpen-session summary).
+
+DELETE FROM public.performance_summaries;

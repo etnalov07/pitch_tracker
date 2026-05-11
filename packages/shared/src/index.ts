@@ -11,6 +11,7 @@ export {
     targetDistance,
     isTargetHit,
 } from './utils/pitchLocation';
+export { scoreAccuracy } from './utils/scoreAccuracy';
 export { getCountBucket, deriveGameMode } from './utils/gameMode';
 export { getNextBattingOrder, getNextBatter, getInningLeadoffBatter, applyAtBatResult, advanceHalf } from './utils/gameSimulation';
 export { formatFielderSequence, parseFielderSequence } from './utils/fielderSequence';
