@@ -1,0 +1,15 @@
+# SPA fallback for Apache (cPanel).
+# Without this, deep links like /game/<id> 404 because Apache looks for a
+# real file at that path and the React Router never gets a chance to run.
+
+Options -MultiViews
+RewriteEngine On
+RewriteBase /
+
+# Real files and directories (assets, favicon, manifest) serve as-is.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Everything else hands off to the SPA.
+RewriteRule ^ index.html [L]
