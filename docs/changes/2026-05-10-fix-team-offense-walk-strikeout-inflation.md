@@ -1,8 +1,8 @@
 # Fix: Team-offense narrative inflated walk/strikeout counts
 
-| Date       | Type | Commit | Versions          |
-| ---------- | ---- | ------ | ----------------- |
-| 2026-05-10 | fix  | _TBD_  | api 1.1.0 → 1.2.0 |
+| Date       | Type | Commit    | Versions          |
+| ---------- | ---- | --------- | ----------------- |
+| 2026-05-10 | fix  | `43ce6ff` | api 1.1.0 → 1.2.0 |
 
 ## Context
 
