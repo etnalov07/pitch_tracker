@@ -1599,15 +1599,22 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
         if (recipients.length === 0) return false;
 
         const gameRow = await query(
-            `SELECT id, home_team_id, opponent_name, scouting_home_team, game_date, home_score, away_score
-             FROM games WHERE id = $1`,
+            `SELECT g.id, g.home_team_id, g.opponent_name, g.scouting_home_team, g.game_date, g.home_score, g.away_score,
+                    ht.name AS home_team_name,
+                    at.name AS away_team_name
+             FROM games g
+             LEFT JOIN teams ht ON g.home_team_id = ht.id
+             LEFT JOIN teams at ON g.away_team_id = at.id
+             WHERE g.id = $1`,
             [gameId]
         );
         if (gameRow.rows.length === 0) return false;
         const game = gameRow.rows[0];
 
-        const teamLabel = game.scouting_home_team || 'Home';
-        const opponentLabel = game.opponent_name || 'Opponent';
+        // home_team_name is the real team for our-team games; scouting_home_team
+        // is the free-text label used in scouting mode where neither side is us.
+        const teamLabel = game.home_team_name || game.scouting_home_team || 'Home';
+        const opponentLabel = game.away_team_name || game.opponent_name || 'Opponent';
         const scoreLabel = game.home_score != null && game.away_score != null ? `${game.home_score}-${game.away_score}` : 'final';
         const gameLabel = `${teamLabel} vs. ${opponentLabel} — ${scoreLabel}${game.game_date ? ` · ${game.game_date}` : ''}`;
 
