@@ -1,8 +1,8 @@
 # Super User + Three Signup Modes (Coach / Player / Org Admin)
 
-> **Status:** Draft. Approach is sketched end-to-end, but the Open Questions
-> section lists real design forks that need explicit sign-off before slice 1
-> ships.
+> **Status:** Approved (2026-05-11). All seven open questions resolved; ready
+> to slice into shippable work. Slice 1 is Super User (Part A) bundled with the
+> small invite-authz fix from Part C1.
 
 ## Decisions Confirmed (2026-05-10)
 
@@ -27,7 +27,7 @@ Env var allowlist: `SUPER_ADMIN_EMAILS=brian.volante@bvolante.com` (comma-separa
 - New middleware `requireSuperAdmin` in `packages/api/src/middleware/auth.ts` (or sibling file): reads `req.user.email`, checks against the allowlist, 403s otherwise.
 - New route namespace `app.use('/bt-api/admin', adminRoutes)` in `app.ts`.
 - New `admin.routes.ts` / `admin.controller.ts` / `admin.service.ts`. Every route gated by `authenticateToken` + `requireSuperAdmin`.
-- Endpoints (v1, all read-only except the four targeted actions):
+- Endpoints (v1, all read-only except the targeted mutating actions):
     - `GET /admin/users` — list/search users (paginated)
     - `GET /admin/users/:id` — full user detail incl. team/org memberships, recent games
     - `GET /admin/orgs` — list organizations + member count + team count
@@ -35,27 +35,34 @@ Env var allowlist: `SUPER_ADMIN_EMAILS=brian.volante@bvolante.com` (comma-separa
     - `GET /admin/games?team_id=&date_range=` — recent games across all teams
     - `POST /admin/users/:id/force-verify-email` — set `email_verified=true`
     - `POST /admin/users/:id/resend-verification` — re-issue token + send email
+    - `POST /admin/users/:id/set-registration-type` — change `registration_type` (handles role drift per Open Question #6)
     - `POST /admin/games/:id/regenerate-narrative` — re-trigger narrative pipeline
     - `POST /admin/games/:id/soft-delete` — soft-delete a game (set `deleted_at`)
 
 ### Audit log
 
-New migration `036_super_admin_audit.sql`:
+New migration `036_admin_audit.sql`. Per Open Question #7, the table is shared
+between Super User and org-level (owner/admin) privileged mutations — `actor_role`
+distinguishes them.
 
 ```sql
-CREATE TABLE super_admin_audit (
+CREATE TABLE admin_audit (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     actor_user_id UUID NOT NULL REFERENCES users(id),
+    actor_role VARCHAR(16) NOT NULL CHECK (actor_role IN ('super', 'org_owner', 'org_admin')),
+    organization_id UUID REFERENCES organizations(id),  -- null for super-user actions
     action VARCHAR(64) NOT NULL,
     target_table VARCHAR(64),
     target_id UUID,
     payload JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-GRANT SELECT, INSERT ON super_admin_audit TO bvolante_pitch_tracker;
+GRANT SELECT, INSERT ON admin_audit TO bvolante_pitch_tracker;
+CREATE INDEX idx_admin_audit_org ON admin_audit(organization_id, created_at DESC);
+CREATE INDEX idx_admin_audit_actor ON admin_audit(actor_user_id, created_at DESC);
 ```
 
-Every mutation in `/admin/*` writes one row. Every read view that lists 50+ rows writes one row (so we know what was browsed).
+Every mutation in `/admin/*` and every org-scoped privileged mutation in `/teams/*`, `/invites/*`, `/games/*` (when the caller's authority comes from `requireOrgRole`) writes one row. Every Super User read view that lists 50+ rows also writes one row.
 
 ### Frontend
 
@@ -171,23 +178,80 @@ For each existing user, by category:
 3. **Org Admin mode (Part B org_admin + Part C3)** — only when you have a real travel-ball customer to onboard. Until then there's no point.
 4. **Invite authz (Part C1)** — small, self-contained, drop in any time. Honestly should probably move to slot 1.5 since it's a real security hole.
 
-## Open Questions (raised in discussion, not yet decided)
+## Open Questions (all resolved 2026-05-10/11)
 
-These are real design forks worth nailing down before slice 1 ships. Listed here so they don't get lost; each has a recommended starting position but needs explicit user sign-off.
+Status legend: ✅ Resolved · 🟡 Open. All ✅ as of 2026-05-11.
 
-1. **Coach is two flows under one role.** Solo HS/college coach (orphaned team, today's behavior) vs. travel-ball coach (invited into someone else's org, never creates their own teams). Same `registration_type='coach'`, but the UX differs — solo coach sees "Create Team" prominently; travel-ball coach probably should not (or should see "Create Team in <Org Name>" only). Open: does the dashboard infer from `organization_members` row presence, or do we add a sub-marker?
+1. ✅ **Coach is two flows under one role.** Solo HS/college coach (orphaned team, today's behavior) vs. travel-ball coach (invited into someone else's org, never creates their own teams). Same `registration_type='coach'`, but the UX differs — solo coach sees "Create Team" prominently; travel-ball coach shouldn't be making free-floating teams in someone else's account.
 
-2. **Org Admin who's also a coach on a team.** Schema supports it (independent role dimensions). UI question: one merged dashboard, two switchable dashboards, or a sidebar toggle between "org view" and "team view"?
+    **Decision (2026-05-10):** Infer from membership — no new column. The `CoachDashboard` checks `organization_members` rows and `team_members.team.organization_id` for the logged-in user.
+    - **Solo coach** (no `organization_members` row, no team with `organization_id`): "Create Team" button visible; team is created orphaned (`organization_id IS NULL`). Today's behavior preserved exactly.
+    - **Travel-ball coach** (rostered on at least one org-linked team via `team_members`, but NOT an `organization_members` owner/admin): no "Create Team" button. They see only the teams they coach within the org. Team creation is an org-admin function.
+    - **Hybrid** (user is both an org admin AND coaches in another solo context): both affordances visible, scoped per team.
 
-3. **What does "Player sees their team" mean exactly?** Just their own stats, or also teammates' game results / final scores / tendencies? A 14-year-old browsing the team's full scouting report is probably not what the coach wants. Recommended starting point: scoreboard + their own line, nothing else.
+    Tradeoff accepted: zero migration cost, but the inference logic lives in dashboard code (must be kept consistent with backend authz). If the rule grows complex, revisit by adding `users.coach_type`.
 
-4. **Invite-with-signup role inheritance.** If an Org Admin invites Joe as a coach via email and Joe signs up via the invite link, Joe gets `registration_type='coach'`. But he's a _travel-ball_ coach, not a solo coach (see #1). The marker doesn't capture that distinction.
+2. ✅ **Org Admin who's also a coach on a team.** A user can hold both roles independently — own/admin an org AND be rostered on a team's coach line.
 
-5. **Multi-team players.** A kid plays HS and travel ball — two `team_members` rows with `role='player'`. Does PlayerDashboard show a team-switcher at the top? One merged view? What if the HS coach and travel coach both want to see only "their" stats?
+    **Decision:** Default to org view + drill in. The user lands on `/org` (`OrgDashboard`). Clicking a team in the org list opens that team's existing coach view (roster, games, charting flows). The team-level pages already exist and don't need a separate "as a coach" mode — the org admin gets the same affordances as any team coach when they enter a team.
 
-6. **Role drift over time.** A player graduates and becomes a college coach. `registration_type` was set at signup and frozen. Do we offer an in-app "I'm now a coach" upgrade, or do they create a new account?
+    No top-bar toggle, no merged dashboard. If the user is rostered on a team in a _different_ org (or an orphaned team), that team still shows up under "My Teams" in the standard `CoachDashboard` accessible at `/`. The two routes coexist; `/org` is the default landing for `registration_type='org_admin'`.
 
-7. **Mutating power for Org Admin.** The sketch gives Super User soft-delete but doesn't say what mutating power Org Admin has. Should they be able to soft-delete a team in their own org? Remove a coach? Reset narratives on their org's games?
+3. ✅ **What does "Player sees their team" mean exactly?** A 14-year-old browsing the full team scouting report is probably not what the coach wants; pure-stats-only is too sparse.
+
+    **Decision:** Personal stats + scoreboard. PlayerDashboard contains:
+    - **Header:** Team name + jersey number.
+    - **My Stats:** pitching stats if pitcher, batting stats if hitter, both if both. Server-side scoping: `WHERE player_id = (SELECT id FROM players WHERE user_id = $me LIMIT 1)`.
+    - **Game results (scoreboard):** list of games the player appeared in, with date, opponent, final score, and the player's own line (e.g. "2-for-3, 1 RBI" or "5 IP, 2 ER"). No per-teammate breakdowns, no team-wide tendencies, no opponent scouting.
+
+    What is **not** exposed: teammate stats, full team batting/pitching tables, team scouting reports, opposing-pitcher tendencies, charting tools, roster management. If a player wants the full team view, they can ask their coach for a screen-share — that boundary stays firm.
+
+    Server enforcement: a new `requirePlayerSelf` middleware (or extend `requirePlayerTeamRole`) on the player-stats endpoints. The dashboard never asks for team-wide data; the API would refuse it anyway.
+
+4. ✅ **Invite-with-signup role inheritance.** When someone signs up via an invite link (Part C2), what `registration_type` do they get?
+
+    **Decision:** Match invite role + rely on Q1 inference. Mapping in `POST /invites/token/:token/register`:
+    - Invite role `'player'` → `registration_type = 'player'`.
+    - Invite role `'coach' | 'assistant' | 'owner'` → `registration_type = 'coach'`.
+    - The solo vs travel-ball distinction is **not** baked into the marker. Q1's membership-based inference handles it: a user invited into an org-linked team automatically reads as travel-ball when the dashboard checks `organization_members` / `team_members.team.organization_id`.
+
+    No new marker values. No new column. Same single registration_type column proposed in Part B handles every signup path (direct + invite-with-signup) consistently.
+
+5. ✅ **Multi-team players.** A kid plays HS and travel ball — two `team_members` rows with `role='player'`. Coaches are naturally scoped to their own team via the existing `requireTeamRole` middleware, so cross-pollination isn't a concern there; the question is purely the player's own view.
+
+    **Decision:** Team switcher at the top of `PlayerDashboard`. Dropdown in the header lists every team where the user has `team_members.role='player'`. Selecting a team scopes all stats and the scoreboard to that team. Defaults to the most-recently-active team (heuristic: most recent game appearance via `ORDER BY games.game_date DESC LIMIT 1`).
+
+    Per-team scoping is enforced server-side: a new query parameter (`?team_id=`) on the player-stats endpoint, validated against the user's `team_members` rows. If a player tries to query a team they're not on, return 403 — same shape as `requireTeamRole`.
+
+6. ✅ **Role drift over time.** A player graduates and becomes a college coach. `registration_type` was set at signup.
+
+    **Decision:** Defer. Don't build the in-app upgrade. Rare case for a v1. The user emails support, the Super User flips `registration_type` (this becomes a fifth mutating action in the Super User toolbox: `POST /admin/users/:id/set-registration-type`), and the dashboard re-routes on next login. Their player stats stay in the DB and remain visible to the player view if we ever add a downgrade path; for now, one-way is fine.
+
+    Stays listed in "Out of Scope (Deferred)" as the in-app self-service upgrade. Add the Super User action to Part A's endpoint list.
+
+7. ✅ **Mutating power for Org Admin (and Owner).** What can org-level roles do within their own org?
+
+    **Decision:** Owner and admin share **full local power** within the org. Schema already supports many `organization_members` rows per org (`role ∈ owner | admin | coach`), so larger orgs can have multiple admins as needed.
+
+    **Owner-only actions** (the "self-destruct" set):
+    - Add or remove another admin (`organization_members.role` mutations).
+    - Transfer ownership to another member.
+    - Soft-delete the organization itself.
+    - Rename the organization (debatable; can be relaxed to admins later if it's a friction point).
+
+    **Owner + admin actions** (full local power):
+    - Create / rename / soft-delete teams in the org.
+    - Invite / remove team members (coaches, assistants, players) on any team in the org.
+    - Approve / deny join requests for any team in the org.
+    - Regenerate AI narratives on any game in the org.
+    - Force-verify email for any user who is a member of a team in the org.
+    - Soft-delete games on org teams.
+
+    **Coach (org-level role)** stays unused in the sketch for v1 — defer until a real use case shows up. If we need a "view-only org observer" later, that's where it lives.
+
+    **Server enforcement:** new `requireOrgRole('owner')` for the self-destruct set; `requireOrgRole('owner','admin')` for the rest. Org-scoped mutations need a parameter that resolves to an org_id (e.g. `team_id` → look up `teams.organization_id`) and the middleware checks the requester's `organization_members` row for that org.
+
+    **Audit log shared with Super User:** the `super_admin_audit` table proposed in Part A becomes more general — rename to `admin_audit` with `actor_role` column ∈ `super | org_owner | org_admin`. Same table catches every privileged mutation.
 
 ## Out of Scope (Deferred)
 
