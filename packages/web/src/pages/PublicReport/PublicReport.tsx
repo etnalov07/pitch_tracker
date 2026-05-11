@@ -73,7 +73,7 @@ const PublicReport: React.FC = () => {
                             <>
                                 <PitcherSectionTitle>Coaches Summary</PitcherSectionTitle>
                                 {report.pitchers.map((p) => (
-                                    <PerformanceSummaryCard key={p.id} summary={p} />
+                                    <PerformanceSummaryCard key={p.id} summary={p} batterBreakdown={report.batter_breakdown} />
                                 ))}
                             </>
                         )}

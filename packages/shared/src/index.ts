@@ -1228,6 +1228,10 @@ export interface PublicGameReport {
     score: { home: number; away: number } | null;
     team_offense: TeamOffenseSummary;
     pitchers: PerformanceSummary[];
+    // Per-game batter breakdown (same shape PerformanceSummaryCard fetches
+    // internally on the SPA via the auth-gated endpoint). Pre-fetched here
+    // so the public page can pass it as a prop and skip the auth call.
+    batter_breakdown: BatterBreakdown[];
 }
 
 // ============================================================================

@@ -1665,6 +1665,10 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
 
         const teamOffense = await this.getOpponentAttackSummary(gameId);
         const pitchers = await this.getAllGamePitcherSummaries(gameId, meta.home_team_id);
+        // Per-batter at-bat sequence — PerformanceSummaryCard fetches this
+        // internally on the SPA, but that call is auth-gated. Pre-fetch here
+        // so the public page can pass it as a prop.
+        const batterBreakdown = await this.getBatterBreakdown(gameId);
 
         const scoreLabel = meta.score ? `${meta.score.home}-${meta.score.away}` : 'final';
         const gameLabel = `${meta.home_team_name} vs. ${meta.opponent_name} — ${scoreLabel}${meta.game_date_mdy ? ` · ${meta.game_date_mdy}` : ''}`;
@@ -1678,6 +1682,7 @@ Do not mention "my team" — describe both teams as the scouted subjects. Write 
             score: meta.score,
             team_offense: teamOffense,
             pitchers,
+            batter_breakdown: batterBreakdown,
         };
     }
 

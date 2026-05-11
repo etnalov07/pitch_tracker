@@ -236,23 +236,32 @@ interface Props {
     summary: PerformanceSummary;
     onRegenerate?: () => void;
     regenerating?: boolean;
+    // If provided, skip the internal auth-gated batter-breakdown fetch.
+    // Used by the public report page (which has no auth token, so the
+    // internal call would 401 and the response interceptor would force
+    // a redirect to /login).
+    batterBreakdown?: BatterBreakdown[];
 }
 
 const formatPitchType = (type: string): string => {
     return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
-const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regenerating }) => {
-    const [batterBreakdown, setBatterBreakdown] = useState<BatterBreakdown[] | null>(null);
+const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regenerating, batterBreakdown: batterBreakdownProp }) => {
+    const [batterBreakdown, setBatterBreakdown] = useState<BatterBreakdown[] | null>(batterBreakdownProp ?? null);
     const isScoutingMode = summary.source_type === 'scouting';
 
     useEffect(() => {
+        if (batterBreakdownProp !== undefined) {
+            setBatterBreakdown(batterBreakdownProp);
+            return;
+        }
         if (summary.source_type !== 'game') return;
         performanceSummaryService
             .getBatterBreakdown(summary.source_id)
             .then((data) => setBatterBreakdown(data))
             .catch(() => setBatterBreakdown([]));
-    }, [summary.source_id, summary.source_type]);
+    }, [summary.source_id, summary.source_type, batterBreakdownProp]);
     return (
         <Card>
             {/* AI Narrative */}
