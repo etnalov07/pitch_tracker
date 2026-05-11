@@ -1,6 +1,7 @@
-import { TeamOffenseSummary, OutcomePitchGroup, CountSituationStat, ZoneHistogram } from '@pitch-tracker/shared';
+import { TeamOffenseSummary, OutcomePitchGroup, CountSituationStat, ZoneHistogram, BatterBreakdown } from '@pitch-tracker/shared';
 import React, { useEffect, useRef, useState } from 'react';
 import { performanceSummaryService } from '../../../services/performanceSummaryService';
+import { WebBatterRow } from '../PerformanceSummaryCard/PerformanceSummaryCard';
 import {
     Card,
     HeaderRow,
@@ -49,17 +50,28 @@ interface Props {
     // If provided, skip the internal fetch — used by the public report page
     // which has already loaded the combined payload via /public-report.
     summary?: TeamOffenseSummary;
+    // Per-batter at-bat sequence for our hitters. If provided (e.g. from the
+    // public report payload), the per-hitter accordion shows the at-bats and
+    // pitch sequences. If not provided, the SPA path fetches it from the
+    // auth-gated endpoint; in readOnly mode the section just hides.
+    myTeamBatterBreakdown?: BatterBreakdown[];
     // Hide coach-only controls (Regenerate Narrative). Also disables the
     // narrative poll, since unauthenticated visitors can't trigger
     // generation and we don't want to spam the public endpoint.
     readOnly?: boolean;
 }
 
-const OpponentAttackSummary: React.FC<Props> = ({ gameId, summary: summaryProp, readOnly = false }) => {
+const OpponentAttackSummary: React.FC<Props> = ({
+    gameId,
+    summary: summaryProp,
+    myTeamBatterBreakdown: myTeamBatterBreakdownProp,
+    readOnly = false,
+}) => {
     const [summary, setSummary] = useState<TeamOffenseSummary | null>(summaryProp ?? null);
     const [loading, setLoading] = useState(!summaryProp);
     const [regenerating, setRegenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [myTeamBatterBreakdown, setMyTeamBatterBreakdown] = useState<BatterBreakdown[] | null>(myTeamBatterBreakdownProp ?? null);
     const pollAttemptsRef = useRef(0);
     const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -117,6 +129,30 @@ const OpponentAttackSummary: React.FC<Props> = ({ gameId, summary: summaryProp, 
             }
         };
     }, [summary, gameId, readOnly]);
+
+    // Fetch our-team batter breakdown for the per-hitter accordion. Skipped
+    // when a prop is provided (public report) and skipped in readOnly mode
+    // (unauthenticated visitor — the auth-gated call would 401 and the
+    // response interceptor would force a redirect to /login).
+    useEffect(() => {
+        if (myTeamBatterBreakdownProp !== undefined) {
+            setMyTeamBatterBreakdown(myTeamBatterBreakdownProp);
+            return;
+        }
+        if (readOnly) return;
+        let cancelled = false;
+        performanceSummaryService
+            .getMyTeamBatterBreakdown(gameId)
+            .then((data) => {
+                if (!cancelled) setMyTeamBatterBreakdown(data);
+            })
+            .catch(() => {
+                if (!cancelled) setMyTeamBatterBreakdown([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [gameId, myTeamBatterBreakdownProp, readOnly]);
 
     const handleRegenerate = async () => {
         setRegenerating(true);
@@ -236,6 +272,17 @@ const OpponentAttackSummary: React.FC<Props> = ({ gameId, summary: summaryProp, 
 
                         <SectionTitle>What worked / what got out</SectionTitle>
                         <OutcomeColumnsView outcomes={[...h.what_worked, ...h.what_got_out]} />
+
+                        {(() => {
+                            const breakdown = myTeamBatterBreakdown?.find((b) => b.batter_id === h.batter_id);
+                            if (!breakdown || breakdown.at_bats.length === 0) return null;
+                            return (
+                                <>
+                                    <SectionTitle>At-bat pitch sequences</SectionTitle>
+                                    <WebBatterRow batter={breakdown} />
+                                </>
+                            );
+                        })()}
                     </HitterBody>
                 </HitterAccordion>
             ))}

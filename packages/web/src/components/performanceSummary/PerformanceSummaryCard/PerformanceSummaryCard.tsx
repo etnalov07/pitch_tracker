@@ -198,7 +198,7 @@ function WebPitchCard({ pitch }: { pitch: BatterAtBatPitch }) {
     );
 }
 
-function WebBatterRow({ batter }: { batter: BatterBreakdown }) {
+export function WebBatterRow({ batter }: { batter: BatterBreakdown }) {
     const [expanded, setExpanded] = useState(true);
     const totalPitches = batter.at_bats.reduce((sum, ab) => sum + ab.pitches.length, 0);
     return (

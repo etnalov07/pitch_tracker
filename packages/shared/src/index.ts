@@ -1232,6 +1232,10 @@ export interface PublicGameReport {
     // internally on the SPA via the auth-gated endpoint). Pre-fetched here
     // so the public page can pass it as a prop and skip the auth call.
     batter_breakdown: BatterBreakdown[];
+    // Same shape but for our hitters facing the opposing pitcher — used by
+    // the per-hitter accordion in the team-offense section to show each
+    // at-bat's pitch sequence.
+    my_team_batter_breakdown: BatterBreakdown[];
 }
 
 // ============================================================================

@@ -67,7 +67,12 @@ const PublicReport: React.FC = () => {
                         </GameTitle>
                         <GameSub>{scoreLabel ? `Final ${scoreLabel}` : 'Final'}</GameSub>
 
-                        <OpponentAttackSummary gameId={report.game_id} summary={report.team_offense} readOnly />
+                        <OpponentAttackSummary
+                            gameId={report.game_id}
+                            summary={report.team_offense}
+                            myTeamBatterBreakdown={report.my_team_batter_breakdown}
+                            readOnly
+                        />
 
                         {report.pitchers.length > 0 && (
                             <>
