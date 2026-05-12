@@ -4,7 +4,7 @@
 | ---------- | ------ | --------- | ------------------------------------------------------------------ |
 | 2026-05-11 | feat   | `0c73762` | api 1.3.0 → 1.4.0, web 0.99.0 → 1.0.0, mobile 1.94.0 → 1.95.0      |
 | 2026-05-11 | fix    | `6d9e5c4` | api-local copy of scoreAccuracy to unbreak prod runtime            |
-| 2026-05-11 | tuning | pending   | api 1.4.0 → 1.5.0: same-column = 1.0 (collapse 0.75 / 0.5 buckets) |
+| 2026-05-11 | tuning | `26b5bc8` | api 1.4.0 → 1.5.0: same-column = 1.0 (collapse 0.75 / 0.5 buckets) |
 
 ## Context
 
