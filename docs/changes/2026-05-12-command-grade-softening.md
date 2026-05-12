@@ -1,8 +1,8 @@
 # Fix: Command Grade softening — row floor on column-anchored targets
 
-| Date       | Type | Commit | Versions          |
-| ---------- | ---- | ------ | ----------------- |
-| 2026-05-12 | fix  | _TBD_  | api 1.5.0 → 1.5.1 |
+| Date       | Type | Commit    | Versions          |
+| ---------- | ---- | --------- | ----------------- |
+| 2026-05-12 | fix  | `f821d7e` | api 1.5.0 → 1.5.1 |
 
 ## Context
 
