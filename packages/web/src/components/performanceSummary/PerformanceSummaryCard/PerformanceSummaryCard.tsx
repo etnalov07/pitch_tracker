@@ -380,10 +380,10 @@ const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regene
                                             <div
                                                 key={pt.pitch_type}
                                                 style={{
-                                                    border: '1px solid #e5e7eb',
+                                                    border: '1px solid var(--surface-border)',
                                                     borderRadius: 8,
                                                     padding: 10,
-                                                    background: '#f9fafb',
+                                                    background: 'var(--surface-elevated)',
                                                 }}
                                             >
                                                 <div style={{ fontWeight: 600, marginBottom: 6 }}>
@@ -391,7 +391,13 @@ const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regene
                                                 </div>
                                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                                                     <div>
-                                                        <div style={{ fontSize: 12, color: '#166534', marginBottom: 4 }}>
+                                                        <div
+                                                            style={{
+                                                                fontSize: 12,
+                                                                color: 'var(--color-green-500)',
+                                                                marginBottom: 4,
+                                                            }}
+                                                        >
                                                             Worked best
                                                         </div>
                                                         {best.length === 0 ? (
@@ -406,7 +412,7 @@ const PerformanceSummaryCard: React.FC<Props> = ({ summary, onRegenerate, regene
                                                         )}
                                                     </div>
                                                     <div>
-                                                        <div style={{ fontSize: 12, color: '#dc2626', marginBottom: 4 }}>
+                                                        <div style={{ fontSize: 12, color: 'var(--accent-red)', marginBottom: 4 }}>
                                                             Got hit
                                                         </div>
                                                         {hurt.filter((z) => z.hard_contact_pct > 0).length === 0 ? (
