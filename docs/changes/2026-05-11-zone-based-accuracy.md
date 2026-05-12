@@ -1,8 +1,10 @@
 # Feat: Zone-based command-grade scoring (replaces Euclidean accuracy)
 
-| Date       | Type | Commit    | Versions                                                      |
-| ---------- | ---- | --------- | ------------------------------------------------------------- |
-| 2026-05-11 | feat | `0c73762` | api 1.3.0 → 1.4.0, web 0.99.0 → 1.0.0, mobile 1.94.0 → 1.95.0 |
+| Date       | Type   | Commit    | Versions                                                           |
+| ---------- | ------ | --------- | ------------------------------------------------------------------ |
+| 2026-05-11 | feat   | `0c73762` | api 1.3.0 → 1.4.0, web 0.99.0 → 1.0.0, mobile 1.94.0 → 1.95.0      |
+| 2026-05-11 | fix    | `6d9e5c4` | api-local copy of scoreAccuracy to unbreak prod runtime            |
+| 2026-05-11 | tuning | pending   | api 1.4.0 → 1.5.0: same-column = 1.0 (collapse 0.75 / 0.5 buckets) |
 
 ## Context
 
@@ -138,3 +140,41 @@ Stat label rename (4 files):
   invalidation. Regeneration is lazy.
 - Renaming the `target_accuracy_percentage` column / API field. Pure UI
   label change; API contract unchanged so web/mobile clients keep working.
+
+## Follow-up tuning (2026-05-11)
+
+After the initial ship, coach feedback was that 5-level scoring was still
+too strict for in/out targets. Collapsed the rule:
+
+**Before** (5 levels for in/out targets): same zone = 1.0; same col 1 row
+off = 0.75; same col 2 rows off = 0.5; adjacent col = 0.25; far col = 0;
+waste matching side = 0.75.
+
+**After**: same column (any row, in-zone OR waste matching side) = 1.0;
+adjacent col = 0.25; far col or wrong-side waste = 0. Effectively 3 levels
+for in/out targets (1.0 / 0.25 / 0), with mid-col targets unchanged
+(still 1.0 / 0.75 / 0.25 / 0).
+
+Rationale: a pitch called for the outside corner that ends up middle-out
+or high-out is still on the called side. Coaches consider that good
+command. The earlier scheme penalized height variation within the same
+column, which doesn't match how pitching is graded in practice.
+
+20-pitch worked-example total moved from 56% to **65%** under the new
+scheme. Files touched:
+
+- `packages/shared/src/utils/scoreAccuracy.ts` — collapsed
+  column-anchored branch.
+- `packages/shared/src/utils/__tests__/scoreAccuracy.test.ts` — 4
+  worked-example cases bumped from 0.75 → 1.0, 1 case bumped 0.5 → 1.0, 2
+  waste-matching cases bumped 0.75 → 1.0, sum/total updated.
+- `packages/api/src/utils/zoneAccuracy.ts` — same collapse (mirror of
+  shared).
+- `packages/api/src/utils/__tests__/zoneAccuracy.test.ts` — smoke-test
+  expectations updated.
+- `packages/api/package.json` — `1.4.0` → `1.5.0`.
+- `docs/plans/2026-05-11-zone-based-accuracy.md` — scoring matrix +
+  worked example table updated.
+
+No DB migration needed — the previous invalidation (`036`) already forces
+regeneration; any newly-cached summary picks up the new algorithm.

@@ -33,19 +33,19 @@ gives partial credit.
 Zones are the existing `PitchCallZone` set (9 in-zone + 8 waste).
 `{row}-{col}` where **row** 0=high / 1=mid / 2=low, **col** 0=in / 1=mid / 2=out.
 
-### Scoring matrix (5-level: 1.00 / 0.75 / 0.50 / 0.25 / 0)
+### Scoring matrix
 
-For in-zone targets (col is `in` or `out`) — column-anchored:
+For in-zone targets (col is `in` or `out`) — **column-anchored, row doesn't matter**:
 
 | Condition                                                  | Score |
 | ---------------------------------------------------------- | ----- |
-| `actual` zone equals `target` zone                         | 1.00  |
-| Same column, row off by 1                                  | 0.75  |
-| Same column, row off by 2                                  | 0.50  |
+| Same column (any row, in-zone)                             | 1.00  |
+| Waste landing on the matching side (col-direction matches) | 1.00  |
 | Adjacent column (1 col off, any row)                       | 0.25  |
 | Far column (2 cols off, any row)                           | 0.00  |
-| Waste landing on the matching side (col-direction matches) | 0.75  |
 | Waste landing on the opposite or no-col side               | 0.00  |
+
+Updated 2026-05-11: collapsed all same-column landings (and waste on the matching column side) to 1.00. The earlier 5-level scheme (1.0 / 0.75 / 0.5 / 0.25 / 0) was too strict for in/out targets — coaches care that the pitch was on the called side; height variation within the same column is acceptable command.
 
 For in-zone targets where col is `mid` (reverse-anchor on row):
 
@@ -82,19 +82,21 @@ have scored each pitch. Target column shows zone in `row-col` notation.
 
 | #   | Target (zone)  | Actual (zone)  | Score | Why                                 | Old (≤0.425)? |
 | --- | -------------- | -------------- | ----- | ----------------------------------- | ------------- |
-| 1   | 2-2 (low-out)  | 2-2            | 1.00  | Spot on                             | ✓             |
-| 2   | 2-2 (low-out)  | 1-2 (mid-out)  | 0.75  | Same col (out), 1 row off           | ✓             |
-| 3   | 2-2 (low-out)  | 0-2 (high-out) | 0.50  | Same col (out), 2 rows off          | ✗             |
+| #   | Target (zone)  | Actual (zone)  | Score | Why                                 | Old (≤0.425)? |
+| --- | -------------- | -------------- | ----- | ----------------------------------- | ------------- |
+| 1   | 2-2 (low-out)  | 2-2            | 1.00  | Same col (in-zone)                  | ✓             |
+| 2   | 2-2 (low-out)  | 1-2 (mid-out)  | 1.00  | Same col (in-zone)                  | ✓             |
+| 3   | 2-2 (low-out)  | 0-2 (high-out) | 1.00  | Same col (in-zone)                  | ✗             |
 | 4   | 2-2 (low-out)  | 2-1 (low-mid)  | 0.25  | Adjacent col                        | ✓             |
 | 5   | 2-2 (low-out)  | 1-1 (mid-mid)  | 0.25  | Adjacent col                        | ✗             |
-| 6   | 2-2 (low-out)  | W-low-out      | 0.75  | Waste matching side (out)           | ✗             |
+| 6   | 2-2 (low-out)  | W-low-out      | 1.00  | Waste matching side (out)           | ✗             |
 | 7   | 2-2 (low-out)  | W-low-in       | 0.00  | Waste opposite side                 | ✗             |
-| 8   | 0-0 (high-in)  | 0-0            | 1.00  | Spot on                             | ✓             |
-| 9   | 0-0 (high-in)  | 1-0 (mid-in)   | 0.75  | Same col (in), 1 row off            | ✓             |
-| 10  | 0-0 (high-in)  | W-in           | 0.75  | Waste matching side (in)            | ✗             |
+| 8   | 0-0 (high-in)  | 0-0            | 1.00  | Same col (in-zone)                  | ✓             |
+| 9   | 0-0 (high-in)  | 1-0 (mid-in)   | 1.00  | Same col (in-zone)                  | ✓             |
+| 10  | 0-0 (high-in)  | W-in           | 1.00  | Waste matching side (in)            | ✗             |
 | 11  | 0-0 (high-in)  | W-high-out     | 0.00  | Waste opposite side                 | ✗             |
-| 12  | 1-2 (mid-out)  | 1-2            | 1.00  | Spot on                             | ✓             |
-| 13  | 1-2 (mid-out)  | 0-2 (high-out) | 0.75  | Same col (out), 1 row off           | ✓             |
+| 12  | 1-2 (mid-out)  | 1-2            | 1.00  | Same col (in-zone)                  | ✓             |
+| 13  | 1-2 (mid-out)  | 0-2 (high-out) | 1.00  | Same col (in-zone)                  | ✓             |
 | 14  | 1-2 (mid-out)  | 1-0 (mid-in)   | 0.00  | 2 cols off                          | ✗             |
 | 15  | 0-1 (high-mid) | 0-1            | 1.00  | Spot on (mid-col target)            | ✓             |
 | 16  | 0-1 (high-mid) | 0-0 (high-in)  | 0.75  | Mid-col target: same row, 1 col off | ✓             |
@@ -103,29 +105,28 @@ have scored each pitch. Target column shows zone in `row-col` notation.
 | 19  | 0-1 (high-mid) | W-high         | 0.75  | Mid-col + waste matching row side   | ✓             |
 | 20  | 0-1 (high-mid) | W-low          | 0.00  | Mid-col + waste opposite row        | ✗             |
 
-**Sum: 11.25 / 20**
+**Sum: 13.00 / 20**
 
 | Algorithm                                  | Accuracy% |
 | ------------------------------------------ | --------- |
-| **Proposed zone-based 5-level**            | **56%**   |
+| **Proposed zone-based (current)**          | **65%**   |
 | Current Euclidean threshold (count ≤ .425) | 55%       |
 
-The new total lands very close to the current Euclidean number for this
-sample (56% vs 55%), but **the distribution of credit is completely
-different**. Today's 55% comes from 11 pitches earning a flat 1.0 each (and
-9 earning 0). Under the new rule:
+Under the current rule:
 
-- Only **4 pitches** earn a full 1.0 (true spot-ons).
-- **6 pitches** earn 0.75 (close — same column-with-row-off or
-  same-row-with-col-off, plus waste landings on the matching side).
-- **1 pitch** earns 0.50 (same column but 2 rows off).
-- **3 pitches** earn 0.25 (adjacent column, or 1 row off on a mid-col
-  target).
-- **6 pitches** earn 0 (2 cols off, or waste opposite side).
+- **10 pitches** earn 1.00 (same column as an in/out target, in-zone or
+  matching-side waste; or a mid-col target spot-on).
+- **3 pitches** earn 0.75 (mid-col target: same row with col off, or waste
+  on matching row side).
+- **3 pitches** earn 0.25 (adjacent col for an in/out target, or 1 row off
+  for a mid-col target).
+- **4 pitches** earn 0 (2 cols off, or waste on the opposite side).
 
-So a pitcher who threw a lot of "spot-on" pitches will now score higher
-than a pitcher who was consistently 1 zone off — the old algorithm
-couldn't distinguish them at all.
+The 65% reflects a pitcher who hit the called column most of the time but
+sometimes leaked one column over. Versus the old Euclidean number (55%):
+the new scheme rewards "right side, wrong height" appropriately while
+still penalizing "wrong side entirely" — the old algorithm couldn't
+distinguish them at all.
 
 ## Implementation plan
 

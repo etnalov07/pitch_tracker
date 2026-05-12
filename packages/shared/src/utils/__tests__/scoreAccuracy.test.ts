@@ -7,19 +7,19 @@ import { scoreAccuracy } from '../scoreAccuracy';
 // the doc together.
 describe('scoreAccuracy — worked example (20 pitches)', () => {
     const cases: Array<{ target: PitchCallZone; actual: PitchCallZone; expected: number; reason: string }> = [
-        { target: '2-2', actual: '2-2', expected: 1, reason: 'Spot on (low-out)' },
-        { target: '2-2', actual: '1-2', expected: 0.75, reason: 'Same col (out), 1 row off' },
-        { target: '2-2', actual: '0-2', expected: 0.5, reason: 'Same col (out), 2 rows off' },
+        { target: '2-2', actual: '2-2', expected: 1, reason: 'Same col (in-zone)' },
+        { target: '2-2', actual: '1-2', expected: 1, reason: 'Same col (in-zone)' },
+        { target: '2-2', actual: '0-2', expected: 1, reason: 'Same col (in-zone)' },
         { target: '2-2', actual: '2-1', expected: 0.25, reason: 'Adjacent col' },
         { target: '2-2', actual: '1-1', expected: 0.25, reason: 'Adjacent col' },
-        { target: '2-2', actual: 'W-low-out', expected: 0.75, reason: 'Waste matching side (out)' },
+        { target: '2-2', actual: 'W-low-out', expected: 1, reason: 'Waste matching side (out)' },
         { target: '2-2', actual: 'W-low-in', expected: 0, reason: 'Waste opposite side' },
-        { target: '0-0', actual: '0-0', expected: 1, reason: 'Spot on (high-in)' },
-        { target: '0-0', actual: '1-0', expected: 0.75, reason: 'Same col (in), 1 row off' },
-        { target: '0-0', actual: 'W-in', expected: 0.75, reason: 'Waste matching side (in)' },
+        { target: '0-0', actual: '0-0', expected: 1, reason: 'Same col (in-zone)' },
+        { target: '0-0', actual: '1-0', expected: 1, reason: 'Same col (in-zone)' },
+        { target: '0-0', actual: 'W-in', expected: 1, reason: 'Waste matching side (in)' },
         { target: '0-0', actual: 'W-high-out', expected: 0, reason: 'Waste opposite side' },
-        { target: '1-2', actual: '1-2', expected: 1, reason: 'Spot on (mid-out)' },
-        { target: '1-2', actual: '0-2', expected: 0.75, reason: 'Same col (out), 1 row off' },
+        { target: '1-2', actual: '1-2', expected: 1, reason: 'Same col (in-zone)' },
+        { target: '1-2', actual: '0-2', expected: 1, reason: 'Same col (in-zone)' },
         { target: '1-2', actual: '1-0', expected: 0, reason: '2 cols off' },
         { target: '0-1', actual: '0-1', expected: 1, reason: 'Spot on (mid-col target)' },
         { target: '0-1', actual: '0-0', expected: 0.75, reason: 'Mid-col target: same row, 1 col off' },
@@ -35,10 +35,10 @@ describe('scoreAccuracy — worked example (20 pitches)', () => {
         });
     });
 
-    it('total of the 20-pitch sample sums to 11.25 (56% rounded)', () => {
+    it('total of the 20-pitch sample sums to 13.00 (65% rounded)', () => {
         const sum = cases.reduce((acc, c) => acc + scoreAccuracy(c.target, c.actual), 0);
-        expect(sum).toBeCloseTo(11.25, 10);
-        expect(Math.round((sum / cases.length) * 100)).toBe(56);
+        expect(sum).toBeCloseTo(13.0, 10);
+        expect(Math.round((sum / cases.length) * 100)).toBe(65);
     });
 });
 
@@ -68,9 +68,9 @@ describe('scoreAccuracy — additional coverage', () => {
     });
 
     it('low-in (2-0) corner target: column-anchored against all four waste corners', () => {
-        // Target col 0 (in) → matches waste col -1.
-        expect(scoreAccuracy('2-0', 'W-low-in')).toBe(0.75);
-        expect(scoreAccuracy('2-0', 'W-high-in')).toBe(0.75);
+        // Target col 0 (in) → matches waste col -1 (waste in-side).
+        expect(scoreAccuracy('2-0', 'W-low-in')).toBe(1);
+        expect(scoreAccuracy('2-0', 'W-high-in')).toBe(1);
         expect(scoreAccuracy('2-0', 'W-low-out')).toBe(0);
         expect(scoreAccuracy('2-0', 'W-high-out')).toBe(0);
     });
@@ -78,7 +78,7 @@ describe('scoreAccuracy — additional coverage', () => {
     it('waste target (e.g. W-low-out) projects to its in-zone neighbor (2-2) for scoring', () => {
         // Behaves identically to target = 2-2 for the same actuals.
         expect(scoreAccuracy('W-low-out', '2-2')).toBe(1);
-        expect(scoreAccuracy('W-low-out', '1-2')).toBe(0.75);
+        expect(scoreAccuracy('W-low-out', '1-2')).toBe(1);
         expect(scoreAccuracy('W-low-out', '1-1')).toBe(0.25);
         expect(scoreAccuracy('W-low-out', 'W-low-in')).toBe(0);
     });

@@ -12,13 +12,11 @@ describe('zoneAccuracy (api-local mirror of shared)', () => {
         expect(scoreAccuracy('1-1', '1-1')).toBe(1);
     });
 
-    it('column-anchored target (in/out): same col 1 row off = 0.75', () => {
-        expect(scoreAccuracy('2-2', '1-2')).toBe(0.75);
-        expect(scoreAccuracy('0-0', '1-0')).toBe(0.75);
-    });
-
-    it('column-anchored target: same col 2 rows off = 0.5', () => {
-        expect(scoreAccuracy('2-2', '0-2')).toBe(0.5);
+    it('column-anchored target (in/out): same col, any row off, in-zone = 1', () => {
+        expect(scoreAccuracy('2-2', '1-2')).toBe(1);
+        expect(scoreAccuracy('2-2', '0-2')).toBe(1);
+        expect(scoreAccuracy('0-0', '1-0')).toBe(1);
+        expect(scoreAccuracy('0-0', '2-0')).toBe(1);
     });
 
     it('column-anchored target: adjacent col = 0.25', () => {
@@ -30,9 +28,9 @@ describe('zoneAccuracy (api-local mirror of shared)', () => {
         expect(scoreAccuracy('1-2', '1-0')).toBe(0);
     });
 
-    it('column-anchored target: waste matching side = 0.75, opposite = 0', () => {
-        expect(scoreAccuracy('2-2', 'W-low-out')).toBe(0.75);
-        expect(scoreAccuracy('0-0', 'W-in')).toBe(0.75);
+    it('column-anchored target: waste matching side = 1, opposite = 0', () => {
+        expect(scoreAccuracy('2-2', 'W-low-out')).toBe(1);
+        expect(scoreAccuracy('0-0', 'W-in')).toBe(1);
         expect(scoreAccuracy('2-2', 'W-low-in')).toBe(0);
         expect(scoreAccuracy('0-0', 'W-high-out')).toBe(0);
     });
