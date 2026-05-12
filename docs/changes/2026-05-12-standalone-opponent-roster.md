@@ -1,8 +1,8 @@
 # Feat: Standalone opponent roster — add pitchers & batters without a game
 
-| Date       | Type | Commit | Versions                                                                |
-| ---------- | ---- | ------ | ----------------------------------------------------------------------- |
-| 2026-05-12 | feat | _TBD_  | api 1.5.1 → 1.6.0, web 1.0.1 → 1.1.0, mobile 1.95.0 → 1.96.0 + app.json |
+| Date       | Type | Commit    | Versions                                                                |
+| ---------- | ---- | --------- | ----------------------------------------------------------------------- |
+| 2026-05-12 | feat | `d089a32` | api 1.5.1 → 1.6.0, web 1.0.1 → 1.1.0, mobile 1.95.0 → 1.96.0 + app.json |
 
 ## Context
 
