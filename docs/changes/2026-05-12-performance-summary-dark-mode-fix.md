@@ -1,8 +1,8 @@
 # Fix: PerformanceSummaryCard "by zone" panel — dark mode visibility
 
-| Date       | Type | Commit | Versions          |
-| ---------- | ---- | ------ | ----------------- |
-| 2026-05-12 | fix  | _TBD_  | web 1.0.0 → 1.0.1 |
+| Date       | Type | Commit    | Versions          |
+| ---------- | ---- | --------- | ----------------- |
+| 2026-05-12 | fix  | `094a7af` | web 1.0.0 → 1.0.1 |
 
 ## Context
 
