@@ -99,17 +99,22 @@ export function scoreAccuracy(target: PitchCallZone, actual: PitchCallZone): 0 |
     const a = ZONE_GRID[actual];
 
     if (t.col === 0 || t.col === 2) {
-        // Column-anchored: in or out target. Column is everything — row
-        // doesn't matter. Same col (in-zone or waste matching side) = 1.0.
-        // Adjacent col = 0.25. Far col / wrong-side waste = 0.
+        // Column-anchored: matching col-side = 1.0. Adjacent col = 0.25.
+        // 2 cols off = 0, unless row matches → 0.25 (right height, wrong
+        // side). Wrong-col-side / perpendicular waste with matching row-side
+        // = 0.25.
+        const matchingWasteRow = t.row === 0 ? -1 : t.row === 2 ? 3 : 1;
         if (isInZone(a)) {
             const colDiff = Math.abs(t.col - a.col);
             if (colDiff === 0) return 1;
             if (colDiff === 1) return 0.25;
+            if (a.row === t.row) return 0.25;
             return 0;
         }
         const matchingWasteCol = t.col === 0 ? -1 : 3;
-        return a.col === matchingWasteCol ? 1 : 0;
+        if (a.col === matchingWasteCol) return 1;
+        if (a.row === matchingWasteRow) return 0.25;
+        return 0;
     }
 
     // Mid-col target (t.col === 1): row-anchored.

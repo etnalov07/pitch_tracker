@@ -16,3 +16,4 @@ Per-feature/per-fix change docs combining the plan summary and what shipped. Eac
 | 2026-05-10 | fix   | Team-offense narrative inflated walk/strikeout counts                   | `43ce6ff`            | [fix-team-offense-walk-strikeout-inflation](2026-05-10-fix-team-offense-walk-strikeout-inflation.md) |
 | 2026-05-11 | feat  | Live-game Batter Breakdown button (web + mobile)                        | `6bf2092`            | [live-batter-breakdown](2026-05-11-live-batter-breakdown.md)                                         |
 | 2026-05-11 | feat  | Zone-based command-grade scoring (replaces Euclidean accuracy)          | `0c73762`            | [zone-based-accuracy](2026-05-11-zone-based-accuracy.md)                                             |
+| 2026-05-12 | fix   | Command Grade softening — row floor on column-anchored targets          | _TBD_                | [command-grade-softening](2026-05-12-command-grade-softening.md)                                     |

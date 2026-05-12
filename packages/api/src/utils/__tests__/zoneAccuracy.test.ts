@@ -24,15 +24,35 @@ describe('zoneAccuracy (api-local mirror of shared)', () => {
         expect(scoreAccuracy('2-2', '1-1')).toBe(0.25);
     });
 
-    it('column-anchored target: 2 cols off = 0', () => {
-        expect(scoreAccuracy('1-2', '1-0')).toBe(0);
+    it('column-anchored target: 2 cols off with row off = 0', () => {
+        expect(scoreAccuracy('2-2', '1-0')).toBe(0);
+        expect(scoreAccuracy('2-2', '0-0')).toBe(0);
     });
 
-    it('column-anchored target: waste matching side = 1, opposite = 0', () => {
+    it('column-anchored target: 2 cols off but row matches = 0.25 (Dial 1)', () => {
+        // Target low-out (2-2), actual low-in (2-0). Right height, wrong side.
+        expect(scoreAccuracy('2-2', '2-0')).toBe(0.25);
+        // Target mid-out (1-2), actual mid-in (1-0). Right height, wrong side.
+        expect(scoreAccuracy('1-2', '1-0')).toBe(0.25);
+    });
+
+    it('column-anchored target: waste matching side = 1', () => {
         expect(scoreAccuracy('2-2', 'W-low-out')).toBe(1);
         expect(scoreAccuracy('0-0', 'W-in')).toBe(1);
-        expect(scoreAccuracy('2-2', 'W-low-in')).toBe(0);
-        expect(scoreAccuracy('0-0', 'W-high-out')).toBe(0);
+    });
+
+    it('column-anchored target: wrong-side waste with matching row = 0.25 (Dial 1)', () => {
+        expect(scoreAccuracy('2-2', 'W-low-in')).toBe(0.25);
+        expect(scoreAccuracy('0-0', 'W-high-out')).toBe(0.25);
+        // Perpendicular waste (W-low / W-high) with matching row-side.
+        expect(scoreAccuracy('2-2', 'W-low')).toBe(0.25);
+        expect(scoreAccuracy('0-2', 'W-high')).toBe(0.25);
+    });
+
+    it('column-anchored target: wrong-side waste with row off = 0', () => {
+        expect(scoreAccuracy('2-2', 'W-in')).toBe(0);
+        expect(scoreAccuracy('2-2', 'W-high')).toBe(0);
+        expect(scoreAccuracy('0-0', 'W-low-out')).toBe(0);
     });
 
     it('mid-col target: same row 1 col off = 0.75', () => {

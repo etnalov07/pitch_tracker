@@ -1,17 +1,19 @@
 // Zone-based pitch command scoring.
 //
-// Replaces the old Euclidean-distance threshold for the post-game / post-bullpen
-// "Accuracy %" stat. Returns a partial-credit score in {0, 0.25, 0.5, 0.75, 1}
-// based on how close the actual landing zone is to the called target zone in the
-// strike-zone grid.
+// Returns a partial-credit score in {0, 0.25, 0.5, 0.75, 1} based on how
+// close the actual landing zone is to the called target zone.
 //
-// Rules (full matrix in docs/plans/2026-05-11-zone-based-accuracy.md):
-//   - In/out column targets are column-anchored: column miss matters more than
-//     row miss. Adjacent column gets partial credit (0.25); two columns off is
-//     zero.
+// Rules (full matrix in docs/plans/2026-05-11-zone-based-accuracy.md, with
+// 2026-05-12 row-floor softening in docs/plans/2026-05-12-command-grade-softening.md):
+//   - In/out column targets are column-anchored: column miss matters more
+//     than row miss. Adjacent column = 0.25. Two columns off = 0, unless the
+//     row matches the target row, in which case 0.25 (right height, wrong
+//     side).
 //   - Mid-column targets are row-anchored: row miss dominates. Adjacent row
 //     gets partial credit; two rows off is zero.
-//   - Waste landings on the matching side get 0.75; opposite side gets 0.
+//   - Waste landings on the matching col-side get 1.0. Waste on the wrong
+//     col-side (or perpendicular waste like W-low / W-high) gets 0.25 when
+//     its row-side matches the target row, else 0.
 //   - Waste targets (called intentional ball, very rare) project to the
 //     nearest in-zone neighbor before scoring.
 
@@ -67,19 +69,22 @@ export function scoreAccuracy(target: PitchCallZone, actual: PitchCallZone): 0 |
     const a = ZONE_GRID[actual];
 
     if (t.col === 0 || t.col === 2) {
-        // Column-anchored: in or out target. Column is everything — row
-        // doesn't matter. Any pitch on the matching column side (in-zone OR
-        // waste) scores 1.0. Adjacent column = 0.25. Far column or wrong-side
-        // waste = 0.
+        // Column-anchored: in or out target. Matching col-side = 1.0.
+        // Adjacent col = 0.25. 2 cols off = 0, unless row matches → 0.25
+        // (right height, wrong side). Wrong-col-side / perpendicular waste
+        // with matching row-side = 0.25.
+        const matchingWasteRow = t.row === 0 ? -1 : t.row === 2 ? 3 : 1;
         if (isInZone(a)) {
             const colDiff = Math.abs(t.col - a.col);
             if (colDiff === 0) return 1;
             if (colDiff === 1) return 0.25;
+            if (a.row === t.row) return 0.25;
             return 0;
         }
-        // Actual is waste. Match on col-side direction only.
         const matchingWasteCol = t.col === 0 ? -1 : 3;
-        return a.col === matchingWasteCol ? 1 : 0;
+        if (a.col === matchingWasteCol) return 1;
+        if (a.row === matchingWasteRow) return 0.25;
+        return 0;
     }
 
     // Mid-col target (t.col === 1): row-anchored.

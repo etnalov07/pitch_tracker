@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Game b3224c08 — Strike Zone Plot</title>
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        margin: 0;
+        padding: 20px;
+    }
+    h1 { margin: 0 0 4px 0; font-size: 20px; }
+    h2 { margin: 24px 0 8px 0; font-size: 15px; color: #94a3b8; font-weight: 600; }
+    .sub { color: #94a3b8; font-size: 13px; margin-bottom: 12px; }
+    .legend { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 12px; margin: 8px 0 16px 0; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+    .panel { background: #1e293b; border-radius: 8px; padding: 12px; }
+    .panel-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .panel-sub { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+    svg { display: block; width: 100%; height: auto; }
+    .controls { margin-bottom: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .controls label { font-size: 12px; cursor: pointer; user-select: none; }
+    .tooltip {
+        position: fixed; pointer-events: none; background: #0f172a;
+        border: 1px solid #475569; color: #e2e8f0; font-size: 11px;
+        padding: 6px 8px; border-radius: 4px; line-height: 1.4;
+        max-width: 240px; opacity: 0; transition: opacity 0.1s; z-index: 100;
+    }
+    .note { background: #1e293b; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+    .note ul { margin: 6px 0; padding-left: 20px; }
+    .note code { background: #0f172a; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+    .stepper {
+        display: grid; grid-template-columns: 1fr 320px; gap: 16px;
+        background: #1e293b; border-radius: 8px; padding: 16px; margin-bottom: 16px;
+    }
+    .stepper-chart svg { max-width: 480px; margin: 0 auto; }
+    .stepper-details { font-size: 13px; line-height: 1.7; }
+    .stepper-details h3 { margin: 0 0 8px 0; font-size: 16px; }
+    .stepper-details .row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #334155; }
+    .stepper-details .row:last-child { border-bottom: none; }
+    .stepper-details .label { color: #94a3b8; }
+    .stepper-details .val { color: #e2e8f0; font-weight: 500; }
+    .stepper-details .score-pill {
+        display: inline-block; padding: 2px 10px; border-radius: 12px;
+        font-weight: 700; color: #0f172a;
+    }
+    .stepper-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .stepper-nav button {
+        background: #334155; color: #e2e8f0; border: none; padding: 6px 14px;
+        border-radius: 4px; cursor: pointer; font-size: 13px;
+    }
+    .stepper-nav button:hover:not(:disabled) { background: #475569; }
+    .stepper-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .stepper-nav input[type="range"] { flex: 1; min-width: 200px; }
+    .stepper-nav .counter { font-variant-numeric: tabular-nums; min-width: 60px; text-align: center; font-size: 13px; color: #94a3b8; }
+    .algo-toggle {
+        background: #1e293b; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px;
+        display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .algo-toggle .label { font-size: 13px; font-weight: 600; }
+    .algo-toggle .group { display: flex; gap: 6px; }
+    .algo-toggle button {
+        background: #334155; color: #cbd5e1; border: none; padding: 6px 12px;
+        border-radius: 4px; cursor: pointer; font-size: 12px;
+    }
+    .algo-toggle button.active { background: #2563eb; color: white; }
+    .algo-toggle .grade { margin-left: auto; font-size: 14px; }
+    .algo-toggle .grade .num { font-weight: 700; font-size: 18px; color: #e2e8f0; }
+    .delta { color: #facc15; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<h1>Game b3224c08 — our pitcher (66 pitches)</h1>
+<div class="sub">Visual diagnostic of scoreAccuracy() output. Toggle between current algorithm and the 2026-05-12 softening proposal.</div>
+
+<div class="algo-toggle">
+    <span class="label">Algorithm:</span>
+    <div class="group">
+        <button id="algo-current" class="active">Current (5-level)</button>
+        <button id="algo-dial1">Dial 1 — row floor</button>
+        <button id="algo-dial2">Dial 2 — 6-level grid</button>
+    </div>
+    <div class="grade">
+        Command grade: <span class="num" id="grade-value">28%</span>
+        <span id="grade-delta"></span>
+    </div>
+</div>
+
+<div class="note">
+    <strong>How to read each plot:</strong>
+    <ul>
+        <li>Solid square outline = strike zone (3×3 grid). Faint outer band = waste zones.</li>
+        <li><strong>Hollow ring</strong> = target zone center. <strong>Filled dot</strong> = actual landing.</li>
+        <li>Thin line connects target to actual. Dot color = the score the algorithm gave.</li>
+        <li>Hover any pitch for #, type, result, target/actual zones, score.</li>
+        <li>The "2-2" target column (col 2 = pitcher's out-side) is <em>column-anchored</em>: any actual landing in col 2 (in-zone or W-out) scores 1.00 regardless of row. This is why some "missed badly high" or "missed badly low but still on the outside" pitches get 1.00.</li>
+    </ul>
+</div>
+
+<div class="legend">
+    <div class="legend-item"><span class="dot" style="background:#22c55e"></span>1.00</div>
+    <div class="legend-item"><span class="dot" style="background:#65a30d"></span>0.80</div>
+    <div class="legend-item"><span class="dot" style="background:#a3e635"></span>0.75</div>
+    <div class="legend-item"><span class="dot" style="background:#ca8a04"></span>0.60</div>
+    <div class="legend-item"><span class="dot" style="background:#ea580c"></span>0.40</div>
+    <div class="legend-item"><span class="dot" style="background:#f97316"></span>0.25</div>
+    <div class="legend-item"><span class="dot" style="background:#dc2626"></span>0.20</div>
+    <div class="legend-item"><span class="dot" style="background:#7f1d1d"></span>0.00</div>
+    <div class="legend-item" style="margin-left:auto;">View from catcher (x=0 inside-RHH / glove side, x=1 outside-RHH)</div>
+</div>
+
+<div class="controls">
+    <strong style="font-size:12px;">Show scores:</strong>
+    <label><input type="checkbox" data-score="1" checked> 1.00</label>
+    <label><input type="checkbox" data-score="0.8" checked> 0.80</label>
+    <label><input type="checkbox" data-score="0.75" checked> 0.75</label>
+    <label><input type="checkbox" data-score="0.6" checked> 0.60</label>
+    <label><input type="checkbox" data-score="0.4" checked> 0.40</label>
+    <label><input type="checkbox" data-score="0.25" checked> 0.25</label>
+    <label><input type="checkbox" data-score="0.2" checked> 0.20</label>
+    <label><input type="checkbox" data-score="0" checked> 0.00</label>
+</div>
+
+<h2>Pitch-by-pitch stepper</h2>
+<div class="stepper">
+    <div class="stepper-chart">
+        <div class="stepper-nav">
+            <button id="btn-first" title="First pitch">⏮</button>
+            <button id="btn-prev" title="Previous (←)">◀ Prev</button>
+            <input type="range" id="pitch-slider" min="1" max="66" value="1" step="1">
+            <button id="btn-next" title="Next (→)">Next ▶</button>
+            <button id="btn-last" title="Last pitch">⏭</button>
+            <span class="counter" id="pitch-counter">1 / 66</span>
+        </div>
+        <div id="stepper-svg"></div>
+    </div>
+    <div class="stepper-details" id="stepper-details"></div>
+</div>
+
+<h2>All 66 pitches</h2>
+<div id="main-chart"></div>
+
+<h2>Small multiples by score</h2>
+<div class="grid" id="small-multiples"></div>
+
+<h2>Suspicious-looking scores (algorithm sanity check)</h2>
+<div class="note">
+    <strong>1.00 scores where the actual landed far from target in the un-anchored dimension:</strong>
+    <ul>
+        <li>#4 target 2-2 (low-out), actual W-out (1.08, 0.70). Missed up by ~0.13y but column-anchored ⇒ 1.00.</li>
+        <li>#5 target 2-2, actual W-out (1.16, 0.81). On col-side. 1.00 is correct under current rule.</li>
+        <li>#6 target 2-2 (low-out), actual W-out (1.17, 0.36). Missed up by 0.47y — way high. Column-anchored ⇒ 1.00. <em>This is the rule "biting" most visibly.</em></li>
+        <li>#19 target 2-0 (low-in), actual W-in (-0.30, 0.37). Missed up by 0.46y. Same situation, opposite column. ⇒ 1.00.</li>
+        <li>#31 target 2-2 (low-out), actual 1-2 (mid-out, 0.98, 0.35). Same col, rowDiff=1, ignored. ⇒ 1.00.</li>
+        <li>#49 target 1-0 (mid-in), actual W-in (-0.12, 0.52). Same col-side, ⇒ 1.00. (This one looks accurate — mid-in target, pitch was just off the inside corner mid-height.)</li>
+    </ul>
+    <strong>0.00 scores that look like they could be partial credit:</strong>
+    <ul>
+        <li>#1 target 2-2 (low-out, 0.83, 0.83), actual W-low-in (-0.20, 0.94). Row matches (low), but opposite column ⇒ 0.00.</li>
+        <li>#8/#11/#15/#27/#44 etc — target 2-2, actual 2-0 (low-in, row matches but two cols off). Under column-anchored rule, two columns off ⇒ 0.00.</li>
+        <li>#17 target 2-2, actual 2-0 on a called strike at (0.10, 0.81). Strike hit but in the wrong column ⇒ 0.00.</li>
+    </ul>
+    <strong>Pattern:</strong> 53 of 66 pitches targeted 2-2 (col 2, out-side). The pitcher consistently missed to col 0 (in-side) — that's the real command problem, and the 0.00 scores are accurate. The 1.00s for big vertical misses on col 2 / col 0 targets are the algorithm's loosest behavior; if those feel too generous, tightening the column-anchored rule to also penalize a 2-row miss would catch #6 / #19 / #31.
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const pitches = [
+    {n:1,  type:'4-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-low-in',  ax:-0.20, ay:0.94, score:0.00},
+    {n:2,  type:'4-seam', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'2-1',       ax: 0.54, ay:0.91, score:0.25},
+    {n:3,  type:'4-seam', result:'called_strike',   tz:'2-2', tx:0.83, ty:0.83, az:'2-2',       ax: 0.84, ay:0.81, score:1.00},
+    {n:4,  type:'4-seam', result:'swinging_strike', tz:'2-2', tx:0.83, ty:0.83, az:'W-out',     ax: 1.08, ay:0.70, score:1.00},
+    {n:5,  type:'4-seam', result:'foul',            tz:'2-2', tx:0.83, ty:0.83, az:'W-out',     ax: 1.16, ay:0.81, score:1.00},
+    {n:6,  type:'4-seam', result:'foul',            tz:'2-2', tx:0.83, ty:0.83, az:'W-out',     ax: 1.17, ay:0.36, score:1.00},
+    {n:7,  type:'slider', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'2-2',       ax: 0.70, ay:1.00, score:1.00},
+    {n:8,  type:'2-seam', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.13, ay:0.87, score:0.00},
+    {n:9,  type:'4-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.07, ay:0.90, score:0.00},
+    {n:10, type:'2-seam', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'2-1',       ax: 0.43, ay:0.89, score:0.25},
+    {n:11, type:'4-seam', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.12, ay:0.85, score:0.00},
+    {n:12, type:'4-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-low-in',  ax: 0.05, ay:1.25, score:0.00},
+    {n:13, type:'4-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-low-in',  ax:-0.24, ay:0.89, score:0.00},
+    {n:14, type:'2-seam', result:'foul',            tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.02, ay:0.79, score:0.00},
+    {n:15, type:'2-seam', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.20, ay:0.96, score:0.00},
+    {n:16, type:'4-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-low-in',  ax:-0.14, ay:1.01, score:0.00},
+    {n:17, type:'4-seam', result:'called_strike',   tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.10, ay:0.81, score:0.00},
+    {n:18, type:'4-seam', result:'ball',            tz:'2-0', tx:0.17, ty:0.83, az:'W-low-out', ax: 0.89, ay:1.11, score:0.00},
+    {n:19, type:'4-seam', result:'ball',            tz:'2-0', tx:0.17, ty:0.83, az:'W-in',      ax:-0.30, ay:0.37, score:1.00},
+    {n:20, type:'2-seam', result:'swinging_strike', tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.16, ay:0.78, score:0.00},
+    {n:21, type:'2-seam', result:'called_strike',   tz:'2-2', tx:0.83, ty:0.83, az:'1-0',       ax: 0.03, ay:0.60, score:0.00},
+    {n:22, type:'4-seam', result:'called_strike',   tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.04, ay:0.73, score:0.00},
+    {n:23, type:'2-seam', result:'in_play',         tz:'2-0', tx:0.17, ty:0.83, az:'2-0',       ax: 0.12, ay:0.97, score:1.00},
+    {n:24, type:'4-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-in',      ax:-0.24, ay:0.27, score:0.00},
+    {n:25, type:'2-seam', result:'swinging_strike', tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.08, ay:0.76, score:0.00},
+    {n:26, type:'2-seam', result:'swinging_strike', tz:'2-2', tx:0.83, ty:0.83, az:'2-2',       ax: 0.71, ay:0.92, score:1.00},
+    {n:27, type:'2-seam', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax:-0.00, ay:0.89, score:0.00},
+    {n:28, type:'2-seam', result:'foul',            tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.33, ay:0.90, score:0.00},
+    {n:29, type:'2-seam', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'1-0',       ax: 0.10, ay:0.67, score:0.00},
+    {n:30, type:'4-seam', result:'swinging_strike', tz:'1-2', tx:0.83, ty:0.50, az:'0-1',       ax: 0.60, ay:0.02, score:0.25},
+    {n:31, type:'4-seam', result:'swinging_strike', tz:'2-2', tx:0.83, ty:0.83, az:'1-2',       ax: 0.98, ay:0.35, score:1.00},
+    {n:32, type:'4-seam', result:'swinging_strike', tz:'0-2', tx:0.83, ty:0.17, az:'0-2',       ax: 0.97, ay:0.00, score:1.00},
+    {n:33, type:'changeup',result:'ball',           tz:'2-2', tx:0.83, ty:0.83, az:'W-in',      ax:-0.24, ay:0.71, score:0.00},
+    {n:34, type:'4-seam', result:'called_strike',   tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.03, ay:0.70, score:0.00},
+    {n:35, type:'changeup',result:'foul',           tz:'2-2', tx:0.83, ty:0.83, az:'W-low-in',  ax:-0.02, ay:1.10, score:0.00},
+    {n:36, type:'2-seam', result:'in_play',         tz:'1-2', tx:0.83, ty:0.50, az:'2-0',       ax: 0.14, ay:0.76, score:0.00},
+    {n:37, type:'2-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-low-in',  ax:-0.24, ay:0.90, score:0.00},
+    {n:38, type:'sinker', result:'foul',            tz:'2-1', tx:0.50, ty:0.83, az:'2-0',       ax: 0.07, ay:0.84, score:0.75},
+    {n:39, type:'4-seam', result:'foul',            tz:'1-0', tx:0.17, ty:0.50, az:'2-1',       ax: 0.55, ay:0.70, score:0.25},
+    {n:40, type:'changeup',result:'in_play',        tz:'2-1', tx:0.50, ty:0.83, az:'2-1',       ax: 0.45, ay:0.76, score:1.00},
+    {n:41, type:'4-seam', result:'swinging_strike', tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.16, ay:0.72, score:0.00},
+    {n:42, type:'4-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-low-in',  ax:-0.29, ay:0.86, score:0.00},
+    {n:43, type:'2-seam', result:'swinging_strike', tz:'2-1', tx:0.50, ty:0.83, az:'2-0',       ax: 0.20, ay:0.91, score:0.75},
+    {n:44, type:'2-seam', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.22, ay:0.77, score:0.00},
+    {n:45, type:'2-seam', result:'called_strike',   tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.20, ay:0.69, score:0.00},
+    {n:46, type:'4-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-in',      ax:-0.06, ay:0.66, score:0.00},
+    {n:47, type:'2-seam', result:'foul',            tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.13, ay:0.84, score:0.00},
+    {n:48, type:'changeup',result:'ball',           tz:'2-2', tx:0.83, ty:0.83, az:'W-low-in',  ax: 0.07, ay:1.09, score:0.00},
+    {n:49, type:'4-seam', result:'ball',            tz:'1-0', tx:0.17, ty:0.50, az:'W-in',      ax:-0.12, ay:0.52, score:1.00},
+    {n:50, type:'2-seam', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'1-0',       ax: 0.17, ay:0.57, score:0.00},
+    {n:51, type:'4-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-low',     ax: 0.51, ay:1.22, score:0.00},
+    {n:52, type:'2-seam', result:'in_play',         tz:'2-2', tx:0.83, ty:0.83, az:'1-0',       ax: 0.08, ay:0.65, score:0.00},
+    {n:53, type:'curveball',result:'called_strike', tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.25, ay:0.69, score:0.00},
+    {n:54, type:'4-seam', result:'called_strike',   tz:'2-2', tx:0.83, ty:0.83, az:'2-1',       ax: 0.44, ay:0.94, score:0.25},
+    {n:55, type:'4-seam', result:'swinging_strike', tz:'2-2', tx:0.83, ty:0.83, az:'0-0',       ax:-0.04, ay:0.21, score:0.00},
+    {n:56, type:'4-seam', result:'called_strike',   tz:'2-2', tx:0.83, ty:0.83, az:'W-in',      ax:-0.29, ay:0.72, score:0.00},
+    {n:57, type:'4-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-in',      ax:-0.24, ay:0.82, score:0.00},
+    {n:58, type:'2-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.07, ay:0.93, score:0.00},
+    {n:59, type:'changeup',result:'called_strike',  tz:'2-2', tx:0.83, ty:0.83, az:'2-2',       ax: 0.68, ay:0.93, score:1.00},
+    {n:60, type:'2-seam', result:'in_play',         tz:'2-1', tx:0.50, ty:0.83, az:'2-0',       ax: 0.30, ay:0.84, score:0.75},
+    {n:61, type:'slider', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-in',      ax:-0.23, ay:0.28, score:0.00},
+    {n:62, type:'2-seam', result:'ball',            tz:'2-2', tx:0.83, ty:0.83, az:'W-low-in',  ax:-0.22, ay:0.86, score:0.00},
+    {n:63, type:'2-seam', result:'foul',            tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.11, ay:0.84, score:0.00},
+    {n:64, type:'2-seam', result:'foul',            tz:'2-2', tx:0.83, ty:0.83, az:'1-2',       ax: 0.79, ay:0.66, score:1.00},
+    {n:65, type:'changeup',result:'swinging_strike',tz:'2-2', tx:0.83, ty:0.83, az:'2-0',       ax: 0.19, ay:0.87, score:0.00},
+    {n:66, type:'slider', result:'in_play',         tz:'1-1', tx:0.50, ty:0.50, az:'1-1',       ax: 0.48, ay:0.57, score:1.00},
+];
+
+const SCORE_COLORS = {
+    1:    '#22c55e',  // green
+    0.8:  '#65a30d',  // green-lime
+    0.75: '#a3e635',  // lime (Dial 1)
+    0.6:  '#ca8a04',  // amber
+    0.5:  '#facc15',  // yellow
+    0.4:  '#ea580c',  // orange-red
+    0.25: '#f97316',  // orange (Dial 1)
+    0.2:  '#dc2626',  // red
+    0:    '#7f1d1d',  // dark red
+};
+
+// ===== Algorithms =====
+// Mirror packages/shared/src/utils/scoreAccuracy.ts
+const ZONE_GRID = {
+    '0-0': {row: 0, col: 0}, '0-1': {row: 0, col: 1}, '0-2': {row: 0, col: 2},
+    '1-0': {row: 1, col: 0}, '1-1': {row: 1, col: 1}, '1-2': {row: 1, col: 2},
+    '2-0': {row: 2, col: 0}, '2-1': {row: 2, col: 1}, '2-2': {row: 2, col: 2},
+    'W-high':     {row: -1, col: 1},
+    'W-low':      {row: 3,  col: 1},
+    'W-in':       {row: 1,  col: -1},
+    'W-out':      {row: 1,  col: 3},
+    'W-high-in':  {row: -1, col: -1},
+    'W-high-out': {row: -1, col: 3},
+    'W-low-in':   {row: 3,  col: -1},
+    'W-low-out':  {row: 3,  col: 3},
+};
+function isInZone(c) { return c.row >= 0 && c.row <= 2 && c.col >= 0 && c.col <= 2; }
+function projectToInZone(c) { return {row: Math.max(0, Math.min(2, c.row)), col: Math.max(0, Math.min(2, c.col))}; }
+
+function scoreCurrent(tz, az) {
+    const tRaw = ZONE_GRID[tz];
+    const t = isInZone(tRaw) ? tRaw : projectToInZone(tRaw);
+    const a = ZONE_GRID[az];
+    if (t.col === 0 || t.col === 2) {
+        if (isInZone(a)) {
+            const cd = Math.abs(t.col - a.col);
+            if (cd === 0) return 1;
+            if (cd === 1) return 0.25;
+            return 0;
+        }
+        const wc = t.col === 0 ? -1 : 3;
+        return a.col === wc ? 1 : 0;
+    }
+    if (isInZone(a)) {
+        const rd = Math.abs(t.row - a.row);
+        const cd = Math.abs(1 - a.col);
+        if (rd === 0) return cd === 0 ? 1 : 0.75;
+        if (rd === 1) return 0.25;
+        return 0;
+    }
+    const wr = t.row === 0 ? -1 : t.row === 2 ? 3 : 1;
+    return a.row === wr ? 0.75 : 0;
+}
+
+function scoreDial1(tz, az) {
+    const tRaw = ZONE_GRID[tz];
+    const t = isInZone(tRaw) ? tRaw : projectToInZone(tRaw);
+    const a = ZONE_GRID[az];
+    if (t.col === 0 || t.col === 2) {
+        if (isInZone(a)) {
+            const cd = Math.abs(t.col - a.col);
+            if (cd === 0) return 1;
+            if (cd === 1) return 0.25;
+            // NEW: 2 cols off, but row matches → 0.25
+            if (a.row === t.row) return 0.25;
+            return 0;
+        }
+        const wc = t.col === 0 ? -1 : 3;
+        if (a.col === wc) return 1;
+        // NEW: wrong-side/perpendicular waste with matching row-side → 0.25
+        const wr = t.row === 0 ? -1 : t.row === 2 ? 3 : 1;
+        if (a.row === wr) return 0.25;
+        return 0;
+    }
+    // mid-col target: unchanged
+    if (isInZone(a)) {
+        const rd = Math.abs(t.row - a.row);
+        const cd = Math.abs(1 - a.col);
+        if (rd === 0) return cd === 0 ? 1 : 0.75;
+        if (rd === 1) return 0.25;
+        return 0;
+    }
+    const wr = t.row === 0 ? -1 : t.row === 2 ? 3 : 1;
+    return a.row === wr ? 0.75 : 0;
+}
+
+// Dial 2: project everything to 3x3 grid, use weighted distance.
+function projectGrid(zone) {
+    const raw = ZONE_GRID[zone];
+    return { row: Math.max(0, Math.min(2, raw.row)), col: Math.max(0, Math.min(2, raw.col)) };
+}
+function scoreDial2(tz, az) {
+    const t = projectGrid(tz);
+    const a = projectGrid(az);
+    const rd = Math.abs(t.row - a.row);
+    const cd = Math.abs(t.col - a.col);
+    if (t.col === 0 || t.col === 2) {
+        if (cd === 0) return rd === 0 ? 1.0 : rd === 1 ? 0.8 : 0.6;
+        if (cd === 1) return rd === 0 ? 0.6 : rd === 1 ? 0.4 : 0.2;
+        return rd === 0 ? 0.2 : 0;
+    }
+    if (rd === 0) return cd === 0 ? 1.0 : 0.8;
+    if (rd === 1) return cd === 0 ? 0.6 : 0.4;
+    return cd === 0 ? 0.2 : 0;
+}
+
+let currentAlgo = 'current'; // 'current' | 'dial1' | 'dial2'
+function scoreFor(p) {
+    if (currentAlgo === 'current') return scoreCurrent(p.tz, p.az);
+    if (currentAlgo === 'dial1')   return scoreDial1(p.tz, p.az);
+    return scoreDial2(p.tz, p.az);
+}
+
+// Coordinate system: viewBox 0..700.
+// Strike zone occupies [150,150]..[550,550] (size 400).
+// nx,ny in [0,1] → svg (150 + nx*400, 150 + ny*400).
+// Waste zones up to nx,ny in [-0.4, 1.4] visible.
+const SZ_LEFT = 150, SZ_TOP = 150, SZ_SIZE = 400;
+function nx(n) { return SZ_LEFT + n * SZ_SIZE; }
+function ny(n) { return SZ_TOP  + n * SZ_SIZE; }
+
+function buildSvg(opts) {
+    const {data, w = 700, h = 700, dotR = 8, ringR = 11, showLabels = true} = opts;
+    const cellSize = SZ_SIZE / 3;
+
+    let svg = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+    // Waste-zone outline
+    svg += `<rect x="${nx(-0.32)}" y="${ny(-0.32)}" width="${SZ_SIZE * 1.64}" height="${SZ_SIZE * 1.64}" fill="#0f172a" stroke="#334155" stroke-width="1" stroke-dasharray="4,4"/>`;
+    // Strike zone box
+    svg += `<rect x="${SZ_LEFT}" y="${SZ_TOP}" width="${SZ_SIZE}" height="${SZ_SIZE}" fill="#1e293b" stroke="#64748b" stroke-width="2"/>`;
+    // Grid lines
+    for (let i = 1; i < 3; i++) {
+        const p = SZ_LEFT + i * cellSize;
+        svg += `<line x1="${p}" y1="${SZ_TOP}" x2="${p}" y2="${SZ_TOP + SZ_SIZE}" stroke="#475569" stroke-width="1"/>`;
+        svg += `<line x1="${SZ_LEFT}" y1="${SZ_TOP + i * cellSize}" x2="${SZ_LEFT + SZ_SIZE}" y2="${SZ_TOP + i * cellSize}" stroke="#475569" stroke-width="1"/>`;
+    }
+    // Zone labels (faint)
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            const cx = SZ_LEFT + (c + 0.5) * cellSize;
+            const cy = SZ_TOP + (r + 0.5) * cellSize;
+            svg += `<text x="${cx}" y="${cy + 4}" fill="#334155" text-anchor="middle" font-size="11">${r}-${c}</text>`;
+        }
+    }
+    // Axis labels
+    svg += `<text x="${nx(0.5)}" y="${ny(-0.38)}" fill="#94a3b8" text-anchor="middle" font-size="11">high</text>`;
+    svg += `<text x="${nx(0.5)}" y="${ny(1.45)}" fill="#94a3b8" text-anchor="middle" font-size="11">low</text>`;
+    svg += `<text x="${nx(-0.38)}" y="${ny(0.5) + 4}" fill="#94a3b8" text-anchor="middle" font-size="11">in</text>`;
+    svg += `<text x="${nx(1.42)}" y="${ny(0.5) + 4}" fill="#94a3b8" text-anchor="middle" font-size="11">out</text>`;
+
+    // Pitches
+    for (const p of data) {
+        const sc = scoreFor(p);
+        const color = SCORE_COLORS[sc];
+        const tx = nx(p.tx), tyv = ny(p.ty);
+        const ax = nx(p.ax), ay = ny(p.ay);
+        const tip = `#${p.n} ${p.type} ${p.result}\\ntarget ${p.tz} → actual ${p.az}\\nscore ${sc.toFixed(2)}`;
+        svg += `<g class="pitch" data-tip="${tip}" data-score="${sc}">`;
+        svg += `<line x1="${tx}" y1="${tyv}" x2="${ax}" y2="${ay}" stroke="${color}" stroke-width="1.2" stroke-opacity="0.55"/>`;
+        svg += `<circle cx="${tx}" cy="${tyv}" r="${ringR}" fill="none" stroke="${color}" stroke-width="1.5" stroke-opacity="0.6"/>`;
+        svg += `<circle cx="${ax}" cy="${ay}" r="${dotR}" fill="${color}" fill-opacity="0.85" stroke="#0f172a" stroke-width="1"/>`;
+        if (showLabels) {
+            svg += `<text x="${ax}" y="${ay - dotR - 3}" fill="${color}" text-anchor="middle" font-size="9" font-weight="600">${p.n}</text>`;
+        }
+        svg += `</g>`;
+    }
+    svg += `</svg>`;
+    return svg;
+}
+
+function renderMainAndSmallMultiples() {
+    document.getElementById('main-chart').innerHTML = buildSvg({data: pitches});
+
+    const buckets = [1, 0.75, 0.5, 0.25, 0];
+    const smGroups = buckets.map(b => {
+        const ps = pitches.filter(p => scoreFor(p) === b);
+        return {score: b, pitches: ps};
+    }).filter(g => g.pitches.length > 0);
+
+    const smContainer = document.getElementById('small-multiples');
+    smContainer.innerHTML = '';
+    for (const g of smGroups) {
+        const panel = document.createElement('div');
+        panel.className = 'panel';
+        panel.innerHTML = `
+            <div class="panel-title" style="color:${SCORE_COLORS[g.score]};">Score ${g.score.toFixed(2)} (n=${g.pitches.length})</div>
+            <div class="panel-sub">All pitches scored ${g.score.toFixed(2)} by scoreAccuracy()</div>
+            ${buildSvg({data: g.pitches, w: 700, h: 700, dotR: 7, ringR: 10})}
+        `;
+        smContainer.appendChild(panel);
+    }
+
+    // Update grade display
+    const sum = pitches.reduce((s, p) => s + scoreFor(p), 0);
+    const pct = Math.round((sum / pitches.length) * 100);
+    document.getElementById('grade-value').textContent = pct + '%';
+    const deltaEl = document.getElementById('grade-delta');
+    if (currentAlgo !== 'current') {
+        const sumOld = pitches.reduce((s, p) => s + scoreCurrent(p.tz, p.az), 0);
+        const pctOld = Math.round((sumOld / pitches.length) * 100);
+        const d = pct - pctOld;
+        const sign = d >= 0 ? '+' : '';
+        deltaEl.innerHTML = ` <span class="delta">(${sign}${d}% vs current)</span>`;
+    } else {
+        deltaEl.innerHTML = '';
+    }
+
+    // Reapply filter checkboxes
+    const visible = new Set(
+        Array.from(document.querySelectorAll('.controls input[type="checkbox"]')).filter(c => c.checked).map(c => c.dataset.score)
+    );
+    document.querySelectorAll('.pitch').forEach(g => {
+        g.style.display = visible.has(g.dataset.score) ? '' : 'none';
+    });
+}
+renderMainAndSmallMultiples();
+
+// Tooltip + filtering
+const tooltip = document.getElementById('tooltip');
+document.addEventListener('mousemove', (e) => {
+    const g = e.target.closest('.pitch');
+    if (g) {
+        tooltip.style.left = (e.clientX + 12) + 'px';
+        tooltip.style.top = (e.clientY + 12) + 'px';
+        tooltip.style.opacity = '1';
+        tooltip.innerText = g.dataset.tip;
+    } else {
+        tooltip.style.opacity = '0';
+    }
+});
+
+const checkboxes = document.querySelectorAll('.controls input[type="checkbox"]');
+checkboxes.forEach(cb => cb.addEventListener('change', () => {
+    const visible = new Set(
+        Array.from(checkboxes).filter(c => c.checked).map(c => c.dataset.score)
+    );
+    document.querySelectorAll('#main-chart .pitch').forEach(g => {
+        g.style.display = visible.has(g.dataset.score) ? '' : 'none';
+    });
+    document.querySelectorAll('.panel .pitch').forEach(g => {
+        g.style.display = visible.has(g.dataset.score) ? '' : 'none';
+    });
+}));
+
+// ===== Pitch-by-pitch stepper =====
+const stepperSvg = document.getElementById('stepper-svg');
+const stepperDetails = document.getElementById('stepper-details');
+const slider = document.getElementById('pitch-slider');
+const counter = document.getElementById('pitch-counter');
+const btnFirst = document.getElementById('btn-first');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const btnLast = document.getElementById('btn-last');
+
+function describeRule(p) {
+    const tCol = parseInt(p.tz.split('-')[1], 10);
+    const tRow = parseInt(p.tz.split('-')[0], 10);
+    if (p.tz.startsWith('W')) return 'Waste target — projected to nearest in-zone, then scored.';
+    if (tCol === 0) return 'Column-anchored (in-side target). Column miss matters most; row ignored.';
+    if (tCol === 2) return 'Column-anchored (out-side target). Column miss matters most; row ignored.';
+    return 'Row-anchored (middle-column target). Row miss matters most; small col miss = 0.75.';
+}
+
+function dx(p) { return p.ax - p.tx; }
+function dy(p) { return p.ay - p.ty; }
+function euclid(p) { return Math.sqrt(dx(p) * dx(p) + dy(p) * dy(p)); }
+
+function renderStep(idx) {
+    const p = pitches[idx];
+    const scCur = scoreCurrent(p.tz, p.az);
+    const scD1 = scoreDial1(p.tz, p.az);
+    const scD2 = scoreDial2(p.tz, p.az);
+    stepperSvg.innerHTML = buildSvg({data: [p], w: 700, h: 700, dotR: 12, ringR: 16, showLabels: false});
+    counter.textContent = `${p.n} / ${pitches.length}`;
+    slider.value = p.n;
+    btnFirst.disabled = btnPrev.disabled = idx === 0;
+    btnNext.disabled = btnLast.disabled = idx === pitches.length - 1;
+
+    const pill = (sc, active) => `<span class="score-pill" style="background:${SCORE_COLORS[sc]}; ${active ? 'box-shadow: 0 0 0 2px #fff;' : ''}">${sc.toFixed(2)}</span>`;
+
+    stepperDetails.innerHTML = `
+        <h3>Pitch #${p.n} — ${p.type}</h3>
+        <div class="row"><span class="label">Result</span><span class="val">${p.result}</span></div>
+        <div class="row"><span class="label">Target zone</span><span class="val">${p.tz} <span style="color:#64748b">(${p.tx.toFixed(2)}, ${p.ty.toFixed(2)})</span></span></div>
+        <div class="row"><span class="label">Actual zone</span><span class="val">${p.az} <span style="color:#64748b">(${p.ax.toFixed(2)}, ${p.ay.toFixed(2)})</span></span></div>
+        <div class="row"><span class="label">Δx (col-axis)</span><span class="val">${dx(p) >= 0 ? '+' : ''}${dx(p).toFixed(2)}</span></div>
+        <div class="row"><span class="label">Δy (row-axis)</span><span class="val">${dy(p) >= 0 ? '+' : ''}${dy(p).toFixed(2)}</span></div>
+        <div class="row"><span class="label">Euclidean miss</span><span class="val">${euclid(p).toFixed(2)}</span></div>
+        <div class="row"><span class="label">Current</span><span class="val">${pill(scCur, currentAlgo === 'current')}</span></div>
+        <div class="row"><span class="label">Dial 1</span><span class="val">${pill(scD1, currentAlgo === 'dial1')}</span></div>
+        <div class="row"><span class="label">Dial 2</span><span class="val">${pill(scD2, currentAlgo === 'dial2')}</span></div>
+        <div class="row" style="border-bottom:none; display:block; padding-top:10px;">
+            <div class="label" style="margin-bottom:4px;">Why this score (current algorithm)</div>
+            <div style="color:#cbd5e1; font-size:12px; line-height:1.5;">${describeRule(p)}</div>
+        </div>
+    `;
+}
+
+let curIdx = 0;
+function go(i) {
+    curIdx = Math.max(0, Math.min(pitches.length - 1, i));
+    renderStep(curIdx);
+}
+btnFirst.onclick = () => go(0);
+btnPrev.onclick = () => go(curIdx - 1);
+btnNext.onclick = () => go(curIdx + 1);
+btnLast.onclick = () => go(pitches.length - 1);
+slider.oninput = () => go(parseInt(slider.value, 10) - 1);
+document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowLeft') { go(curIdx - 1); e.preventDefault(); }
+    if (e.key === 'ArrowRight') { go(curIdx + 1); e.preventDefault(); }
+});
+renderStep(0);
+
+// Algorithm toggle
+const btnCurrent = document.getElementById('algo-current');
+const btnDial1 = document.getElementById('algo-dial1');
+const btnDial2 = document.getElementById('algo-dial2');
+function setAlgo(a) {
+    currentAlgo = a;
+    btnCurrent.classList.toggle('active', a === 'current');
+    btnDial1.classList.toggle('active', a === 'dial1');
+    btnDial2.classList.toggle('active', a === 'dial2');
+    renderMainAndSmallMultiples();
+    renderStep(curIdx);
+}
+btnCurrent.onclick = () => setAlgo('current');
+btnDial1.onclick = () => setAlgo('dial1');
+btnDial2.onclick = () => setAlgo('dial2');
+</script>
+</body>
+</html>
