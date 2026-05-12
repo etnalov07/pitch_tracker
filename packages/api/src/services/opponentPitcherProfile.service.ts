@@ -54,6 +54,84 @@ export class OpponentPitcherProfileService {
         await query('UPDATE opposing_pitchers SET profile_id = $1 WHERE id = $2', [profileId, opposingPitcherId]);
     }
 
+    /** Standalone create — no game required. Looks up the parent opponent team to derive team_id. */
+    async create(
+        opponentTeamId: string,
+        params: { pitcher_name: string; throws: ThrowingHand; jersey_number?: number | null }
+    ): Promise<OpponentPitcherProfile> {
+        const opp = await query('SELECT team_id FROM opponent_teams WHERE id = $1', [opponentTeamId]);
+        if (!opp.rows[0]) {
+            throw Object.assign(new Error('Opponent team not found'), { status: 404 });
+        }
+        const teamId = opp.rows[0].team_id;
+        const normalized = normalize(params.pitcher_name);
+        const existing = await query(
+            'SELECT * FROM opponent_pitcher_profiles WHERE opponent_team_id = $1 AND normalized_name = $2',
+            [opponentTeamId, normalized]
+        );
+        if (existing.rows[0]) {
+            throw Object.assign(new Error('A pitcher with this name already exists on this opponent team'), {
+                status: 409,
+                existing: existing.rows[0],
+            });
+        }
+        const result = await query(
+            `INSERT INTO opponent_pitcher_profiles
+                (id, opponent_team_id, team_id, pitcher_name, normalized_name, throws, jersey_number)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING *`,
+            [uuidv4(), opponentTeamId, teamId, params.pitcher_name.trim(), normalized, params.throws, params.jersey_number ?? null]
+        );
+        return result.rows[0];
+    }
+
+    async update(
+        id: string,
+        params: { pitcher_name?: string; throws?: ThrowingHand; jersey_number?: number | null }
+    ): Promise<OpponentPitcherProfile | null> {
+        const existing = await this.getById(id);
+        if (!existing) return null;
+        const nextName = params.pitcher_name?.trim() ?? existing.pitcher_name;
+        const nextNormalized = normalize(nextName);
+        // Guard against rename collision on the same opponent team.
+        if (nextNormalized !== existing.normalized_name) {
+            const dup = await query(
+                'SELECT id FROM opponent_pitcher_profiles WHERE opponent_team_id = $1 AND normalized_name = $2 AND id <> $3',
+                [existing.opponent_team_id, nextNormalized, id]
+            );
+            if (dup.rows[0]) {
+                throw Object.assign(new Error('Another pitcher on this opponent team already has that name'), { status: 409 });
+            }
+        }
+        const result = await query(
+            `UPDATE opponent_pitcher_profiles
+             SET pitcher_name = $1,
+                 normalized_name = $2,
+                 throws = $3,
+                 jersey_number = $4,
+                 updated_at = NOW()
+             WHERE id = $5
+             RETURNING *`,
+            [
+                nextName,
+                nextNormalized,
+                params.throws ?? existing.throws,
+                params.jersey_number === undefined ? (existing.jersey_number ?? null) : params.jersey_number,
+                id,
+            ]
+        );
+        return result.rows[0] ?? null;
+    }
+
+    /** Delete profile. Nullifies `opposing_pitchers.profile_id` so per-game pitch data survives. */
+    async delete(id: string): Promise<boolean> {
+        return transaction(async (client) => {
+            await client.query('UPDATE opposing_pitchers SET profile_id = NULL WHERE profile_id = $1', [id]);
+            const result = await client.query('DELETE FROM opponent_pitcher_profiles WHERE id = $1', [id]);
+            return (result.rowCount ?? 0) > 0;
+        });
+    }
+
     async incrementGameCount(id: string, gameDate?: string): Promise<void> {
         await query(
             `UPDATE opponent_pitcher_profiles

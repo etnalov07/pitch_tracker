@@ -11,7 +11,10 @@ router.get(
     '/opponent-team/:opponentTeamId',
     opponentPitcherProfileController.getByOpponentTeam.bind(opponentPitcherProfileController)
 );
+router.post('/opponent-team/:opponentTeamId', opponentPitcherProfileController.create.bind(opponentPitcherProfileController));
 router.get('/:id', opponentPitcherProfileController.getById.bind(opponentPitcherProfileController));
+router.patch('/:id', opponentPitcherProfileController.update.bind(opponentPitcherProfileController));
+router.delete('/:id', opponentPitcherProfileController.delete.bind(opponentPitcherProfileController));
 router.post('/:id/recalculate', opponentPitcherProfileController.recalculate.bind(opponentPitcherProfileController));
 router.post(
     '/:id/link-opposing-pitcher',

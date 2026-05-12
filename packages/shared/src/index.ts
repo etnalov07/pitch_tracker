@@ -624,8 +624,21 @@ export interface BatterScoutingProfile {
     player_name: string;
     normalized_name: string;
     bats: HandednessType;
+    jersey_number?: number | null;
     created_at?: string;
     updated_at?: string;
+}
+
+export interface CreateBatterScoutingProfileParams {
+    player_name: string;
+    bats: HandednessType;
+    jersey_number?: number | null;
+}
+
+export interface UpdateBatterScoutingProfileParams {
+    player_name?: string;
+    bats?: HandednessType;
+    jersey_number?: number | null;
 }
 
 export interface BatterScoutingNote {
@@ -1688,6 +1701,18 @@ export interface OpponentPitcherProfile {
     last_seen_date?: string | null;
     created_at: string;
     updated_at?: string;
+}
+
+export interface CreateOpponentPitcherProfileParams {
+    pitcher_name: string;
+    throws: ThrowingHand;
+    jersey_number?: number | null;
+}
+
+export interface UpdateOpponentPitcherProfileParams {
+    pitcher_name?: string;
+    throws?: ThrowingHand;
+    jersey_number?: number | null;
 }
 
 export interface OpponentPitcherTendencies {

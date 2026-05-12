@@ -1,9 +1,14 @@
 import {
+    BatterScoutingProfile,
+    CreateBatterScoutingProfileParams,
+    CreateOpponentPitcherProfileParams,
     CreateOpponentTeamParams,
     OpponentPitcherProfile,
     OpponentPitcherTendencies,
     OpponentTeam,
     OpponentTeamWithRoster,
+    UpdateBatterScoutingProfileParams,
+    UpdateOpponentPitcherProfileParams,
 } from '../types';
 import api from './api';
 
@@ -61,5 +66,41 @@ export const opponentPitcherProfileService = {
         await api.post(`/opponent-pitcher-profiles/${profileId}/link-opposing-pitcher`, {
             opposing_pitcher_id: opposingPitcherId,
         });
+    },
+
+    create: async (opponentTeamId: string, params: CreateOpponentPitcherProfileParams): Promise<OpponentPitcherProfile> => {
+        const response = await api.post<{ pitcher: OpponentPitcherProfile }>(
+            `/opponent-pitcher-profiles/opponent-team/${opponentTeamId}`,
+            params
+        );
+        return response.data.pitcher;
+    },
+
+    update: async (id: string, params: UpdateOpponentPitcherProfileParams): Promise<OpponentPitcherProfile> => {
+        const response = await api.patch<{ pitcher: OpponentPitcherProfile }>(`/opponent-pitcher-profiles/${id}`, params);
+        return response.data.pitcher;
+    },
+
+    delete: async (id: string): Promise<void> => {
+        await api.delete(`/opponent-pitcher-profiles/${id}`);
+    },
+};
+
+export const opponentBatterProfileService = {
+    create: async (opponentTeamId: string, params: CreateBatterScoutingProfileParams): Promise<BatterScoutingProfile> => {
+        const response = await api.post<{ batter: BatterScoutingProfile }>(
+            `/opponent-batter-profiles/opponent-team/${opponentTeamId}`,
+            params
+        );
+        return response.data.batter;
+    },
+
+    update: async (id: string, params: UpdateBatterScoutingProfileParams): Promise<BatterScoutingProfile> => {
+        const response = await api.patch<{ batter: BatterScoutingProfile }>(`/opponent-batter-profiles/${id}`, params);
+        return response.data.batter;
+    },
+
+    delete: async (id: string): Promise<void> => {
+        await api.delete(`/opponent-batter-profiles/${id}`);
     },
 };

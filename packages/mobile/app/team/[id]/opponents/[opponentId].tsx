@@ -1,19 +1,44 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Text, Card, Button, Divider, useTheme } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, RefreshControl, Alert, ActionSheetIOS, Platform } from 'react-native';
+import { Text, Card, Button, Divider, IconButton, useTheme, SegmentedButtons } from 'react-native-paper';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { OpponentPitcherProfile, OpponentPitcherTendencies } from '@pitch-tracker/shared';
-import { useAppDispatch, useAppSelector, fetchOpponentById } from '../../../../src/state';
+import {
+    BatterScoutingProfile,
+    HandednessType,
+    OpponentPitcherProfile,
+    OpponentPitcherTendencies,
+    ThrowingHand,
+} from '@pitch-tracker/shared';
+import {
+    useAppDispatch,
+    useAppSelector,
+    fetchOpponentById,
+    addOpponentPitcher,
+    updateOpponentPitcher,
+    deleteOpponentPitcher,
+    addOpponentBatter,
+    updateOpponentBatter,
+    deleteOpponentBatter,
+} from '../../../../src/state';
 import opponentsApi from '../../../../src/state/opponents/api/opponentsApi';
 import { LoadingScreen } from '../../../../src/components/common';
 import * as Haptics from '../../../../src/utils/haptics';
+import { TextInput as RNTextInput } from 'react-native';
 
 function fmt(n: number | null | undefined, suffix = '%'): string {
     if (n == null) return '—';
     return `${n}${suffix}`;
 }
 
-function PitcherCard({ pitcher, teamId }: { pitcher: OpponentPitcherProfile; teamId: string }) {
+function PitcherCard({
+    pitcher,
+    onEdit,
+    onDelete,
+}: {
+    pitcher: OpponentPitcherProfile;
+    onEdit: (p: OpponentPitcherProfile) => void;
+    onDelete: (p: OpponentPitcherProfile) => void;
+}) {
     const [expanded, setExpanded] = useState(false);
     const [tendencies, setTendencies] = useState<OpponentPitcherTendencies | null | 'loading'>(null);
     const [recalcing, setRecalcing] = useState(false);
@@ -45,14 +70,35 @@ function PitcherCard({ pitcher, teamId }: { pitcher: OpponentPitcherProfile; tea
         }
     };
 
+    const handleLongPress = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        const options = ['Edit', 'Delete', 'Cancel'];
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                { options, destructiveButtonIndex: 1, cancelButtonIndex: 2, title: pitcher.pitcher_name },
+                (idx) => {
+                    if (idx === 0) onEdit(pitcher);
+                    else if (idx === 1) onDelete(pitcher);
+                }
+            );
+        } else {
+            Alert.alert(pitcher.pitcher_name, undefined, [
+                { text: 'Edit', onPress: () => onEdit(pitcher) },
+                { text: 'Delete', style: 'destructive', onPress: () => onDelete(pitcher) },
+                { text: 'Cancel', style: 'cancel' },
+            ]);
+        }
+    };
+
     return (
-        <Card style={styles.rosterCard} onPress={handleExpand}>
+        <Card style={styles.rosterCard} onPress={handleExpand} onLongPress={handleLongPress}>
             <Card.Content>
                 <View style={styles.rosterRow}>
-                    <View>
+                    <View style={{ flex: 1 }}>
                         <Text variant="titleSmall">{pitcher.pitcher_name}</Text>
                         <Text variant="bodySmall" style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
-                            {pitcher.throws}HP · {pitcher.games_pitched}G
+                            {pitcher.throws}HP{pitcher.jersey_number != null ? ` · #${pitcher.jersey_number}` : ''} ·{' '}
+                            {pitcher.games_pitched}G
                         </Text>
                     </View>
                     <Text style={{ color: theme.colors.primary, fontSize: 12 }}>{expanded ? '▲' : '▽'}</Text>
@@ -75,16 +121,6 @@ function PitcherCard({ pitcher, teamId }: { pitcher: OpponentPitcherProfile; tea
                                     <StatCell label="Break%" value={fmt(tendencies.breaking_pct)} />
                                     <StatCell label="OS%" value={fmt(tendencies.offspeed_pct)} />
                                 </View>
-                                {tendencies.early_count_fastball_pct != null && (
-                                    <Text style={[styles.note, { color: theme.colors.onSurfaceVariant }]}>
-                                        Early count: {fmt(tendencies.early_count_fastball_pct)} FB
-                                    </Text>
-                                )}
-                                {tendencies.two_strike_offspeed_pct != null && (
-                                    <Text style={[styles.note, { color: theme.colors.onSurfaceVariant }]}>
-                                        Two-strike: {fmt(tendencies.two_strike_offspeed_pct)} offspeed
-                                    </Text>
-                                )}
                                 <Button
                                     mode="text"
                                     compact
@@ -113,12 +149,154 @@ function StatCell({ label, value }: { label: string; value: string }) {
     );
 }
 
+type PitcherFormState = { mode: 'add' | 'edit'; editingId?: string; name: string; throws: ThrowingHand; jersey: string };
+type BatterFormState = { mode: 'add' | 'edit'; editingId?: string; name: string; bats: HandednessType; jersey: string };
+
+function PitcherInlineForm({
+    state,
+    onChange,
+    onSubmit,
+    onCancel,
+    submitting,
+    error,
+}: {
+    state: PitcherFormState;
+    onChange: (next: PitcherFormState) => void;
+    onSubmit: () => void;
+    onCancel: () => void;
+    submitting: boolean;
+    error: string;
+}) {
+    const theme = useTheme();
+    return (
+        <Card style={styles.formCard}>
+            <Card.Content>
+                <Text variant="titleSmall" style={[styles.formLabel, { color: theme.colors.onSurface }]}>
+                    Pitcher name *
+                </Text>
+                <RNTextInput
+                    style={[styles.input, { backgroundColor: theme.colors.surface, color: theme.colors.onSurface }]}
+                    value={state.name}
+                    onChangeText={(t) => onChange({ ...state, name: t })}
+                    placeholder="Jake Garcia"
+                    placeholderTextColor={theme.colors.onSurfaceVariant}
+                    autoFocus
+                />
+                <Text variant="titleSmall" style={[styles.formLabel, { color: theme.colors.onSurface }]}>
+                    Throws
+                </Text>
+                <SegmentedButtons
+                    value={state.throws}
+                    onValueChange={(v) => onChange({ ...state, throws: v as ThrowingHand })}
+                    buttons={[
+                        { value: 'R', label: 'Right' },
+                        { value: 'L', label: 'Left' },
+                    ]}
+                />
+                <Text variant="titleSmall" style={[styles.formLabel, { color: theme.colors.onSurface }]}>
+                    Jersey #
+                </Text>
+                <RNTextInput
+                    style={[styles.input, { backgroundColor: theme.colors.surface, color: theme.colors.onSurface }]}
+                    value={state.jersey}
+                    onChangeText={(t) => onChange({ ...state, jersey: t.replace(/[^\d]/g, '') })}
+                    placeholder="17"
+                    placeholderTextColor={theme.colors.onSurfaceVariant}
+                    keyboardType="number-pad"
+                />
+                {error ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text> : null}
+                <View style={styles.formActions}>
+                    <Button onPress={onCancel}>Cancel</Button>
+                    <Button mode="contained" onPress={onSubmit} disabled={submitting || !state.name.trim()} loading={submitting}>
+                        {state.mode === 'add' ? 'Add Pitcher' : 'Save'}
+                    </Button>
+                </View>
+            </Card.Content>
+        </Card>
+    );
+}
+
+function BatterInlineForm({
+    state,
+    onChange,
+    onSubmit,
+    onCancel,
+    submitting,
+    error,
+}: {
+    state: BatterFormState;
+    onChange: (next: BatterFormState) => void;
+    onSubmit: () => void;
+    onCancel: () => void;
+    submitting: boolean;
+    error: string;
+}) {
+    const theme = useTheme();
+    return (
+        <Card style={styles.formCard}>
+            <Card.Content>
+                <Text variant="titleSmall" style={[styles.formLabel, { color: theme.colors.onSurface }]}>
+                    Batter name *
+                </Text>
+                <RNTextInput
+                    style={[styles.input, { backgroundColor: theme.colors.surface, color: theme.colors.onSurface }]}
+                    value={state.name}
+                    onChangeText={(t) => onChange({ ...state, name: t })}
+                    placeholder="Alex Wright"
+                    placeholderTextColor={theme.colors.onSurfaceVariant}
+                    autoFocus
+                />
+                <Text variant="titleSmall" style={[styles.formLabel, { color: theme.colors.onSurface }]}>
+                    Bats
+                </Text>
+                <SegmentedButtons
+                    value={state.bats}
+                    onValueChange={(v) => onChange({ ...state, bats: v as HandednessType })}
+                    buttons={[
+                        { value: 'R', label: 'Right' },
+                        { value: 'L', label: 'Left' },
+                        { value: 'S', label: 'Switch' },
+                    ]}
+                />
+                <Text variant="titleSmall" style={[styles.formLabel, { color: theme.colors.onSurface }]}>
+                    Jersey #
+                </Text>
+                <RNTextInput
+                    style={[styles.input, { backgroundColor: theme.colors.surface, color: theme.colors.onSurface }]}
+                    value={state.jersey}
+                    onChangeText={(t) => onChange({ ...state, jersey: t.replace(/[^\d]/g, '') })}
+                    placeholder="4"
+                    placeholderTextColor={theme.colors.onSurfaceVariant}
+                    keyboardType="number-pad"
+                />
+                {error ? <Text style={[styles.errorText, { color: theme.colors.error }]}>{error}</Text> : null}
+                <View style={styles.formActions}>
+                    <Button onPress={onCancel}>Cancel</Button>
+                    <Button mode="contained" onPress={onSubmit} disabled={submitting || !state.name.trim()} loading={submitting}>
+                        {state.mode === 'add' ? 'Add Batter' : 'Save'}
+                    </Button>
+                </View>
+            </Card.Content>
+        </Card>
+    );
+}
+
+const emptyPitcherForm: PitcherFormState = { mode: 'add', name: '', throws: 'R', jersey: '' };
+const emptyBatterForm: BatterFormState = { mode: 'add', name: '', bats: 'R', jersey: '' };
+
 export default function OpponentDetailScreen() {
     const theme = useTheme();
     const { id: teamId, opponentId } = useLocalSearchParams<{ id: string; opponentId: string }>();
     const dispatch = useAppDispatch();
 
     const { selectedOpponent, detailLoading } = useAppSelector((state) => state.opponents);
+
+    const [pitcherForm, setPitcherForm] = useState<PitcherFormState | null>(null);
+    const [batterForm, setBatterForm] = useState<BatterFormState | null>(null);
+    const [pitcherSubmitting, setPitcherSubmitting] = useState(false);
+    const [batterSubmitting, setBatterSubmitting] = useState(false);
+    const [pitcherError, setPitcherError] = useState('');
+    const [batterError, setBatterError] = useState('');
 
     const load = useCallback(() => {
         if (teamId && opponentId) dispatch(fetchOpponentById({ teamId, id: opponentId }));
@@ -127,6 +305,121 @@ export default function OpponentDetailScreen() {
     useEffect(() => {
         load();
     }, [load]);
+
+    const handlePitcherSubmit = async () => {
+        if (!selectedOpponent || !pitcherForm) return;
+        setPitcherSubmitting(true);
+        setPitcherError('');
+        const jerseyNum = pitcherForm.jersey.trim() === '' ? null : parseInt(pitcherForm.jersey, 10);
+        try {
+            if (pitcherForm.mode === 'add') {
+                await dispatch(
+                    addOpponentPitcher({
+                        opponentTeamId: selectedOpponent.id,
+                        params: { pitcher_name: pitcherForm.name.trim(), throws: pitcherForm.throws, jersey_number: jerseyNum },
+                    })
+                ).unwrap();
+            } else if (pitcherForm.editingId) {
+                await dispatch(
+                    updateOpponentPitcher({
+                        id: pitcherForm.editingId,
+                        params: { pitcher_name: pitcherForm.name.trim(), throws: pitcherForm.throws, jersey_number: jerseyNum },
+                    })
+                ).unwrap();
+            }
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setPitcherForm(null);
+        } catch (err) {
+            setPitcherError(typeof err === 'string' ? err : 'Failed to save pitcher.');
+        } finally {
+            setPitcherSubmitting(false);
+        }
+    };
+
+    const handlePitcherDelete = (p: OpponentPitcherProfile) => {
+        Alert.alert('Remove pitcher', `Remove ${p.pitcher_name} from this opponent's roster?`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Remove',
+                style: 'destructive',
+                onPress: async () => {
+                    await dispatch(deleteOpponentPitcher(p.id));
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                },
+            },
+        ]);
+    };
+
+    const handleBatterSubmit = async () => {
+        if (!selectedOpponent || !batterForm) return;
+        setBatterSubmitting(true);
+        setBatterError('');
+        const jerseyNum = batterForm.jersey.trim() === '' ? null : parseInt(batterForm.jersey, 10);
+        try {
+            if (batterForm.mode === 'add') {
+                await dispatch(
+                    addOpponentBatter({
+                        opponentTeamId: selectedOpponent.id,
+                        params: { player_name: batterForm.name.trim(), bats: batterForm.bats, jersey_number: jerseyNum },
+                    })
+                ).unwrap();
+            } else if (batterForm.editingId) {
+                await dispatch(
+                    updateOpponentBatter({
+                        id: batterForm.editingId,
+                        params: { player_name: batterForm.name.trim(), bats: batterForm.bats, jersey_number: jerseyNum },
+                    })
+                ).unwrap();
+            }
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setBatterForm(null);
+        } catch (err) {
+            setBatterError(typeof err === 'string' ? err : 'Failed to save batter.');
+        } finally {
+            setBatterSubmitting(false);
+        }
+    };
+
+    const handleBatterDelete = (b: BatterScoutingProfile) => {
+        Alert.alert('Remove batter', `Remove ${b.player_name} from this opponent's roster?`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Remove',
+                style: 'destructive',
+                onPress: async () => {
+                    await dispatch(deleteOpponentBatter(b.id));
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                },
+            },
+        ]);
+    };
+
+    const handleBatterLongPress = (b: BatterScoutingProfile) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        const editAction = () =>
+            setBatterForm({
+                mode: 'edit',
+                editingId: b.id,
+                name: b.player_name,
+                bats: b.bats,
+                jersey: b.jersey_number != null ? String(b.jersey_number) : '',
+            });
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                { options: ['Edit', 'Delete', 'Cancel'], destructiveButtonIndex: 1, cancelButtonIndex: 2, title: b.player_name },
+                (idx) => {
+                    if (idx === 0) editAction();
+                    else if (idx === 1) handleBatterDelete(b);
+                }
+            );
+        } else {
+            Alert.alert(b.player_name, undefined, [
+                { text: 'Edit', onPress: editAction },
+                { text: 'Delete', style: 'destructive', onPress: () => handleBatterDelete(b) },
+                { text: 'Cancel', style: 'cancel' },
+            ]);
+        }
+    };
 
     if (detailLoading && !selectedOpponent) return <LoadingScreen message="Loading…" />;
     if (!selectedOpponent) return null;
@@ -150,33 +443,115 @@ export default function OpponentDetailScreen() {
                     )}
                 </View>
 
-                <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-                    Pitchers
-                </Text>
+                <View style={styles.sectionHeader}>
+                    <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+                        Pitchers
+                    </Text>
+                    {!pitcherForm && (
+                        <Button
+                            mode="contained-tonal"
+                            compact
+                            icon="plus"
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setPitcherError('');
+                                setPitcherForm(emptyPitcherForm);
+                            }}
+                        >
+                            Add
+                        </Button>
+                    )}
+                </View>
+
+                {pitcherForm && (
+                    <PitcherInlineForm
+                        state={pitcherForm}
+                        onChange={setPitcherForm}
+                        onSubmit={handlePitcherSubmit}
+                        onCancel={() => {
+                            setPitcherForm(null);
+                            setPitcherError('');
+                        }}
+                        submitting={pitcherSubmitting}
+                        error={pitcherError}
+                    />
+                )}
+
                 {selectedOpponent.pitchers.length === 0 ? (
                     <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>
-                        No pitchers yet — they appear after charting games vs. this team.
+                        No pitchers yet. Tap Add above, or chart a game to populate this roster automatically.
                     </Text>
                 ) : (
-                    selectedOpponent.pitchers.map((p) => <PitcherCard key={p.id} pitcher={p} teamId={teamId!} />)
+                    selectedOpponent.pitchers.map((p) => (
+                        <PitcherCard
+                            key={p.id}
+                            pitcher={p}
+                            onEdit={(pp) =>
+                                setPitcherForm({
+                                    mode: 'edit',
+                                    editingId: pp.id,
+                                    name: pp.pitcher_name,
+                                    throws: pp.throws,
+                                    jersey: pp.jersey_number != null ? String(pp.jersey_number) : '',
+                                })
+                            }
+                            onDelete={handlePitcherDelete}
+                        />
+                    ))
                 )}
 
                 <Divider style={{ marginVertical: 16 }} />
 
-                <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-                    Batters
-                </Text>
+                <View style={styles.sectionHeader}>
+                    <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+                        Batters
+                    </Text>
+                    {!batterForm && (
+                        <Button
+                            mode="contained-tonal"
+                            compact
+                            icon="plus"
+                            onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                setBatterError('');
+                                setBatterForm(emptyBatterForm);
+                            }}
+                        >
+                            Add
+                        </Button>
+                    )}
+                </View>
+
+                {batterForm && (
+                    <BatterInlineForm
+                        state={batterForm}
+                        onChange={setBatterForm}
+                        onSubmit={handleBatterSubmit}
+                        onCancel={() => {
+                            setBatterForm(null);
+                            setBatterError('');
+                        }}
+                        submitting={batterSubmitting}
+                        error={batterError}
+                    />
+                )}
+
                 {selectedOpponent.batters.length === 0 ? (
                     <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>
-                        No batters yet — they appear after entering opponent lineups.
+                        No batters yet. Tap Add above, or chart an opponent lineup to populate this roster automatically.
                     </Text>
                 ) : (
                     <Card style={styles.rosterCard}>
                         {selectedOpponent.batters.map((b, idx) => (
                             <React.Fragment key={b.id}>
                                 <Card.Content style={styles.rosterRow}>
-                                    <Text variant="bodyMedium">{b.player_name}</Text>
-                                    <Text style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>{b.bats}HH</Text>
+                                    <View style={{ flex: 1 }}>
+                                        <Text variant="bodyMedium">{b.player_name}</Text>
+                                        <Text style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
+                                            {b.bats}HH{b.jersey_number != null ? ` · #${b.jersey_number}` : ''}
+                                        </Text>
+                                    </View>
+                                    <IconButton icon="dots-vertical" size={20} onPress={() => handleBatterLongPress(b)} />
                                 </Card.Content>
                                 {idx < selectedOpponent.batters.length - 1 && <Divider />}
                             </React.Fragment>
@@ -200,15 +575,27 @@ const styles = StyleSheet.create({
         paddingVertical: 3,
         borderRadius: 12,
     },
-    sectionTitle: { marginBottom: 8 },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    sectionTitle: { marginBottom: 0 },
     rosterCard: { marginBottom: 10 },
     rosterRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    meta: { fontSize: 12 },
+    meta: { fontSize: 12, marginTop: 2 },
     tendenciesBox: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
     statRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
     statCell: { alignItems: 'center', minWidth: 64 },
     statValue: { fontSize: 18, fontWeight: '700' },
     statLabel: { fontSize: 11, marginTop: 1 },
-    note: { fontSize: 12, marginBottom: 4 },
     empty: { fontSize: 13, fontStyle: 'italic', marginBottom: 8 },
+    formCard: { marginBottom: 12 },
+    formLabel: { marginTop: 12, marginBottom: 4 },
+    input: {
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        padding: 10,
+        fontSize: 15,
+        marginBottom: 4,
+    },
+    formActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 },
+    errorText: { fontSize: 12, marginTop: 6 },
 });

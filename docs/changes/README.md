@@ -18,3 +18,4 @@ Per-feature/per-fix change docs combining the plan summary and what shipped. Eac
 | 2026-05-11 | feat  | Zone-based command-grade scoring (replaces Euclidean accuracy)          | `0c73762`            | [zone-based-accuracy](2026-05-11-zone-based-accuracy.md)                                             |
 | 2026-05-12 | fix   | Command Grade softening — row floor on column-anchored targets          | `f821d7e`            | [command-grade-softening](2026-05-12-command-grade-softening.md)                                     |
 | 2026-05-12 | fix   | PerformanceSummaryCard "by zone" panel — dark mode visibility           | `094a7af`            | [performance-summary-dark-mode-fix](2026-05-12-performance-summary-dark-mode-fix.md)                 |
+| 2026-05-12 | feat  | Standalone opponent roster — add pitchers & batters without a game      | _TBD_                | [standalone-opponent-roster](2026-05-12-standalone-opponent-roster.md)                               |

@@ -1,5 +1,15 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { CreateOpponentTeamParams, OpponentTeam, OpponentTeamWithRoster } from '@pitch-tracker/shared';
+import {
+    BatterScoutingProfile,
+    CreateBatterScoutingProfileParams,
+    CreateOpponentPitcherProfileParams,
+    CreateOpponentTeamParams,
+    OpponentPitcherProfile,
+    OpponentTeam,
+    OpponentTeamWithRoster,
+    UpdateBatterScoutingProfileParams,
+    UpdateOpponentPitcherProfileParams,
+} from '@pitch-tracker/shared';
 import opponentsApi from './api/opponentsApi';
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
@@ -53,6 +63,77 @@ export const createOpponent = createAsyncThunk(
     }
 );
 
+export const addOpponentPitcher = createAsyncThunk(
+    'opponents/addPitcher',
+    async (
+        { opponentTeamId, params }: { opponentTeamId: string; params: CreateOpponentPitcherProfileParams },
+        { rejectWithValue }
+    ) => {
+        try {
+            return await opponentsApi.createPitcher(opponentTeamId, params);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to add pitcher'));
+        }
+    }
+);
+
+export const updateOpponentPitcher = createAsyncThunk(
+    'opponents/updatePitcher',
+    async ({ id, params }: { id: string; params: UpdateOpponentPitcherProfileParams }, { rejectWithValue }) => {
+        try {
+            return await opponentsApi.updatePitcher(id, params);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to update pitcher'));
+        }
+    }
+);
+
+export const deleteOpponentPitcher = createAsyncThunk('opponents/deletePitcher', async (id: string, { rejectWithValue }) => {
+    try {
+        await opponentsApi.deletePitcher(id);
+        return id;
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to delete pitcher'));
+    }
+});
+
+export const addOpponentBatter = createAsyncThunk(
+    'opponents/addBatter',
+    async (
+        { opponentTeamId, params }: { opponentTeamId: string; params: CreateBatterScoutingProfileParams },
+        { rejectWithValue }
+    ) => {
+        try {
+            return await opponentsApi.createBatter(opponentTeamId, params);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to add batter'));
+        }
+    }
+);
+
+export const updateOpponentBatter = createAsyncThunk(
+    'opponents/updateBatter',
+    async ({ id, params }: { id: string; params: UpdateBatterScoutingProfileParams }, { rejectWithValue }) => {
+        try {
+            return await opponentsApi.updateBatter(id, params);
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error, 'Failed to update batter'));
+        }
+    }
+);
+
+export const deleteOpponentBatter = createAsyncThunk('opponents/deleteBatter', async (id: string, { rejectWithValue }) => {
+    try {
+        await opponentsApi.deleteBatter(id);
+        return id;
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to delete batter'));
+    }
+});
+
+const sortPitchers = (arr: OpponentPitcherProfile[]) => [...arr].sort((a, b) => a.pitcher_name.localeCompare(b.pitcher_name));
+const sortBatters = (arr: BatterScoutingProfile[]) => [...arr].sort((a, b) => a.player_name.localeCompare(b.player_name));
+
 const opponentsSlice = createSlice({
     name: 'opponents',
     initialState,
@@ -92,6 +173,40 @@ const opponentsSlice = createSlice({
             })
             .addCase(createOpponent.fulfilled, (state, action) => {
                 state.opponents.push(action.payload);
+            })
+            .addCase(addOpponentPitcher.fulfilled, (state, action) => {
+                if (state.selectedOpponent && state.selectedOpponent.id === action.payload.opponent_team_id) {
+                    state.selectedOpponent.pitchers = sortPitchers([...state.selectedOpponent.pitchers, action.payload]);
+                }
+            })
+            .addCase(updateOpponentPitcher.fulfilled, (state, action) => {
+                if (state.selectedOpponent) {
+                    state.selectedOpponent.pitchers = sortPitchers(
+                        state.selectedOpponent.pitchers.map((p) => (p.id === action.payload.id ? action.payload : p))
+                    );
+                }
+            })
+            .addCase(deleteOpponentPitcher.fulfilled, (state, action) => {
+                if (state.selectedOpponent) {
+                    state.selectedOpponent.pitchers = state.selectedOpponent.pitchers.filter((p) => p.id !== action.payload);
+                }
+            })
+            .addCase(addOpponentBatter.fulfilled, (state, action) => {
+                if (state.selectedOpponent && state.selectedOpponent.id === action.payload.opponent_team_id) {
+                    state.selectedOpponent.batters = sortBatters([...state.selectedOpponent.batters, action.payload]);
+                }
+            })
+            .addCase(updateOpponentBatter.fulfilled, (state, action) => {
+                if (state.selectedOpponent) {
+                    state.selectedOpponent.batters = sortBatters(
+                        state.selectedOpponent.batters.map((b) => (b.id === action.payload.id ? action.payload : b))
+                    );
+                }
+            })
+            .addCase(deleteOpponentBatter.fulfilled, (state, action) => {
+                if (state.selectedOpponent) {
+                    state.selectedOpponent.batters = state.selectedOpponent.batters.filter((b) => b.id !== action.payload);
+                }
             });
     },
 });

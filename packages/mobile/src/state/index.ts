@@ -128,6 +128,12 @@ export {
     fetchOpponents,
     fetchOpponentById,
     createOpponent,
+    addOpponentPitcher,
+    updateOpponentPitcher,
+    deleteOpponentPitcher,
+    addOpponentBatter,
+    updateOpponentBatter,
+    deleteOpponentBatter,
     clearOpponentsError,
     clearSelectedOpponent,
 } from './opponents/opponentsSlice';

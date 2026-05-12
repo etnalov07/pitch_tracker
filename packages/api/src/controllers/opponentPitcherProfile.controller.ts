@@ -52,6 +52,76 @@ export class OpponentPitcherProfileController {
             next(error);
         }
     }
+
+    async create(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const opponentTeamId = req.params.opponentTeamId as string;
+            const { pitcher_name, throws, jersey_number } = req.body;
+            if (!pitcher_name || typeof pitcher_name !== 'string' || !pitcher_name.trim()) {
+                res.status(400).json({ error: 'pitcher_name is required' });
+                return;
+            }
+            if (throws !== 'L' && throws !== 'R') {
+                res.status(400).json({ error: "throws must be 'L' or 'R'" });
+                return;
+            }
+            const pitcher = await opponentPitcherProfileService.create(opponentTeamId, {
+                pitcher_name,
+                throws,
+                jersey_number,
+            });
+            res.status(201).json({ pitcher });
+        } catch (error: unknown) {
+            const e = error as { status?: number; message?: string; existing?: unknown };
+            if (e.status === 409) {
+                res.status(409).json({ error: e.message, existing: e.existing });
+                return;
+            }
+            if (e.status === 404) {
+                res.status(404).json({ error: e.message });
+                return;
+            }
+            next(error);
+        }
+    }
+
+    async update(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const id = req.params.id as string;
+            const { pitcher_name, throws, jersey_number } = req.body;
+            if (throws !== undefined && throws !== 'L' && throws !== 'R') {
+                res.status(400).json({ error: "throws must be 'L' or 'R'" });
+                return;
+            }
+            const pitcher = await opponentPitcherProfileService.update(id, { pitcher_name, throws, jersey_number });
+            if (!pitcher) {
+                res.status(404).json({ error: 'Pitcher profile not found' });
+                return;
+            }
+            res.status(200).json({ pitcher });
+        } catch (error: unknown) {
+            const e = error as { status?: number; message?: string };
+            if (e.status === 409) {
+                res.status(409).json({ error: e.message });
+                return;
+            }
+            next(error);
+        }
+    }
+
+    async delete(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const id = req.params.id as string;
+            const deleted = await opponentPitcherProfileService.delete(id);
+            if (!deleted) {
+                res.status(404).json({ error: 'Pitcher profile not found' });
+                return;
+            }
+            res.status(204).send();
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new OpponentPitcherProfileController();

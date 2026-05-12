@@ -179,3 +179,102 @@ export const ErrorText = styled.div({
     padding: theme.spacing.xl,
     textAlign: 'center',
 });
+
+export const SectionTitleRow = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    margin: `0 0 ${theme.spacing.md}`,
+    paddingBottom: theme.spacing.sm,
+    borderBottom: `1px solid ${theme.colors.gray[100]}`,
+});
+
+export const SectionTitleText = styled.h2({
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[800],
+    margin: 0,
+});
+
+export const SmallAddButton = styled.button({
+    background: theme.colors.primary[50],
+    color: theme.colors.primary[700],
+    border: `1px solid ${theme.colors.primary[200]}`,
+    padding: `4px 10px`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    cursor: 'pointer',
+    '&:hover': { background: theme.colors.primary[100] },
+});
+
+export const RosterActions = styled.div({
+    display: 'flex',
+    gap: 4,
+    marginLeft: theme.spacing.sm,
+});
+
+export const IconButton = styled.button({
+    background: 'none',
+    border: 'none',
+    color: theme.colors.gray[500],
+    fontSize: theme.fontSize.sm,
+    cursor: 'pointer',
+    padding: '2px 6px',
+    borderRadius: theme.borderRadius.sm,
+    '&:hover': { background: theme.colors.gray[200], color: theme.colors.gray[800] },
+});
+
+export const InlineFormCard = styled.div({
+    background: theme.colors.primary[50],
+    border: `1px solid ${theme.colors.primary[200]}`,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    display: 'grid',
+    gap: theme.spacing.sm,
+});
+
+export const FormLabel = styled.label({
+    display: 'block',
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[700],
+    marginBottom: 2,
+});
+
+export const TextInput = styled.input({
+    width: '100%',
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    border: `1px solid ${theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    background: theme.surfaces.card,
+    '&:focus': { outline: 'none', borderColor: theme.colors.primary[500] },
+});
+
+export const RadioGroup = styled.div({
+    display: 'flex',
+    gap: theme.spacing.sm,
+});
+
+export const RadioLabel = styled.label({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    fontSize: theme.fontSize.sm,
+    cursor: 'pointer',
+});
+
+export const FormActions = styled.div({
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: theme.spacing.sm,
+    marginTop: 4,
+});
+
+export const FormError = styled.div({
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.red[600],
+    marginTop: 4,
+});
