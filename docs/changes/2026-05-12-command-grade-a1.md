@@ -1,8 +1,8 @@
 # Fix: Command Grade A1 — adjacent-column row split + dead import cleanup
 
-| Date       | Type | Commit  | Versions          |
-| ---------- | ---- | ------- | ----------------- |
-| 2026-05-12 | fix  | _TBD_   | api 1.6.0 → 1.6.1 |
+| Date       | Type | Commit    | Versions          |
+| ---------- | ---- | --------- | ----------------- |
+| 2026-05-12 | fix  | `06c50c3` | api 1.6.0 → 1.6.1 |
 
 ## Context
 
