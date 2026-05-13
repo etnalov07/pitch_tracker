@@ -3,14 +3,17 @@ import { scoreAccuracy } from '../scoreAccuracy';
 
 // 20 worked-example pitches originally from
 // docs/plans/2026-05-11-zone-based-accuracy.md, updated 2026-05-12 for the
-// row-floor softening in docs/plans/2026-05-12-command-grade-softening.md.
-// Two cases now score 0.25 instead of 0 (right height, wrong column-side).
+// row-floor softening in docs/plans/2026-05-12-command-grade-softening.md
+// and the A1 adjacency split in docs/changes/2026-05-12-command-grade-a1.md.
+// Two cases score 0.25 instead of 0 (right height, wrong column-side); one
+// case (target 2-2, actual 2-1) scores 0.5 instead of 0.25 (right height,
+// one column off).
 describe('scoreAccuracy — worked example (20 pitches)', () => {
     const cases: Array<{ target: PitchCallZone; actual: PitchCallZone; expected: number; reason: string }> = [
         { target: '2-2', actual: '2-2', expected: 1, reason: 'Same col (in-zone)' },
         { target: '2-2', actual: '1-2', expected: 1, reason: 'Same col (in-zone)' },
         { target: '2-2', actual: '0-2', expected: 1, reason: 'Same col (in-zone)' },
-        { target: '2-2', actual: '2-1', expected: 0.25, reason: 'Adjacent col' },
+        { target: '2-2', actual: '2-1', expected: 0.5, reason: 'Adjacent col + row matches (A1)' },
         { target: '2-2', actual: '1-1', expected: 0.25, reason: 'Adjacent col' },
         { target: '2-2', actual: 'W-low-out', expected: 1, reason: 'Waste matching side (out)' },
         { target: '2-2', actual: 'W-low-in', expected: 0.25, reason: 'Wrong-col-side waste, row matches (Dial 1)' },
@@ -35,10 +38,10 @@ describe('scoreAccuracy — worked example (20 pitches)', () => {
         });
     });
 
-    it('total of the 20-pitch sample sums to 13.75 (69% rounded) under Dial 1', () => {
+    it('total of the 20-pitch sample sums to 14.00 (70% rounded) under A1', () => {
         const sum = cases.reduce((acc, c) => acc + scoreAccuracy(c.target, c.actual), 0);
-        expect(sum).toBeCloseTo(13.75, 10);
-        expect(Math.round((sum / cases.length) * 100)).toBe(69);
+        expect(sum).toBeCloseTo(14.0, 10);
+        expect(Math.round((sum / cases.length) * 100)).toBe(70);
     });
 });
 
@@ -142,6 +145,37 @@ describe('scoreAccuracy — additional coverage', () => {
             expect(scoreAccuracy('2-2', 'W-high')).toBe(0);
             // Target high-in (0-0), actual W-low-out (corner waste, opposite row + opposite col).
             expect(scoreAccuracy('0-0', 'W-low-out')).toBe(0);
+        });
+    });
+
+    describe('A1 adjacency split (2026-05-12)', () => {
+        it('column-anchored: adjacent col + row matches → 0.5', () => {
+            // Target low-out (2-2), actual low-mid (2-1). One col in, same height.
+            expect(scoreAccuracy('2-2', '2-1')).toBe(0.5);
+            // Target high-in (0-0), actual high-mid (0-1). One col out, same height.
+            expect(scoreAccuracy('0-0', '0-1')).toBe(0.5);
+            // Target mid-out (1-2), actual mid-mid (1-1). Same height, one col in.
+            expect(scoreAccuracy('1-2', '1-1')).toBe(0.5);
+            // Target mid-in (1-0), actual mid-mid (1-1). Same height, one col out.
+            expect(scoreAccuracy('1-0', '1-1')).toBe(0.5);
+        });
+
+        it('column-anchored: adjacent col + row off → still 0.25', () => {
+            // Target low-out (2-2), actual mid-mid (1-1). One col in, one row up.
+            expect(scoreAccuracy('2-2', '1-1')).toBe(0.25);
+            // Target high-in (0-0), actual mid-mid (1-1). One col out, one row down.
+            expect(scoreAccuracy('0-0', '1-1')).toBe(0.25);
+            // Target low-out (2-2), actual high-mid (0-1). One col in, two rows up.
+            expect(scoreAccuracy('2-2', '0-1')).toBe(0.25);
+        });
+
+        it('A1 does not affect mid-col targets or waste cases', () => {
+            // Mid-col target: row-anchored branch handles it; unchanged.
+            expect(scoreAccuracy('0-1', '0-0')).toBe(0.75);
+            // Waste actual on matching col-side: still 1.0.
+            expect(scoreAccuracy('2-2', 'W-low-out')).toBe(1);
+            // Wrong-col-side waste with matching row: still 0.25.
+            expect(scoreAccuracy('2-2', 'W-low-in')).toBe(0.25);
         });
     });
 

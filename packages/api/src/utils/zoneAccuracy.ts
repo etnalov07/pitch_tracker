@@ -99,7 +99,8 @@ export function scoreAccuracy(target: PitchCallZone, actual: PitchCallZone): 0 |
     const a = ZONE_GRID[actual];
 
     if (t.col === 0 || t.col === 2) {
-        // Column-anchored: matching col-side = 1.0. Adjacent col = 0.25.
+        // Column-anchored: matching col-side = 1.0. Adjacent col: 0.5 when
+        // row matches (right height, one col off, A1 2026-05-12), else 0.25.
         // 2 cols off = 0, unless row matches → 0.25 (right height, wrong
         // side). Wrong-col-side / perpendicular waste with matching row-side
         // = 0.25.
@@ -107,7 +108,7 @@ export function scoreAccuracy(target: PitchCallZone, actual: PitchCallZone): 0 |
         if (isInZone(a)) {
             const colDiff = Math.abs(t.col - a.col);
             if (colDiff === 0) return 1;
-            if (colDiff === 1) return 0.25;
+            if (colDiff === 1) return a.row === t.row ? 0.5 : 0.25;
             if (a.row === t.row) return 0.25;
             return 0;
         }

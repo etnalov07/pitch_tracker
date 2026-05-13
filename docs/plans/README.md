@@ -12,3 +12,4 @@
 | 2026-05-12 | Command Grade softening — row floor on column-anchored targets | Approved    | [command-grade-softening](2026-05-12-command-grade-softening.md)                      |
 | 2026-05-12 | Command Grade six-level scoring (Dial 2)                       | Not adopted | [command-grade-six-level](2026-05-12-command-grade-six-level.md)                      |
 | 2026-05-12 | Standalone opponent roster (add pitchers & batters w/o a game) | Approved    | [standalone-opponent-roster](2026-05-12-standalone-opponent-roster.md)                |
+| 2026-05-12 | Command / pitch accuracy audit (3 paths, 4 proposals tested)   | Review only | [command-grade-audit](2026-05-12-command-grade-audit.md)                              |

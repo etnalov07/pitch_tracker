@@ -19,9 +19,16 @@ describe('zoneAccuracy (api-local mirror of shared)', () => {
         expect(scoreAccuracy('0-0', '2-0')).toBe(1);
     });
 
-    it('column-anchored target: adjacent col = 0.25', () => {
-        expect(scoreAccuracy('2-2', '2-1')).toBe(0.25);
+    it('column-anchored target: adjacent col + row matches = 0.5 (A1)', () => {
+        // Target low-out (2-2), actual low-mid (2-1). One col off, same height.
+        expect(scoreAccuracy('2-2', '2-1')).toBe(0.5);
+        // Target high-in (0-0), actual high-mid (0-1). One col off, same height.
+        expect(scoreAccuracy('0-0', '0-1')).toBe(0.5);
+    });
+
+    it('column-anchored target: adjacent col + row off = 0.25', () => {
         expect(scoreAccuracy('2-2', '1-1')).toBe(0.25);
+        expect(scoreAccuracy('0-0', '1-1')).toBe(0.25);
     });
 
     it('column-anchored target: 2 cols off with row off = 0', () => {

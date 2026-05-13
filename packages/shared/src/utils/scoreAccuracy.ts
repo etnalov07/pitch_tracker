@@ -4,11 +4,12 @@
 // close the actual landing zone is to the called target zone.
 //
 // Rules (full matrix in docs/plans/2026-05-11-zone-based-accuracy.md, with
-// 2026-05-12 row-floor softening in docs/plans/2026-05-12-command-grade-softening.md):
+// 2026-05-12 row-floor softening in docs/plans/2026-05-12-command-grade-softening.md
+// and 2026-05-12 A1 adjacency split in docs/changes/2026-05-12-command-grade-a1.md):
 //   - In/out column targets are column-anchored: column miss matters more
-//     than row miss. Adjacent column = 0.25. Two columns off = 0, unless the
-//     row matches the target row, in which case 0.25 (right height, wrong
-//     side).
+//     than row miss. Adjacent column = 0.5 when row matches the target row
+//     (right height, one column off), else 0.25. Two columns off = 0, unless
+//     the row matches in which case 0.25 (right height, wrong side).
 //   - Mid-column targets are row-anchored: row miss dominates. Adjacent row
 //     gets partial credit; two rows off is zero.
 //   - Waste landings on the matching col-side get 1.0. Waste on the wrong
@@ -70,14 +71,15 @@ export function scoreAccuracy(target: PitchCallZone, actual: PitchCallZone): 0 |
 
     if (t.col === 0 || t.col === 2) {
         // Column-anchored: in or out target. Matching col-side = 1.0.
-        // Adjacent col = 0.25. 2 cols off = 0, unless row matches → 0.25
+        // Adjacent col: 0.5 when row matches (right height, one col off),
+        // else 0.25. 2 cols off = 0, unless row matches → 0.25
         // (right height, wrong side). Wrong-col-side / perpendicular waste
         // with matching row-side = 0.25.
         const matchingWasteRow = t.row === 0 ? -1 : t.row === 2 ? 3 : 1;
         if (isInZone(a)) {
             const colDiff = Math.abs(t.col - a.col);
             if (colDiff === 0) return 1;
-            if (colDiff === 1) return 0.25;
+            if (colDiff === 1) return a.row === t.row ? 0.5 : 0.25;
             if (a.row === t.row) return 0.25;
             return 0;
         }
