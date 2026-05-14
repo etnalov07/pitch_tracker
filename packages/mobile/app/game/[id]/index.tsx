@@ -3,7 +3,15 @@ import { View, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Text, Button, useTheme, IconButton, Card, Chip, Divider, ActivityIndicator } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
-import { useAppDispatch, useAppSelector, fetchGameById, toggleHomeAway, startGame } from '../../../src/state';
+import {
+    useAppDispatch,
+    useAppSelector,
+    fetchGameById,
+    toggleHomeAway,
+    startGame,
+    fetchOpponentLineup,
+    fetchMyTeamLineup,
+} from '../../../src/state';
 
 export default function GameDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -11,13 +19,15 @@ export default function GameDetailScreen() {
     const theme = useTheme();
     const dispatch = useAppDispatch();
 
-    const { selectedGame, loading, error } = useAppSelector((state) => state.games);
+    const { selectedGame, loading, error, opponentLineup, myTeamLineup } = useAppSelector((state) => state.games);
     // All hooks must be declared before any conditional early-return below.
     const [starting, setStarting] = useState(false);
 
     useEffect(() => {
         if (id) {
             dispatch(fetchGameById(id));
+            dispatch(fetchOpponentLineup(id));
+            dispatch(fetchMyTeamLineup(id));
         }
     }, [id, dispatch]);
 
@@ -237,6 +247,34 @@ export default function GameDetailScreen() {
                 </Card>
 
                 {/* Actions */}
+                {game.status === 'scheduled' &&
+                    game.charting_mode !== 'scouting' &&
+                    game.charting_mode !== 'opp_pitcher' &&
+                    opponentLineup.length === 0 && (
+                        <Button
+                            mode="outlined"
+                            icon="account-group"
+                            onPress={() => router.push(`/game/${id}/lineup` as any)}
+                            style={styles.actionButton}
+                            contentStyle={styles.actionButtonContent}
+                        >
+                            Setup Opponent Lineup
+                        </Button>
+                    )}
+                {game.status === 'scheduled' &&
+                    game.charting_mode !== 'scouting' &&
+                    game.charting_mode !== 'our_pitcher' &&
+                    myTeamLineup.length === 0 && (
+                        <Button
+                            mode="outlined"
+                            icon="account-group-outline"
+                            onPress={() => router.push(`/game/${id}/my-lineup` as any)}
+                            style={styles.actionButton}
+                            contentStyle={styles.actionButtonContent}
+                        >
+                            Setup My Lineup
+                        </Button>
+                    )}
                 {game.status === 'scheduled' && (
                     <Button
                         mode="contained"
