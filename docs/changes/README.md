@@ -22,3 +22,4 @@ Per-feature/per-fix change docs combining the plan summary and what shipped. Eac
 | 2026-05-12 | fix   | Command Grade A1 — adjacent-column row split + dead import cleanup      | `06c50c3`            | [command-grade-a1](2026-05-12-command-grade-a1.md)                                                   |
 | 2026-05-14 | fix   | CORS preflight blocks browser PATCH requests                            | `4f0d4a5`            | [cors-allow-patch](2026-05-14-cors-allow-patch.md)                                                   |
 | 2026-05-14 | fix   | "Setup Opponent Lineup" button hidden for away teams pre-game           | `be14846`            | [setup-opponent-lineup-button-gate](2026-05-14-setup-opponent-lineup-button-gate.md)                 |
+| 2026-05-14 | fix   | Lineup setup CTAs vanish after saving one lineup pre-game               | TBD                  | [lineup-ctas-visible-pre-game](2026-05-14-lineup-ctas-visible-pre-game.md)                           |

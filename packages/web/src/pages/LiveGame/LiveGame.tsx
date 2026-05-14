@@ -244,6 +244,13 @@ const LiveGame: React.FC = () => {
           ? !currentOpposingPitcher
           : !currentPitcher || !currentBatter;
 
+    // Lineup-setup CTAs are visible pre-game (status === 'scheduled') until the user starts
+    // the game, and also during the in-game select prompt when a lineup is still empty.
+    const showOpponentLineupCTA = !isScoutingMode && game?.charting_mode !== 'opp_pitcher' && opponentLineup.length === 0;
+    const showMyLineupCTA = !isScoutingMode && game?.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0;
+    const showSetupSelectPrompt = needsSetup && !currentAtBat;
+    const showPreGameLineupCTAs = game?.status === 'scheduled' && (showOpponentLineupCTA || showMyLineupCTA);
+
     // Single-team scouting: true when the current half is NOT the focus team's pitching half
     const scoutingFocus = game?.scouting_focus;
     const shouldSkipHalf =
@@ -649,30 +656,32 @@ const LiveGame: React.FC = () => {
                     )}
                 </PlayersRow>
 
-                {needsSetup && !currentAtBat && (
+                {(showSetupSelectPrompt || showPreGameLineupCTAs) && (
                     <SetupPrompt>
-                        <SetupText>
-                            {isScoutingMode
-                                ? !currentOpposingPitcher && !currentBatter
-                                    ? 'Select the pitcher and batter to start scouting.'
-                                    : !currentOpposingPitcher
-                                      ? 'Select the pitcher to continue.'
-                                      : 'Select the batter to continue.'
-                                : !currentPitcher && gameMode === 'opp_pitcher'
-                                  ? 'Select the opposing pitcher and your batter to start tracking.'
-                                  : !currentPitcher && !currentBatter
-                                    ? 'Select your pitcher and the opponent batter to start tracking pitches.'
-                                    : !currentPitcher
-                                      ? 'Select your pitcher to continue.'
-                                      : 'Select the opponent batter to continue.'}
-                        </SetupText>
-                        {isScoutingMode && (
+                        {showSetupSelectPrompt && (
+                            <SetupText>
+                                {isScoutingMode
+                                    ? !currentOpposingPitcher && !currentBatter
+                                        ? 'Select the pitcher and batter to start scouting.'
+                                        : !currentOpposingPitcher
+                                          ? 'Select the pitcher to continue.'
+                                          : 'Select the batter to continue.'
+                                    : !currentPitcher && gameMode === 'opp_pitcher'
+                                      ? 'Select the opposing pitcher and your batter to start tracking.'
+                                      : !currentPitcher && !currentBatter
+                                        ? 'Select your pitcher and the opponent batter to start tracking pitches.'
+                                        : !currentPitcher
+                                          ? 'Select your pitcher to continue.'
+                                          : 'Select the opponent batter to continue.'}
+                            </SetupText>
+                        )}
+                        {isScoutingMode && showSetupSelectPrompt && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Lineups</SetupButton>
                         )}
-                        {!isScoutingMode && game?.charting_mode !== 'opp_pitcher' && opponentLineup.length === 0 && (
+                        {showOpponentLineupCTA && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Opponent Lineup</SetupButton>
                         )}
-                        {!isScoutingMode && game?.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0 && (
+                        {showMyLineupCTA && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/my-lineup?from=live`)}>
                                 Setup My Team Lineup
                             </SetupButton>
