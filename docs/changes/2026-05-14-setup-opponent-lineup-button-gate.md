@@ -1,8 +1,8 @@
 # Fix: "Setup Opponent Lineup" button hidden for away teams pre-game
 
-| Date       | Type | Commit | Versions                                  |
-| ---------- | ---- | ------ | ----------------------------------------- |
-| 2026-05-14 | fix  | TBD    | web 1.1.0 → 1.2.0, mobile 1.96.0 → 1.97.0 |
+| Date       | Type | Commit    | Versions                                  |
+| ---------- | ---- | --------- | ----------------------------------------- |
+| 2026-05-14 | fix  | `be14846` | web 1.1.0 → 1.2.0, mobile 1.96.0 → 1.97.0 |
 
 ## Context
 
