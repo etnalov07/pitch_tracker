@@ -1,8 +1,8 @@
 # Feat: pre-game lineup CTAs on mobile game-detail screen
 
-| Date       | Type | Commit | Versions               |
-| ---------- | ---- | ------ | ---------------------- |
-| 2026-05-14 | feat | TBD    | mobile 1.97.0 → 1.98.0 |
+| Date       | Type | Commit    | Versions               |
+| ---------- | ---- | --------- | ---------------------- |
+| 2026-05-14 | feat | `6533c3f` | mobile 1.97.0 → 1.98.0 |
 
 ## Context
 
@@ -75,7 +75,7 @@ No shared types, API routes, or DB migrations touched. No web changes.
 - [x] `cd packages/mobile && npm test` green.
 - [ ] **Manual (mobile):** create a new game with `charting_mode = 'both'`,
       team as **away**. On the game-detail screen, both `Setup Opponent
-    Lineup` and `Setup My Lineup` buttons are visible above
+  Lineup` and `Setup My Lineup` buttons are visible above
       `Start Game`. Tap each, save, return; the corresponding button
       disappears once that lineup has entries.
 - [ ] **Manual (mobile):** `charting_mode = 'our_pitcher'` shows only
