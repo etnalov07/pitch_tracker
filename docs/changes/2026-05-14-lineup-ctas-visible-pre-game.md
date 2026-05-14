@@ -1,8 +1,8 @@
 # Fix: lineup setup CTAs vanish after saving one lineup pre-game
 
-| Date       | Type | Commit | Versions          |
-| ---------- | ---- | ------ | ----------------- |
-| 2026-05-14 | fix  | TBD    | web 1.2.0 → 1.3.0 |
+| Date       | Type | Commit    | Versions          |
+| ---------- | ---- | --------- | ----------------- |
+| 2026-05-14 | fix  | `c6ab85c` | web 1.2.0 → 1.3.0 |
 
 ## Context
 
