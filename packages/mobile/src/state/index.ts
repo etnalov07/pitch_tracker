@@ -15,6 +15,7 @@ export {
     fetchAllGames,
     fetchGameById,
     createGame,
+    deleteGame,
     startGame,
     endGame,
     advanceInning,

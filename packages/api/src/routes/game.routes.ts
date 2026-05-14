@@ -11,6 +11,7 @@ router.post('/', gameController.createGame.bind(gameController));
 router.get('/my-games', gameController.getMyGames.bind(gameController));
 router.get('/team/:team_id', gameController.getGamesByTeam.bind(gameController));
 router.get('/:id', gameController.getGameById.bind(gameController));
+router.delete('/:id', gameController.deleteGame.bind(gameController));
 router.post('/:id/start', gameController.startGame.bind(gameController));
 router.post('/:id/toggle-home-away', gameController.toggleHomeAway.bind(gameController));
 router.put('/:id/score', gameController.updateScore.bind(gameController));
