@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Super User &amp; Admin Hierarchy — Diagrams</title>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+        <style>
+            :root {
+                --bg: #0d1117;
+                --panel: #161b22;
+                --panel-2: #1f262d;
+                --border: #30363d;
+                --text: #e6edf3;
+                --text-dim: #9ba3af;
+                --accent: #58a6ff;
+                --accent-2: #3fb950;
+                --warn: #d29922;
+                --danger: #f85149;
+                --code-bg: #010409;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                background: var(--bg);
+                color: var(--text);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                line-height: 1.55;
+            }
+            .container {
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 32px 24px 64px;
+            }
+            header {
+                border-bottom: 1px solid var(--border);
+                padding-bottom: 16px;
+                margin-bottom: 32px;
+            }
+            header h1 {
+                margin: 0 0 6px;
+                font-size: 28px;
+            }
+            header .sub {
+                color: var(--text-dim);
+                font-size: 14px;
+            }
+            header .sub a {
+                color: var(--accent);
+                text-decoration: none;
+            }
+            header .sub a:hover {
+                text-decoration: underline;
+            }
+            nav.toc {
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 14px 18px;
+                margin-bottom: 36px;
+            }
+            nav.toc strong {
+                display: block;
+                font-size: 12px;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--text-dim);
+                margin-bottom: 8px;
+            }
+            nav.toc ol {
+                margin: 0;
+                padding-left: 20px;
+            }
+            nav.toc a {
+                color: var(--accent);
+                text-decoration: none;
+            }
+            nav.toc a:hover {
+                text-decoration: underline;
+            }
+            section {
+                margin-bottom: 48px;
+            }
+            section h2 {
+                font-size: 20px;
+                margin: 0 0 6px;
+                color: var(--text);
+            }
+            section .lede {
+                color: var(--text-dim);
+                font-size: 14px;
+                margin: 0 0 16px;
+            }
+            .card {
+                background: var(--panel);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 20px;
+                overflow-x: auto;
+            }
+            .mermaid {
+                background: var(--panel);
+                text-align: center;
+            }
+            /* Role hierarchy "stack" */
+            .role-stack {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .role {
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 14px 18px;
+                background: var(--panel-2);
+                display: grid;
+                grid-template-columns: 220px 1fr;
+                gap: 16px;
+                align-items: start;
+            }
+            .role .name {
+                font-weight: 600;
+            }
+            .role .name small {
+                display: block;
+                color: var(--text-dim);
+                font-weight: 400;
+                font-size: 12px;
+                margin-top: 4px;
+            }
+            .role .powers {
+                color: var(--text);
+                font-size: 14px;
+            }
+            .role .powers ul {
+                margin: 4px 0 0;
+                padding-left: 18px;
+            }
+            .role.super {
+                border-color: #6e40c9;
+                background: linear-gradient(180deg, #221a3d 0%, #1a1430 100%);
+            }
+            .role.owner {
+                border-color: var(--accent-2);
+            }
+            .role.admin {
+                border-color: var(--accent);
+            }
+            .role.coach {
+                border-color: var(--warn);
+            }
+            .role.player {
+                border-color: var(--text-dim);
+            }
+            .chev {
+                text-align: center;
+                color: var(--text-dim);
+                font-size: 18px;
+                line-height: 1;
+            }
+            /* Data tree */
+            ul.tree {
+                list-style: none;
+                margin: 0;
+                padding-left: 0;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                font-size: 13px;
+            }
+            ul.tree ul {
+                list-style: none;
+                margin: 0;
+                padding-left: 22px;
+                border-left: 1px dashed var(--border);
+                margin-left: 6px;
+            }
+            ul.tree li {
+                padding: 3px 0;
+            }
+            ul.tree .tag {
+                color: var(--text-dim);
+                font-style: italic;
+                margin-left: 6px;
+            }
+            ul.tree .super {
+                color: #b392f0;
+                font-weight: 600;
+            }
+            ul.tree .org {
+                color: var(--accent-2);
+            }
+            ul.tree .team {
+                color: var(--accent);
+            }
+            ul.tree .leaf {
+                color: var(--text);
+            }
+            /* Caller summary table */
+            table.callers {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 13px;
+            }
+            table.callers th,
+            table.callers td {
+                padding: 10px 12px;
+                border-bottom: 1px solid var(--border);
+                text-align: left;
+                vertical-align: top;
+            }
+            table.callers th {
+                background: var(--panel-2);
+                color: var(--text-dim);
+                font-size: 11px;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+            }
+            table.callers code {
+                background: var(--code-bg);
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-size: 12px;
+            }
+            table.callers .pass {
+                color: var(--accent-2);
+            }
+            table.callers .deny {
+                color: var(--danger);
+            }
+            /* Step list for the middleware walkthrough */
+            ol.steps {
+                counter-reset: step;
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            ol.steps li {
+                position: relative;
+                padding: 14px 16px 14px 56px;
+                margin-bottom: 10px;
+                background: var(--panel-2);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+            }
+            ol.steps li::before {
+                counter-increment: step;
+                content: counter(step);
+                position: absolute;
+                top: 14px;
+                left: 16px;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: var(--accent);
+                color: #0d1117;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 13px;
+            }
+            ol.steps li .label {
+                font-weight: 600;
+                display: block;
+                margin-bottom: 4px;
+            }
+            ol.steps li .detail {
+                color: var(--text-dim);
+                font-size: 13px;
+            }
+            ol.steps li code {
+                background: var(--code-bg);
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-size: 12px;
+                color: var(--text);
+            }
+            ol.steps li.danger::before {
+                background: var(--danger);
+                color: white;
+            }
+            ol.steps li.success::before {
+                background: var(--accent-2);
+                color: #0d1117;
+            }
+            /* Notes block */
+            .note {
+                margin-top: 16px;
+                padding: 12px 14px;
+                border-left: 3px solid var(--warn);
+                background: var(--panel-2);
+                border-radius: 0 6px 6px 0;
+                color: var(--text);
+                font-size: 13px;
+            }
+            .note strong {
+                color: var(--warn);
+            }
+            footer {
+                color: var(--text-dim);
+                font-size: 12px;
+                border-top: 1px solid var(--border);
+                padding-top: 16px;
+                margin-top: 48px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>Super User &amp; Admin Hierarchy</h1>
+                <div class="sub">
+                    Visual companion to
+                    <a href="2026-05-10-super-user-and-signup-modes.md"
+                        >docs/plans/2026-05-10-super-user-and-signup-modes.md</a
+                    >
+                    · drafted 2026-05-13 · diagrams are pre-implementation
+                </div>
+            </header>
+
+            <nav class="toc">
+                <strong>Contents</strong>
+                <ol>
+                    <li><a href="#roles">Role hierarchy (who outranks whom)</a></li>
+                    <li><a href="#data">Data ownership tree</a></li>
+                    <li><a href="#signup">Signup → dashboard routing</a></li>
+                    <li><a href="#request">Request flow: <code>POST games/:id/soft-delete</code></a></li>
+                    <li><a href="#middleware">Step-by-step middleware walkthrough</a></li>
+                    <li><a href="#callers">Per-caller outcome table</a></li>
+                </ol>
+            </nav>
+
+            <section id="roles">
+                <h2>1. Role hierarchy</h2>
+                <p class="lede">Five tiers. Super User is external (env-var allowlist). The rest live in the DB.</p>
+                <div class="card">
+                    <div class="role-stack">
+                        <div class="role super">
+                            <div class="name">
+                                SUPER USER
+                                <small>env-var allowlist · <code>SUPER_ADMIN_EMAILS</code></small>
+                            </div>
+                            <div class="powers">
+                                God mode across all organizations. Read everything; mutate the five targeted actions
+                                (force-verify, resend verification, set registration_type, regenerate narrative,
+                                soft-delete game).
+                            </div>
+                        </div>
+                        <div class="chev">▼</div>
+
+                        <div class="role owner">
+                            <div class="name">
+                                ORG OWNER
+                                <small><code>organization_members.role = 'owner'</code></small>
+                            </div>
+                            <div class="powers">
+                                Everything Org Admin can do, <em>plus</em> the self-destruct set:
+                                <ul>
+                                    <li>add or remove another admin</li>
+                                    <li>transfer ownership</li>
+                                    <li>soft-delete the organization</li>
+                                    <li>rename the organization</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="chev">▼</div>
+
+                        <div class="role admin">
+                            <div class="name">
+                                ORG ADMIN
+                                <small><code>organization_members.role = 'admin'</code></small>
+                            </div>
+                            <div class="powers">
+                                Full local power within this org:
+                                <ul>
+                                    <li>create / rename / soft-delete teams</li>
+                                    <li>invite / remove coaches, assistants, players on any team</li>
+                                    <li>approve or deny join requests</li>
+                                    <li>regenerate narratives, force-verify emails of org members</li>
+                                    <li>soft-delete games on org teams</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="chev">▼</div>
+
+                        <div class="role coach">
+                            <div class="name">
+                                TEAM COACH / OWNER
+                                <small
+                                    ><code>team_members.role ∈ ('owner','coach','assistant')</code></small
+                                >
+                            </div>
+                            <div class="powers">
+                                Standard team operations on this team only: chart games, manage roster, send invites
+                                (gated by upcoming Part C1 fix). Scope ends at the team boundary.
+                            </div>
+                        </div>
+                        <div class="chev">▼</div>
+
+                        <div class="role player">
+                            <div class="name">
+                                PLAYER
+                                <small><code>team_members.role = 'player'</code></small>
+                            </div>
+                            <div class="powers">
+                                Personal stats only — own pitching line, own batting line, team scoreboard. No teammate
+                                breakdowns, no scouting reports, no charting tools.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="data">
+                <h2>2. Data ownership tree</h2>
+                <p class="lede">
+                    Two co-existing top-level shapes: org-rooted teams (new) and orphaned teams (today's solo coaches).
+                </p>
+                <div class="card">
+                    <ul class="tree">
+                        <li>
+                            <span class="super">SUPER USER</span> <span class="tag">— env-var, no DB row</span>
+                            <ul>
+                                <li>
+                                    sees everything via <span class="leaf">/bt-api/admin/*</span>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <span class="org">organizations</span>
+                            <ul>
+                                <li>
+                                    <span class="leaf">organization_members</span>
+                                    <span class="tag">(role: owner | admin | coach)</span>
+                                    <ul>
+                                        <li>→ users <span class="tag">(registration_type='org_admin')</span></li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    <span class="team">teams</span> <span class="tag">(organization_id FK)</span>
+                                    <ul>
+                                        <li>
+                                            <span class="leaf">team_members</span>
+                                            <span class="tag">(role: owner | coach | assistant | player)</span>
+                                            <ul>
+                                                <li>
+                                                    → users
+                                                    <span class="tag">(registration_type='coach' or 'player')</span>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <span class="leaf">players</span>
+                                            <span class="tag">(roster; players.user_id nullable)</span>
+                                        </li>
+                                        <li>
+                                            <span class="leaf">games</span>
+                                            <ul>
+                                                <li>at_bats → pitches</li>
+                                                <li>performance_summaries</li>
+                                                <li>narratives</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <span class="team">teams</span>
+                            <span class="tag">(organization_id IS NULL — orphaned, today's behavior)</span>
+                            <ul>
+                                <li>… same children as above …</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <span class="leaf">admin_audit</span>
+                            <span class="tag">← writes from both super-user and org-level privileged mutations</span>
+                            <ul>
+                                <li>actor_role: <code>'super' | 'org_owner' | 'org_admin'</code></li>
+                                <li>organization_id: <code>NULL</code> for super-user actions</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="signup">
+                <h2>3. Signup → dashboard routing</h2>
+                <p class="lede">
+                    The picker on the signup form actually means something now. Three lanes, four landing pages, one
+                    super-user back door.
+                </p>
+                <div class="card">
+                    <pre class="mermaid">
+flowchart TD
+    Reg["/register · 'I am a...' picker"] --> Type{registration_type}
+
+    Type -->|coach| CoachHome["/<br/>CoachDashboard<br/>(existing)"]
+    Type -->|player| PWait["/onboarding/player<br/>Waiting for invite"]
+    Type -->|org_admin| OrgCreate["/onboarding/org<br/>Name your organization"]
+
+    PWait -->|invite accepted<br/>or coach links| PDash["/<br/>PlayerDashboard<br/>· team switcher<br/>· my stats<br/>· scoreboard"]
+    OrgCreate --> OrgDash["/org<br/>OrgDashboard<br/>· team list<br/>· create team<br/>· invite coach"]
+    OrgDash -->|drill into team| TeamView["/teams/:id<br/>(existing team views, reused)"]
+
+    CoachHome -.solo coach.-> CoachCreate["Create Team button visible<br/>(organization_id = NULL)"]
+    CoachHome -.travel-ball coach.-> CoachNoCreate["No Create Team button<br/>(team is org-linked, user not org admin)"]
+
+    Super["SUPER USER<br/>(email ∈ SUPER_ADMIN_EMAILS)"] -.hidden tab in main nav.-> Admin["/admin<br/>Users · Orgs · Teams · Games · Audit<br/>+ 15-min destructive-mode toggle"]
+
+    classDef super fill:#221a3d,stroke:#6e40c9,color:#e6edf3
+    classDef coach fill:#1f262d,stroke:#d29922,color:#e6edf3
+    classDef player fill:#1f262d,stroke:#9ba3af,color:#e6edf3
+    classDef org fill:#1f262d,stroke:#3fb950,color:#e6edf3
+    classDef admin fill:#1f262d,stroke:#58a6ff,color:#e6edf3
+    class Super,Admin super
+    class CoachHome,CoachCreate,CoachNoCreate coach
+    class PWait,PDash player
+    class OrgCreate,OrgDash,TeamView org
+                    </pre>
+                </div>
+            </section>
+
+            <section id="request">
+                <h2>4. Request flow: <code>POST games/:id/soft-delete</code></h2>
+                <p class="lede">
+                    Two routes can land on the same DB mutation. Super-user takes the dedicated admin route; everyone
+                    else takes the existing one, newly gated.
+                </p>
+                <div class="card">
+                    <pre class="mermaid">
+flowchart TD
+    Req([Incoming HTTP request]) --> Auth["authenticateToken<br/>loads req.user from JWT<br/>401 if missing/bad"]
+
+    Auth --> Split{Which route?}
+    Split -->|"/bt-api/admin/games/:id/soft-delete"| SuperRoute["requireSuperAdmin<br/>email ∈ SUPER_ADMIN_EMAILS?"]
+    Split -->|"/bt-api/games/:id/soft-delete"| GameRoute["requireGameAuthority<br/>(new composite)"]
+
+    SuperRoute -->|no| Deny1[/"403 Forbidden"/]
+    SuperRoute -->|yes| Ctrl
+
+    GameRoute --> Lookup["lookup game → team → org_id"]
+    Lookup --> OrgBranch{"team.organization_id<br/>IS NULL?"}
+    OrgBranch -->|yes| TeamOnly["requireTeamRole(owner, coach)"]
+    OrgBranch -->|no| TeamOrOrg["requireTeamRole(owner, coach)<br/>OR<br/>requireOrgRole(owner, admin)"]
+    TeamOnly --> Match{match?}
+    TeamOrOrg --> Match
+    Match -->|no| Deny2[/"403 Forbidden"/]
+    Match -->|yes| SetAuthority["set req.authority =<br/>'super' | 'org_owner' | 'org_admin' | 'team'"]
+    SetAuthority --> Ctrl
+
+    Ctrl["controller.softDelete"] --> Tx["transaction:<br/>UPDATE games SET deleted_at = NOW()<br/>INSERT INTO admin_audit (actor_role, org_id, ...)"]
+    Tx --> Ok[/"200 { id, deleted_at }"/]
+
+    classDef ok fill:#0f2a18,stroke:#3fb950,color:#e6edf3
+    classDef bad fill:#2a0f12,stroke:#f85149,color:#e6edf3
+    classDef step fill:#1f262d,stroke:#30363d,color:#e6edf3
+    class Ok ok
+    class Deny1,Deny2 bad
+    class Auth,SuperRoute,GameRoute,Lookup,TeamOnly,TeamOrOrg,SetAuthority,Ctrl,Tx step
+                    </pre>
+                </div>
+            </section>
+
+            <section id="middleware">
+                <h2>5. Step-by-step middleware walkthrough</h2>
+                <p class="lede">
+                    The same request, traced linearly. Use this as the implementation checklist for
+                    <code>requireGameAuthority</code>.
+                </p>
+                <div class="card">
+                    <ol class="steps">
+                        <li>
+                            <span class="label">Parse and verify the JWT</span>
+                            <span class="detail"
+                                ><code>authenticateToken</code> decodes the bearer token, loads
+                                <code>req.user = { id, email, ... }</code>. If missing or invalid, return
+                                <code>401</code> and stop.</span
+                            >
+                        </li>
+                        <li>
+                            <span class="label">Branch on route</span>
+                            <span class="detail"
+                                >Super-user route → step 3. Standard game route → step 4.</span
+                            >
+                        </li>
+                        <li>
+                            <span class="label">requireSuperAdmin (super route only)</span>
+                            <span class="detail"
+                                >Read <code>SUPER_ADMIN_EMAILS</code> at boot; check
+                                <code>req.user.email</code> against the list. Fail → <code>403</code>. Pass → set
+                                <code>req.authority = 'super'</code>, jump to step 8.</span
+                            >
+                        </li>
+                        <li>
+                            <span class="label">Load the game and its team</span>
+                            <span class="detail"
+                                >Query <code>games</code> by <code>:id</code>, join
+                                <code>teams</code> to retrieve <code>organization_id</code> (nullable). If the game
+                                doesn't exist, <code>404</code>.</span
+                            >
+                        </li>
+                        <li>
+                            <span class="label">Try team-scoped authority</span>
+                            <span class="detail"
+                                >Look up the caller's <code>team_members</code> row for this team. If
+                                <code>role ∈ ('owner','coach','assistant')</code>, set
+                                <code>req.authority = 'team'</code> and proceed to step 8.</span
+                            >
+                        </li>
+                        <li>
+                            <span class="label">Try org-scoped authority (only if team is org-linked)</span>
+                            <span class="detail"
+                                >Skip if <code>organization_id IS NULL</code>. Otherwise, look up the caller's
+                                <code>organization_members</code> row. If <code>role = 'owner'</code> →
+                                <code>req.authority = 'org_owner'</code>. If <code>role = 'admin'</code> →
+                                <code>req.authority = 'org_admin'</code>.</span
+                            >
+                        </li>
+                        <li class="danger">
+                            <span class="label">Deny if nothing matched</span>
+                            <span class="detail"
+                                >No team-membership match and no org-membership match → <code>403</code>. Player and
+                                outsider callers terminate here.</span
+                            >
+                        </li>
+                        <li>
+                            <span class="label">Controller dispatch</span>
+                            <span class="detail"
+                                ><code>gamesController.softDelete</code> (or
+                                <code>adminController.softDeleteGame</code> for the super route) calls the service
+                                layer.</span
+                            >
+                        </li>
+                        <li>
+                            <span class="label">Transactional mutation + audit write</span>
+                            <span class="detail"
+                                >Inside one DB transaction:
+                                <code>UPDATE games SET deleted_at = NOW() WHERE id = :id</code>, then
+                                <code
+                                    >INSERT INTO admin_audit (actor_user_id, actor_role, organization_id, action,
+                                    target_table, target_id, payload)</code
+                                >. Audit row is skipped when <code>req.authority = 'team'</code> (open question, see
+                                note).</span
+                            >
+                        </li>
+                        <li class="success">
+                            <span class="label">Respond</span>
+                            <span class="detail"><code>200 { id, deleted_at }</code>. Done.</span>
+                        </li>
+                    </ol>
+
+                    <div class="note">
+                        <strong>Open:</strong> the plan's <code>admin_audit.actor_role</code> CHECK constraint allows
+                        only <code>'super' | 'org_owner' | 'org_admin'</code>. So team-coach soft-deletes either go
+                        un-audited or we widen the enum to <code>'team'</code>. The diagram assumes un-audited (matches
+                        the plan as written).
+                    </div>
+                </div>
+            </section>
+
+            <section id="callers">
+                <h2>6. Per-caller outcome table</h2>
+                <p class="lede">Same request, five callers, five outcomes.</p>
+                <div class="card">
+                    <table class="callers">
+                        <thead>
+                            <tr>
+                                <th>Caller</th>
+                                <th>Route hit</th>
+                                <th>Middleware chain</th>
+                                <th>Result</th>
+                                <th>Audit row</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Super User</strong></td>
+                                <td><code>/admin/games/:id/soft-delete</code></td>
+                                <td><code>auth</code> + <code>requireSuperAdmin</code></td>
+                                <td class="pass">✓ soft-deleted</td>
+                                <td>
+                                    <code>actor_role='super'</code><br /><code>organization_id=NULL</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Org Owner</strong> (game in their org)</td>
+                                <td><code>/games/:id/soft-delete</code></td>
+                                <td>
+                                    <code>auth</code> + <code>requireGameAuthority</code> →
+                                    <code>requireOrgRole</code>
+                                </td>
+                                <td class="pass">✓ soft-deleted</td>
+                                <td>
+                                    <code>actor_role='org_owner'</code><br /><code>organization_id=&lt;their org&gt;</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Org Admin</strong> (game in their org)</td>
+                                <td><code>/games/:id/soft-delete</code></td>
+                                <td>
+                                    <code>auth</code> + <code>requireGameAuthority</code> →
+                                    <code>requireOrgRole</code>
+                                </td>
+                                <td class="pass">✓ soft-deleted</td>
+                                <td>
+                                    <code>actor_role='org_admin'</code><br /><code>organization_id=&lt;their org&gt;</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Team Coach</strong> (own team)</td>
+                                <td><code>/games/:id/soft-delete</code></td>
+                                <td>
+                                    <code>auth</code> + <code>requireGameAuthority</code> →
+                                    <code>requireTeamRole</code>
+                                </td>
+                                <td class="pass">✓ soft-deleted</td>
+                                <td>(none — see open question)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Player</strong></td>
+                                <td><code>/games/:id/soft-delete</code></td>
+                                <td>
+                                    <code>auth</code> + <code>requireGameAuthority</code> → no match
+                                </td>
+                                <td class="deny">✗ 403</td>
+                                <td>—</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Outsider</strong> (coach on a different team)</td>
+                                <td><code>/games/:id/soft-delete</code></td>
+                                <td>
+                                    <code>auth</code> + <code>requireGameAuthority</code> → no match
+                                </td>
+                                <td class="deny">✗ 403</td>
+                                <td>—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <footer>
+                Visual companion to <code>docs/plans/2026-05-10-super-user-and-signup-modes.md</code>. Diagrams reflect
+                the plan as approved 2026-05-11; nothing here has shipped yet.
+            </footer>
+        </div>
+
+        <script>
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                themeVariables: {
+                    background: '#161b22',
+                    primaryColor: '#1f262d',
+                    primaryTextColor: '#e6edf3',
+                    primaryBorderColor: '#30363d',
+                    lineColor: '#9ba3af',
+                    fontFamily: 'ui-sans-serif, system-ui',
+                },
+                flowchart: { curve: 'basis', htmlLabels: true, padding: 14 },
+            });
+        </script>
+    </body>
+</html>
