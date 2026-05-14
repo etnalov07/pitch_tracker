@@ -20,3 +20,4 @@ Per-feature/per-fix change docs combining the plan summary and what shipped. Eac
 | 2026-05-12 | fix   | PerformanceSummaryCard "by zone" panel — dark mode visibility           | `094a7af`            | [performance-summary-dark-mode-fix](2026-05-12-performance-summary-dark-mode-fix.md)                 |
 | 2026-05-12 | feat  | Standalone opponent roster — add pitchers & batters without a game      | `d089a32`            | [standalone-opponent-roster](2026-05-12-standalone-opponent-roster.md)                               |
 | 2026-05-12 | fix   | Command Grade A1 — adjacent-column row split + dead import cleanup      | `06c50c3`            | [command-grade-a1](2026-05-12-command-grade-a1.md)                                                   |
+| 2026-05-14 | fix   | CORS preflight blocks browser PATCH requests                            | TBD                  | [cors-allow-patch](2026-05-14-cors-allow-patch.md)                                                   |
