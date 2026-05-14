@@ -1,8 +1,8 @@
 # Fix: CORS preflight blocks browser PATCH requests
 
-| Date       | Type | Commit | Versions          |
-| ---------- | ---- | ------ | ----------------- |
-| 2026-05-14 | fix  | TBD    | api 1.6.1 → 1.7.0 |
+| Date       | Type | Commit    | Versions          |
+| ---------- | ---- | --------- | ----------------- |
+| 2026-05-14 | fix  | `4f0d4a5` | api 1.6.1 → 1.7.0 |
 
 ## Context
 
