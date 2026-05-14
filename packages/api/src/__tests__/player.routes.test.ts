@@ -10,6 +10,8 @@ jest.mock('../middleware/roles', () => ({
     requireTeamRole: () => (_req: any, _res: any, next: any) => next(),
     requireOrgRole: () => (_req: any, _res: any, next: any) => next(),
     requirePlayerTeamRole: () => (_req: any, _res: any, next: any) => next(),
+    requireTeamRoleFromBody: () => (_req: any, _res: any, next: any) => next(),
+    requireTeamRoleFromJoinRequest: () => (_req: any, _res: any, next: any) => next(),
     requireOrgMember: (_req: any, _res: any, next: any) => next(),
 }));
 

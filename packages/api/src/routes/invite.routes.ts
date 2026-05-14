@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth';
-import { loadUserRoles, requireTeamRole } from '../middleware/roles';
+import { loadUserRoles, requireTeamRole, requireTeamRoleFromBody } from '../middleware/roles';
 import inviteController from '../controllers/invite.controller';
 
 const router = Router();
@@ -14,13 +14,14 @@ router.post('/token/:token/accept', authenticateToken, inviteController.accept.b
 // Protected routes below require auth + roles
 router.use(authenticateToken, loadUserRoles);
 
-// Create invite (team coach/owner)
-router.post('/', inviteController.create.bind(inviteController));
+// Create invite — team owner/coach only (team_id read from body)
+router.post('/', requireTeamRoleFromBody('owner', 'coach'), inviteController.create.bind(inviteController));
 
 // List invites for a team (team coach/owner)
-router.get('/team/:team_id', inviteController.listByTeam.bind(inviteController));
+router.get('/team/:team_id', requireTeamRole('owner', 'coach'), inviteController.listByTeam.bind(inviteController));
 
-// Revoke invite (team coach/owner)
+// Revoke invite (team coach/owner) — :id is invite id, team is checked at controller level today.
+// Authz tightening for revoke is deferred until we add a lookup-by-invite middleware.
 router.put('/:id/revoke', inviteController.revoke.bind(inviteController));
 
 export default router;

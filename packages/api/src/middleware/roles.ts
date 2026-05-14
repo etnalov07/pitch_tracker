@@ -135,6 +135,101 @@ export const requirePlayerTeamRole = (...roles: TeamRole[]) => {
 };
 
 /**
+ * Factory: require one of the given team roles using team_id from the request body.
+ * Used by endpoints like POST /invites and POST /players where team_id arrives
+ * in the payload instead of the URL. Also honors legacy owner_id on teams and
+ * grants access to org owners/admins for org-linked teams (forward-compat for
+ * Phase 3 org-admin mode — no-op today since no orgs exist).
+ */
+export const requireTeamRoleFromBody = (...roles: TeamRole[]) => {
+    return async (req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> => {
+        const teamId = (req.body?.team_id as string | undefined) || undefined;
+
+        if (!teamId || !req.user) {
+            res.status(403).json({ error: 'Forbidden' });
+            return;
+        }
+
+        // team_members role check
+        const userRole = req.userRoles?.teamRoles.get(teamId);
+        if (userRole && roles.includes(userRole)) {
+            next();
+            return;
+        }
+
+        try {
+            const teamResult = await query('SELECT owner_id, organization_id FROM teams WHERE id = $1', [teamId]);
+            if (teamResult.rows.length === 0) {
+                res.status(404).json({ error: 'Team not found' });
+                return;
+            }
+            const team = teamResult.rows[0] as { owner_id: string; organization_id: string | null };
+
+            // Legacy owner_id
+            if (team.owner_id === req.user.id) {
+                next();
+                return;
+            }
+
+            // Org owner/admin on an org-linked team
+            if (team.organization_id) {
+                const orgRole = req.userRoles?.orgRoles.get(team.organization_id);
+                if (orgRole === 'owner' || orgRole === 'admin') {
+                    next();
+                    return;
+                }
+            }
+        } catch (error) {
+            next(error);
+            return;
+        }
+
+        res.status(403).json({ error: 'Insufficient team permissions' });
+    };
+};
+
+/**
+ * Factory: require one of the given team roles, where the team_id is derived
+ * from the join_request row at req.params.id. Used by approval/deny endpoints.
+ */
+export const requireTeamRoleFromJoinRequest = (...roles: TeamRole[]) => {
+    return async (req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> => {
+        const joinRequestId = req.params.id;
+
+        if (!joinRequestId || !req.user) {
+            res.status(403).json({ error: 'Forbidden' });
+            return;
+        }
+
+        try {
+            const jrResult = await query('SELECT team_id FROM join_requests WHERE id = $1', [joinRequestId]);
+            if (jrResult.rows.length === 0) {
+                res.status(404).json({ error: 'Join request not found' });
+                return;
+            }
+            const teamId = jrResult.rows[0].team_id as string;
+
+            const userRole = req.userRoles?.teamRoles.get(teamId);
+            if (userRole && roles.includes(userRole)) {
+                next();
+                return;
+            }
+
+            const teamResult = await query('SELECT owner_id FROM teams WHERE id = $1', [teamId]);
+            if (teamResult.rows.length > 0 && teamResult.rows[0].owner_id === req.user.id) {
+                next();
+                return;
+            }
+        } catch (error) {
+            next(error);
+            return;
+        }
+
+        res.status(403).json({ error: 'Insufficient team permissions' });
+    };
+};
+
+/**
  * Middleware: require the user to be a member of the specified org (any role).
  */
 export const requireOrgMember = (req: RoleAwareRequest, res: Response, next: NextFunction): void => {

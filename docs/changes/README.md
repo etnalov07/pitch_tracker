@@ -1,6 +1,6 @@
 # Change Log
 
-Per-feature/per-fix change docs combining the plan summary and what shipped. Each file captures **why**, **what was decided**, **what shipped** (files + commit SHA + version), and **how to verify**. Forward-design docs live in [`../plans/`](../plans/README.md); this folder is the post-ship record.
+Per-feature/per-fix change docs combining the plan summary and what shipped. Each file captures **why**, **the plan (what was decided)**, **what shipped** — a bullet-point list of what was actually coded, grouped by package, plus commit SHA + version — and **how to verify**. Forward-design docs live in [`../plans/`](../plans/README.md); this folder is the post-ship record. Every doc commits both the plan and what actually happened.
 
 | Date       | Type  | Title                                                                   | Commit               | Doc                                                                                                  |
 | ---------- | ----- | ----------------------------------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------- |
@@ -20,3 +20,4 @@ Per-feature/per-fix change docs combining the plan summary and what shipped. Eac
 | 2026-05-12 | fix   | PerformanceSummaryCard "by zone" panel — dark mode visibility           | `094a7af`            | [performance-summary-dark-mode-fix](2026-05-12-performance-summary-dark-mode-fix.md)                 |
 | 2026-05-12 | feat  | Standalone opponent roster — add pitchers & batters without a game      | `d089a32`            | [standalone-opponent-roster](2026-05-12-standalone-opponent-roster.md)                               |
 | 2026-05-12 | fix   | Command Grade A1 — adjacent-column row split + dead import cleanup      | `06c50c3`            | [command-grade-a1](2026-05-12-command-grade-a1.md)                                                   |
+| 2026-05-13 | feat  | Super User (Part A) + invite authz (Part C1) — slice 1 of signup-modes  | _backfill_           | [super-user-and-invite-authz](2026-05-13-super-user-and-invite-authz.md)                             |

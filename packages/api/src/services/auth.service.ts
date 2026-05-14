@@ -6,6 +6,7 @@ import { UserWithPassword, UserResponse, RegisterData, LoginCredentials } from '
 import { v4 as uuidv4 } from 'uuid';
 import emailService from './email.service';
 import { config } from '../config/env';
+import { isSuperAdminEmail } from '../middleware/auth';
 
 const VERIFY_TOKEN_TTL_DAYS = 7;
 
@@ -43,7 +44,7 @@ export class AuthService {
             console.error('Welcome email pipeline failed:', err)
         );
 
-        return { user, token };
+        return { user: { ...user, is_super_admin: isSuperAdminEmail(user.email) }, token };
     }
 
     /**
@@ -114,7 +115,10 @@ export class AuthService {
         // Return user without password
         const { password_hash, ...userResponse } = user;
 
-        return { user: userResponse as UserResponse, token };
+        return {
+            user: { ...(userResponse as UserResponse), is_super_admin: isSuperAdminEmail(user.email) } as UserResponse,
+            token,
+        };
     }
 
     async getUserById(userId: string): Promise<UserResponse | null> {
@@ -148,6 +152,7 @@ export class AuthService {
             ...user,
             team_memberships: teamMemberships.rows,
             org_memberships: orgMemberships.rows,
+            is_super_admin: isSuperAdminEmail(user.email),
         };
     }
 }

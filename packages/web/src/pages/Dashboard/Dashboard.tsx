@@ -199,6 +199,11 @@ const Dashboard: React.FC = () => {
                 </HeaderLeft>
                 <HeaderRight>
                     {primaryRole && <RoleBadge>{primaryRole === 'owner' ? 'Coach' : primaryRole} Mode</RoleBadge>}
+                    {user?.is_super_admin && (
+                        <SettingsButton onClick={() => navigate('/admin')} title="Super Admin" aria-label="Super Admin">
+                            ★
+                        </SettingsButton>
+                    )}
                     <SettingsButton onClick={() => navigate('/settings')} title="Settings" aria-label="Settings">
                         ⚙
                     </SettingsButton>

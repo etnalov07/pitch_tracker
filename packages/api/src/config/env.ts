@@ -28,6 +28,12 @@ interface Config {
         fromEmail: string;
         fromEmailName: string;
     };
+    superAdmin: {
+        // Allowlisted emails (case-insensitive) that grant super-admin access.
+        // Read once at boot from SUPER_ADMIN_EMAILS (comma-separated). Empty in
+        // dev is fine; in prod the deploy must set it.
+        emails: string[];
+    };
 }
 
 const getEnvVariable = (key: string, defaultValue?: string): string => {
@@ -65,6 +71,12 @@ export const config: Config = {
         resendApiKey: process.env.RESEND_API_KEY || '',
         fromEmail: getEnvVariable('FROM_EMAIL', 'noreply@pitch-tracker.bvolante.com'),
         fromEmailName: getEnvVariable('FROM_EMAIL_NAME', 'Pitch Chart'),
+    },
+    superAdmin: {
+        emails: (process.env.SUPER_ADMIN_EMAILS || '')
+            .split(',')
+            .map((e) => e.trim().toLowerCase())
+            .filter((e) => e.length > 0),
     },
 };
 

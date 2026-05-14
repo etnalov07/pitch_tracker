@@ -39,11 +39,11 @@ Every feature and bug fix gets a markdown doc in `docs/changes/` capturing the p
 
 - **Location:** `docs/changes/<YYYY-MM-DD>-<slug>.md`. Index in `docs/changes/README.md` (update the table when you add a new doc).
 - **Forward-design docs** (upfront planning before any code) still go in `docs/plans/` with its own README index. `docs/changes/` is the **post-ship** record — written when the work is committed.
-- **Sections each doc must include:**
+- **Every change doc must contain both the plan AND what actually got coded.** Sections each doc must include:
     1. Header with date, type (`feat`/`fix`/`style`/`refactor`/`docs`/`chore`), commit SHA, and version bumps.
     2. **Context** — the problem this solved and what prompted it.
-    3. **Decisions** — what was chosen and why; key tradeoffs.
-    4. **What shipped** — files changed, grouped by package; new types/migrations/endpoints called out.
+    3. **Plan (Decisions)** — the strategy committed to: what was chosen and why; key tradeoffs. Link the upstream `docs/plans/` doc if one exists.
+    4. **What shipped** — bullet-point list of what was actually coded, grouped by package. One bullet per logical change, naming the file and the specific edit (added X, modified Y, removed Z). Call out new types, migrations, endpoints, and any deviations from the Plan.
     5. **Verification** — how to test end-to-end + any migration / env-var steps.
     6. **Out of scope (deferred)** — explicit list of what was NOT done so future work doesn't re-litigate.
 - **Bundle a feature's follow-up commits** (build fixes, prettier-only commits) into the feature's existing doc instead of creating a new one per commit.

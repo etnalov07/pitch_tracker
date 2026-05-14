@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import packageJson from '../package.json';
+import Admin from './pages/Admin';
 import BullpenLive from './pages/BullpenLive';
 import BullpenNew from './pages/BullpenNew';
 import BullpenPlanEditor from './pages/BullpenPlanEditor';
@@ -230,6 +231,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <Settings />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin"
+                    element={
+                        <ProtectedRoute>
+                            <Admin />
                         </ProtectedRoute>
                     }
                 />

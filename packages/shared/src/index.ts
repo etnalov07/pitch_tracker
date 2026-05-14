@@ -29,6 +29,10 @@ export interface User {
     last_name: string;
     created_at: string;
     updated_at?: string;
+    // Derived server-side from the SUPER_ADMIN_EMAILS env allowlist; present on
+    // every user response. Falsy for normal users. The web hides the /admin
+    // link unless true; server re-checks on every admin route.
+    is_super_admin?: boolean;
 }
 
 export interface UserWithPassword extends User {
@@ -1828,4 +1832,84 @@ export function emptyScoutingLineup(size: number): ScoutingLineupEntry[] {
         position: '',
         bats: 'R' as const,
     }));
+}
+
+// ============================================================================
+// Admin (Super User) Types
+// ============================================================================
+
+export type AdminActorRole = 'super' | 'org_owner' | 'org_admin';
+
+export interface AdminUserListItem {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    email_verified: boolean;
+    created_at: string;
+    team_count: number;
+    org_count: number;
+}
+
+export interface AdminUserDetail extends UserWithRoles {
+    email_verified: boolean;
+    email_verified_at?: string | null;
+    recent_games: Array<{
+        id: string;
+        game_date: string;
+        opponent_name?: string;
+        home_team_name?: string;
+    }>;
+}
+
+export interface AdminOrgListItem {
+    id: string;
+    name: string;
+    slug: string;
+    member_count: number;
+    team_count: number;
+    created_at: string;
+}
+
+export interface AdminTeamListItem {
+    id: string;
+    name: string;
+    organization_id?: string | null;
+    organization_name?: string | null;
+    owner_id: string;
+    owner_email?: string;
+    created_at: string;
+}
+
+export interface AdminGameListItem {
+    id: string;
+    game_date: string;
+    home_team_id: string;
+    home_team_name?: string;
+    opponent_name?: string;
+    status: string;
+    home_score: number;
+    away_score: number;
+    created_by: string;
+    created_at: string;
+}
+
+export interface AdminAuditEntry {
+    id: string;
+    actor_user_id: string;
+    actor_email?: string;
+    actor_role: AdminActorRole;
+    organization_id?: string | null;
+    action: string;
+    target_table?: string | null;
+    target_id?: string | null;
+    payload?: Record<string, unknown> | null;
+    created_at: string;
+}
+
+export interface AdminListResponse<T> {
+    items: T[];
+    total: number;
+    page: number;
+    page_size: number;
 }
