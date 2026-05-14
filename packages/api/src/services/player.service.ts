@@ -278,6 +278,26 @@ export class PlayerService {
 
         return stats;
     }
+
+    /**
+     * Return every player record linked to the given user, scoped to teams
+     * where the user has `team_members.role='player'`. Used by /players/me to
+     * drive the PlayerDashboard team switcher. Each row includes the team
+     * name so the UI doesn't need a second call.
+     */
+    async getPlayersForUser(userId: string): Promise<Array<Player & { team_name?: string }>> {
+        const result = await query(
+            `SELECT p.*, t.name AS team_name
+             FROM team_members tm
+             JOIN teams t ON t.id = tm.team_id
+             LEFT JOIN players p ON p.id = tm.player_id
+             WHERE tm.user_id = $1 AND tm.role = 'player'
+             ORDER BY t.name ASC`,
+            [userId]
+        );
+        // tm rows without a linked player return p.* as NULL — filter them
+        return result.rows.filter((r) => r.id !== null);
+    }
 }
 
 export default new PlayerService();

@@ -53,6 +53,38 @@ export class InviteController {
             next(error);
         }
     }
+
+    /**
+     * POST /invites/token/:token/register
+     * Public — no auth required. Creates a new user from an invite-bound email
+     * in one transaction (user row + team_member + player.user_id + accept).
+     * registration_type is inferred from invite role.
+     */
+    async registerFromInvite(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { password, first_name, last_name } = req.body as {
+                password?: string;
+                first_name?: string;
+                last_name?: string;
+            };
+            if (!password || password.length < 8) {
+                res.status(400).json({ error: 'Password must be at least 8 characters' });
+                return;
+            }
+            if (!first_name || !last_name) {
+                res.status(400).json({ error: 'first_name and last_name required' });
+                return;
+            }
+            const result = await inviteService.registerFromInvite(req.params.token as string, {
+                password,
+                first_name,
+                last_name,
+            });
+            res.status(201).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new InviteController();

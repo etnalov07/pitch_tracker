@@ -21,3 +21,4 @@ Per-feature/per-fix change docs combining the plan summary and what shipped. Eac
 | 2026-05-12 | feat  | Standalone opponent roster — add pitchers & batters without a game      | `d089a32`            | [standalone-opponent-roster](2026-05-12-standalone-opponent-roster.md)                               |
 | 2026-05-12 | fix   | Command Grade A1 — adjacent-column row split + dead import cleanup      | `06c50c3`            | [command-grade-a1](2026-05-12-command-grade-a1.md)                                                   |
 | 2026-05-13 | feat  | Super User (Part A) + invite authz (Part C1) — slice 1 of signup-modes  | `a474894`            | [super-user-and-invite-authz](2026-05-13-super-user-and-invite-authz.md)                             |
+| 2026-05-13 | feat  | registration_type + Player mode + C2 invite-with-signup — slice 2       | _backfill_           | [registration-type-and-player-mode](2026-05-13-registration-type-and-player-mode.md)                 |

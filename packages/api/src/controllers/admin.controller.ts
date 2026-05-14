@@ -108,6 +108,40 @@ export class AdminController {
         }
     }
 
+    async setRegistrationType(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.params.id as string;
+            const { registration_type } = req.body as { registration_type?: 'coach' | 'player' | 'org_admin' | null };
+            if (
+                registration_type !== null &&
+                registration_type !== 'coach' &&
+                registration_type !== 'player' &&
+                registration_type !== 'org_admin'
+            ) {
+                res.status(400).json({ error: 'registration_type must be coach, player, org_admin, or null' });
+                return;
+            }
+            const ok = await adminService.setRegistrationType(userId, registration_type);
+            if (!ok) {
+                res.status(404).json({ error: 'User not found' });
+                return;
+            }
+            if (req.user) {
+                await auditService.write({
+                    actor_user_id: req.user.id,
+                    actor_role: 'super',
+                    action: 'admin.users.set_registration_type',
+                    target_table: 'users',
+                    target_id: userId,
+                    payload: { registration_type },
+                });
+            }
+            res.status(200).json({ message: 'Registration type updated' });
+        } catch (err) {
+            next(err);
+        }
+    }
+
     async resendVerification(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const userId = req.params.id as string;

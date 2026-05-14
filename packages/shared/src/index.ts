@@ -22,6 +22,8 @@ export type { LineupSlot, HalfInningState, AtBatOutcome } from './utils/gameSimu
 // User & Authentication Types
 // ============================================================================
 
+export type RegistrationType = 'coach' | 'player' | 'org_admin';
+
 export interface User {
     id: string;
     email: string;
@@ -29,6 +31,9 @@ export interface User {
     last_name: string;
     created_at: string;
     updated_at?: string;
+    // Mode the user signed up under. NULL for users who pre-date the column —
+    // treated as 'coach' by the dashboard branching shell.
+    registration_type?: RegistrationType | null;
     // Derived server-side from the SUPER_ADMIN_EMAILS env allowlist; present on
     // every user response. Falsy for normal users. The web hides the /admin
     // link unless true; server re-checks on every admin route.
@@ -49,7 +54,7 @@ export interface RegisterData {
     password: string;
     first_name: string;
     last_name: string;
-    registration_type?: 'coach' | 'player' | 'org_admin';
+    registration_type?: RegistrationType;
 }
 
 export interface AuthResponse {

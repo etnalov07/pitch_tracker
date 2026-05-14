@@ -10,6 +10,8 @@ router.use(authenticateToken);
 router.use(loadUserRoles);
 
 router.post('/', requireTeamRoleFromBody('owner', 'coach'), playerController.createPlayer.bind(playerController));
+// Specific routes must precede /:id parameterized routes (per api.md)
+router.get('/me', playerController.getMyPlayers.bind(playerController));
 router.get('/team/:team_id', playerController.getPlayersByTeam.bind(playerController));
 router.get('/pitchers/team/:team_id', playerController.getPitchersByTeam.bind(playerController));
 router.get('/pitchers/team/:team_id/with-pitch-types', playerController.getPitchersWithPitchTypes.bind(playerController));

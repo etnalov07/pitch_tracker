@@ -12,7 +12,7 @@ const VERIFY_TOKEN_TTL_DAYS = 7;
 
 export class AuthService {
     async register(data: RegisterData): Promise<{ user: UserResponse; token: string }> {
-        const { email, password, first_name, last_name } = data;
+        const { email, password, first_name, last_name, registration_type } = data;
 
         // Check if user already exists
         const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
@@ -27,10 +27,10 @@ export class AuthService {
         // Create user
         const userId = uuidv4();
         const result = await query(
-            `INSERT INTO users (id, email, password_hash, first_name, last_name)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, email, first_name, last_name, created_at`,
-            [userId, email, password_hash, first_name, last_name]
+            `INSERT INTO users (id, email, password_hash, first_name, last_name, registration_type)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, email, first_name, last_name, registration_type, created_at`,
+            [userId, email, password_hash, first_name, last_name, registration_type ?? null]
         );
 
         const user = result.rows[0];
@@ -122,7 +122,10 @@ export class AuthService {
     }
 
     async getUserById(userId: string): Promise<UserResponse | null> {
-        const result = await query('SELECT id, email, first_name, last_name, created_at FROM users WHERE id = $1', [userId]);
+        const result = await query(
+            'SELECT id, email, first_name, last_name, registration_type, created_at FROM users WHERE id = $1',
+            [userId]
+        );
 
         if (result.rows.length === 0) return null;
 

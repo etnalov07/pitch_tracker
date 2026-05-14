@@ -16,5 +16,6 @@ router.get('/audit', adminController.listAudit.bind(adminController));
 
 router.post('/users/:id/force-verify-email', adminController.forceVerifyEmail.bind(adminController));
 router.post('/users/:id/resend-verification', adminController.resendVerification.bind(adminController));
+router.post('/users/:id/set-registration-type', adminController.setRegistrationType.bind(adminController));
 
 export default router;

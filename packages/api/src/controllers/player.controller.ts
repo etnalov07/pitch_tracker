@@ -12,6 +12,24 @@ export class PlayerController {
         }
     }
 
+    /**
+     * GET /players/me — auth required; returns every player record linked to
+     * the logged-in user via team_members.role='player'. Drives the
+     * PlayerDashboard team switcher.
+     */
+    async getMyPlayers(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            if (!req.user) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
+            const players = await playerService.getPlayersForUser(req.user.id);
+            res.status(200).json({ players });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async getPlayerById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;

@@ -206,6 +206,15 @@ export class AdminService {
         return result.rows.length > 0;
     }
 
+    async setRegistrationType(userId: string, registrationType: 'coach' | 'player' | 'org_admin' | null): Promise<boolean> {
+        const result = await query(
+            `UPDATE users SET registration_type = $2, updated_at = NOW()
+             WHERE id = $1 RETURNING id`,
+            [userId, registrationType]
+        );
+        return result.rows.length > 0;
+    }
+
     async resendVerification(userId: string): Promise<{ sent: boolean; reason?: string }> {
         const userRow = await query(`SELECT id, email, first_name, email_verified FROM users WHERE id = $1`, [userId]);
         if (userRow.rows.length === 0) return { sent: false, reason: 'User not found' };
