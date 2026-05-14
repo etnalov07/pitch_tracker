@@ -181,6 +181,7 @@ const LiveGame: React.FC = () => {
         setGameRole,
         setStatsRefreshTrigger,
         myTeamLineup,
+        opponentLineup,
         currentMyBatter,
         setCurrentMyBatter,
         settings,
@@ -668,7 +669,7 @@ const LiveGame: React.FC = () => {
                         {isScoutingMode && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Lineups</SetupButton>
                         )}
-                        {!isScoutingMode && !currentBatter && gameMode !== 'opp_pitcher' && (
+                        {!isScoutingMode && game?.charting_mode !== 'opp_pitcher' && opponentLineup.length === 0 && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Opponent Lineup</SetupButton>
                         )}
                         {!isScoutingMode && game?.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0 && (

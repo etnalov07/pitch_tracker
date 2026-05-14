@@ -1644,13 +1644,22 @@ export default function LiveGameScreen() {
                                   ? 'Select the opposing pitcher to begin'
                                   : 'Select your batter to begin'}
                         </Text>
-                        {myTeamLineup.length === 0 && !isScoutingMode && (
+                        {myTeamLineup.length === 0 && !isScoutingMode && game?.charting_mode !== 'our_pitcher' && (
                             <Button
                                 mode="outlined"
                                 onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
                                 style={{ marginTop: 8 }}
                             >
                                 Setup My Lineup
+                            </Button>
+                        )}
+                        {opponentLineup.length === 0 && !isScoutingMode && game?.charting_mode !== 'opp_pitcher' && (
+                            <Button
+                                mode="outlined"
+                                onPress={() => router.push(`/game/${id}/lineup` as any)}
+                                style={{ marginTop: 8 }}
+                            >
+                                Setup Opponent Lineup
                             </Button>
                         )}
                     </View>
@@ -1668,6 +1677,20 @@ export default function LiveGameScreen() {
                               ? 'Select a pitcher to begin'
                               : 'Select a batter to begin'}
                     </Text>
+                    {opponentLineup.length === 0 && !isScoutingMode && game?.charting_mode !== 'opp_pitcher' && (
+                        <Button mode="outlined" onPress={() => router.push(`/game/${id}/lineup` as any)} style={{ marginTop: 8 }}>
+                            Setup Opponent Lineup
+                        </Button>
+                    )}
+                    {myTeamLineup.length === 0 && !isScoutingMode && game?.charting_mode !== 'our_pitcher' && (
+                        <Button
+                            mode="outlined"
+                            onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
+                            style={{ marginTop: 8 }}
+                        >
+                            Setup My Lineup
+                        </Button>
+                    )}
                 </View>
             );
         }
