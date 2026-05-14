@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-13
 - **Type:** `feat`
-- **Commit SHA:** _backfill on commit_
+- **Commit SHA:** `a474894`
 - **Version bumps:** `@pitch-tracker/api` 1.6.1 → 1.7.0, `@pitch-tracker/web` 1.1.0 → 1.2.0. Shared not bumped (pinned at 1.0.0 per CI constraint).
 - **Plan reference:** [docs/plans/2026-05-10-super-user-and-signup-modes.md](../plans/2026-05-10-super-user-and-signup-modes.md)
 
