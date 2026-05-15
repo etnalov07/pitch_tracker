@@ -7,7 +7,13 @@ export interface ReplayAtBat {
 }
 
 export function filterUserPitcherPitches(pitches: Pitch[]): Pitch[] {
-    return pitches.filter((p) => p.team_side === 'our_team');
+    // Accept a pitch as "our pitcher" if either:
+    //   - team_side === 'our_team' (modern path), or
+    //   - team_side is null/undefined but pitcher_id is set (legacy — pitches
+    //     predating team_side don't have it; the API's getGamePitches inner-
+    //     joins on players, so any returned pitch with a valid pitcher_id was
+    //     logged by a player on our roster).
+    return pitches.filter((p) => p.team_side === 'our_team' || (!p.team_side && !!p.pitcher_id));
 }
 
 export function groupPitchesByAtBat(pitches: Pitch[]): Map<string, Pitch[]> {

@@ -35,6 +35,20 @@ describe('filterUserPitcherPitches', () => {
         ];
         expect(filterUserPitcherPitches(pitches).map((p) => p.id)).toEqual(['a', 'c']);
     });
+
+    it('falls back to pitcher_id when team_side is missing (legacy data)', () => {
+        const pitches: Pitch[] = [
+            // Modern: explicit our_team
+            makePitch({ id: 'a', at_bat_id: 'ab1', created_at: '1', team_side: 'our_team' }),
+            // Legacy: no team_side but pitcher_id present → kept
+            { ...makePitch({ id: 'b', at_bat_id: 'ab1', created_at: '2' }), team_side: undefined, pitcher_id: 'p1' },
+            // Legacy: no team_side and no pitcher_id → dropped
+            { ...makePitch({ id: 'c', at_bat_id: 'ab2', created_at: '3' }), team_side: undefined, pitcher_id: '' },
+            // Modern: explicit opponent → dropped
+            makePitch({ id: 'd', at_bat_id: 'ab2', created_at: '4', team_side: 'opponent' }),
+        ];
+        expect(filterUserPitcherPitches(pitches).map((p) => p.id)).toEqual(['a', 'b']);
+    });
 });
 
 describe('groupPitchesByAtBat', () => {
