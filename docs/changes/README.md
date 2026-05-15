@@ -26,3 +26,4 @@ Per-feature/per-fix change docs combining the plan summary and what shipped. Eac
 | 2026-05-14 | feat  | Mobile pre-game lineup CTAs on game-detail screen                       | `6533c3f`            | [mobile-pre-game-lineup-ctas](2026-05-14-mobile-pre-game-lineup-ctas.md)                             |
 | 2026-05-14 | fix   | Post-hit throwouts didn't add to the inning's outs (stale-closure)      | `bc94f85`            | [throwout-outs-stale-closure](2026-05-14-throwout-outs-stale-closure.md)                             |
 | 2026-05-14 | fix   | Live game header trio — score labels, stats modal data, pitch count     | `3ba6688`            | [live-game-header-trio](2026-05-14-live-game-header-trio.md)                                         |
+| 2026-05-14 | feat  | Pitch-by-pitch game replay (mobile + web)                               | _backfill_           | [pitch-replay](2026-05-14-pitch-replay.md)                                                           |

@@ -321,6 +321,15 @@ export default function GameDetailScreen() {
                         >
                             View Pitch Data
                         </Button>
+                        <Button
+                            mode="outlined"
+                            icon="play-circle-outline"
+                            onPress={() => router.push(`/game/${id}/replay` as any)}
+                            style={styles.actionButton}
+                            contentStyle={styles.actionButtonContent}
+                        >
+                            Replay Game
+                        </Button>
                     </>
                 )}
             </ScrollView>

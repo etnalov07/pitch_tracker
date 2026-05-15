@@ -150,6 +150,16 @@ export const gamesApi = {
         return response.data.atBat;
     },
 
+    getAtBatsByGame: async (gameId: string): Promise<AtBat[]> => {
+        const response = await api.get<{ atBats: AtBat[] }>(`/at-bats/game/${gameId}`);
+        return response.data.atBats;
+    },
+
+    getGamePitches: async (gameId: string): Promise<Pitch[]> => {
+        const response = await api.get<{ pitches: Pitch[] }>(`/pitches/game/${gameId}`);
+        return response.data.pitches;
+    },
+
     // Game Pitcher operations
     getGamePitchers: async (gameId: string): Promise<GamePitcherWithPlayer[]> => {
         const response = await api.get<{ pitchers: GamePitcherWithPlayer[] }>(`/game-pitchers/game/${gameId}`);

@@ -16,7 +16,9 @@ export { getCountBucket, deriveGameMode } from './utils/gameMode';
 export { getNextBattingOrder, getNextBatter, getInningLeadoffBatter, applyAtBatResult, advanceHalf } from './utils/gameSimulation';
 export { formatFielderSequence, parseFielderSequence } from './utils/fielderSequence';
 export { describeBaserunnerEvent } from './utils/baserunnerEvent';
+export { filterUserPitcherPitches, groupPitchesByAtBat, buildReplaySequence } from './utils/replayBuilder';
 export type { LineupSlot, HalfInningState, AtBatOutcome } from './utils/gameSimulation';
+export type { ReplayAtBat } from './utils/replayBuilder';
 
 // ============================================================================
 // User & Authentication Types

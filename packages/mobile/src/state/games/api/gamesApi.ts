@@ -110,6 +110,11 @@ export const gamesApi = {
         return response.data.atBat;
     },
 
+    getAtBatsByGame: async (gameId: string): Promise<AtBat[]> => {
+        const response = await api.get<{ atBats: AtBat[] }>(`/at-bats/game/${gameId}`);
+        return response.data.atBats;
+    },
+
     // Pitch operations
     logPitch: async (pitchData: Partial<Pitch>): Promise<Pitch> => {
         const response = await api.post<{ pitch: Pitch }>('/pitches', pitchData);

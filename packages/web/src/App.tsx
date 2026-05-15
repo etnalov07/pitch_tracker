@@ -19,6 +19,7 @@ import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
 import Opponents from './pages/Opponents';
 import PitcherProfile from './pages/PitcherProfile';
 import PublicReport from './pages/PublicReport';
+import Replay from './pages/Replay';
 import ScoutingLineup from './pages/ScoutingLineup';
 import ScoutingReport from './pages/ScoutingReport';
 import ScoutingReports from './pages/ScoutingReports';
@@ -62,6 +63,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <LiveGame />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/game/:gameId/replay"
+                    element={
+                        <ProtectedRoute>
+                            <Replay />
                         </ProtectedRoute>
                     }
                 />
