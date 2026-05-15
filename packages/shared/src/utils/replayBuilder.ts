@@ -51,15 +51,32 @@ function pickJoinedName(
     return fallback;
 }
 
-function pickBatterName(pitch: Pitch | undefined): string {
+export interface ReplayLookups {
+    /** Map opponent_batter_id → display name (sourced from opponent lineup). */
+    batterNameByOpponentId?: Map<string, string>;
+    /** Map pitcher_id → display name (sourced from game pitchers). */
+    pitcherNameByPlayerId?: Map<string, string>;
+}
+
+function pickBatterName(pitch: Pitch | undefined, lookups?: ReplayLookups): string {
+    // For opp batters the API's INNER JOIN on players(batter_id) misses (the
+    // batter lives in opponent_lineup); prefer the caller-supplied lookup.
+    if (pitch?.opponent_batter_id && lookups?.batterNameByOpponentId) {
+        const fromMap = lookups.batterNameByOpponentId.get(pitch.opponent_batter_id);
+        if (fromMap) return fromMap;
+    }
     return pickJoinedName(pitch, 'batter_first_name', 'batter_last_name', 'batter_name', 'Batter');
 }
 
-function pickPitcherName(pitch: Pitch | undefined): string {
+function pickPitcherName(pitch: Pitch | undefined, lookups?: ReplayLookups): string {
+    if (pitch?.pitcher_id && lookups?.pitcherNameByPlayerId) {
+        const fromMap = lookups.pitcherNameByPlayerId.get(pitch.pitcher_id);
+        if (fromMap) return fromMap;
+    }
     return pickJoinedName(pitch, 'pitcher_first_name', 'pitcher_last_name', 'pitcher_name', 'Pitcher');
 }
 
-export function buildReplaySequence(pitches: Pitch[], atBats: AtBat[]): ReplayAtBat[] {
+export function buildReplaySequence(pitches: Pitch[], atBats: AtBat[], lookups?: ReplayLookups): ReplayAtBat[] {
     const ourPitches = filterUserPitcherPitches(pitches);
     const grouped = groupPitchesByAtBat(ourPitches);
 
@@ -71,8 +88,8 @@ export function buildReplaySequence(pitches: Pitch[], atBats: AtBat[]): ReplayAt
             return {
                 atBat: ab,
                 pitches: abPitches,
-                batterDisplayName: pickBatterName(abPitches[0]),
-                pitcherDisplayName: pickPitcherName(abPitches[0]),
+                batterDisplayName: pickBatterName(abPitches[0], lookups),
+                pitcherDisplayName: pickPitcherName(abPitches[0], lookups),
             };
         });
 }

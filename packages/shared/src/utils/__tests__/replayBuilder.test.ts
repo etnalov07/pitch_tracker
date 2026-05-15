@@ -107,4 +107,18 @@ describe('buildReplaySequence', () => {
         expect(seq[0].batterDisplayName).toBe('Batter');
         expect(seq[0].pitcherDisplayName).toBe('Pitcher');
     });
+
+    it('uses lookup map for opp batter name (API join misses opponent_lineup)', () => {
+        const pitch: Pitch = {
+            ...makePitch({ id: 'p1', at_bat_id: 'ab1', created_at: '1' }),
+            opponent_batter_id: 'opp-batter-99',
+            pitcher_id: 'pitcher-7',
+        };
+        const seq = buildReplaySequence([pitch], [makeAtBat({ id: 'ab1', created_at: '0' })], {
+            batterNameByOpponentId: new Map([['opp-batter-99', 'Big Papi']]),
+            pitcherNameByPlayerId: new Map([['pitcher-7', 'C. Sale']]),
+        });
+        expect(seq[0].batterDisplayName).toBe('Big Papi');
+        expect(seq[0].pitcherDisplayName).toBe('C. Sale');
+    });
 });

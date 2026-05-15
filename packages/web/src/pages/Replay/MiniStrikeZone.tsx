@@ -1,11 +1,12 @@
 import { PITCH_CALL_ZONE_COORDS, PitchCallZone } from '@pitch-tracker/shared';
 import React from 'react';
 import { theme } from '../../styles/theme';
+import BatterSilhouette from './BatterSilhouette';
 
 interface Props {
     targetZone?: PitchCallZone | null;
-    actualX?: number;
-    actualY?: number;
+    actualX?: number | string | null;
+    actualY?: number | string | null;
     pitchType?: string;
     batterSide?: 'R' | 'L' | 'S' | null;
     pitcherThrows?: 'R' | 'L' | null;
@@ -56,11 +57,21 @@ const toSvgX = (x: number) => ZONE_X + x * ZONE_W;
 const toSvgY = (y: number) => ZONE_Y + y * ZONE_H;
 const PITCH_RADIUS = 13;
 
+// PostgreSQL `numeric` columns come back from node-postgres as strings (e.g.
+// "0.5000"); coerce here so callers can pass either form.
+const toFiniteNumber = (v: number | string | null | undefined): number | null => {
+    if (v == null) return null;
+    const n = typeof v === 'number' ? v : Number(v);
+    return Number.isFinite(n) ? n : null;
+};
+
 const MiniStrikeZone: React.FC<Props> = ({ targetZone, actualX, actualY, pitchType, batterSide, pitcherThrows, size = 280 }) => {
     const targetCoords = targetZone ? PITCH_CALL_ZONE_COORDS[targetZone] : null;
     const dotColor = PITCH_TYPE_COLORS[pitchType ?? 'other'] ?? PITCH_TYPE_COLORS.other;
     const dotLabel = PITCH_TYPE_ABBREV[pitchType ?? 'other'] ?? 'OT';
-    const hasActual = typeof actualX === 'number' && typeof actualY === 'number';
+    const ax = toFiniteNumber(actualX);
+    const ay = toFiniteNumber(actualY);
+    const hasActual = ax != null && ay != null;
     // Resolve switch-hitter against the pitcher's throws (matches mobile StrikeZone behavior).
     const effectiveSide: 'R' | 'L' | null = batterSide
         ? batterSide === 'S'
@@ -71,9 +82,11 @@ const MiniStrikeZone: React.FC<Props> = ({ targetZone, actualX, actualY, pitchTy
               ? 'L'
               : 'R'
         : null;
-    // Batter on the side they stand on relative to the catcher's view used by the
-    // strike-zone canvas: RHH on the right, LHH on the left.
-    const silhouetteX = effectiveSide === 'R' ? 245 : 25;
+    // Same transform the mobile StrikeZone uses to position BatterSilhouette
+    // beside the strike-zone rectangle.
+    const batterX = effectiveSide === 'R' ? 253 : 47;
+    const batterScaleX = effectiveSide === 'R' ? 1 : -1;
+    const silhouetteTransform = `translate(${batterX}, 40) scale(${batterScaleX * 1.61}, 1.61) translate(-36, 0)`;
 
     return (
         <svg
@@ -82,26 +95,10 @@ const MiniStrikeZone: React.FC<Props> = ({ targetZone, actualX, actualY, pitchTy
             viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
             style={{ background: theme.colors.gray[100], borderRadius: 8 }}
         >
-            {/* Batter silhouette — simple stick figure on the side the batter stands */}
+            {/* Batter silhouette — same component used in the live-game StrikeZone */}
             {effectiveSide && (
-                <g opacity={0.55} fill={theme.colors.gray[500]}>
-                    {/* head */}
-                    <circle cx={silhouetteX} cy={90} r={9} />
-                    {/* body */}
-                    <rect x={silhouetteX - 4} y={99} width={8} height={50} rx={2} />
-                    {/* legs */}
-                    <rect x={silhouetteX - 4} y={149} width={3} height={45} />
-                    <rect x={silhouetteX + 1} y={149} width={3} height={45} />
-                    {/* bat angled toward the strike zone */}
-                    <line
-                        x1={silhouetteX}
-                        y1={108}
-                        x2={effectiveSide === 'R' ? silhouetteX - 35 : silhouetteX + 35}
-                        y2={70}
-                        stroke={theme.colors.gray[600]}
-                        strokeWidth={3}
-                        strokeLinecap="round"
-                    />
+                <g transform={silhouetteTransform}>
+                    <BatterSilhouette />
                 </g>
             )}
             {/* Strike zone outline */}
@@ -173,16 +170,16 @@ const MiniStrikeZone: React.FC<Props> = ({ targetZone, actualX, actualY, pitchTy
             {hasActual && (
                 <g>
                     <circle
-                        cx={toSvgX(actualX as number)}
-                        cy={toSvgY(actualY as number)}
+                        cx={toSvgX(ax as number)}
+                        cy={toSvgY(ay as number)}
                         r={PITCH_RADIUS}
                         fill={dotColor}
                         stroke="#fff"
                         strokeWidth={2}
                     />
                     <text
-                        x={toSvgX(actualX as number)}
-                        y={toSvgY(actualY as number) + 3}
+                        x={toSvgX(ax as number)}
+                        y={toSvgY(ay as number) + 3}
                         textAnchor="middle"
                         fontSize={9}
                         fontWeight="bold"

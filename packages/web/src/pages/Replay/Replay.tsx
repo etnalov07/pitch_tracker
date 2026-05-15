@@ -5,6 +5,7 @@ import {
     OpponentLineupPlayer,
     Pitch,
     ReplayAtBat,
+    ReplayLookups,
     buildReplaySequence,
 } from '@pitch-tracker/shared';
 import React, { useEffect, useMemo, useState } from 'react';
@@ -103,7 +104,25 @@ const Replay: React.FC = () => {
         };
     }, [gameId]);
 
-    const sequence: ReplayAtBat[] = useMemo(() => buildReplaySequence(pitches, atBats), [pitches, atBats]);
+    // Lookup tables: opp-batter / pitcher names (so the API join misses don't
+    // reduce opp batters to "Batter") and handedness for the silhouette.
+    const lookups: ReplayLookups = useMemo(() => {
+        const batterNameByOpponentId = new Map<string, string>();
+        for (const b of opponentLineup) if (b.id && b.player_name) batterNameByOpponentId.set(b.id, b.player_name);
+        const pitcherNameByPlayerId = new Map<string, string>();
+        for (const gp of gamePitchers) {
+            const id = gp.player_id ?? gp.player?.id;
+            if (id && gp.player) {
+                const first = gp.player.first_name?.[0];
+                const last = gp.player.last_name;
+                const name = first && last ? `${first}. ${last}` : last || first || '';
+                if (name) pitcherNameByPlayerId.set(id, name);
+            }
+        }
+        return { batterNameByOpponentId, pitcherNameByPlayerId };
+    }, [opponentLineup, gamePitchers]);
+
+    const sequence: ReplayAtBat[] = useMemo(() => buildReplaySequence(pitches, atBats, lookups), [pitches, atBats, lookups]);
 
     const batsByOppBatterId = useMemo(() => {
         const m = new Map<string, 'R' | 'L' | 'S'>();

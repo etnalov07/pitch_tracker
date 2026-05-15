@@ -18,7 +18,7 @@ export { formatFielderSequence, parseFielderSequence } from './utils/fielderSequ
 export { describeBaserunnerEvent } from './utils/baserunnerEvent';
 export { filterUserPitcherPitches, groupPitchesByAtBat, buildReplaySequence } from './utils/replayBuilder';
 export type { LineupSlot, HalfInningState, AtBatOutcome } from './utils/gameSimulation';
-export type { ReplayAtBat } from './utils/replayBuilder';
+export type { ReplayAtBat, ReplayLookups } from './utils/replayBuilder';
 
 // ============================================================================
 // User & Authentication Types

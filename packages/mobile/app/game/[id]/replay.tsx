@@ -9,6 +9,7 @@ import {
     OpponentLineupPlayer,
     Pitch,
     ReplayAtBat,
+    ReplayLookups,
     buildReplaySequence,
 } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
@@ -72,9 +73,26 @@ export default function ReplayScreen() {
         };
     }, [id]);
 
-    const sequence: ReplayAtBat[] = useMemo(() => buildReplaySequence(pitches, atBats), [pitches, atBats]);
+    // Lookup tables: opp-batter / pitcher names (so the API join misses don't
+    // reduce opp batters to "Batter") and handedness for the silhouette.
+    const lookups: ReplayLookups = useMemo(() => {
+        const batterNameByOpponentId = new Map<string, string>();
+        for (const b of opponentLineup) if (b.id && b.player_name) batterNameByOpponentId.set(b.id, b.player_name);
+        const pitcherNameByPlayerId = new Map<string, string>();
+        for (const gp of gamePitchers) {
+            const id = gp.player_id ?? gp.player?.id;
+            if (id && gp.player) {
+                const first = gp.player.first_name?.[0];
+                const last = gp.player.last_name;
+                const name = first && last ? `${first}. ${last}` : last || first || '';
+                if (name) pitcherNameByPlayerId.set(id, name);
+            }
+        }
+        return { batterNameByOpponentId, pitcherNameByPlayerId };
+    }, [opponentLineup, gamePitchers]);
 
-    // Lookup tables for batter handedness + pitcher throws (used by the StrikeZone silhouette).
+    const sequence: ReplayAtBat[] = useMemo(() => buildReplaySequence(pitches, atBats, lookups), [pitches, atBats, lookups]);
+
     const batsByOppBatterId = useMemo(() => {
         const m = new Map<string, 'R' | 'L' | 'S'>();
         for (const b of opponentLineup) if (b.id && b.bats) m.set(b.id, b.bats as 'R' | 'L' | 'S');
@@ -99,7 +117,19 @@ export default function ReplayScreen() {
     }, [selectedAtBatIdx]);
 
     const currentEntry: ReplayAtBat | undefined = sequence[selectedAtBatIdx];
-    const currentPitch: Pitch | undefined = currentEntry?.pitches[pitchIdx];
+    const rawPitch: Pitch | undefined = currentEntry?.pitches[pitchIdx];
+
+    // PostgreSQL `numeric` columns come back from node-postgres as strings
+    // (e.g. "0.5000"). Coerce so the StrikeZone's location math + the
+    // location-recorded check both behave correctly.
+    const toNum = (v: unknown): number | undefined => {
+        if (v == null) return undefined;
+        const n = typeof v === 'number' ? v : Number(v);
+        return Number.isFinite(n) ? n : undefined;
+    };
+    const currentPitch: Pitch | undefined = rawPitch
+        ? { ...rawPitch, location_x: toNum(rawPitch.location_x), location_y: toNum(rawPitch.location_y) }
+        : undefined;
 
     const renderHeader = () => (
         <View style={styles.headerRow}>
