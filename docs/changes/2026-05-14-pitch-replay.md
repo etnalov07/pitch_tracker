@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-14
 - **Type:** feat
-- **Commit:** _backfill on commit_
+- **Commit:** `9bfd81f`
 - **Versions:** mobile `2.0.0` → `2.1.0`, web `1.5.0` → `1.6.0`
 
 ## Context
