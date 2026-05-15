@@ -149,9 +149,14 @@ export default function ReplayScreen() {
                         targetZone={currentPitch?.target_zone ?? null}
                         previousPitches={currentPitch ? [currentPitch] : []}
                         disabled
-                        colorBy="result"
+                        colorBy="pitchType"
                     />
                 </View>
+                {currentPitch && (currentPitch.location_x == null || currentPitch.location_y == null) && (
+                    <Text variant="bodySmall" style={{ textAlign: 'center', color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                        (pitch location not recorded)
+                    </Text>
+                )}
 
                 {currentEntry && currentEntry.pitches.length > 0 && (
                     <PitchScrubber pitchCount={currentEntry.pitches.length} pitchIdx={pitchIdx} onChange={setPitchIdx} />

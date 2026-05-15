@@ -28,3 +28,4 @@ Per-feature/per-fix change docs combining the plan summary and what shipped. Eac
 | 2026-05-14 | fix   | Live game header trio — score labels, stats modal data, pitch count     | `3ba6688`            | [live-game-header-trio](2026-05-14-live-game-header-trio.md)                                         |
 | 2026-05-14 | feat  | Pitch-by-pitch game replay (mobile + web)                               | `9bfd81f`            | [pitch-replay](2026-05-14-pitch-replay.md)                                                           |
 | 2026-05-15 | fix   | Replay: include legacy pitches that pre-date `team_side`                | `e24f7d9`            | [replay-legacy-pitches](2026-05-15-replay-legacy-pitches.md)                                         |
+| 2026-05-15 | fix   | Replay: color the actual-location dot by pitch type                     | _backfill_           | [replay-pitch-type-color](2026-05-15-replay-pitch-type-color.md)                                     |

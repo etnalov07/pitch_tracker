@@ -135,8 +135,13 @@ const Replay: React.FC = () => {
                                 targetZone={currentPitch?.target_zone ?? null}
                                 actualX={currentPitch?.location_x}
                                 actualY={currentPitch?.location_y}
-                                pitchResult={currentPitch?.pitch_result}
+                                pitchType={currentPitch?.pitch_type}
                             />
+                            {currentPitch && (currentPitch.location_x == null || currentPitch.location_y == null) && (
+                                <PitchMeta style={{ marginTop: 8, textAlign: 'center', width: '100%' }}>
+                                    (pitch location not recorded)
+                                </PitchMeta>
+                            )}
                         </ZoneCard>
 
                         <InfoCol>

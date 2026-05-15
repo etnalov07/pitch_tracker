@@ -6,7 +6,7 @@ interface Props {
     targetZone?: PitchCallZone | null;
     actualX?: number;
     actualY?: number;
-    pitchResult?: string;
+    pitchType?: string;
     size?: number;
 }
 
@@ -18,23 +18,47 @@ const ZONE_W = 90;
 const ZONE_H = 132;
 const AMBER = '#F5A623';
 
-const RESULT_COLOR: Record<string, string> = {
-    ball: '#9ca3af',
-    called_strike: '#10b981',
-    swinging_strike: '#ef4444',
-    foul: '#f59e0b',
-    in_play: '#3b82f6',
-    hit_by_pitch: '#8b5cf6',
+// Mirrors mobile StrikeZone PITCH_TYPE_COLORS so the visual encoding is the
+// same on both platforms.
+const PITCH_TYPE_COLORS: Record<string, string> = {
+    fastball: '#ef4444',
+    '4-seam': '#ef4444',
+    '2-seam': '#f97316',
+    cutter: '#f59e0b',
+    sinker: '#eab308',
+    slider: '#3b82f6',
+    curveball: '#8b5cf6',
+    changeup: '#22c55e',
+    splitter: '#14b8a6',
+    knuckleball: '#6b7280',
+    other: '#9ca3af',
+};
+
+const PITCH_TYPE_ABBREV: Record<string, string> = {
+    fastball: 'FB',
+    '4-seam': 'FB',
+    '2-seam': '2S',
+    cutter: 'CT',
+    sinker: 'SK',
+    slider: 'SL',
+    curveball: 'CB',
+    changeup: 'CH',
+    splitter: 'SP',
+    knuckleball: 'KN',
+    other: 'OT',
 };
 
 // Pitch.location_x / location_y are normalized 0..1 inside the strike-zone
 // rectangle (waste zones extend beyond). Same mapping as the mobile StrikeZone.
 const toSvgX = (x: number) => ZONE_X + x * ZONE_W;
 const toSvgY = (y: number) => ZONE_Y + y * ZONE_H;
-const PITCH_RADIUS = 11;
+const PITCH_RADIUS = 13;
 
-const MiniStrikeZone: React.FC<Props> = ({ targetZone, actualX, actualY, pitchResult, size = 280 }) => {
+const MiniStrikeZone: React.FC<Props> = ({ targetZone, actualX, actualY, pitchType, size = 280 }) => {
     const targetCoords = targetZone ? PITCH_CALL_ZONE_COORDS[targetZone] : null;
+    const dotColor = PITCH_TYPE_COLORS[pitchType ?? 'other'] ?? PITCH_TYPE_COLORS.other;
+    const dotLabel = PITCH_TYPE_ABBREV[pitchType ?? 'other'] ?? 'OT';
+    const hasActual = typeof actualX === 'number' && typeof actualY === 'number';
 
     return (
         <svg
@@ -108,16 +132,28 @@ const MiniStrikeZone: React.FC<Props> = ({ targetZone, actualX, actualY, pitchRe
                 </g>
             )}
 
-            {/* Actual location dot */}
-            {typeof actualX === 'number' && typeof actualY === 'number' && (
-                <circle
-                    cx={toSvgX(actualX)}
-                    cy={toSvgY(actualY)}
-                    r={PITCH_RADIUS}
-                    fill={pitchResult ? RESULT_COLOR[pitchResult] || '#3b82f6' : '#3b82f6'}
-                    stroke="#fff"
-                    strokeWidth={1.5}
-                />
+            {/* Actual location dot — colored by pitch type with a 2-letter type abbrev */}
+            {hasActual && (
+                <g>
+                    <circle
+                        cx={toSvgX(actualX as number)}
+                        cy={toSvgY(actualY as number)}
+                        r={PITCH_RADIUS}
+                        fill={dotColor}
+                        stroke="#fff"
+                        strokeWidth={2}
+                    />
+                    <text
+                        x={toSvgX(actualX as number)}
+                        y={toSvgY(actualY as number) + 3}
+                        textAnchor="middle"
+                        fontSize={9}
+                        fontWeight="bold"
+                        fill="#fff"
+                    >
+                        {dotLabel}
+                    </text>
+                </g>
             )}
         </svg>
     );
