@@ -548,7 +548,11 @@ export default function LiveGameScreen() {
     );
 
     const handleEndAtBat = useCallback(
-        async (result: string, finalPitch?: Partial<Pitch>, extra?: { rbi?: number; runs_scored?: number }) => {
+        async (
+            result: string,
+            finalPitch?: Partial<Pitch>,
+            extra?: { rbi?: number; runs_scored?: number; outs_before_override?: number }
+        ) => {
             if (!currentAtBat) return;
             try {
                 // Capture before clearing; append finalPitch if provided (covers stale-closure case
@@ -558,8 +562,12 @@ export default function LiveGameScreen() {
                 const endedBatterId =
                     gameMode === 'opp_pitcher' ? (currentMyBatter?.player_id ?? currentMyBatter?.player?.id) : currentBatter?.id;
 
+                // outs_before_override lets the post-hit advancement flow pass in the
+                // outs count after recording N throwouts — currentOuts is still stale
+                // here because setCurrentOuts hasn't flushed.
+                const outsBefore = extra?.outs_before_override ?? currentOuts;
                 const outsFromPlay = getOutsForResult(result);
-                const newOutCount = currentOuts + outsFromPlay;
+                const newOutCount = outsBefore + outsFromPlay;
                 await dispatch(
                     endAtBat({
                         id: endedAtBat.id,
@@ -604,7 +612,7 @@ export default function LiveGameScreen() {
                         if (nextBatter) setCurrentBattingOrder(nextBatter.batting_order);
                         if (nextBatter) {
                             setCurrentBatter(nextBatter);
-                            await startAtBatForBatter(nextBatter, outsFromPlay > 0 ? newOutCount : currentOuts, currentInning);
+                            await startAtBatForBatter(nextBatter, outsFromPlay > 0 ? newOutCount : outsBefore, currentInning);
                         } else {
                             setCurrentBatter(null);
                         }
@@ -1256,7 +1264,13 @@ export default function LiveGameScreen() {
                 // Credit the batter with an RBI for each run scored on the play (sac fly, hit, etc.).
                 // Walks/HBPs also legitimately credit forced runs. The hit still counts even if a
                 // runner was thrown out trying to advance.
-                await handleEndAtBat(pendingHitResult, undefined, { rbi: runsScored, runs_scored: runsScored });
+                // outs_before_override threads the post-throwout outs into handleEndAtBat — its
+                // currentOuts closure is still pre-throwout because the setState hasn't flushed.
+                await handleEndAtBat(pendingHitResult, undefined, {
+                    rbi: runsScored,
+                    runs_scored: runsScored,
+                    outs_before_override: lastOutsAfter,
+                });
                 setPendingHitResult(null);
             } catch {
                 Alert.alert('Error', 'Failed to update runner positions');

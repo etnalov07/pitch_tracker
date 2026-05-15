@@ -266,12 +266,19 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
-    const handleEndAtBat = async (result: string, extra?: { rbi?: number; runs_scored?: number }) => {
+    const handleEndAtBat = async (
+        result: string,
+        extra?: { rbi?: number; runs_scored?: number; outs_before_override?: number }
+    ) => {
         if (!currentAtBat) return;
 
         try {
+            // outs_before_override lets the post-hit advancement flow pass in the
+            // outs count after recording N throwouts — currentOuts is still stale
+            // here because setCurrentOuts hasn't flushed.
+            const outsBefore = extra?.outs_before_override ?? currentOuts;
             const outsFromPlay = getOutsForResult(result);
-            const newOutCount = currentOuts + outsFromPlay;
+            const newOutCount = outsBefore + outsFromPlay;
 
             await dispatch(
                 endAtBat({
@@ -331,7 +338,7 @@ export function useLiveGameActions(state: LiveGameState) {
                     await advanceToNextBatter(newOutCount);
                 }
             } else {
-                await advanceToNextBatter(currentOuts);
+                await advanceToNextBatter(outsBefore);
             }
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : 'Failed to end at-bat');
@@ -667,10 +674,16 @@ export function useLiveGameActions(state: LiveGameState) {
 
             // End the at-bat with the pending result. The hit still counts even if a
             // runner was thrown out; runs scored on the play earn the batter RBIs.
+            // outs_before_override threads the post-throwout outs into handleEndAtBat —
+            // its currentOuts closure is still pre-throwout because the setState hasn't flushed.
             const result = state.pendingHitResult;
             setPendingHitResult(null);
             if (result) {
-                await handleEndAtBat(result, { rbi: runsScored, runs_scored: runsScored });
+                await handleEndAtBat(result, {
+                    rbi: runsScored,
+                    runs_scored: runsScored,
+                    outs_before_override: lastOutsAfter,
+                });
             }
         } catch (error) {
             console.error('Failed to update runner advancement:', error);
