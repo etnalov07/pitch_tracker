@@ -1,4 +1,12 @@
-import { AtBat, Game, Pitch, ReplayAtBat, buildReplaySequence } from '@pitch-tracker/shared';
+import {
+    AtBat,
+    Game,
+    GamePitcherWithPlayer,
+    OpponentLineupPlayer,
+    Pitch,
+    ReplayAtBat,
+    buildReplaySequence,
+} from '@pitch-tracker/shared';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { gamesApi } from '../../state/games/api/gamesApi';
@@ -56,6 +64,8 @@ const Replay: React.FC = () => {
     const [, setGame] = useState<Game | null>(null);
     const [pitches, setPitches] = useState<Pitch[]>([]);
     const [atBats, setAtBats] = useState<AtBat[]>([]);
+    const [opponentLineup, setOpponentLineup] = useState<OpponentLineupPlayer[]>([]);
+    const [gamePitchers, setGamePitchers] = useState<GamePitcherWithPlayer[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -66,12 +76,20 @@ const Replay: React.FC = () => {
         if (!gameId) return;
         let cancelled = false;
         setLoading(true);
-        Promise.all([gamesApi.getGameById(gameId), gamesApi.getGamePitches(gameId), gamesApi.getAtBatsByGame(gameId)])
-            .then(([g, p, ab]) => {
+        Promise.all([
+            gamesApi.getGameById(gameId),
+            gamesApi.getGamePitches(gameId),
+            gamesApi.getAtBatsByGame(gameId),
+            gamesApi.getOpponentLineup(gameId).catch(() => [] as OpponentLineupPlayer[]),
+            gamesApi.getGamePitchers(gameId).catch(() => [] as GamePitcherWithPlayer[]),
+        ])
+            .then(([g, p, ab, ol, gp]) => {
                 if (cancelled) return;
                 setGame(g);
                 setPitches(p);
                 setAtBats(ab);
+                setOpponentLineup(ol);
+                setGamePitchers(gp);
                 setError(null);
             })
             .catch((e) => {
@@ -87,6 +105,21 @@ const Replay: React.FC = () => {
 
     const sequence: ReplayAtBat[] = useMemo(() => buildReplaySequence(pitches, atBats), [pitches, atBats]);
 
+    const batsByOppBatterId = useMemo(() => {
+        const m = new Map<string, 'R' | 'L' | 'S'>();
+        for (const b of opponentLineup) if (b.id && b.bats) m.set(b.id, b.bats as 'R' | 'L' | 'S');
+        return m;
+    }, [opponentLineup]);
+    const throwsByPitcherId = useMemo(() => {
+        const m = new Map<string, 'R' | 'L'>();
+        for (const gp of gamePitchers) {
+            const id = gp.player_id ?? gp.player?.id;
+            const throws = gp.player?.throws;
+            if (id && (throws === 'R' || throws === 'L')) m.set(id, throws);
+        }
+        return m;
+    }, [gamePitchers]);
+
     useEffect(() => {
         if (selectedAtBatIdx >= sequence.length) setSelectedAtBatIdx(0);
     }, [sequence.length, selectedAtBatIdx]);
@@ -97,6 +130,13 @@ const Replay: React.FC = () => {
 
     const currentEntry: ReplayAtBat | undefined = sequence[selectedAtBatIdx];
     const currentPitch: Pitch | undefined = currentEntry?.pitches[pitchIdx];
+
+    const batterSide: 'R' | 'L' | 'S' | undefined = currentPitch?.opponent_batter_id
+        ? batsByOppBatterId.get(currentPitch.opponent_batter_id)
+        : undefined;
+    const pitcherThrows: 'R' | 'L' | undefined = currentPitch?.pitcher_id
+        ? throwsByPitcherId.get(currentPitch.pitcher_id)
+        : undefined;
 
     return (
         <Page>
@@ -136,6 +176,8 @@ const Replay: React.FC = () => {
                                 actualX={currentPitch?.location_x}
                                 actualY={currentPitch?.location_y}
                                 pitchType={currentPitch?.pitch_type}
+                                batterSide={batterSide}
+                                pitcherThrows={pitcherThrows}
                             />
                             {currentPitch && (currentPitch.location_x == null || currentPitch.location_y == null) && (
                                 <PitchMeta style={{ marginTop: 8, textAlign: 'center', width: '100%' }}>
@@ -150,9 +192,12 @@ const Replay: React.FC = () => {
                                     <BatterName>
                                         {currentEntry.atBat.batting_order ? `#${currentEntry.atBat.batting_order} ` : ''}
                                         {currentEntry.batterDisplayName}
+                                        {batterSide ? ` (${batterSide}HH)` : ''}
                                     </BatterName>
                                     <BatterMeta>
-                                        AB result: {currentEntry.atBat.result?.replace(/_/g, ' ') ?? 'in progress'}
+                                        P: {currentEntry.pitcherDisplayName}
+                                        {pitcherThrows ? ` (${pitcherThrows}HP)` : ''} · AB result:{' '}
+                                        {currentEntry.atBat.result?.replace(/_/g, ' ') ?? 'in progress'}
                                     </BatterMeta>
                                 </BatterHeader>
                             )}

@@ -4,6 +4,7 @@ export interface ReplayAtBat {
     atBat: AtBat;
     pitches: Pitch[];
     batterDisplayName: string;
+    pitcherDisplayName: string;
 }
 
 export function filterUserPitcherPitches(pitches: Pitch[]): Pitch[] {
@@ -32,17 +33,30 @@ export function groupPitchesByAtBat(pitches: Pitch[]): Map<string, Pitch[]> {
     return grouped;
 }
 
-// Looks up batter first/last from any field the API joins onto Pitch payloads
-// (e.g., batter_first_name / batter_last_name). The Pitch type doesn't declare
-// these — we read them defensively and fall back to "Batter".
-function pickBatterName(pitch: Pitch | undefined): string {
-    if (!pitch) return 'Batter';
+// Looks up first/last from API-joined fields on Pitch (the Pitch type doesn't
+// declare them). Defensive read with a fallback.
+function pickJoinedName(
+    pitch: Pitch | undefined,
+    firstKey: string,
+    lastKey: string,
+    fallbackKey: string | null,
+    fallback: string
+): string {
+    if (!pitch) return fallback;
     const p = pitch as unknown as Record<string, unknown>;
-    const first = typeof p.batter_first_name === 'string' ? p.batter_first_name : '';
-    const last = typeof p.batter_last_name === 'string' ? p.batter_last_name : '';
+    const first = typeof p[firstKey] === 'string' ? (p[firstKey] as string) : '';
+    const last = typeof p[lastKey] === 'string' ? (p[lastKey] as string) : '';
     if (first || last) return `${first ? first[0] + '. ' : ''}${last}`.trim();
-    if (typeof p.batter_name === 'string' && p.batter_name) return p.batter_name;
-    return 'Batter';
+    if (fallbackKey && typeof p[fallbackKey] === 'string' && p[fallbackKey]) return p[fallbackKey] as string;
+    return fallback;
+}
+
+function pickBatterName(pitch: Pitch | undefined): string {
+    return pickJoinedName(pitch, 'batter_first_name', 'batter_last_name', 'batter_name', 'Batter');
+}
+
+function pickPitcherName(pitch: Pitch | undefined): string {
+    return pickJoinedName(pitch, 'pitcher_first_name', 'pitcher_last_name', 'pitcher_name', 'Pitcher');
 }
 
 export function buildReplaySequence(pitches: Pitch[], atBats: AtBat[]): ReplayAtBat[] {
@@ -58,6 +72,7 @@ export function buildReplaySequence(pitches: Pitch[], atBats: AtBat[]): ReplayAt
                 atBat: ab,
                 pitches: abPitches,
                 batterDisplayName: pickBatterName(abPitches[0]),
+                pitcherDisplayName: pickPitcherName(abPitches[0]),
             };
         });
 }

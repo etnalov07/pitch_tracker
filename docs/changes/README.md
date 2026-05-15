@@ -29,3 +29,4 @@ Per-feature/per-fix change docs combining the plan summary and what shipped. Eac
 | 2026-05-14 | feat  | Pitch-by-pitch game replay (mobile + web)                               | `9bfd81f`            | [pitch-replay](2026-05-14-pitch-replay.md)                                                           |
 | 2026-05-15 | fix   | Replay: include legacy pitches that pre-date `team_side`                | `e24f7d9`            | [replay-legacy-pitches](2026-05-15-replay-legacy-pitches.md)                                         |
 | 2026-05-15 | fix   | Replay: color the actual-location dot by pitch type                     | `33252f8`            | [replay-pitch-type-color](2026-05-15-replay-pitch-type-color.md)                                     |
+| 2026-05-15 | feat  | Replay: batter silhouette + batter/pitcher names + handedness           | _backfill_           | [replay-silhouette-and-names](2026-05-15-replay-silhouette-and-names.md)                             |

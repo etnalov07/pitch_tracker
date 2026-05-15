@@ -88,18 +88,23 @@ describe('buildReplaySequence', () => {
         expect(seq.map((s) => s.atBat.id)).toEqual(['ab2']);
     });
 
-    it('uses joined batter name fields when present', () => {
+    it('uses joined batter and pitcher name fields when present', () => {
         const pitch = makePitch({ id: 'p1', at_bat_id: 'ab1', created_at: '1' });
         // Cast through unknown to attach the API-joined fields not on the Pitch type.
-        (pitch as unknown as Record<string, string>).batter_first_name = 'Manny';
-        (pitch as unknown as Record<string, string>).batter_last_name = 'Ramirez';
+        const writable = pitch as unknown as Record<string, string>;
+        writable.batter_first_name = 'Manny';
+        writable.batter_last_name = 'Ramirez';
+        writable.pitcher_first_name = 'Pedro';
+        writable.pitcher_last_name = 'Martinez';
         const seq = buildReplaySequence([pitch], [makeAtBat({ id: 'ab1', created_at: '0' })]);
         expect(seq[0].batterDisplayName).toBe('M. Ramirez');
+        expect(seq[0].pitcherDisplayName).toBe('P. Martinez');
     });
 
-    it('falls back to "Batter" when no name fields are joined', () => {
+    it('falls back to "Batter" / "Pitcher" when no name fields are joined', () => {
         const pitch = makePitch({ id: 'p1', at_bat_id: 'ab1', created_at: '1' });
         const seq = buildReplaySequence([pitch], [makeAtBat({ id: 'ab1', created_at: '0' })]);
         expect(seq[0].batterDisplayName).toBe('Batter');
+        expect(seq[0].pitcherDisplayName).toBe('Pitcher');
     });
 });

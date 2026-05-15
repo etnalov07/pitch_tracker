@@ -7,6 +7,8 @@ interface Props {
     actualX?: number;
     actualY?: number;
     pitchType?: string;
+    batterSide?: 'R' | 'L' | 'S' | null;
+    pitcherThrows?: 'R' | 'L' | null;
     size?: number;
 }
 
@@ -54,11 +56,24 @@ const toSvgX = (x: number) => ZONE_X + x * ZONE_W;
 const toSvgY = (y: number) => ZONE_Y + y * ZONE_H;
 const PITCH_RADIUS = 13;
 
-const MiniStrikeZone: React.FC<Props> = ({ targetZone, actualX, actualY, pitchType, size = 280 }) => {
+const MiniStrikeZone: React.FC<Props> = ({ targetZone, actualX, actualY, pitchType, batterSide, pitcherThrows, size = 280 }) => {
     const targetCoords = targetZone ? PITCH_CALL_ZONE_COORDS[targetZone] : null;
     const dotColor = PITCH_TYPE_COLORS[pitchType ?? 'other'] ?? PITCH_TYPE_COLORS.other;
     const dotLabel = PITCH_TYPE_ABBREV[pitchType ?? 'other'] ?? 'OT';
     const hasActual = typeof actualX === 'number' && typeof actualY === 'number';
+    // Resolve switch-hitter against the pitcher's throws (matches mobile StrikeZone behavior).
+    const effectiveSide: 'R' | 'L' | null = batterSide
+        ? batterSide === 'S'
+            ? pitcherThrows === 'L'
+                ? 'R'
+                : 'L'
+            : batterSide === 'L'
+              ? 'L'
+              : 'R'
+        : null;
+    // Batter on the side they stand on relative to the catcher's view used by the
+    // strike-zone canvas: RHH on the right, LHH on the left.
+    const silhouetteX = effectiveSide === 'R' ? 245 : 25;
 
     return (
         <svg
@@ -67,6 +82,28 @@ const MiniStrikeZone: React.FC<Props> = ({ targetZone, actualX, actualY, pitchTy
             viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}
             style={{ background: theme.colors.gray[100], borderRadius: 8 }}
         >
+            {/* Batter silhouette — simple stick figure on the side the batter stands */}
+            {effectiveSide && (
+                <g opacity={0.55} fill={theme.colors.gray[500]}>
+                    {/* head */}
+                    <circle cx={silhouetteX} cy={90} r={9} />
+                    {/* body */}
+                    <rect x={silhouetteX - 4} y={99} width={8} height={50} rx={2} />
+                    {/* legs */}
+                    <rect x={silhouetteX - 4} y={149} width={3} height={45} />
+                    <rect x={silhouetteX + 1} y={149} width={3} height={45} />
+                    {/* bat angled toward the strike zone */}
+                    <line
+                        x1={silhouetteX}
+                        y1={108}
+                        x2={effectiveSide === 'R' ? silhouetteX - 35 : silhouetteX + 35}
+                        y2={70}
+                        stroke={theme.colors.gray[600]}
+                        strokeWidth={3}
+                        strokeLinecap="round"
+                    />
+                </g>
+            )}
             {/* Strike zone outline */}
             <rect
                 x={ZONE_X}

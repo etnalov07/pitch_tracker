@@ -2,7 +2,15 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View, SafeAreaView } from 'react-native';
 import { Text, IconButton, ActivityIndicator, useTheme } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AtBat, Game, Pitch, ReplayAtBat, buildReplaySequence } from '@pitch-tracker/shared';
+import {
+    AtBat,
+    Game,
+    GamePitcherWithPlayer,
+    OpponentLineupPlayer,
+    Pitch,
+    ReplayAtBat,
+    buildReplaySequence,
+} from '@pitch-tracker/shared';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import StrikeZone, { PITCH_TYPE_LABELS } from '../../../src/components/live/StrikeZone/StrikeZone';
 import BatterStrip from '../../../src/components/replay/BatterStrip';
@@ -25,6 +33,8 @@ export default function ReplayScreen() {
     const [game, setGame] = useState<Game | null>(null);
     const [pitches, setPitches] = useState<Pitch[]>([]);
     const [atBats, setAtBats] = useState<AtBat[]>([]);
+    const [opponentLineup, setOpponentLineup] = useState<OpponentLineupPlayer[]>([]);
+    const [gamePitchers, setGamePitchers] = useState<GamePitcherWithPlayer[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -35,12 +45,20 @@ export default function ReplayScreen() {
         if (!id) return;
         let cancelled = false;
         setLoading(true);
-        Promise.all([gamesApi.getGameById(id), gamesApi.getGamePitches(id), gamesApi.getAtBatsByGame(id)])
-            .then(([g, p, ab]) => {
+        Promise.all([
+            gamesApi.getGameById(id),
+            gamesApi.getGamePitches(id),
+            gamesApi.getAtBatsByGame(id),
+            gamesApi.getOpponentLineup(id).catch(() => [] as OpponentLineupPlayer[]),
+            gamesApi.getGamePitchers(id).catch(() => [] as GamePitcherWithPlayer[]),
+        ])
+            .then(([g, p, ab, ol, gp]) => {
                 if (cancelled) return;
                 setGame(g);
                 setPitches(p);
                 setAtBats(ab);
+                setOpponentLineup(ol);
+                setGamePitchers(gp);
                 setError(null);
             })
             .catch((e) => {
@@ -56,7 +74,22 @@ export default function ReplayScreen() {
 
     const sequence: ReplayAtBat[] = useMemo(() => buildReplaySequence(pitches, atBats), [pitches, atBats]);
 
-    // Clamp selection if data shrinks (e.g., during reload)
+    // Lookup tables for batter handedness + pitcher throws (used by the StrikeZone silhouette).
+    const batsByOppBatterId = useMemo(() => {
+        const m = new Map<string, 'R' | 'L' | 'S'>();
+        for (const b of opponentLineup) if (b.id && b.bats) m.set(b.id, b.bats as 'R' | 'L' | 'S');
+        return m;
+    }, [opponentLineup]);
+    const throwsByPitcherId = useMemo(() => {
+        const m = new Map<string, 'R' | 'L'>();
+        for (const gp of gamePitchers) {
+            const id = gp.player_id ?? gp.player?.id;
+            const throws = gp.player?.throws;
+            if (id && (throws === 'R' || throws === 'L')) m.set(id, throws);
+        }
+        return m;
+    }, [gamePitchers]);
+
     useEffect(() => {
         if (selectedAtBatIdx >= sequence.length) setSelectedAtBatIdx(0);
     }, [sequence.length, selectedAtBatIdx]);
@@ -125,6 +158,16 @@ export default function ReplayScreen() {
     const typeLabel = pitchType ? (PITCH_TYPE_LABELS[pitchType] ?? pitchType) : '—';
     const veloLabel = typeof velocity === 'number' && velocity > 0 ? `${Math.round(velocity)} mph` : null;
 
+    // Batter side / pitcher throws — fall back to right-handed if unknown so the
+    // silhouette still renders. Lookup uses the opponent batter's id and the
+    // pitcher's player_id (both stored on the Pitch).
+    const batterSide: 'R' | 'L' | 'S' | undefined = currentPitch?.opponent_batter_id
+        ? batsByOppBatterId.get(currentPitch.opponent_batter_id)
+        : undefined;
+    const pitcherThrows: 'R' | 'L' | undefined = currentPitch?.pitcher_id
+        ? throwsByPitcherId.get(currentPitch.pitcher_id)
+        : undefined;
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
             {renderHeader()}
@@ -136,9 +179,11 @@ export default function ReplayScreen() {
                         <Text variant="titleMedium">
                             {currentEntry.atBat.batting_order ? `#${currentEntry.atBat.batting_order} ` : ''}
                             {currentEntry.batterDisplayName}
+                            {batterSide ? ` (${batterSide}HH)` : ''}
                         </Text>
-                        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                            AB result: {abResult}
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                            P: {currentEntry.pitcherDisplayName}
+                            {pitcherThrows ? ` (${pitcherThrows}HP)` : ''} · AB result: {abResult}
                         </Text>
                     </View>
                 )}
@@ -150,6 +195,8 @@ export default function ReplayScreen() {
                         previousPitches={currentPitch ? [currentPitch] : []}
                         disabled
                         colorBy="pitchType"
+                        batterSide={batterSide}
+                        pitcherThrows={pitcherThrows}
                     />
                 </View>
                 {currentPitch && (currentPitch.location_x == null || currentPitch.location_y == null) && (
