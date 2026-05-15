@@ -176,11 +176,6 @@ export default function LiveGameScreen() {
     const [completedAtBatsByBatter, setCompletedAtBatsByBatter] = useState<Record<string, CompletedAtBatEntry[]>>({});
     const [showPreviousAtBats, setShowPreviousAtBats] = useState(false);
 
-    // Pitch count for the currently selected pitcher in this game.
-    // Fetched from the per-pitcher stats endpoint so a pitching change resets
-    // the displayed count to the new pitcher's outing total.
-    const [currentPitcherPitchCount, setCurrentPitcherPitchCount] = useState(0);
-
     // Pitch call state (integrated from pitch-calling screen)
     const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
     const [sendingCall, setSendingCall] = useState(false);
@@ -277,28 +272,6 @@ export default function LiveGameScreen() {
             dispatch(fetchTeamPitcherRoster(game.home_team_id));
         }
     }, [game?.id, game?.home_team_id, game?.charting_mode, dispatch, id]);
-
-    // Refresh the current pitcher's game pitch count when the active pitcher
-    // changes (pitching change) or after each pitch is logged
-    // (statsRefreshTrigger bumps).
-    useEffect(() => {
-        if (!currentPitcher?.player_id || !id) {
-            setCurrentPitcherPitchCount(0);
-            return;
-        }
-        let cancelled = false;
-        gamesApi
-            .getPitcherGameStats(currentPitcher.player_id, id)
-            .then((stats) => {
-                if (!cancelled) setCurrentPitcherPitchCount(stats.total_pitches ?? 0);
-            })
-            .catch(() => {
-                // Network errors leave the prior count visible until the next refresh.
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [currentPitcher?.player_id, id, statsRefreshTrigger]);
 
     useEffect(() => {
         if (gamePitchers.length > 0 && !currentPitcher) {
@@ -1598,7 +1571,6 @@ export default function LiveGameScreen() {
             strikes={strikes}
             outs={currentOuts}
             runners={baseRunners}
-            pitchCount={currentPitcherPitchCount}
             onPitcherPress={
                 game.status === 'in_progress'
                     ? isScoutingMode || gameMode === 'opp_pitcher'
@@ -1884,7 +1856,7 @@ export default function LiveGameScreen() {
                 onDismiss={() => setShowPitcherStatsModal(false)}
                 pitcher={currentPitcher?.player ?? null}
                 pitcherId={currentPitcher?.player_id}
-                pitches={pitches}
+                gameId={id}
             />
         </Portal>
     );

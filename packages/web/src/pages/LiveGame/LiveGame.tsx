@@ -459,13 +459,10 @@ const LiveGame: React.FC = () => {
 
                 <GameHeader>
                     <TeamInfo>
-                        <TeamName>
-                            {isScoutingMode
-                                ? game.opponent_name || 'Away Team'
-                                : game.is_home_game === false
-                                  ? game.home_team_name || 'Your Team'
-                                  : game.opponent_name || 'Away Team'}
-                        </TeamName>
+                        {/* Left = away_score. Per the client scoring convention, opponent runs always
+                            land in away_score regardless of is_home_game — this column is always the
+                            opponent outside of scouting. */}
+                        <TeamName>{isScoutingMode ? game.opponent_name || 'Away Team' : game.opponent_name || 'Opponent'}</TeamName>
                         <Score>{game.away_score || 0}</Score>
                         {isScoutingMode && (
                             <div style={{ fontSize: '10px', color: theme.colors.gray[500], marginTop: '2px' }}>
@@ -542,12 +539,11 @@ const LiveGame: React.FC = () => {
                             )}
                     </GameInfo>
                     <TeamInfo>
+                        {/* Right = home_score. Per the client scoring convention, the user's runs always
+                            land in home_score regardless of is_home_game — this column is always the
+                            user's team outside of scouting. */}
                         <TeamName>
-                            {isScoutingMode
-                                ? game.scouting_home_team || 'Home Team'
-                                : game.is_home_game === false
-                                  ? game.opponent_name || 'Home Team'
-                                  : game.home_team_name || 'Your Team'}
+                            {isScoutingMode ? game.scouting_home_team || 'Home Team' : game.home_team_name || 'Your Team'}
                         </TeamName>
                         <Score>{game.home_score || 0}</Score>
                         {isScoutingMode && (

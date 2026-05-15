@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { Modal, Portal, Button, useTheme } from 'react-native-paper';
 import { Pitch, Player } from '@pitch-tracker/shared';
+import { gamesApi } from '../../../state/games/api/gamesApi';
 import PitcherStats from '../PitcherStats';
 
 interface Props {
@@ -9,15 +10,31 @@ interface Props {
     onDismiss: () => void;
     pitcher?: Player | null;
     pitcherId?: string;
-    pitches: Pitch[];
+    gameId?: string | null;
 }
 
-const PitcherStatsModal: React.FC<Props> = ({ visible, onDismiss, pitcher, pitcherId, pitches }) => {
+const PitcherStatsModal: React.FC<Props> = ({ visible, onDismiss, pitcher, pitcherId, gameId }) => {
     const theme = useTheme();
-    const filteredPitches = useMemo(() => {
-        if (!pitcherId) return [];
-        return pitches.filter((p) => p.pitcher_id === pitcherId);
-    }, [pitches, pitcherId]);
+    const [pitches, setPitches] = useState<Pitch[]>([]);
+
+    // Fetch full-game pitches each time the modal opens so the stats reflect everything
+    // logged so far, not just the current at-bat (which was the prior bug).
+    useEffect(() => {
+        if (!visible || !gameId) return;
+        let cancelled = false;
+        gamesApi
+            .getGamePitches(gameId)
+            .then((all) => {
+                if (cancelled) return;
+                setPitches(pitcherId ? all.filter((p) => p.pitcher_id === pitcherId) : all);
+            })
+            .catch(() => {
+                if (!cancelled) setPitches([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [visible, gameId, pitcherId]);
 
     return (
         <Portal>
@@ -27,7 +44,7 @@ const PitcherStatsModal: React.FC<Props> = ({ visible, onDismiss, pitcher, pitch
                 contentContainerStyle={[styles.container, { backgroundColor: theme.colors.surface }]}
             >
                 <ScrollView>
-                    <PitcherStats pitcher={pitcher} pitches={filteredPitches} />
+                    <PitcherStats pitcher={pitcher} pitches={pitches} />
                 </ScrollView>
                 <Button onPress={onDismiss} style={styles.closeButton}>
                     Close
