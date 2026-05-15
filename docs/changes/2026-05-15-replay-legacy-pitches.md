@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-15
 - **Type:** fix
-- **Commit:** _backfill on commit_
+- **Commit:** `e24f7d9`
 - **Versions:** mobile `2.1.0` → `2.1.1`, web `1.6.0` → `1.6.1`
 
 ## Context
