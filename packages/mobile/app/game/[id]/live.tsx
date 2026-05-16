@@ -71,6 +71,8 @@ import {
     setCurrentMyBatter,
 } from '../../../src/state';
 import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
+import { useStalkerRadar } from '../../../src/hooks/useStalkerRadar';
+import RadarStatusPill from '../../../src/components/radar/RadarStatusPill';
 import {
     StrikeZone,
     PITCH_TYPE_COLORS,
@@ -199,7 +201,15 @@ export default function LiveGameScreen() {
     const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
 
     // Settings
-    const { pitchCallingEnabled, velocityEnabled } = useAppSelector((state) => state.settings);
+    const { pitchCallingEnabled, velocityEnabled, radarEnabled } = useAppSelector((state) => state.settings);
+
+    // Stalker radar — auto-fills the velocity field as readings arrive.
+    const radar = useStalkerRadar();
+    useEffect(() => {
+        if (radar.lastReadingAt != null && radar.lastVelocity != null) {
+            setVelocity(String(radar.lastVelocity));
+        }
+    }, [radar.lastReadingAt, radar.lastVelocity]);
 
     const game = currentGameState?.game || selectedGame;
     const gameMode: GameMode = game ? deriveGameMode(game.is_home_game ?? true, game.inning_half) : 'our_pitcher';
@@ -2161,6 +2171,7 @@ export default function LiveGameScreen() {
                                     maxLength={3}
                                     selectTextOnFocus
                                 />
+                                {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
                             </View>
                         )}
                         {!isReadOnly && (
@@ -2406,6 +2417,7 @@ export default function LiveGameScreen() {
                             maxLength={3}
                             selectTextOnFocus
                         />
+                        {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
                     </View>
                 )}
                 {/* 6. Log Pitch */}

@@ -121,7 +121,14 @@ export {
     clearPerformanceSummaryError,
 } from './performanceSummary/performanceSummarySlice';
 
-export { initializeSettings, setPitchCallingEnabled, setVelocityEnabled, setThemeMode } from './settings/settingsSlice';
+export {
+    initializeSettings,
+    setPitchCallingEnabled,
+    setVelocityEnabled,
+    setThemeMode,
+    setRadarEnabled,
+    setRadarDevice,
+} from './settings/settingsSlice';
 export type { ThemeMode } from './settings/settingsSlice';
 
 export {

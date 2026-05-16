@@ -43,6 +43,14 @@
                 {
                     "iosMicrophonePermission": "PitchChart uses the microphone for walkie-talkie communication with the catcher's earpiece."
                 }
+            ],
+            [
+                "react-native-ble-plx",
+                {
+                    "isBackgroundEnabled": false,
+                    "modes": [],
+                    "bluetoothAlwaysPermission": "PitchChart connects to a Stalker radar gun over Bluetooth to read pitch velocity."
+                }
             ]
         ],
         "experiments": {
