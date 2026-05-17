@@ -15,7 +15,7 @@ import JoinTeam from './pages/JoinTeam/JoinTeam';
 import LiveGame from './pages/LiveGame/LiveGame';
 import Login from './pages/Login/Login';
 import MyTeamLineup from './pages/MyTeamLineup/MyTeamLineup';
-import { PlayerWaiting } from './pages/Onboarding';
+import { OrgCreate, PlayerWaiting } from './pages/Onboarding';
 import OpponentDetail from './pages/OpponentDetail';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
 import Opponents from './pages/Opponents';
@@ -257,6 +257,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <PlayerWaiting />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/onboarding/org"
+                    element={
+                        <ProtectedRoute>
+                            <OrgCreate />
                         </ProtectedRoute>
                     }
                 />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { organizationService } from '../../services/organizationService';
 import { useAppDispatch, useAppSelector, logout, fetchAllGames, fetchAllTeams } from '../../state';
 import { teamsApi } from '../../state/teams/api/teamsApi';
 import { theme } from '../../styles/theme';
@@ -79,8 +80,17 @@ const CoachDashboard: React.FC = () => {
 
     const [activeTab, setActiveTab] = useState<'games' | 'teams'>('games');
     const [teamRosters, setTeamRosters] = useState<Record<string, Player[]>>({});
+    const [isOrgManager, setIsOrgManager] = useState(false);
 
     const loading = gamesLoading || teamsLoading;
+
+    // Travel-ball coach inference (Open Question #1): a coach rostered on an
+    // org-linked team who is NOT an org owner/admin shouldn't be spinning up
+    // free-floating teams in someone else's org — that's an org-admin function.
+    // Solo coaches (no org-linked team) and hybrids (also an org owner/admin)
+    // keep the "New Team" affordance.
+    const hasOrgLinkedTeam = teams.some((team) => !!team.organization_id);
+    const canCreateTeam = !hasOrgLinkedTeam || isOrgManager;
 
     // Derive the user's primary role from team memberships
     const ROLE_PRIORITY: Record<string, number> = { owner: 0, coach: 1, assistant: 2, player: 3 };
@@ -96,6 +106,23 @@ const CoachDashboard: React.FC = () => {
         dispatch(fetchAllGames());
         dispatch(fetchAllTeams());
     }, [dispatch]);
+
+    // Determine whether this coach also owns/admins an organization
+    useEffect(() => {
+        let cancelled = false;
+        organizationService
+            .listMine()
+            .then((orgs) => {
+                if (cancelled) return;
+                setIsOrgManager(orgs.some((o) => o.user_role === 'owner' || o.user_role === 'admin'));
+            })
+            .catch(() => {
+                if (!cancelled) setIsOrgManager(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // Fetch rosters for all teams when teams are loaded
     useEffect(() => {
@@ -217,10 +244,12 @@ const CoachDashboard: React.FC = () => {
                         <ActionIcon>+</ActionIcon>
                         <ActionText>New Game</ActionText>
                     </ActionCard>
-                    <ActionCard onClick={() => navigate('/teams/new')}>
-                        <ActionIcon>+</ActionIcon>
-                        <ActionText>New Team</ActionText>
-                    </ActionCard>
+                    {canCreateTeam && (
+                        <ActionCard onClick={() => navigate('/teams/new')}>
+                            <ActionIcon>+</ActionIcon>
+                            <ActionText>New Team</ActionText>
+                        </ActionCard>
+                    )}
                     <ActionCard onClick={() => navigate('/join-team')}>
                         <ActionIcon>&#128269;</ActionIcon>
                         <ActionText>Find Team</ActionText>
