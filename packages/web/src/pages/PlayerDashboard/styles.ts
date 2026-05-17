@@ -105,3 +105,95 @@ export const EmptyText = styled.p({
     margin: 0,
     color: theme.colors.gray[600],
 });
+
+export const StatBlock = styled.div({
+    marginBottom: theme.spacing.lg,
+    ':last-of-type': {
+        marginBottom: 0,
+    },
+});
+
+export const StatBlockTitle = styled.h3({
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[700],
+    textTransform: 'uppercase',
+    letterSpacing: '0.03em',
+    margin: 0,
+    marginBottom: theme.spacing.md,
+});
+
+export const StatGrid = styled.div({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(72px, 1fr))',
+    gap: theme.spacing.md,
+});
+
+export const StatItem = styled.div({
+    textAlign: 'center',
+    padding: theme.spacing.md,
+    backgroundColor: theme.surfaces.body,
+    borderRadius: theme.borderRadius.md,
+});
+
+export const StatItemValue = styled.div({
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.gray[900],
+});
+
+export const StatItemLabel = styled.div({
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.gray[600],
+    textTransform: 'uppercase',
+    marginTop: theme.spacing.xs,
+});
+
+export const GameList = styled.div({
+    display: 'flex',
+    flexDirection: 'column',
+});
+
+export const GameRow = styled.div({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    padding: `${theme.spacing.md} 0`,
+    borderBottom: `1px solid ${theme.colors.gray[200]}`,
+    ':last-of-type': {
+        borderBottom: 'none',
+    },
+});
+
+export const GameDate = styled.span({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[600],
+    minWidth: 64,
+});
+
+export const GameOpponent = styled.span({
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.gray[900],
+    flex: 1,
+});
+
+export const GameResult = styled.span<{ result: 'W' | 'L' | 'T' | null }>(({ result }) => ({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: result === 'W' ? theme.colors.green[700] : result === 'L' ? theme.colors.red[700] : theme.colors.gray[600],
+    minWidth: 72,
+    textAlign: 'right',
+}));
+
+export const GameLines = styled.div({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing.xs,
+    flex: 2,
+});
+
+export const GameLine = styled.span({
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[700],
+});

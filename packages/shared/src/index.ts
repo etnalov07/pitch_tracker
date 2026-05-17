@@ -236,6 +236,50 @@ export interface PitcherGameLogsResponse {
 }
 
 // ============================================================================
+// Player Self-Stats (PlayerDashboard "My Stats")
+// ============================================================================
+
+export interface MyPlayerBatting {
+    games: number;
+    at_bats: number;
+    hits: number;
+    rbi: number;
+    runs: number;
+    walks: number;
+    strikeouts: number;
+    batting_average: string;
+}
+
+export interface MyPlayerPitching {
+    games: number;
+    batters_faced: number;
+    total_pitches: number;
+    strikes: number;
+    balls: number;
+    strike_percentage: number;
+}
+
+export interface PlayerStatGame {
+    game_id: string;
+    game_date: string;
+    opponent_name: string | null;
+    team_score: number | null;
+    opponent_score: number | null;
+    result: 'W' | 'L' | 'T' | null;
+    batting_line: string | null;
+    pitching_line: string | null;
+}
+
+export interface MyPlayerStats {
+    player_id: string;
+    team_id: string;
+    team_name: string | null;
+    batting: MyPlayerBatting | null;
+    pitching: MyPlayerPitching | null;
+    games: PlayerStatGame[];
+}
+
+// ============================================================================
 // Game Types
 // ============================================================================
 
