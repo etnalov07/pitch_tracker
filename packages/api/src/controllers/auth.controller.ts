@@ -91,6 +91,33 @@ export class AuthController {
     }
 
     /**
+     * POST /auth/resend-verification-by-email
+     * Public. Issues a fresh verification email for the given address. Always
+     * responds 200 regardless of whether the address has an account or is
+     * already verified — avoids leaking which emails are registered.
+     */
+    async resendVerificationByEmail(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({ error: errors.array()[0].msg });
+                return;
+            }
+            const { email } = req.body;
+            const userRow = await query('SELECT id, email, first_name, email_verified FROM users WHERE email = $1', [email]);
+            if (userRow.rows.length > 0) {
+                const u = userRow.rows[0];
+                if (!u.email_verified) {
+                    await authService.issueAndSendVerification(u.id, u.email, u.first_name);
+                }
+            }
+            res.status(200).json({ message: 'If that address needs verification, a new link has been sent.' });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * POST /auth/resend-verification
      * Authenticated. Issues a new verification token and emails it to the
      * caller. Idempotent — repeated calls invalidate older unused tokens by

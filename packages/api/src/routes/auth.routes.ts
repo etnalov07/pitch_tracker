@@ -30,10 +30,18 @@ const loginValidation = [
     body('password').notEmpty().withMessage('Password required'),
 ];
 
+const emailOnlyValidation = [body('email').isEmail().normalizeEmail().withMessage('Valid email required')];
+
 // Public routes
 router.post('/register', authLimiter, registerValidation, authController.register.bind(authController));
 router.post('/login', authLimiter, loginValidation, authController.login.bind(authController));
 router.get('/verify-email', authController.verifyEmail.bind(authController));
+router.post(
+    '/resend-verification-by-email',
+    authLimiter,
+    emailOnlyValidation,
+    authController.resendVerificationByEmail.bind(authController)
+);
 
 // Protected routes
 router.get('/profile', authenticateToken, authController.getProfile.bind(authController));

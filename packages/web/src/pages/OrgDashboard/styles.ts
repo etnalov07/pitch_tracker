@@ -217,6 +217,26 @@ export const RemoveButton = styled.button({
     cursor: 'pointer',
 });
 
+export const ResendButton = styled.button({
+    padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+    backgroundColor: 'transparent',
+    color: theme.colors.primary[700],
+    border: `1px solid ${theme.colors.primary[300]}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.sm,
+    cursor: 'pointer',
+    ':disabled': {
+        opacity: 0.6,
+        cursor: 'default',
+    },
+});
+
+export const MemberStatus = styled.span<{ tone: 'muted' | 'ok' }>(({ tone }) => ({
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    color: tone === 'ok' ? theme.colors.green[700] : theme.colors.gray[500],
+}));
+
 export const ErrorText = styled.p({
     color: theme.colors.red[700],
     fontSize: theme.fontSize.sm,

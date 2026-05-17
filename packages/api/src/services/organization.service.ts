@@ -1,6 +1,7 @@
 import { query, transaction } from '../config/database';
 import { Organization, OrganizationMember, OrganizationWithTeams, OrgRole } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import authService from './auth.service';
 
 function slugify(text: string): string {
     return text
@@ -122,7 +123,8 @@ export class OrganizationService {
 
     async getMembers(orgId: string): Promise<OrganizationMember[]> {
         const result = await query(
-            `SELECT om.*, u.first_name as user_first_name, u.last_name as user_last_name, u.email as user_email
+            `SELECT om.*, u.first_name as user_first_name, u.last_name as user_last_name,
+                    u.email as user_email, u.email_verified as user_email_verified
              FROM organization_members om
              JOIN users u ON u.id = om.user_id
              WHERE om.organization_id = $1
@@ -130,6 +132,30 @@ export class OrganizationService {
             [orgId]
         );
         return result.rows;
+    }
+
+    /**
+     * Re-send the email-verification message to an org member's user. Scoped
+     * to the org: `memberId` must belong to `orgId`, so an owner/admin can
+     * only ever trigger this for members of an org they manage.
+     */
+    async resendMemberVerification(orgId: string, memberId: string): Promise<{ sent: boolean; reason?: string }> {
+        const result = await query(
+            `SELECT u.id as user_id, u.email, u.first_name, u.email_verified
+             FROM organization_members om
+             JOIN users u ON u.id = om.user_id
+             WHERE om.id = $1 AND om.organization_id = $2`,
+            [memberId, orgId]
+        );
+        if (result.rows.length === 0) {
+            return { sent: false, reason: 'Member not found' };
+        }
+        const u = result.rows[0];
+        if (u.email_verified) {
+            return { sent: false, reason: 'Email already verified' };
+        }
+        await authService.issueAndSendVerification(u.user_id, u.email, u.first_name);
+        return { sent: true };
     }
 
     async addMember(orgId: string, userId: string, role: OrgRole = 'coach'): Promise<OrganizationMember> {

@@ -28,6 +28,8 @@ import {
     MemberEmail,
     MemberRight,
     RoleBadge,
+    ResendButton,
+    MemberStatus,
     InlineForm,
     TextInput,
     RoleSelect,
@@ -69,6 +71,7 @@ const OrgDashboard: React.FC = () => {
     const [renameValue, setRenameValue] = useState('');
     const [busy, setBusy] = useState(false);
     const [actionError, setActionError] = useState<string | null>(null);
+    const [resentMemberIds, setResentMemberIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         let cancelled = false;
@@ -156,6 +159,20 @@ const OrgDashboard: React.FC = () => {
             loadOrgData(activeOrgId);
         } catch (err) {
             setActionError(errMsg(err, 'Could not remove that member.'));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleResendVerification = async (memberId: string) => {
+        if (!activeOrgId) return;
+        setBusy(true);
+        setActionError(null);
+        try {
+            await organizationService.resendMemberVerification(activeOrgId, memberId);
+            setResentMemberIds((prev) => new Set(prev).add(memberId));
+        } catch (err) {
+            setActionError(errMsg(err, 'Could not resend the verification email.'));
         } finally {
             setBusy(false);
         }
@@ -298,6 +315,16 @@ const OrgDashboard: React.FC = () => {
                                     </MemberInfo>
                                     <MemberRight>
                                         <RoleBadge>{member.role}</RoleBadge>
+                                        {!member.user_email_verified &&
+                                            (resentMemberIds.has(member.id) ? (
+                                                <MemberStatus tone="ok">Verification sent</MemberStatus>
+                                            ) : canManage ? (
+                                                <ResendButton onClick={() => handleResendVerification(member.id)} disabled={busy}>
+                                                    Resend verification
+                                                </ResendButton>
+                                            ) : (
+                                                <MemberStatus tone="muted">Unverified</MemberStatus>
+                                            ))}
                                         {canManage && member.user_id !== user?.id && (
                                             <RemoveButton onClick={() => handleRemoveMember(member.id)} disabled={busy}>
                                                 Remove

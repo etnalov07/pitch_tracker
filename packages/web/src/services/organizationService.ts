@@ -50,6 +50,11 @@ export const organizationService = {
         await api.delete(`/organizations/${orgId}/members/${memberId}`);
     },
 
+    // Resend the verification email to an org member (owner/admin only)
+    resendMemberVerification: async (orgId: string, memberId: string): Promise<void> => {
+        await api.post(`/organizations/${orgId}/members/${memberId}/resend-verification`);
+    },
+
     // Rename an organization (owner/admin only)
     rename: async (orgId: string, name: string): Promise<Organization> => {
         const response = await api.put<Organization>(`/organizations/${orgId}`, { name });

@@ -93,6 +93,22 @@ export class OrganizationController {
         }
     }
 
+    async resendMemberVerification(req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const result = await organizationService.resendMemberVerification(
+                req.params.org_id as string,
+                req.params.member_id as string
+            );
+            if (!result.sent) {
+                res.status(result.reason === 'Member not found' ? 404 : 400).json({ error: result.reason });
+                return;
+            }
+            res.json({ message: 'Verification email sent' });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async addTeam(req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { team_id } = req.body;

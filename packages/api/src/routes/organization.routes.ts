@@ -42,4 +42,11 @@ router.delete(
     organizationController.removeMember.bind(organizationController)
 );
 
+// Resend the email-verification message to a member
+router.post(
+    '/:org_id/members/:member_id/resend-verification',
+    requireOrgRole('owner', 'admin'),
+    organizationController.resendMemberVerification.bind(organizationController)
+);
+
 export default router;

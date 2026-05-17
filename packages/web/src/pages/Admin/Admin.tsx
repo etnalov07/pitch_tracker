@@ -229,9 +229,7 @@ const UsersTab: React.FC<UsersTabProps> = ({ destructiveActive }) => {
                                             Force verify
                                         </ActionButton>
                                     )}
-                                    {destructiveActive && !u.email_verified && (
-                                        <ActionButton onClick={() => handleResend(u.id)}>Resend</ActionButton>
-                                    )}
+                                    {!u.email_verified && <ActionButton onClick={() => handleResend(u.id)}>Resend</ActionButton>}
                                 </Td>
                             </tr>
                         ))}

@@ -1511,6 +1511,7 @@ export interface OrganizationMember {
     user_first_name?: string;
     user_last_name?: string;
     user_email?: string;
+    user_email_verified?: boolean;
 }
 
 export interface OrganizationWithTeams extends Organization {

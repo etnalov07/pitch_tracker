@@ -56,4 +56,10 @@ export const authService = {
         const response = await api.get<User>('/auth/profile');
         return response.data;
     },
+
+    // Public: request a fresh verification email for an address. Always
+    // resolves — the API never reveals whether the address has an account.
+    resendVerificationByEmail: async (email: string): Promise<void> => {
+        await api.post('/auth/resend-verification-by-email', { email });
+    },
 };
