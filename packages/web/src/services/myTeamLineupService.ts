@@ -16,4 +16,17 @@ export const myTeamLineupService = {
         const response = await api.put<{ player: MyTeamLineupPlayer }>(`/my-team-lineup/${id}`, data);
         return response.data.player;
     },
+
+    /**
+     * Substitutes a my-team batter with a roster player. The server inserts a new
+     * lineup row (is_starter=false) in the same batting slot and links the original
+     * via replaced_by_id. Returns the new sub row.
+     */
+    substitute: async (
+        playerId: string,
+        sub: { player_id: string; inning_entered: number; position?: string }
+    ): Promise<MyTeamLineupPlayer> => {
+        const response = await api.post<{ player: MyTeamLineupPlayer }>(`/my-team-lineup/player/${playerId}/substitute`, sub);
+        return response.data.player;
+    },
 };

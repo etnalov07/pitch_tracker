@@ -12,11 +12,13 @@ import PitcherTendenciesPanel from '../../components/live/PitcherTendenciesPanel
 import StrikeZone from '../../components/live/StrikeZone';
 import BatterBreakdownModal from '../../components/liveGame/BatterBreakdownModal';
 import { useGameWebSocket } from '../../hooks/useGameWebSocket';
+import { myTeamLineupService } from '../../services/myTeamLineupService';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { theme } from '../../styles/theme';
 import DiamondModal from './DiamondModal';
 import DoublePlayModal from './DoublePlayModal';
 import InningChangeModal from './InningChangeModal';
+import MyBatterSubModal from './MyBatterSubModal';
 import PitcherStatsModal from './PitcherStatsModal';
 import RunnerAdvancementModal from './RunnerAdvancementModal';
 import RunnerEventModal from './RunnerEventModal';
@@ -107,6 +109,7 @@ const LiveGame: React.FC = () => {
     const [showSettingsPanel, setShowSettingsPanel] = React.useState(false);
     const [showUndoPitch, setShowUndoPitch] = React.useState(false);
     const [showBreakdown, setShowBreakdown] = React.useState(false);
+    const [showMyBatterSub, setShowMyBatterSub] = React.useState(false);
 
     const {
         gameId,
@@ -181,6 +184,8 @@ const LiveGame: React.FC = () => {
         setGameRole,
         setStatsRefreshTrigger,
         myTeamLineup,
+        setMyTeamLineup,
+        teamRosterPlayers,
         opponentLineup,
         currentMyBatter,
         setCurrentMyBatter,
@@ -619,6 +624,7 @@ const LiveGame: React.FC = () => {
                                 >
                                     <option value="">Select batter</option>
                                     {myTeamLineup
+                                        .filter((p) => !p.replaced_by_id)
                                         .sort((a, b) => a.batting_order - b.batting_order)
                                         .map((p) => (
                                             <option key={p.id} value={p.id}>
@@ -630,6 +636,7 @@ const LiveGame: React.FC = () => {
                                         ))}
                                 </select>
                             </ChangeButton>
+                            {myTeamLineup.length > 0 && <ChangeButton onClick={() => setShowMyBatterSub(true)}>Sub</ChangeButton>}
                         </PlayerDisplay>
                     ) : (
                         <PlayerDisplay>
@@ -904,6 +911,31 @@ const LiveGame: React.FC = () => {
                     onTeamRunsChange={setTeamRunsScored}
                     onConfirm={actions.handleInningChangeConfirm}
                     showRunsInput={game?.scouting_focus === 'home' || game?.scouting_focus === 'away'}
+                />
+            )}
+
+            {showMyBatterSub && (
+                <MyBatterSubModal
+                    lineup={myTeamLineup}
+                    rosterPlayers={teamRosterPlayers}
+                    currentInningNumber={game?.current_inning}
+                    initialBatterId={currentMyBatter?.id}
+                    onClose={() => setShowMyBatterSub(false)}
+                    onSubstituted={async () => {
+                        if (!gameId) return;
+                        const updated = await myTeamLineupService.getByGame(gameId);
+                        setMyTeamLineup(updated);
+                        // If the current batter was the one replaced, point at the new sub in that slot.
+                        if (currentMyBatter) {
+                            const stillActive = updated.find((p) => p.id === currentMyBatter.id && !p.replaced_by_id);
+                            if (!stillActive) {
+                                const replacement = updated.find(
+                                    (p) => p.batting_order === currentMyBatter.batting_order && !p.replaced_by_id
+                                );
+                                if (replacement) setCurrentMyBatter(replacement);
+                            }
+                        }
+                    }}
                 />
             )}
 

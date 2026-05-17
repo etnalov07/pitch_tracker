@@ -12,6 +12,7 @@ export { default as RunnerAdvancementModal } from './RunnerAdvancementModal';
 export { default as InPlayModal } from './InPlayModal';
 export { default as PitcherSelectorModal } from './PitcherSelectorModal';
 export { default as BatterSelectorModal } from './BatterSelectorModal';
+export { default as MyBatterSelectorModal } from './MyBatterSelectorModal';
 export { default as InningChangeModal } from './InningChangeModal';
 export { default as TeamAtBatModal } from './TeamAtBatModal';
 export { default as PreviousAtBatsModal } from './PreviousAtBatsModal';

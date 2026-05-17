@@ -31,6 +31,46 @@ class MyTeamLineupService {
         });
     }
 
+    /**
+     * Substitutes a my-team batter: inserts a new lineup row for the incoming
+     * roster player (is_starter=false, same batting_order, inning_entered) and
+     * links the original via replaced_by_id. Returns the new row with its
+     * joined player, matching getByGame's shape.
+     */
+    async substitutePlayer(
+        originalPlayerId: string,
+        newPlayerId: string,
+        inningEntered: number,
+        position?: string
+    ): Promise<MyTeamLineupPlayer> {
+        return transaction(async (client) => {
+            const originalRes = await client.query('SELECT * FROM my_team_lineup WHERE id = $1', [originalPlayerId]);
+            const original = originalRes.rows[0];
+            if (!original) {
+                throw new Error('Original player not found');
+            }
+
+            const insertRes = await client.query(
+                `INSERT INTO my_team_lineup (game_id, player_id, batting_order, position, is_starter, inning_entered)
+                 VALUES ($1, $2, $3, $4, false, $5)
+                 RETURNING id`,
+                [original.game_id, newPlayerId, original.batting_order, position ?? original.position, inningEntered]
+            );
+            const newId = insertRes.rows[0].id;
+
+            await client.query('UPDATE my_team_lineup SET replaced_by_id = $1 WHERE id = $2', [newId, originalPlayerId]);
+
+            const res = await client.query(
+                `SELECT m.*, row_to_json(p.*) AS player
+                 FROM my_team_lineup m
+                 JOIN players p ON p.id = m.player_id
+                 WHERE m.id = $1`,
+                [newId]
+            );
+            return res.rows[0];
+        });
+    }
+
     async update(id: string, data: Partial<CreateMyTeamLineupPlayerParams>): Promise<MyTeamLineupPlayer | null> {
         const fields: string[] = [];
         const values: unknown[] = [];
