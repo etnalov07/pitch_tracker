@@ -1,5 +1,5 @@
 import { query, transaction } from '../config/database';
-import { Player, RosterImportRow, RosterImportResult } from '../types';
+import { MyPlayerStats, PlayerStatGame, Player, RosterImportRow, RosterImportResult } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 export class PlayerService {
@@ -277,6 +277,193 @@ export class PlayerService {
         }
 
         return stats;
+    }
+
+    /**
+     * Return every player record linked to the given user, scoped to teams
+     * where the user has `team_members.role='player'`. Used by /players/me to
+     * drive the PlayerDashboard team switcher. Each row includes the team
+     * name so the UI doesn't need a second call.
+     */
+    async getPlayersForUser(userId: string): Promise<Array<Player & { team_name?: string }>> {
+        const result = await query(
+            `SELECT p.*, t.name AS team_name
+             FROM team_members tm
+             JOIN teams t ON t.id = tm.team_id
+             LEFT JOIN players p ON p.id = tm.player_id
+             WHERE tm.user_id = $1 AND tm.role = 'player'
+             ORDER BY t.name ASC`,
+            [userId]
+        );
+        // tm rows without a linked player return p.* as NULL — filter them
+        return result.rows.filter((r) => r.id !== null);
+    }
+
+    /**
+     * The logged-in player's own batting + pitching aggregates and a
+     * per-game scoreboard. Scoped server-side to the `players` row linked to
+     * this user — there is no player_id input, so a player can only ever see
+     * their own line. `teamId` disambiguates multi-team players; it is
+     * validated by the resolution query (a team the user isn't a player on
+     * yields no row → null → 403 at the controller).
+     */
+    async getMyStats(userId: string, teamId?: string): Promise<MyPlayerStats | null> {
+        const playerResult = await query(
+            `SELECT p.id, p.team_id, t.name AS team_name
+             FROM team_members tm
+             JOIN teams t ON t.id = tm.team_id
+             JOIN players p ON p.id = tm.player_id
+             WHERE tm.user_id = $1 AND tm.role = 'player'
+               AND ($2::uuid IS NULL OR tm.team_id = $2::uuid)
+             ORDER BY t.name ASC
+             LIMIT 1`,
+            [userId, teamId ?? null]
+        );
+        if (playerResult.rows.length === 0) return null;
+
+        const { id: playerId, team_id, team_name } = playerResult.rows[0];
+
+        const [battingByGame, pitchingByGame, battersFacedByGame, gamesResult] = await Promise.all([
+            query(
+                `SELECT game_id,
+                        COUNT(*) AS at_bats,
+                        COUNT(*) FILTER (WHERE result IN ('single', 'double', 'triple', 'home_run')) AS hits,
+                        COUNT(*) FILTER (WHERE result = 'strikeout') AS strikeouts,
+                        COUNT(*) FILTER (WHERE result = 'walk') AS walks,
+                        COALESCE(SUM(rbi), 0) AS rbi,
+                        COALESCE(SUM(runs_scored), 0) AS runs
+                 FROM at_bats
+                 WHERE batter_id = $1
+                 GROUP BY game_id`,
+                [playerId]
+            ),
+            query(
+                `SELECT game_id,
+                        COUNT(*) AS total_pitches,
+                        COUNT(*) FILTER (WHERE pitch_result = 'ball') AS balls
+                 FROM pitches
+                 WHERE pitcher_id = $1
+                 GROUP BY game_id`,
+                [playerId]
+            ),
+            query(`SELECT game_id, COUNT(*) AS batters_faced FROM at_bats WHERE pitcher_id = $1 GROUP BY game_id`, [playerId]),
+            query(
+                `SELECT g.id, g.game_date, g.opponent_name, g.home_score, g.away_score, g.is_home_game
+                 FROM games g
+                 WHERE g.id IN (
+                     SELECT game_id FROM at_bats WHERE batter_id = $1
+                     UNION
+                     SELECT game_id FROM pitches WHERE pitcher_id = $1
+                 )
+                 ORDER BY g.game_date DESC
+                 LIMIT 30`,
+                [playerId]
+            ),
+        ]);
+
+        const battingGames = new Map<
+            string,
+            { at_bats: number; hits: number; strikeouts: number; walks: number; rbi: number; runs: number }
+        >();
+        for (const r of battingByGame.rows) {
+            battingGames.set(r.game_id, {
+                at_bats: parseInt(r.at_bats, 10),
+                hits: parseInt(r.hits, 10),
+                strikeouts: parseInt(r.strikeouts, 10),
+                walks: parseInt(r.walks, 10),
+                rbi: parseInt(r.rbi, 10),
+                runs: parseInt(r.runs, 10),
+            });
+        }
+
+        const pitchingGames = new Map<string, { total_pitches: number; balls: number; batters_faced: number }>();
+        for (const r of pitchingByGame.rows) {
+            const total = parseInt(r.total_pitches, 10);
+            pitchingGames.set(r.game_id, { total_pitches: total, balls: parseInt(r.balls, 10), batters_faced: 0 });
+        }
+        for (const r of battersFacedByGame.rows) {
+            const entry = pitchingGames.get(r.game_id);
+            if (entry) entry.batters_faced = parseInt(r.batters_faced, 10);
+        }
+
+        // Batting aggregate across all games
+        const batting =
+            battingGames.size > 0
+                ? {
+                      games: battingGames.size,
+                      at_bats: 0,
+                      hits: 0,
+                      rbi: 0,
+                      runs: 0,
+                      walks: 0,
+                      strikeouts: 0,
+                      batting_average: '0.000',
+                  }
+                : null;
+        if (batting) {
+            for (const g of battingGames.values()) {
+                batting.at_bats += g.at_bats;
+                batting.hits += g.hits;
+                batting.rbi += g.rbi;
+                batting.runs += g.runs;
+                batting.walks += g.walks;
+                batting.strikeouts += g.strikeouts;
+            }
+            batting.batting_average = batting.at_bats > 0 ? (batting.hits / batting.at_bats).toFixed(3) : '0.000';
+        }
+
+        // Pitching aggregate across all games
+        const pitching =
+            pitchingGames.size > 0
+                ? { games: pitchingGames.size, batters_faced: 0, total_pitches: 0, strikes: 0, balls: 0, strike_percentage: 0 }
+                : null;
+        if (pitching) {
+            for (const g of pitchingGames.values()) {
+                pitching.total_pitches += g.total_pitches;
+                pitching.balls += g.balls;
+                pitching.batters_faced += g.batters_faced;
+            }
+            pitching.strikes = pitching.total_pitches - pitching.balls;
+            pitching.strike_percentage =
+                pitching.total_pitches > 0 ? Math.round((pitching.strikes / pitching.total_pitches) * 100) : 0;
+        }
+
+        const games: PlayerStatGame[] = gamesResult.rows.map((g) => {
+            const isAway = g.is_home_game === false;
+            const teamScore = isAway ? g.away_score : g.home_score;
+            const oppScore = isAway ? g.home_score : g.away_score;
+            let result: 'W' | 'L' | 'T' | null = null;
+            if (teamScore !== null && teamScore !== undefined && oppScore !== null && oppScore !== undefined) {
+                result = teamScore > oppScore ? 'W' : teamScore < oppScore ? 'L' : 'T';
+            }
+
+            const bat = battingGames.get(g.id);
+            let battingLine: string | null = null;
+            if (bat) {
+                battingLine = `${bat.hits}-for-${bat.at_bats}`;
+                if (bat.rbi > 0) battingLine += `, ${bat.rbi} RBI`;
+            }
+
+            const pit = pitchingGames.get(g.id);
+            let pitchingLine: string | null = null;
+            if (pit) {
+                const pct = pit.total_pitches > 0 ? Math.round(((pit.total_pitches - pit.balls) / pit.total_pitches) * 100) : 0;
+                pitchingLine = `${pit.total_pitches} P · ${pct}% strikes · ${pit.batters_faced} BF`;
+            }
+
+            return {
+                game_id: g.id,
+                game_date: g.game_date,
+                opponent_name: g.opponent_name ?? null,
+                team_score: teamScore ?? null,
+                opponent_score: oppScore ?? null,
+                result,
+                batting_line: battingLine,
+                pitching_line: pitchingLine,
+            };
+        });
+
+        return { player_id: playerId, team_id, team_name: team_name ?? null, batting, pitching, games };
     }
 }
 

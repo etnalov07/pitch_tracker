@@ -161,6 +161,16 @@ export class GameController {
         }
     }
 
+    async deleteGame(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            await gameService.deleteGame(id as string);
+            res.status(200).json({ message: 'Game deleted' });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async toggleHomeAway(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;

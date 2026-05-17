@@ -375,6 +375,18 @@ export class GameService {
 
         return result.rows[0].base_runners || { first: false, second: false, third: false };
     }
+    async deleteGame(gameId: string): Promise<void> {
+        await transaction(async (client) => {
+            // performance_summaries has no FK to games (polymorphic source_type/source_id), so clear manually.
+            await client.query(`DELETE FROM performance_summaries WHERE source_type = 'game' AND source_id = $1`, [gameId]);
+
+            const result = await client.query(`DELETE FROM games WHERE id = $1`, [gameId]);
+            if (result.rowCount === 0) {
+                throw new Error('Game not found');
+            }
+        });
+    }
+
     async toggleHomeAway(gameId: string): Promise<Game> {
         const result = await query(
             `UPDATE games SET is_home_game = NOT COALESCE(is_home_game, true)

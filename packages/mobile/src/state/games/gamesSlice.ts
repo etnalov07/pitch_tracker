@@ -91,6 +91,15 @@ export const createGame = createAsyncThunk('games/create', async (gameData: Part
     }
 });
 
+export const deleteGame = createAsyncThunk('games/delete', async (gameId: string, { rejectWithValue }) => {
+    try {
+        await gamesApi.deleteGame(gameId);
+        return gameId;
+    } catch (error: unknown) {
+        return rejectWithValue(getErrorMessage(error, 'Failed to delete game'));
+    }
+});
+
 export const startGame = createAsyncThunk('games/start', async (gameId: string, { rejectWithValue }) => {
     try {
         return await gamesApi.startGame(gameId);
@@ -463,6 +472,18 @@ const gamesSlice = createSlice({
             })
             .addCase(createGame.rejected, (state, action) => {
                 state.loading = false;
+                state.error = action.payload as string;
+            });
+
+        // Delete Game
+        builder
+            .addCase(deleteGame.fulfilled, (state, action) => {
+                state.games = state.games.filter((g) => g.id !== action.payload);
+                if (state.selectedGame?.id === action.payload) {
+                    state.selectedGame = null;
+                }
+            })
+            .addCase(deleteGame.rejected, (state, action) => {
                 state.error = action.payload as string;
             });
 

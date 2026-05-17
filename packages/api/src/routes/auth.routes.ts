@@ -19,6 +19,10 @@ const registerValidation = [
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
     body('first_name').trim().notEmpty().withMessage('First name required'),
     body('last_name').trim().notEmpty().withMessage('Last name required'),
+    body('registration_type')
+        .optional()
+        .isIn(['coach', 'player', 'org_admin'])
+        .withMessage('registration_type must be coach, player, or org_admin'),
 ];
 
 const loginValidation = [

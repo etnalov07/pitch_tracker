@@ -6,12 +6,13 @@ import { UserWithPassword, UserResponse, RegisterData, LoginCredentials } from '
 import { v4 as uuidv4 } from 'uuid';
 import emailService from './email.service';
 import { config } from '../config/env';
+import { isSuperAdminEmail } from '../middleware/auth';
 
 const VERIFY_TOKEN_TTL_DAYS = 7;
 
 export class AuthService {
     async register(data: RegisterData): Promise<{ user: UserResponse; token: string }> {
-        const { email, password, first_name, last_name } = data;
+        const { email, password, first_name, last_name, registration_type } = data;
 
         // Check if user already exists
         const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
@@ -26,10 +27,10 @@ export class AuthService {
         // Create user
         const userId = uuidv4();
         const result = await query(
-            `INSERT INTO users (id, email, password_hash, first_name, last_name)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, email, first_name, last_name, created_at`,
-            [userId, email, password_hash, first_name, last_name]
+            `INSERT INTO users (id, email, password_hash, first_name, last_name, registration_type)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, email, first_name, last_name, registration_type, created_at`,
+            [userId, email, password_hash, first_name, last_name, registration_type ?? null]
         );
 
         const user = result.rows[0];
@@ -43,7 +44,7 @@ export class AuthService {
             console.error('Welcome email pipeline failed:', err)
         );
 
-        return { user, token };
+        return { user: { ...user, is_super_admin: isSuperAdminEmail(user.email) }, token };
     }
 
     /**
@@ -114,11 +115,17 @@ export class AuthService {
         // Return user without password
         const { password_hash, ...userResponse } = user;
 
-        return { user: userResponse as UserResponse, token };
+        return {
+            user: { ...(userResponse as UserResponse), is_super_admin: isSuperAdminEmail(user.email) } as UserResponse,
+            token,
+        };
     }
 
     async getUserById(userId: string): Promise<UserResponse | null> {
-        const result = await query('SELECT id, email, first_name, last_name, created_at FROM users WHERE id = $1', [userId]);
+        const result = await query(
+            'SELECT id, email, first_name, last_name, registration_type, created_at FROM users WHERE id = $1',
+            [userId]
+        );
 
         if (result.rows.length === 0) return null;
 
@@ -148,6 +155,7 @@ export class AuthService {
             ...user,
             team_memberships: teamMemberships.rows,
             org_memberships: orgMemberships.rows,
+            is_super_admin: isSuperAdminEmail(user.email),
         };
     }
 }

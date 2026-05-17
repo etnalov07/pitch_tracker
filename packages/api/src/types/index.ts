@@ -23,6 +23,8 @@ export interface UserResponse {
     first_name: string;
     last_name: string;
     created_at: Date;
+    registration_type?: 'coach' | 'player' | 'org_admin' | null;
+    is_super_admin?: boolean;
 }
 
 // Express Request with authenticated user

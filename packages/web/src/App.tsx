@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import packageJson from '../package.json';
+import Admin from './pages/Admin';
 import BullpenLive from './pages/BullpenLive';
 import BullpenNew from './pages/BullpenNew';
 import BullpenPlanEditor from './pages/BullpenPlanEditor';
@@ -14,6 +15,7 @@ import JoinTeam from './pages/JoinTeam/JoinTeam';
 import LiveGame from './pages/LiveGame/LiveGame';
 import Login from './pages/Login/Login';
 import MyTeamLineup from './pages/MyTeamLineup/MyTeamLineup';
+import { OrgCreate, PlayerWaiting } from './pages/Onboarding';
 import OpponentDetail from './pages/OpponentDetail';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
 import Opponents from './pages/Opponents';
@@ -239,6 +241,30 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <Settings />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin"
+                    element={
+                        <ProtectedRoute>
+                            <Admin />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/onboarding/player"
+                    element={
+                        <ProtectedRoute>
+                            <PlayerWaiting />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/onboarding/org"
+                    element={
+                        <ProtectedRoute>
+                            <OrgCreate />
                         </ProtectedRoute>
                     }
                 />

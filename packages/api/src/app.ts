@@ -6,6 +6,7 @@ import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 
 // Import routes
+import adminRoutes from './routes/admin.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import atBatRoutes from './routes/atBat.routes';
 import authRoutes from './routes/auth.routes';
@@ -86,6 +87,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // API Routes (prefixed with /bt-api for Namecheap routing)
+app.use('/bt-api/admin', adminRoutes);
 app.use('/bt-api/analytics', analyticsRoutes);
 app.use('/bt-api/at-bats', atBatRoutes);
 app.use('/bt-api/auth', authRoutes);

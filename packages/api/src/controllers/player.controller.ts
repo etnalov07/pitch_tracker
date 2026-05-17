@@ -12,6 +12,48 @@ export class PlayerController {
         }
     }
 
+    /**
+     * GET /players/me — auth required; returns every player record linked to
+     * the logged-in user via team_members.role='player'. Drives the
+     * PlayerDashboard team switcher.
+     */
+    async getMyPlayers(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            if (!req.user) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
+            const players = await playerService.getPlayersForUser(req.user.id);
+            res.status(200).json({ players });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /players/me/stats — auth required; returns the logged-in player's
+     * own batting/pitching aggregates + per-game scoreboard. Optional
+     * ?team_id= disambiguates multi-team players and is validated server-side
+     * (a team the user isn't a player on yields 403).
+     */
+    async getMyStats(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            if (!req.user) {
+                res.status(401).json({ error: 'Unauthorized' });
+                return;
+            }
+            const teamId = typeof req.query.team_id === 'string' ? req.query.team_id : undefined;
+            const stats = await playerService.getMyStats(req.user.id, teamId);
+            if (!stats) {
+                res.status(403).json({ error: 'You are not a player on that team' });
+                return;
+            }
+            res.status(200).json({ stats });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async getPlayerById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;

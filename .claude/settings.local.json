@@ -157,7 +157,13 @@
       "mcp__Claude_in_Chrome__tabs_create_mcp",
       "Bash(python -m http.server 8765)",
       "Bash(kill %1)",
-      "Bash(pkill -f \"http-server\")"
+      "Bash(pkill -f \"http-server\")",
+      "PowerShell(npx eslint src/styles/theme.ts src/pages/Dashboard/styles.ts)",
+      "PowerShell(npx prettier --write src/pages/PitcherProfile/styles.ts src/pages/PitcherProfile/PitcherProfile.tsx src/components/pitcher/GameLogTable/styles.ts src/components/pitcher/BullpenLogTable/styles.ts)",
+      "PowerShell(npx prettier --write src/pages/LiveGame/ViewerDashboard.tsx src/components/live/PitcherStats/styles.ts src/components/live/CountBreakdownPanel/styles.ts src/components/live/ViewerTendenciesTab/ViewerTendenciesTab.tsx src/components/performanceSummary/PerformanceSummaryCard/styles.ts src/components/performanceSummary/BatterBreakdownPanel/styles.ts)",
+      "PowerShell(npx tsc --noEmit)",
+      "Bash(npx ts-node *)",
+      "Bash(start \"\" \"C:\\\\Projects\\\\pitch_tracker\\\\docs\\\\reports\\\\2026-05-11-game-b3224c08-strike-zone-plot.html\")"
     ]
   },
   "hooks": {

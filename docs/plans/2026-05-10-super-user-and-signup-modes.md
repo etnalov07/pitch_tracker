@@ -41,7 +41,7 @@ Env var allowlist: `SUPER_ADMIN_EMAILS=brian.volante@bvolante.com` (comma-separa
 
 ### Audit log
 
-New migration `036_admin_audit.sql`. Per Open Question #7, the table is shared
+New migration `040_admin_audit.sql`. Per Open Question #7, the table is shared
 between Super User and org-level (owner/admin) privileged mutations — `actor_role`
 distinguishes them.
 
@@ -117,7 +117,7 @@ Impersonation, password reads/resets, mass mutations, billing/usage dashboards, 
 The field is already sent by both clients (`Login.tsx:71`, `register.tsx:45`) and shapes are in shared. Backend changes:
 
 1. `packages/shared/src/index.ts` — `RegistrationType = 'coach' | 'player' | 'org_admin'` (already present at line 47).
-2. Migration `037_users_registration_type.sql`:
+2. Migration `041_users_registration_type.sql`:
     ```sql
     ALTER TABLE users ADD COLUMN registration_type VARCHAR(16);
     -- nullable; existing users stay NULL = treated as 'coach' by the dashboard
@@ -167,7 +167,7 @@ For each existing user, by category:
 | Existing `team_members` rows                           | Honored by `requireTeamRole`  | Honored by `requireTeamRole` (new authz on `POST /invites` doesn't touch existing acceptance) |
 | Mobile app                                             | No role branching             | No role branching (mobile is untouched in this sketch — phase later)                          |
 
-**Migrations are additive only**: one nullable column on `users` (037), one new table for audit (036), no ALTERs that change types or add NOT NULL constraints to populated columns.
+**Migrations are additive only**: one nullable column on `users` (041), one new table for audit (040), no ALTERs that change types or add NOT NULL constraints to populated columns.
 
 ---
 
