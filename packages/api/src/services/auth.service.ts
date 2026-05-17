@@ -56,7 +56,7 @@ export class AuthService {
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
         await query('INSERT INTO email_verifications (user_id, token, expires_at) VALUES ($1, $2, $3)', [userId, token, expiresAt]);
-        const verifyUrl = `${config.invite.baseUrl}/verify-email?token=${token}`;
+        const verifyUrl = `${config.api.baseUrl}/auth/verify-email?token=${token}`;
         await emailService.sendWelcomeEmail({ to: email, firstName, verifyUrl });
     }
 
@@ -68,7 +68,7 @@ export class AuthService {
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
         await query('INSERT INTO email_verifications (user_id, token, expires_at) VALUES ($1, $2, $3)', [userId, token, expiresAt]);
-        const verifyUrl = `${config.invite.baseUrl}/verify-email?token=${token}`;
+        const verifyUrl = `${config.api.baseUrl}/auth/verify-email?token=${token}`;
         await emailService.sendVerificationEmail({ to: email, firstName, verifyUrl });
     }
 

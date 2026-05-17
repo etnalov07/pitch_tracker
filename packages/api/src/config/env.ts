@@ -19,6 +19,11 @@ interface Config {
     cors: {
         origin: string | string[];
     };
+    api: {
+        // Public base URL of this API (including the /bt-api prefix). Used to
+        // build absolute links back to API endpoints in outbound emails.
+        baseUrl: string;
+    };
     invite: {
         defaultExpiryDays: number;
         baseUrl: string;
@@ -62,6 +67,9 @@ export const config: Config = {
         origin: getEnvVariable('CORS_ORIGIN', 'http://localhost:3000')
             .split(',')
             .map((o) => o.trim()),
+    },
+    api: {
+        baseUrl: getEnvVariable('API_BASE_URL', 'http://localhost:5000/bt-api'),
     },
     invite: {
         defaultExpiryDays: parseInt(getEnvVariable('INVITE_EXPIRY_DAYS', '7'), 10),

@@ -29,6 +29,7 @@ import Settings from './pages/Settings';
 import TeamDetail from './pages/TeamDetail/TeamDetail';
 import Teams from './pages/Teams/Teams';
 import TeamSettings from './pages/TeamSettings';
+import VerifyEmail from './pages/VerifyEmail';
 import { useAppSelector } from './state';
 
 // Protected Route component
@@ -44,6 +45,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/invite/:token" element={<InviteAccept />} />
                 <Route path="/report/:gameId" element={<PublicReport />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route
                     path="/join-team"
                     element={
