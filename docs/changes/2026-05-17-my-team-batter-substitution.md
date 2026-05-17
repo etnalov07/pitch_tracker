@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-17
 - **Type:** feat
-- **Commit:** _backfill on commit_
+- **Commit:** `ae89179`
 - **Versions:** api `1.7.0` → `1.8.0`, web `1.7.1` → `1.8.0`, mobile `2.3.0` → `2.4.0`
 
 ## Context
