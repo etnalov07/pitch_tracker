@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-17
 - **Type:** `feat`
-- **Commit SHA:** _pending — backfilled after commit_
+- **Commit SHA:** `3ebdb93`
 - **Version bumps:** `@pitch-tracker/web` 1.8.0 → 1.9.0. Shared, API, mobile not bumped (no changes).
 - **Plan reference:** [docs/plans/2026-05-10-super-user-and-signup-modes.md](../plans/2026-05-10-super-user-and-signup-modes.md)
 
