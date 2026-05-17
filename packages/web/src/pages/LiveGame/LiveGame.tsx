@@ -12,11 +12,13 @@ import PitcherTendenciesPanel from '../../components/live/PitcherTendenciesPanel
 import StrikeZone from '../../components/live/StrikeZone';
 import BatterBreakdownModal from '../../components/liveGame/BatterBreakdownModal';
 import { useGameWebSocket } from '../../hooks/useGameWebSocket';
+import { myTeamLineupService } from '../../services/myTeamLineupService';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { theme } from '../../styles/theme';
 import DiamondModal from './DiamondModal';
 import DoublePlayModal from './DoublePlayModal';
 import InningChangeModal from './InningChangeModal';
+import MyBatterSubModal from './MyBatterSubModal';
 import PitcherStatsModal from './PitcherStatsModal';
 import RunnerAdvancementModal from './RunnerAdvancementModal';
 import RunnerEventModal from './RunnerEventModal';
@@ -107,6 +109,7 @@ const LiveGame: React.FC = () => {
     const [showSettingsPanel, setShowSettingsPanel] = React.useState(false);
     const [showUndoPitch, setShowUndoPitch] = React.useState(false);
     const [showBreakdown, setShowBreakdown] = React.useState(false);
+    const [showMyBatterSub, setShowMyBatterSub] = React.useState(false);
 
     const {
         gameId,
@@ -181,6 +184,9 @@ const LiveGame: React.FC = () => {
         setGameRole,
         setStatsRefreshTrigger,
         myTeamLineup,
+        setMyTeamLineup,
+        teamRosterPlayers,
+        opponentLineup,
         currentMyBatter,
         setCurrentMyBatter,
         settings,
@@ -242,6 +248,13 @@ const LiveGame: React.FC = () => {
         : gameMode === 'opp_pitcher'
           ? !currentOpposingPitcher
           : !currentPitcher || !currentBatter;
+
+    // Lineup-setup CTAs are visible pre-game (status === 'scheduled') until the user starts
+    // the game, and also during the in-game select prompt when a lineup is still empty.
+    const showOpponentLineupCTA = !isScoutingMode && game?.charting_mode !== 'opp_pitcher' && opponentLineup.length === 0;
+    const showMyLineupCTA = !isScoutingMode && game?.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0;
+    const showSetupSelectPrompt = needsSetup && !currentAtBat;
+    const showPreGameLineupCTAs = game?.status === 'scheduled' && (showOpponentLineupCTA || showMyLineupCTA);
 
     // Single-team scouting: true when the current half is NOT the focus team's pitching half
     const scoutingFocus = game?.scouting_focus;
@@ -451,13 +464,10 @@ const LiveGame: React.FC = () => {
 
                 <GameHeader>
                     <TeamInfo>
-                        <TeamName>
-                            {isScoutingMode
-                                ? game.opponent_name || 'Away Team'
-                                : game.is_home_game === false
-                                  ? game.home_team_name || 'Your Team'
-                                  : game.opponent_name || 'Away Team'}
-                        </TeamName>
+                        {/* Left = away_score. Per the client scoring convention, opponent runs always
+                            land in away_score regardless of is_home_game — this column is always the
+                            opponent outside of scouting. */}
+                        <TeamName>{isScoutingMode ? game.opponent_name || 'Away Team' : game.opponent_name || 'Opponent'}</TeamName>
                         <Score>{game.away_score || 0}</Score>
                         {isScoutingMode && (
                             <div style={{ fontSize: '10px', color: theme.colors.gray[500], marginTop: '2px' }}>
@@ -534,12 +544,11 @@ const LiveGame: React.FC = () => {
                             )}
                     </GameInfo>
                     <TeamInfo>
+                        {/* Right = home_score. Per the client scoring convention, the user's runs always
+                            land in home_score regardless of is_home_game — this column is always the
+                            user's team outside of scouting. */}
                         <TeamName>
-                            {isScoutingMode
-                                ? game.scouting_home_team || 'Home Team'
-                                : game.is_home_game === false
-                                  ? game.opponent_name || 'Home Team'
-                                  : game.home_team_name || 'Your Team'}
+                            {isScoutingMode ? game.scouting_home_team || 'Home Team' : game.home_team_name || 'Your Team'}
                         </TeamName>
                         <Score>{game.home_score || 0}</Score>
                         {isScoutingMode && (
@@ -615,6 +624,7 @@ const LiveGame: React.FC = () => {
                                 >
                                     <option value="">Select batter</option>
                                     {myTeamLineup
+                                        .filter((p) => !p.replaced_by_id)
                                         .sort((a, b) => a.batting_order - b.batting_order)
                                         .map((p) => (
                                             <option key={p.id} value={p.id}>
@@ -626,6 +636,7 @@ const LiveGame: React.FC = () => {
                                         ))}
                                 </select>
                             </ChangeButton>
+                            {myTeamLineup.length > 0 && <ChangeButton onClick={() => setShowMyBatterSub(true)}>Sub</ChangeButton>}
                         </PlayerDisplay>
                     ) : (
                         <PlayerDisplay>
@@ -648,30 +659,32 @@ const LiveGame: React.FC = () => {
                     )}
                 </PlayersRow>
 
-                {needsSetup && !currentAtBat && (
+                {(showSetupSelectPrompt || showPreGameLineupCTAs) && (
                     <SetupPrompt>
-                        <SetupText>
-                            {isScoutingMode
-                                ? !currentOpposingPitcher && !currentBatter
-                                    ? 'Select the pitcher and batter to start scouting.'
-                                    : !currentOpposingPitcher
-                                      ? 'Select the pitcher to continue.'
-                                      : 'Select the batter to continue.'
-                                : !currentPitcher && gameMode === 'opp_pitcher'
-                                  ? 'Select the opposing pitcher and your batter to start tracking.'
-                                  : !currentPitcher && !currentBatter
-                                    ? 'Select your pitcher and the opponent batter to start tracking pitches.'
-                                    : !currentPitcher
-                                      ? 'Select your pitcher to continue.'
-                                      : 'Select the opponent batter to continue.'}
-                        </SetupText>
-                        {isScoutingMode && (
+                        {showSetupSelectPrompt && (
+                            <SetupText>
+                                {isScoutingMode
+                                    ? !currentOpposingPitcher && !currentBatter
+                                        ? 'Select the pitcher and batter to start scouting.'
+                                        : !currentOpposingPitcher
+                                          ? 'Select the pitcher to continue.'
+                                          : 'Select the batter to continue.'
+                                    : !currentPitcher && gameMode === 'opp_pitcher'
+                                      ? 'Select the opposing pitcher and your batter to start tracking.'
+                                      : !currentPitcher && !currentBatter
+                                        ? 'Select your pitcher and the opponent batter to start tracking pitches.'
+                                        : !currentPitcher
+                                          ? 'Select your pitcher to continue.'
+                                          : 'Select the opponent batter to continue.'}
+                            </SetupText>
+                        )}
+                        {isScoutingMode && showSetupSelectPrompt && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Lineups</SetupButton>
                         )}
-                        {!isScoutingMode && !currentBatter && gameMode !== 'opp_pitcher' && (
+                        {showOpponentLineupCTA && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/lineup`)}>Setup Opponent Lineup</SetupButton>
                         )}
-                        {!isScoutingMode && game?.charting_mode !== 'our_pitcher' && myTeamLineup.length === 0 && (
+                        {showMyLineupCTA && (
                             <SetupButton onClick={() => navigate(`/game/${gameId}/my-lineup?from=live`)}>
                                 Setup My Team Lineup
                             </SetupButton>
@@ -898,6 +911,31 @@ const LiveGame: React.FC = () => {
                     onTeamRunsChange={setTeamRunsScored}
                     onConfirm={actions.handleInningChangeConfirm}
                     showRunsInput={game?.scouting_focus === 'home' || game?.scouting_focus === 'away'}
+                />
+            )}
+
+            {showMyBatterSub && (
+                <MyBatterSubModal
+                    lineup={myTeamLineup}
+                    rosterPlayers={teamRosterPlayers}
+                    currentInningNumber={game?.current_inning}
+                    initialBatterId={currentMyBatter?.id}
+                    onClose={() => setShowMyBatterSub(false)}
+                    onSubstituted={async () => {
+                        if (!gameId) return;
+                        const updated = await myTeamLineupService.getByGame(gameId);
+                        setMyTeamLineup(updated);
+                        // If the current batter was the one replaced, point at the new sub in that slot.
+                        if (currentMyBatter) {
+                            const stillActive = updated.find((p) => p.id === currentMyBatter.id && !p.replaced_by_id);
+                            if (!stillActive) {
+                                const replacement = updated.find(
+                                    (p) => p.batting_order === currentMyBatter.batting_order && !p.replaced_by_id
+                                );
+                                if (replacement) setCurrentMyBatter(replacement);
+                            }
+                        }
+                    }}
                 />
             )}
 

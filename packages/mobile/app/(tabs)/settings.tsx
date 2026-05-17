@@ -11,25 +11,69 @@ import {
     setPitchCallingEnabled,
     setVelocityEnabled,
     setThemeMode,
+    setRadarEnabled,
+    setRadarDevice,
     type ThemeMode,
 } from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
 import { useBluetoothAudio } from '../../src/utils/bluetoothAudio';
 import { activateBTAudio } from '../../src/utils/pitchCallAudio';
+import { useStalkerRadar } from '../../src/hooks/useStalkerRadar';
+import { RadarDevice, RadarStatus } from '../../src/utils/stalkerRadar/stalkerRadarService';
 // Offline service disabled for iOS 26.2 beta testing
 // import { triggerSync } from '../../src/services/offlineService';
 // import { clearAllActions } from '../../src/db/offlineQueue';
+
+const RADAR_STATUS_LABEL: Record<RadarStatus, string> = {
+    idle: 'Not connected',
+    scanning: 'Scanning…',
+    connecting: 'Connecting…',
+    connected: 'Connected',
+    disconnected: 'Disconnected — reconnecting…',
+    error: 'Error — check Bluetooth',
+};
 
 export default function SettingsScreen() {
     const dispatch = useAppDispatch();
     const theme = useTheme();
     const { user } = useAppSelector((state) => state.auth);
     const { isOnline, isSyncing, pendingCount, lastSyncTime } = useAppSelector((state) => state.offline);
-    const { pitchCallingEnabled, velocityEnabled, themeMode } = useAppSelector((state) => state.settings);
+    const { pitchCallingEnabled, velocityEnabled, themeMode, radarEnabled, radarDeviceId, radarDeviceName } = useAppSelector(
+        (state) => state.settings
+    );
     const { isTablet } = useDeviceType();
     const [syncing, setSyncing] = useState(false);
     const { connected: btConnected, deviceName: btDeviceName, isChecking: btChecking } = useBluetoothAudio();
     const [testingAudio, setTestingAudio] = useState(false);
+
+    const radar = useStalkerRadar();
+
+    const handleScanForRadar = useCallback(async () => {
+        try {
+            await radar.scan();
+        } catch {
+            Alert.alert('Bluetooth', 'Could not scan — check that Bluetooth and permissions are enabled.');
+        }
+    }, [radar]);
+
+    const handlePairRadar = useCallback(
+        async (device: RadarDevice) => {
+            dispatch(setRadarDevice({ id: device.id, name: device.name }));
+            try {
+                await radar.connect(device.id);
+            } catch {
+                Alert.alert('Bluetooth', 'Could not connect to the radar.');
+            }
+        },
+        [dispatch, radar]
+    );
+
+    const handleForgetRadar = useCallback(() => {
+        radar.disconnect().catch(() => {
+            /* ignore */
+        });
+        dispatch(setRadarDevice(null));
+    }, [dispatch, radar]);
 
     const handleTestBTAudio = useCallback(async () => {
         if (testingAudio) return;
@@ -241,6 +285,82 @@ export default function SettingsScreen() {
                         left={(props) => <List.Icon {...props} icon="shield-check" color="#10b981" />}
                         descriptionNumberOfLines={3}
                     />
+                </List.Section>
+
+                <Divider style={styles.divider} />
+
+                <List.Section>
+                    <List.Subheader>Radar Gun</List.Subheader>
+                    <List.Item
+                        title="Stalker Radar"
+                        description="Auto-fill pitch velocity from a Bluetooth radar gun"
+                        left={(props) => <List.Icon {...props} icon="radar" />}
+                        right={() => (
+                            <Switch
+                                value={radarEnabled}
+                                onValueChange={(v) => {
+                                    dispatch(setRadarEnabled(v));
+                                    // Radar feeds the velocity field — turn that on too.
+                                    if (v && !velocityEnabled) dispatch(setVelocityEnabled(true));
+                                }}
+                            />
+                        )}
+                    />
+                    {radarEnabled && (
+                        <>
+                            <List.Item
+                                title="Connection Status"
+                                description={RADAR_STATUS_LABEL[radar.status]}
+                                left={(props) => (
+                                    <List.Icon
+                                        {...props}
+                                        icon={radar.status === 'connected' ? 'bluetooth-connect' : 'bluetooth'}
+                                        color={
+                                            radar.status === 'connected'
+                                                ? '#10b981'
+                                                : radar.status === 'error'
+                                                  ? '#ef4444'
+                                                  : undefined
+                                        }
+                                    />
+                                )}
+                            />
+                            {radarDeviceId && (
+                                <List.Item
+                                    title={radarDeviceName || 'Paired radar'}
+                                    description="Tap to forget this radar"
+                                    left={(props) => <List.Icon {...props} icon="radar" />}
+                                    right={(props) => <List.Icon {...props} icon="close" />}
+                                    onPress={handleForgetRadar}
+                                />
+                            )}
+                            <List.Item
+                                title={radar.status === 'scanning' ? 'Scanning…' : 'Scan for Radar'}
+                                description="Power on the radar, then scan to pair"
+                                left={(props) => <List.Icon {...props} icon="bluetooth-settings" />}
+                                right={() =>
+                                    radar.status === 'scanning' ? (
+                                        <ActivityIndicator size={20} />
+                                    ) : (
+                                        <Button compact mode="text" onPress={handleScanForRadar}>
+                                            Scan
+                                        </Button>
+                                    )
+                                }
+                                onPress={radar.status === 'scanning' ? undefined : handleScanForRadar}
+                            />
+                            {radar.devices.map((device) => (
+                                <List.Item
+                                    key={device.id}
+                                    title={device.name || 'Unknown device'}
+                                    description={device.id}
+                                    left={(props) => <List.Icon {...props} icon="radar" />}
+                                    right={(props) => <List.Icon {...props} icon="chevron-right" />}
+                                    onPress={() => handlePairRadar(device)}
+                                />
+                            ))}
+                        </>
+                    )}
                 </List.Section>
 
                 <Divider style={styles.divider} />

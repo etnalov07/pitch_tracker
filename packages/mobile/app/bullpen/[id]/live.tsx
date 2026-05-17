@@ -16,6 +16,8 @@ import { useAppDispatch, useAppSelector, fetchBullpenSession, fetchSessionPitche
 import { logBullpenPitch, endBullpenSession } from '../../../src/state/bullpen/bullpenSlice';
 import { StrikeZone, PitchTypeGrid } from '../../../src/components/live';
 import { SessionHeader } from '../../../src/components/bullpen';
+import { useStalkerRadar } from '../../../src/hooks/useStalkerRadar';
+import RadarStatusPill from '../../../src/components/radar/RadarStatusPill';
 
 const PITCH_TYPE_LABELS: Record<string, string> = {
     fastball: 'Fastball',
@@ -54,6 +56,15 @@ export default function BullpenLiveScreen() {
     const [targetZone, setTargetZone] = useState<PitchCallZone | null>(null);
     const [velocity, setVelocity] = useState('');
     const [isLogging, setIsLogging] = useState(false);
+
+    // Stalker radar — auto-fills velocity as readings arrive.
+    const radarEnabled = useAppSelector((state) => state.settings.radarEnabled);
+    const radar = useStalkerRadar();
+    useEffect(() => {
+        if (radar.lastReadingAt != null && radar.lastVelocity != null) {
+            setVelocity(String(radar.lastVelocity));
+        }
+    }, [radar.lastReadingAt, radar.lastVelocity]);
 
     // End session modal
     const [showEndModal, setShowEndModal] = useState(false);
@@ -280,6 +291,7 @@ export default function BullpenLiveScreen() {
                         placeholderTextColor="#9ca3af"
                         maxLength={3}
                     />
+                    {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
                 </View>
 
                 <Button

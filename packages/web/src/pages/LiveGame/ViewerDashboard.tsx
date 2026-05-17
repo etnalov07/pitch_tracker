@@ -156,6 +156,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 </ScoreRow>
                 <InningBadge>{inningLabel}</InningBadge>
                 <ViewerBadge>VIEWER</ViewerBadge>
+                {game.status === 'completed' && <ReplayLink href={`/game/${game.id}/replay`}>▶ Replay</ReplayLink>}
                 {onExit && <ExitButton onClick={onExit}>← Dashboard</ExitButton>}
             </Header>
 
@@ -365,6 +366,23 @@ const ViewerBadge = styled.span`
     border-radius: ${theme.borderRadius.sm};
     padding: 2px ${theme.spacing.xs};
     letter-spacing: 1px;
+`;
+
+const ReplayLink = styled.a`
+    font-size: ${theme.fontSize.xs};
+    font-weight: ${theme.fontWeight.medium};
+    color: ${theme.colors.primary[700]};
+    background: ${theme.colors.primary[50]};
+    border: 1px solid ${theme.colors.primary[300]};
+    border-radius: ${theme.borderRadius.md};
+    padding: ${theme.spacing.xs} ${theme.spacing.sm};
+    text-decoration: none;
+    white-space: nowrap;
+    margin-left: ${theme.spacing.sm};
+
+    &:hover {
+        background: ${theme.colors.primary[100]};
+    }
 `;
 
 const ExitButton = styled.button`

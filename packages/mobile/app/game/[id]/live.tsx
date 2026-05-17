@@ -71,6 +71,8 @@ import {
     setCurrentMyBatter,
 } from '../../../src/state';
 import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
+import { useStalkerRadar } from '../../../src/hooks/useStalkerRadar';
+import RadarStatusPill from '../../../src/components/radar/RadarStatusPill';
 import {
     StrikeZone,
     PITCH_TYPE_COLORS,
@@ -81,6 +83,7 @@ import {
     InPlayModal,
     PitcherSelectorModal,
     BatterSelectorModal,
+    MyBatterSelectorModal,
     InningChangeModal,
     TeamAtBatModal,
     RunnerAdvancementModal,
@@ -176,11 +179,6 @@ export default function LiveGameScreen() {
     const [completedAtBatsByBatter, setCompletedAtBatsByBatter] = useState<Record<string, CompletedAtBatEntry[]>>({});
     const [showPreviousAtBats, setShowPreviousAtBats] = useState(false);
 
-    // Pitch count for the currently selected pitcher in this game.
-    // Fetched from the per-pitcher stats endpoint so a pitching change resets
-    // the displayed count to the new pitcher's outing total.
-    const [currentPitcherPitchCount, setCurrentPitcherPitchCount] = useState(0);
-
     // Pitch call state (integrated from pitch-calling screen)
     const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
     const [sendingCall, setSendingCall] = useState(false);
@@ -204,7 +202,15 @@ export default function LiveGameScreen() {
     const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
 
     // Settings
-    const { pitchCallingEnabled, velocityEnabled } = useAppSelector((state) => state.settings);
+    const { pitchCallingEnabled, velocityEnabled, radarEnabled } = useAppSelector((state) => state.settings);
+
+    // Stalker radar — auto-fills the velocity field as readings arrive.
+    const radar = useStalkerRadar();
+    useEffect(() => {
+        if (radar.lastReadingAt != null && radar.lastVelocity != null) {
+            setVelocity(String(radar.lastVelocity));
+        }
+    }, [radar.lastReadingAt, radar.lastVelocity]);
 
     const game = currentGameState?.game || selectedGame;
     const gameMode: GameMode = game ? deriveGameMode(game.is_home_game ?? true, game.inning_half) : 'our_pitcher';
@@ -277,28 +283,6 @@ export default function LiveGameScreen() {
             dispatch(fetchTeamPitcherRoster(game.home_team_id));
         }
     }, [game?.id, game?.home_team_id, game?.charting_mode, dispatch, id]);
-
-    // Refresh the current pitcher's game pitch count when the active pitcher
-    // changes (pitching change) or after each pitch is logged
-    // (statsRefreshTrigger bumps).
-    useEffect(() => {
-        if (!currentPitcher?.player_id || !id) {
-            setCurrentPitcherPitchCount(0);
-            return;
-        }
-        let cancelled = false;
-        gamesApi
-            .getPitcherGameStats(currentPitcher.player_id, id)
-            .then((stats) => {
-                if (!cancelled) setCurrentPitcherPitchCount(stats.total_pitches ?? 0);
-            })
-            .catch(() => {
-                // Network errors leave the prior count visible until the next refresh.
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [currentPitcher?.player_id, id, statsRefreshTrigger]);
 
     useEffect(() => {
         if (gamePitchers.length > 0 && !currentPitcher) {
@@ -548,7 +532,11 @@ export default function LiveGameScreen() {
     );
 
     const handleEndAtBat = useCallback(
-        async (result: string, finalPitch?: Partial<Pitch>, extra?: { rbi?: number; runs_scored?: number }) => {
+        async (
+            result: string,
+            finalPitch?: Partial<Pitch>,
+            extra?: { rbi?: number; runs_scored?: number; outs_before_override?: number }
+        ) => {
             if (!currentAtBat) return;
             try {
                 // Capture before clearing; append finalPitch if provided (covers stale-closure case
@@ -558,8 +546,12 @@ export default function LiveGameScreen() {
                 const endedBatterId =
                     gameMode === 'opp_pitcher' ? (currentMyBatter?.player_id ?? currentMyBatter?.player?.id) : currentBatter?.id;
 
+                // outs_before_override lets the post-hit advancement flow pass in the
+                // outs count after recording N throwouts — currentOuts is still stale
+                // here because setCurrentOuts hasn't flushed.
+                const outsBefore = extra?.outs_before_override ?? currentOuts;
                 const outsFromPlay = getOutsForResult(result);
-                const newOutCount = currentOuts + outsFromPlay;
+                const newOutCount = outsBefore + outsFromPlay;
                 await dispatch(
                     endAtBat({
                         id: endedAtBat.id,
@@ -591,8 +583,10 @@ export default function LiveGameScreen() {
                     if (outsFromPlay > 0) setCurrentOuts(newOutCount);
                     if (!isScoutingMode && gameMode === 'opp_pitcher') {
                         // Advance to next batter in my team's lineup
+                        // Active lineup = one row per slot (starter, or the sub that
+                        // replaced them) — so the rotation includes substitutes.
                         const myStarters = myTeamLineup
-                            .filter((p) => p.is_starter)
+                            .filter((p) => !p.replaced_by_id)
                             .sort((a, b) => a.batting_order - b.batting_order);
                         const currentMyOrder = currentMyBatter?.batting_order ?? 1;
                         const myLineupSize = myStarters.length;
@@ -604,7 +598,7 @@ export default function LiveGameScreen() {
                         if (nextBatter) setCurrentBattingOrder(nextBatter.batting_order);
                         if (nextBatter) {
                             setCurrentBatter(nextBatter);
-                            await startAtBatForBatter(nextBatter, outsFromPlay > 0 ? newOutCount : currentOuts, currentInning);
+                            await startAtBatForBatter(nextBatter, outsFromPlay > 0 ? newOutCount : outsBefore, currentInning);
                         } else {
                             setCurrentBatter(null);
                         }
@@ -1256,7 +1250,13 @@ export default function LiveGameScreen() {
                 // Credit the batter with an RBI for each run scored on the play (sac fly, hit, etc.).
                 // Walks/HBPs also legitimately credit forced runs. The hit still counts even if a
                 // runner was thrown out trying to advance.
-                await handleEndAtBat(pendingHitResult, undefined, { rbi: runsScored, runs_scored: runsScored });
+                // outs_before_override threads the post-throwout outs into handleEndAtBat — its
+                // currentOuts closure is still pre-throwout because the setState hasn't flushed.
+                await handleEndAtBat(pendingHitResult, undefined, {
+                    rbi: runsScored,
+                    runs_scored: runsScored,
+                    outs_before_override: lastOutsAfter,
+                });
                 setPendingHitResult(null);
             } catch {
                 Alert.alert('Error', 'Failed to update runner positions');
@@ -1584,7 +1584,6 @@ export default function LiveGameScreen() {
             strikes={strikes}
             outs={currentOuts}
             runners={baseRunners}
-            pitchCount={currentPitcherPitchCount}
             onPitcherPress={
                 game.status === 'in_progress'
                     ? isScoutingMode || gameMode === 'opp_pitcher'
@@ -1644,13 +1643,22 @@ export default function LiveGameScreen() {
                                   ? 'Select the opposing pitcher to begin'
                                   : 'Select your batter to begin'}
                         </Text>
-                        {myTeamLineup.length === 0 && !isScoutingMode && (
+                        {myTeamLineup.length === 0 && !isScoutingMode && game?.charting_mode !== 'our_pitcher' && (
                             <Button
                                 mode="outlined"
                                 onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
                                 style={{ marginTop: 8 }}
                             >
                                 Setup My Lineup
+                            </Button>
+                        )}
+                        {opponentLineup.length === 0 && !isScoutingMode && game?.charting_mode !== 'opp_pitcher' && (
+                            <Button
+                                mode="outlined"
+                                onPress={() => router.push(`/game/${id}/lineup` as any)}
+                                style={{ marginTop: 8 }}
+                            >
+                                Setup Opponent Lineup
                             </Button>
                         )}
                     </View>
@@ -1668,6 +1676,20 @@ export default function LiveGameScreen() {
                               ? 'Select a pitcher to begin'
                               : 'Select a batter to begin'}
                     </Text>
+                    {opponentLineup.length === 0 && !isScoutingMode && game?.charting_mode !== 'opp_pitcher' && (
+                        <Button mode="outlined" onPress={() => router.push(`/game/${id}/lineup` as any)} style={{ marginTop: 8 }}>
+                            Setup Opponent Lineup
+                        </Button>
+                    )}
+                    {myTeamLineup.length === 0 && !isScoutingMode && game?.charting_mode !== 'our_pitcher' && (
+                        <Button
+                            mode="outlined"
+                            onPress={() => router.push(`/game/${id}/my-lineup?from=live` as any)}
+                            style={{ marginTop: 8 }}
+                        >
+                            Setup My Lineup
+                        </Button>
+                    )}
                 </View>
             );
         }
@@ -1703,53 +1725,33 @@ export default function LiveGameScreen() {
                 onBatterAdded={() => dispatch(fetchOpponentLineup(id!))}
                 currentInningNumber={currentInning?.inning_number}
             />
-            {myBatterModalVisible && (
-                <View style={styles.myBatterOverlay}>
-                    <View style={[styles.myBatterModal, { backgroundColor: theme.colors.surface }]}>
-                        <Text variant="titleMedium" style={{ marginBottom: 12 }}>
-                            Select Your Batter
-                        </Text>
-                        <ScrollView>
-                            {[...myTeamLineup]
-                                .sort((a, b) => a.batting_order - b.batting_order)
-                                .map((p) => (
-                                    <TouchableOpacity
-                                        key={p.id}
-                                        onPress={() => {
-                                            dispatch(setCurrentMyBatter(p));
-                                            setMyBatterModalVisible(false);
-                                        }}
-                                        style={[
-                                            styles.myBatterItem,
-                                            { backgroundColor: theme.colors.surfaceVariant },
-                                            currentMyBatter?.id === p.id && styles.myBatterItemSelected,
-                                        ]}
-                                    >
-                                        <Text style={[styles.myBatterOrder, { color: theme.colors.onSurface }]}>
-                                            #{p.batting_order}
-                                        </Text>
-                                        <Text style={[styles.myBatterName, { color: theme.colors.onSurface }]}>
-                                            {p.player
-                                                ? `${p.player.first_name} ${p.player.last_name}`
-                                                : `Batter ${p.batting_order}`}
-                                        </Text>
-                                        <Text style={[styles.myBatterPos, { color: theme.colors.onSurfaceVariant }]}>
-                                            {p.position || p.player?.primary_position || ''}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            {myTeamLineup.length === 0 && (
-                                <Text style={{ color: theme.colors.onSurfaceVariant, marginVertical: 16 }}>
-                                    No lineup set up yet.
-                                </Text>
-                            )}
-                        </ScrollView>
-                        <Button onPress={() => setMyBatterModalVisible(false)} style={{ marginTop: 8 }}>
-                            Close
-                        </Button>
-                    </View>
-                </View>
-            )}
+            <MyBatterSelectorModal
+                visible={myBatterModalVisible}
+                onDismiss={() => setMyBatterModalVisible(false)}
+                lineup={myTeamLineup}
+                currentBatter={currentMyBatter}
+                onSelectBatter={(p) => {
+                    dispatch(setCurrentMyBatter(p));
+                    setMyBatterModalVisible(false);
+                }}
+                teamPlayers={teamPlayers}
+                currentInningNumber={currentInning?.inning_number}
+                onSubstituted={async () => {
+                    if (!id) return;
+                    const updated = await dispatch(fetchMyTeamLineup(id)).unwrap();
+                    // If the current batter was the one replaced, point at the new sub in that slot.
+                    if (currentMyBatter) {
+                        const stillActive = updated.find((p) => p.id === currentMyBatter.id && !p.replaced_by_id);
+                        if (!stillActive) {
+                            const replacement = updated.find(
+                                (p) => p.batting_order === currentMyBatter.batting_order && !p.replaced_by_id
+                            );
+                            if (replacement) dispatch(setCurrentMyBatter(replacement));
+                        }
+                    }
+                }}
+                isTablet={isTablet}
+            />
             <InningChangeModal
                 visible={showInningChange}
                 inningChangeInfo={inningChangeInfo}
@@ -1847,7 +1849,7 @@ export default function LiveGameScreen() {
                 onDismiss={() => setShowPitcherStatsModal(false)}
                 pitcher={currentPitcher?.player ?? null}
                 pitcherId={currentPitcher?.player_id}
-                pitches={pitches}
+                gameId={id}
             />
         </Portal>
     );
@@ -2152,6 +2154,7 @@ export default function LiveGameScreen() {
                                     maxLength={3}
                                     selectTextOnFocus
                                 />
+                                {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
                             </View>
                         )}
                         {!isReadOnly && (
@@ -2397,6 +2400,7 @@ export default function LiveGameScreen() {
                             maxLength={3}
                             selectTextOnFocus
                         />
+                        {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
                     </View>
                 )}
                 {/* 6. Log Pitch */}
@@ -2723,46 +2727,5 @@ const styles = StyleSheet.create({
     },
     lineupBannerBtn: {
         backgroundColor: '#d97706',
-    },
-    myBatterOverlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 999,
-    },
-    myBatterModal: {
-        borderRadius: 12,
-        padding: 20,
-        width: '85%',
-        maxHeight: '70%',
-    },
-    myBatterItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 8,
-        borderRadius: 8,
-        marginBottom: 4,
-    },
-    myBatterItemSelected: {
-        backgroundColor: '#dbeafe',
-    },
-    myBatterOrder: {
-        width: 32,
-        fontWeight: '700',
-    },
-    myBatterName: {
-        flex: 1,
-        fontSize: 15,
-    },
-    myBatterPos: {
-        fontSize: 12,
-        width: 36,
-        textAlign: 'right',
     },
 });

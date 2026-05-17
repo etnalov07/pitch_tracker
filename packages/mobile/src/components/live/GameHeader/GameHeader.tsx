@@ -12,7 +12,6 @@ interface GameHeaderProps {
     strikes: number;
     outs: number;
     runners?: BaseRunners;
-    pitchCount?: number;
     onPitcherPress?: () => void;
     onPitcherStatsPress?: () => void;
     onBatterPress?: () => void;
@@ -28,7 +27,6 @@ const GameHeader: React.FC<GameHeaderProps> = ({
     strikes,
     outs,
     runners = { first: false, second: false, third: false },
-    pitchCount,
     onPitcherPress,
     onPitcherStatsPress,
     onBatterPress,
@@ -45,13 +43,11 @@ const GameHeader: React.FC<GameHeaderProps> = ({
             {/* Top row: Score + Count inline */}
             <View style={styles.topRow}>
                 <View style={styles.teamScore}>
-                    {/* Left column = visiting/away team */}
+                    {/* Left = away_score. Per the client scoring convention, opponent runs always
+                        land in away_score (regardless of is_home_game) — so this column is always OPP
+                        outside of scouting. */}
                     <Text style={styles.teamLabel} numberOfLines={1}>
-                        {game.charting_mode === 'scouting'
-                            ? (game.opponent_name || 'AWAY').substring(0, 6).toUpperCase()
-                            : game.is_home_game === false
-                              ? 'YOU'
-                              : 'OPP'}
+                        {game.charting_mode === 'scouting' ? (game.opponent_name || 'AWAY').substring(0, 6).toUpperCase() : 'OPP'}
                     </Text>
                     <Text style={styles.score}>{game.away_score || 0}</Text>
                 </View>
@@ -91,13 +87,13 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                     </View>
                 </View>
                 <View style={styles.teamScore}>
-                    {/* Right column = home team */}
+                    {/* Right = home_score. Per the client scoring convention, the user's runs always
+                        land in home_score (regardless of is_home_game) — so this column is always YOU
+                        outside of scouting. */}
                     <Text style={styles.teamLabel} numberOfLines={1}>
                         {game.charting_mode === 'scouting'
                             ? (game.scouting_home_team || 'HOME').substring(0, 6).toUpperCase()
-                            : game.is_home_game === false
-                              ? 'OPP'
-                              : 'YOU'}
+                            : 'YOU'}
                     </Text>
                     <Text style={styles.score}>{game.home_score || 0}</Text>
                 </View>
@@ -117,9 +113,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                     >
                         <Text style={styles.playerLabel}>P</Text>
                         <Text testID="game-header-pitcher-name" style={styles.playerName} numberOfLines={1}>
-                            {currentPitcher
-                                ? `${currentPitcher.first_name[0]}. ${currentPitcher.last_name}${pitchCount != null ? ` (${pitchCount})` : ''}`
-                                : 'Select'}
+                            {currentPitcher ? `${currentPitcher.first_name[0]}. ${currentPitcher.last_name}` : 'Select'}
                         </Text>
                     </Pressable>
                     {currentPitcher && onPitcherStatsPress && (

@@ -30,6 +30,30 @@ class MyTeamLineupController {
         }
     }
 
+    async substitutePlayer(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const { player_id, inning_entered, position } = req.body as {
+                player_id?: string;
+                inning_entered?: number;
+                position?: string;
+            };
+            if (!player_id || !inning_entered) {
+                res.status(400).json({ error: 'player_id and inning_entered are required' });
+                return;
+            }
+            const player = await myTeamLineupService.substitutePlayer(
+                req.params['id'] as string,
+                player_id,
+                inning_entered,
+                position
+            );
+            res.status(201).json({ player });
+        } catch (err) {
+            console.error('substituteMyTeamLineup error:', err);
+            res.status(500).json({ error: 'Failed to substitute my team lineup player' });
+        }
+    }
+
     async update(req: AuthRequest, res: Response): Promise<void> {
         try {
             const player = await myTeamLineupService.update(req.params['id'] as string, req.body);
