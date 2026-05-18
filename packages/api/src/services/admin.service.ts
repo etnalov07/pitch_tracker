@@ -8,6 +8,7 @@ import type {
     AdminTeamListItem,
     AdminGameListItem,
     AdminAuditEntry,
+    AdminAuthEventEntry,
     AdminListResponse,
 } from '../types';
 
@@ -45,7 +46,7 @@ export class AdminService {
 
         queryParams.push(limit, offset);
         const rows = await query(
-            `SELECT u.id, u.email, u.first_name, u.last_name, u.email_verified, u.created_at,
+            `SELECT u.id, u.email, u.first_name, u.last_name, u.email_verified, u.created_at, u.locked_until,
                     COALESCE(tm.team_count, 0)::int AS team_count,
                     COALESCE(om.org_count, 0)::int AS org_count
              FROM users u
@@ -285,6 +286,40 @@ export class AdminService {
             throw err;
         }
         return { deleted: true, snapshot: { name: teamRow.rows[0].name } };
+    }
+
+    /** Super-User-triggered password reset: issues a token and emails the reset link. */
+    async sendPasswordReset(userId: string): Promise<{ sent: boolean; reason?: string }> {
+        const userRow = await query(`SELECT id, email, first_name FROM users WHERE id = $1`, [userId]);
+        if (userRow.rows.length === 0) return { sent: false, reason: 'User not found' };
+        const u = userRow.rows[0];
+        await authService.issueAndSendPasswordReset(u.id, u.email, u.first_name);
+        return { sent: true };
+    }
+
+    /** Clear an account lockout immediately (resets the failed-attempt counter). */
+    async unlockUser(userId: string): Promise<{ unlocked: boolean; reason?: string }> {
+        const result = await query(
+            `UPDATE users SET failed_login_count = 0, locked_until = NULL, updated_at = NOW() WHERE id = $1 RETURNING id`,
+            [userId]
+        );
+        if (result.rows.length === 0) return { unlocked: false, reason: 'User not found' };
+        return { unlocked: true };
+    }
+
+    async listAuthEvents(params: PaginationParams): Promise<AdminListResponse<AdminAuthEventEntry>> {
+        const { offset, limit, page } = normalize(params);
+        const countResult = await query(`SELECT COUNT(*)::text AS count FROM auth_events`);
+        const total = parseInt(countResult.rows[0]?.count ?? '0', 10);
+
+        const rows = await query(
+            `SELECT id, user_id, email, event_type, ip_address, created_at
+             FROM auth_events
+             ORDER BY created_at DESC
+             LIMIT $1 OFFSET $2`,
+            [limit, offset]
+        );
+        return { items: rows.rows as AdminAuthEventEntry[], total, page, page_size: limit };
     }
 
     /** Hard-delete an organization. Teams are unlinked (kept); a leftover FK violation is reported, not thrown. */

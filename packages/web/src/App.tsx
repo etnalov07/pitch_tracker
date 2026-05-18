@@ -22,6 +22,7 @@ import Opponents from './pages/Opponents';
 import PitcherProfile from './pages/PitcherProfile';
 import PublicReport from './pages/PublicReport';
 import Replay from './pages/Replay';
+import ResetPassword from './pages/ResetPassword';
 import ScoutingLineup from './pages/ScoutingLineup';
 import ScoutingReport from './pages/ScoutingReport';
 import ScoutingReports from './pages/ScoutingReports';
@@ -46,6 +47,7 @@ function App() {
                 <Route path="/invite/:token" element={<InviteAccept />} />
                 <Route path="/report/:gameId" element={<PublicReport />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route
                     path="/join-team"
                     element={

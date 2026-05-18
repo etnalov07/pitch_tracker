@@ -62,4 +62,14 @@ export const authService = {
     resendVerificationByEmail: async (email: string): Promise<void> => {
         await api.post('/auth/resend-verification-by-email', { email });
     },
+
+    // Public: request a password-reset email. Always resolves (anti-enumeration).
+    requestPasswordReset: async (email: string): Promise<void> => {
+        await api.post('/auth/request-password-reset', { email });
+    },
+
+    // Public: consume a reset token and set a new password.
+    resetPassword: async (token: string, password: string): Promise<void> => {
+        await api.post('/auth/reset-password', { token, password });
+    },
 };

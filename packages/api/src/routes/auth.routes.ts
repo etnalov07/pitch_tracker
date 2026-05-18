@@ -32,6 +32,11 @@ const loginValidation = [
 
 const emailOnlyValidation = [body('email').isEmail().normalizeEmail().withMessage('Valid email required')];
 
+const resetPasswordValidation = [
+    body('token').trim().notEmpty().withMessage('Reset token required'),
+    body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+];
+
 // Public routes
 router.post('/register', authLimiter, registerValidation, authController.register.bind(authController));
 router.post('/login', authLimiter, loginValidation, authController.login.bind(authController));
@@ -42,6 +47,8 @@ router.post(
     emailOnlyValidation,
     authController.resendVerificationByEmail.bind(authController)
 );
+router.post('/request-password-reset', authLimiter, emailOnlyValidation, authController.requestPasswordReset.bind(authController));
+router.post('/reset-password', authLimiter, resetPasswordValidation, authController.resetPassword.bind(authController));
 
 // Protected routes
 router.get('/profile', authenticateToken, authController.getProfile.bind(authController));

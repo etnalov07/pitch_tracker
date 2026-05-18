@@ -6,6 +6,7 @@ import type {
     AdminTeamListItem,
     AdminGameListItem,
     AdminAuditEntry,
+    AdminAuthEventEntry,
 } from '../types';
 import api from './api';
 
@@ -53,6 +54,16 @@ export const adminService = {
     },
     resendVerification: async (userId: string): Promise<void> => {
         await api.post(`/admin/users/${userId}/resend-verification`);
+    },
+    listAuthEvents: async (params: PageParams = {}): Promise<AdminListResponse<AdminAuthEventEntry>> => {
+        const response = await api.get<AdminListResponse<AdminAuthEventEntry>>(`/admin/auth-events${buildQuery(params)}`);
+        return response.data;
+    },
+    sendPasswordReset: async (userId: string): Promise<void> => {
+        await api.post(`/admin/users/${userId}/send-password-reset`);
+    },
+    unlockUser: async (userId: string): Promise<void> => {
+        await api.post(`/admin/users/${userId}/unlock`);
     },
     deleteUser: async (userId: string): Promise<void> => {
         await api.delete(`/admin/users/${userId}`);

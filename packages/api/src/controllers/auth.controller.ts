@@ -38,7 +38,7 @@ export class AuthController {
 
             const { email, password } = req.body;
 
-            const result = await authService.login({ email, password });
+            const result = await authService.login({ email, password }, req.ip);
 
             res.status(200).json({
                 message: 'Login successful',
@@ -85,6 +85,48 @@ export class AuthController {
             }
             const ok = await authService.verifyEmail(token);
             res.redirect(`${config.invite.baseUrl}/verify-email?status=${ok ? 'ok' : 'invalid'}`);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/request-password-reset
+     * Public. Emails a reset link if the address has an account. Always
+     * responds 200 — never reveals whether the address is registered.
+     */
+    async requestPasswordReset(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({ error: errors.array()[0].msg });
+                return;
+            }
+            await authService.requestPasswordReset(req.body.email, req.ip);
+            res.status(200).json({ message: 'If that address has an account, a reset link has been sent.' });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /auth/reset-password
+     * Public. Consumes a reset token and sets a new password.
+     */
+    async resetPassword(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                res.status(400).json({ error: errors.array()[0].msg });
+                return;
+            }
+            const { token, password } = req.body;
+            const result = await authService.resetPassword(token, password);
+            if (!result.ok) {
+                res.status(400).json({ error: result.reason });
+                return;
+            }
+            res.status(200).json({ message: 'Password updated. You can now sign in.' });
         } catch (error) {
             next(error);
         }

@@ -2,7 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/adminService';
 import { useAppSelector } from '../../state';
-import type { AdminUserListItem, AdminOrgListItem, AdminTeamListItem, AdminGameListItem, AdminAuditEntry } from '../../types';
+import type {
+    AdminUserListItem,
+    AdminOrgListItem,
+    AdminTeamListItem,
+    AdminGameListItem,
+    AdminAuditEntry,
+    AdminAuthEventEntry,
+} from '../../types';
 import {
     Container,
     Header,
@@ -25,7 +32,7 @@ import {
     ErrorText,
 } from './styles';
 
-type TabKey = 'users' | 'orgs' | 'teams' | 'games' | 'audit';
+type TabKey = 'users' | 'orgs' | 'teams' | 'games' | 'audit' | 'auth';
 const PAGE_SIZE = 50;
 // Client-side timer: hides destructive buttons after this window expires.
 // Server doesn't trust it — the endpoints are always live to super admins.
@@ -44,6 +51,8 @@ const formatDate = (iso?: string | null): string => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const errorMessage = (err: any, fallback: string): string =>
     err?.response?.data?.error || (err instanceof Error ? err.message : fallback);
+
+const isLocked = (lockedUntil?: string | null): boolean => !!lockedUntil && new Date(lockedUntil).getTime() > Date.now();
 
 const Admin: React.FC = () => {
     const navigate = useNavigate();
@@ -99,12 +108,16 @@ const Admin: React.FC = () => {
                     <Tab active={tab === 'audit'} onClick={() => setTab('audit')}>
                         Audit Log
                     </Tab>
+                    <Tab active={tab === 'auth'} onClick={() => setTab('auth')}>
+                        Auth Events
+                    </Tab>
                 </TabBar>
                 {tab === 'users' && <UsersTab destructiveActive={destructiveActive} />}
                 {tab === 'orgs' && <OrgsTab destructiveActive={destructiveActive} />}
                 {tab === 'teams' && <TeamsTab destructiveActive={destructiveActive} />}
                 {tab === 'games' && <GamesTab />}
                 {tab === 'audit' && <AuditTab />}
+                {tab === 'auth' && <AuthEventsTab />}
             </MainContent>
         </Container>
     );
@@ -188,6 +201,24 @@ const UsersTab: React.FC<UsersTabProps> = ({ destructiveActive }) => {
         }
     };
 
+    const handleSendReset = async (id: string) => {
+        try {
+            await adminService.sendPasswordReset(id);
+            window.alert('Password reset email sent.');
+        } catch (err) {
+            window.alert(errorMessage(err, 'Failed to send reset email.'));
+        }
+    };
+
+    const handleUnlock = async (id: string) => {
+        try {
+            await adminService.unlockUser(id);
+            reload();
+        } catch (err) {
+            window.alert(errorMessage(err, 'Failed to unlock account.'));
+        }
+    };
+
     return (
         <>
             <SearchRow>
@@ -245,6 +276,10 @@ const UsersTab: React.FC<UsersTabProps> = ({ destructiveActive }) => {
                                         </ActionButton>
                                     )}
                                     {!u.email_verified && <ActionButton onClick={() => handleResend(u.id)}>Resend</ActionButton>}
+                                    <ActionButton onClick={() => handleSendReset(u.id)}>Send reset</ActionButton>
+                                    {isLocked(u.locked_until) && (
+                                        <ActionButton onClick={() => handleUnlock(u.id)}>Unlock</ActionButton>
+                                    )}
                                     {destructiveActive && (
                                         <ActionButton destructive onClick={() => handleDelete(u.id, u.email)}>
                                             Delete
@@ -446,6 +481,44 @@ const AuditTab: React.FC = () => {
                                 <Td>
                                     <code style={{ fontSize: 11 }}>{a.payload ? JSON.stringify(a.payload) : ''}</code>
                                 </Td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            )}
+            <PagerControls page={page} setPage={setPage} total={total} />
+        </>
+    );
+};
+
+const AuthEventsTab: React.FC = () => {
+    const fetcher = useCallback((page: number) => adminService.listAuthEvents({ page, page_size: PAGE_SIZE }), []);
+    const { items, total, page, setPage, loading, error } = usePagedList<AdminAuthEventEntry>(fetcher);
+
+    return (
+        <>
+            {error && <ErrorText>{error}</ErrorText>}
+            {loading ? (
+                <LoadingText>Loading…</LoadingText>
+            ) : (
+                <Table>
+                    <thead>
+                        <tr>
+                            <Th>When</Th>
+                            <Th>Event</Th>
+                            <Th>Email</Th>
+                            <Th>User</Th>
+                            <Th>IP</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {items.map((e) => (
+                            <tr key={e.id}>
+                                <Td>{formatDate(e.created_at)}</Td>
+                                <Td>{e.event_type}</Td>
+                                <Td>{e.email || '—'}</Td>
+                                <Td>{e.user_id ? `${e.user_id.slice(0, 8)}…` : '—'}</Td>
+                                <Td>{e.ip_address || '—'}</Td>
                             </tr>
                         ))}
                     </tbody>

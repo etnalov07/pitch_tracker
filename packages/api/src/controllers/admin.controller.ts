@@ -236,6 +236,62 @@ export class AdminController {
             next(err);
         }
     }
+
+    async sendPasswordReset(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.params.id as string;
+            const result = await adminService.sendPasswordReset(userId);
+            if (!result.sent) {
+                res.status(result.reason === 'User not found' ? 404 : 400).json({ error: result.reason });
+                return;
+            }
+            if (req.user) {
+                await auditService.write({
+                    actor_user_id: req.user.id,
+                    actor_role: 'super',
+                    action: 'admin.users.send_password_reset',
+                    target_table: 'users',
+                    target_id: userId,
+                });
+            }
+            res.status(200).json({ message: 'Password reset email sent' });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async unlockUser(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.params.id as string;
+            const result = await adminService.unlockUser(userId);
+            if (!result.unlocked) {
+                res.status(404).json({ error: result.reason });
+                return;
+            }
+            if (req.user) {
+                await auditService.write({
+                    actor_user_id: req.user.id,
+                    actor_role: 'super',
+                    action: 'admin.users.unlock',
+                    target_table: 'users',
+                    target_id: userId,
+                });
+            }
+            res.status(200).json({ message: 'Account unlocked' });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async listAuthEvents(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { page, page_size } = parsePagination(req);
+            const result = await adminService.listAuthEvents({ page, page_size });
+            res.status(200).json(result);
+        } catch (err) {
+            next(err);
+        }
+    }
 }
 
 export default new AdminController();

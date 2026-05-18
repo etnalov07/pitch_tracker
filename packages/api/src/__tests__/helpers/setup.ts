@@ -14,6 +14,35 @@ jest.mock('../../config/database', () => ({
     transaction: jest.fn(),
 }));
 
+// The real authenticateToken now reads the DB (to enforce session
+// invalidation on password change). Route tests have no DB and mock `query`
+// with exact call-sequences, so verify the JWT only here — the DB-free
+// equivalent of the middleware's behavior before that change. requireSuperAdmin
+// and isSuperAdminEmail keep their real implementations.
+jest.mock('../../middleware/auth', () => {
+    const actual = jest.requireActual('../../middleware/auth');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const jwtLib = require('jsonwebtoken');
+    return {
+        ...actual,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        authenticateToken: (req: any, res: any, next: any) => {
+            const header = req.headers?.authorization;
+            const token = header && header.split(' ')[1];
+            if (!token) {
+                res.status(401).json({ error: 'Access token required' });
+                return;
+            }
+            try {
+                req.user = jwtLib.verify(token, process.env.JWT_SECRET);
+                next();
+            } catch {
+                res.status(403).json({ error: 'Invalid or expired token' });
+            }
+        },
+    };
+});
+
 import request from 'supertest';
 import app from '../../app';
 import { query, transaction } from '../../config/database';

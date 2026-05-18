@@ -22,6 +22,12 @@ interface VerificationEmailParams {
     verifyUrl: string;
 }
 
+interface PasswordResetEmailParams {
+    to: string;
+    firstName: string;
+    resetUrl: string;
+}
+
 interface PostGameReportEmailParams {
     recipients: string[]; // BCC list — recipients don't see each other
     subject: string;
@@ -205,6 +211,43 @@ class EmailService {
             return true;
         } catch (err) {
             console.error('Failed to send verification email:', err);
+            return false;
+        }
+    }
+
+    async sendPasswordResetEmail({ to, firstName, resetUrl }: PasswordResetEmailParams): Promise<boolean> {
+        const client = this.getClient();
+        if (!client) {
+            console.warn('Email not configured: RESEND_API_KEY is not set. Skipping password reset email.');
+            return false;
+        }
+
+        const html = baseShell(
+            'Reset your password',
+            `
+              <p style="margin:0 0 12px;font-size:16px;color:#1a1a1a;">Hi ${escapeHtml(firstName)},</p>
+              <p style="margin:0 0 16px;font-size:15px;color:#1a1a1a;line-height:1.5;">We received a request to reset your Pitch Chart password. Click the button below to choose a new one. This link expires in 1 hour.</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 16px;">
+                    <a href="${resetUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:14px 40px;border-radius:6px;">Reset your password</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:24px 0 0;font-size:13px;color:#6b7280;">If you didn't request this, you can safely ignore this email — your password won't change.</p>
+            `
+        );
+
+        try {
+            await client.emails.send({
+                from: `${config.email.fromEmailName} <${config.email.fromEmail}>`,
+                to,
+                subject: 'Reset your password on Pitch Chart',
+                html,
+            });
+            return true;
+        } catch (err) {
+            console.error('Failed to send password reset email:', err);
             return false;
         }
     }

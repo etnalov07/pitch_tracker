@@ -67,6 +67,9 @@ export interface AuthResponse {
 export interface JWTPayload {
     id: string;
     email: string;
+    // Set by jsonwebtoken on sign; present on verified/decoded tokens. Used to
+    // reject tokens issued before a password change.
+    iat?: number;
 }
 
 // ============================================================================
@@ -1901,6 +1904,7 @@ export interface AdminUserListItem {
     created_at: string;
     team_count: number;
     org_count: number;
+    locked_until?: string | null;
 }
 
 export interface AdminUserDetail extends UserWithRoles {
@@ -1956,6 +1960,15 @@ export interface AdminAuditEntry {
     target_table?: string | null;
     target_id?: string | null;
     payload?: Record<string, unknown> | null;
+    created_at: string;
+}
+
+export interface AdminAuthEventEntry {
+    id: string;
+    user_id: string | null;
+    email: string | null;
+    event_type: string;
+    ip_address: string | null;
     created_at: string;
 }
 

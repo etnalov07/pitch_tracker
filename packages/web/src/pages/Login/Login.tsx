@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../../services/authService';
 import { useAppDispatch, useAppSelector, loginUser, registerUser, clearAuthError } from '../../state';
 import {
     Container,
@@ -33,6 +34,11 @@ const Login: React.FC = () => {
         last_name: '',
         registration_type: 'coach' as 'coach' | 'player' | 'org_admin',
     });
+
+    const [forgot, setForgot] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotBusy, setForgotBusy] = useState(false);
+    const [forgotSent, setForgotSent] = useState(false);
 
     // Redirect if already authenticated
     useEffect(() => {
@@ -73,6 +79,70 @@ const Login: React.FC = () => {
             );
         }
     };
+
+    const handleForgotSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!forgotEmail.trim() || forgotBusy) return;
+        setForgotBusy(true);
+        try {
+            await authService.requestPasswordReset(forgotEmail.trim());
+        } catch {
+            // Endpoint always succeeds (anti-enumeration) — nothing to surface.
+        }
+        setForgotBusy(false);
+        setForgotSent(true);
+    };
+
+    const leaveForgot = () => {
+        setForgot(false);
+        setForgotSent(false);
+        setForgotEmail('');
+    };
+
+    if (forgot) {
+        return (
+            <Container>
+                <FormCard>
+                    <Logo>PitchChart</Logo>
+                    <Title>Reset your password</Title>
+                    <Subtitle>We&apos;ll email you a link to set a new one</Subtitle>
+                    {forgotSent ? (
+                        <>
+                            <p style={{ color: '#15803d', lineHeight: 1.5 }}>
+                                If that address has an account, a reset link is on its way. The link expires in 1 hour.
+                            </p>
+                            <ToggleText>
+                                <ToggleLink onClick={leaveForgot}>Back to sign in</ToggleLink>
+                            </ToggleText>
+                        </>
+                    ) : (
+                        <>
+                            <Form onSubmit={handleForgotSubmit}>
+                                <FormGroup>
+                                    <Label htmlFor="forgot_email">Email</Label>
+                                    <Input
+                                        type="email"
+                                        id="forgot_email"
+                                        name="forgot_email"
+                                        value={forgotEmail}
+                                        onChange={(e) => setForgotEmail(e.target.value)}
+                                        required
+                                        placeholder="john@example.com"
+                                    />
+                                </FormGroup>
+                                <SubmitButton type="submit" disabled={forgotBusy}>
+                                    {forgotBusy ? 'Please wait...' : 'Send reset link'}
+                                </SubmitButton>
+                            </Form>
+                            <ToggleText>
+                                <ToggleLink onClick={leaveForgot}>Back to sign in</ToggleLink>
+                            </ToggleText>
+                        </>
+                    )}
+                </FormCard>
+            </Container>
+        );
+    }
 
     return (
         <Container>
@@ -165,6 +235,12 @@ const Login: React.FC = () => {
                             placeholder="••••••••"
                         />
                     </FormGroup>
+
+                    {isLogin && (
+                        <ToggleText style={{ textAlign: 'right', marginTop: 0 }}>
+                            <ToggleLink onClick={() => setForgot(true)}>Forgot password?</ToggleLink>
+                        </ToggleText>
+                    )}
 
                     <SubmitButton type="submit" disabled={loading}>
                         {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
