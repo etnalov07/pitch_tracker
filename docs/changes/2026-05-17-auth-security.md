@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-17
 - **Type:** `feat`
-- **Commit SHA:** _pending — backfilled after commit_
+- **Commit SHA:** `782e93b`
 - **Version bumps:** `@pitch-tracker/api` 1.12.0 → 1.13.0, `@pitch-tracker/web` 1.13.0 → 1.14.0. Shared not bumped (pinned at 1.0.0 per CI constraint).
 
 ## Context
