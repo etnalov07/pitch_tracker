@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-17
 - **Type:** `feat`
-- **Commit SHA:** _pending_
+- **Commit SHA:** `0bf0629`
 - **Version bumps:** `@pitch-tracker/web` 1.16.0 → 1.17.0, `mobile` 2.5.0 → 2.6.0 (`app.json` expo.version 1.97.0 → 1.98.0).
 
 ## Context
