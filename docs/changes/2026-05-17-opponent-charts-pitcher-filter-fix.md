@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-17
 - **Type:** `fix`
-- **Commit SHA:** _pending — backfilled after commit_
+- **Commit SHA:** `4cc341d`
 - **Version bumps:** `@pitch-tracker/web` 1.14.0 → 1.15.0.
 
 ## Context
