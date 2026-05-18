@@ -163,8 +163,12 @@ export class AnalyticsService {
         opponentName?: string
     ): Promise<PitchLocationData[]> {
         const params: (string | undefined)[] = [batterId];
+        // Resolve the batter through at_bats as well as the pitches columns:
+        // opponent-batter pitches aren't reliably tagged with
+        // pitches.opponent_batter_id, but at_bats.opponent_batter_id is always
+        // set (same path getBatterSprayChart / getBatterBreakdown rely on).
         const filters: string[] = [
-            '(p.batter_id = $1 OR p.opponent_batter_id = $1)',
+            '(p.batter_id = $1 OR p.opponent_batter_id = $1 OR ab.batter_id = $1 OR ab.opponent_batter_id = $1)',
             'p.location_x IS NOT NULL',
             'p.location_y IS NOT NULL',
         ];
@@ -183,7 +187,9 @@ export class AnalyticsService {
             filters.push(`g.opponent_name = $${params.length}`);
         }
 
-        const fromClause = needGamesJoin ? 'FROM pitches p JOIN games g ON p.game_id = g.id' : 'FROM pitches p';
+        const fromClause = needGamesJoin
+            ? 'FROM pitches p LEFT JOIN at_bats ab ON ab.id = p.at_bat_id JOIN games g ON p.game_id = g.id'
+            : 'FROM pitches p LEFT JOIN at_bats ab ON ab.id = p.at_bat_id';
 
         const result = await query(
             `SELECT p.location_x, p.location_y, p.pitch_type, p.pitch_result, p.velocity,

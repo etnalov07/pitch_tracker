@@ -151,7 +151,9 @@ describe('AnalyticsService', () => {
 
         it('buckets b > s as behind', async () => {
             mockQuery.mockResolvedValueOnce({
-                rows: [{ balls_before: '2', strikes_before: '0', pitch_type: 'curveball', pitch_result: 'called_strike', count: '2' }],
+                rows: [
+                    { balls_before: '2', strikes_before: '0', pitch_type: 'curveball', pitch_result: 'called_strike', count: '2' },
+                ],
             } as any);
 
             const result = await service.getCountBreakdown('game-1');
@@ -205,18 +207,16 @@ describe('AnalyticsService', () => {
 
     describe('getPitcherLiveTendencies', () => {
         it('returns has_data=false when fewer than 10 pitches exist', async () => {
-            mockQuery
-                .mockResolvedValueOnce({ rows: [{ first_name: 'John', last_name: 'Doe' }] } as any)
-                .mockResolvedValueOnce({
-                    rows: Array(5).fill({
-                        pitch_type: 'fastball',
-                        pitch_result: 'called_strike',
-                        velocity: '90',
-                        zone: '1-1',
-                        location_x: null,
-                        location_y: null,
-                    }),
-                } as any);
+            mockQuery.mockResolvedValueOnce({ rows: [{ first_name: 'John', last_name: 'Doe' }] } as any).mockResolvedValueOnce({
+                rows: Array(5).fill({
+                    pitch_type: 'fastball',
+                    pitch_result: 'called_strike',
+                    velocity: '90',
+                    zone: '1-1',
+                    location_x: null,
+                    location_y: null,
+                }),
+            } as any);
 
             const result = await service.getPitcherLiveTendencies('pitcher-1', 'R');
 
@@ -261,9 +261,7 @@ describe('AnalyticsService', () => {
         });
 
         it('falls back to "Unknown" when player not found', async () => {
-            mockQuery
-                .mockResolvedValueOnce({ rows: [] } as any)
-                .mockResolvedValueOnce({ rows: [] } as any);
+            mockQuery.mockResolvedValueOnce({ rows: [] } as any).mockResolvedValueOnce({ rows: [] } as any);
 
             const result = await service.getPitcherLiveTendencies('ghost-pitcher', 'R');
 
@@ -279,7 +277,9 @@ describe('AnalyticsService', () => {
         it('returns has_data=false for team batter with fewer than 5 pitches', async () => {
             mockQuery
                 .mockResolvedValueOnce({ rows: [{ first_name: 'Chris', last_name: 'Jones', bats: 'L' }] } as any)
-                .mockResolvedValueOnce({ rows: [{ pitch_type: 'fastball', pitch_result: 'ball', zone: null, location_x: null, location_y: null }] } as any);
+                .mockResolvedValueOnce({
+                    rows: [{ pitch_type: 'fastball', pitch_result: 'ball', zone: null, location_x: null, location_y: null }],
+                } as any);
 
             const result = await service.getHitterLiveTendencies('batter-1', 'team');
 
@@ -328,6 +328,70 @@ describe('AnalyticsService', () => {
             const result = await service.getHitterLiveTendencies('batter-3', 'team');
 
             expect(result.batter_hand).toBe('R');
+        });
+    });
+
+    // ========================================================================
+    // getBatterPitchLocations
+    // ========================================================================
+
+    describe('getBatterPitchLocations', () => {
+        it('resolves the batter through at_bats so opponent batters are matched', async () => {
+            // Opponent-batter pitches aren't reliably tagged with
+            // pitches.opponent_batter_id; the at_bats join is the reliable path.
+            mockQuery.mockResolvedValueOnce({ rows: [] } as any);
+
+            await service.getBatterPitchLocations('opp-batter-1');
+
+            const sql = (mockQuery.mock.calls[0][0] as string).replace(/\s+/g, ' ');
+            expect(sql).toMatch(/LEFT JOIN at_bats ab ON ab\.id = p\.at_bat_id/i);
+            expect(sql).toMatch(/ab\.opponent_batter_id = \$1/i);
+            expect(mockQuery.mock.calls[0][1]).toEqual(['opp-batter-1']);
+        });
+
+        it('still matches our-team batters via pitches.batter_id', async () => {
+            mockQuery.mockResolvedValueOnce({ rows: [] } as any);
+
+            await service.getBatterPitchLocations('our-batter-1');
+
+            const sql = (mockQuery.mock.calls[0][0] as string).replace(/\s+/g, ' ');
+            expect(sql).toMatch(/p\.batter_id = \$1/i);
+        });
+
+        it('joins games when an opponent team scope is given', async () => {
+            mockQuery.mockResolvedValueOnce({ rows: [] } as any);
+
+            await service.getBatterPitchLocations('b1', undefined, 'opp-team-9');
+
+            const sql = (mockQuery.mock.calls[0][0] as string).replace(/\s+/g, ' ');
+            expect(sql).toMatch(/JOIN games g ON p\.game_id = g\.id/i);
+            expect(sql).toMatch(/LEFT JOIN at_bats ab/i);
+            expect(mockQuery.mock.calls[0][1]).toContain('opp-team-9');
+        });
+
+        it('maps returned rows to PitchLocationData', async () => {
+            mockQuery.mockResolvedValueOnce({
+                rows: [
+                    {
+                        location_x: '0.5',
+                        location_y: '-0.2',
+                        pitch_type: 'slider',
+                        pitch_result: 'ball',
+                        velocity: '84',
+                        target_location_x: '0.4',
+                        target_location_y: '-0.1',
+                        balls_before: '1',
+                        strikes_before: '2',
+                    },
+                ],
+            } as any);
+
+            const result = await service.getBatterPitchLocations('b1');
+
+            expect(result).toHaveLength(1);
+            expect(result[0].location_x).toBe(0.5);
+            expect(result[0].pitch_type).toBe('slider');
+            expect(result[0].strikes_before).toBe(2);
         });
     });
 });
