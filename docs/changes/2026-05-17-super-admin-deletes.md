@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-17
 - **Type:** `feat`
-- **Commit SHA:** _pending — backfilled after commit_
+- **Commit SHA:** `fee11e3`
 - **Version bumps:** `@pitch-tracker/api` 1.11.0 → 1.12.0, `@pitch-tracker/web` 1.12.0 → 1.13.0.
 
 ## Context
