@@ -40,6 +40,11 @@ const formatDate = (iso?: string | null): string => {
     }
 };
 
+// Surface the server's error string (e.g. a delete blocked by the user guard).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const errorMessage = (err: any, fallback: string): string =>
+    err?.response?.data?.error || (err instanceof Error ? err.message : fallback);
+
 const Admin: React.FC = () => {
     const navigate = useNavigate();
     const user = useAppSelector((state) => state.auth.user);
@@ -96,8 +101,8 @@ const Admin: React.FC = () => {
                     </Tab>
                 </TabBar>
                 {tab === 'users' && <UsersTab destructiveActive={destructiveActive} />}
-                {tab === 'orgs' && <OrgsTab />}
-                {tab === 'teams' && <TeamsTab />}
+                {tab === 'orgs' && <OrgsTab destructiveActive={destructiveActive} />}
+                {tab === 'teams' && <TeamsTab destructiveActive={destructiveActive} />}
                 {tab === 'games' && <GamesTab />}
                 {tab === 'audit' && <AuditTab />}
             </MainContent>
@@ -173,6 +178,16 @@ const UsersTab: React.FC<UsersTabProps> = ({ destructiveActive }) => {
         window.alert('Verification email sent.');
     };
 
+    const handleDelete = async (id: string, label: string) => {
+        if (!window.confirm(`Permanently delete user ${label}? This cannot be undone.`)) return;
+        try {
+            await adminService.deleteUser(id);
+            reload();
+        } catch (err) {
+            window.alert(errorMessage(err, 'Failed to delete user.'));
+        }
+    };
+
     return (
         <>
             <SearchRow>
@@ -230,6 +245,11 @@ const UsersTab: React.FC<UsersTabProps> = ({ destructiveActive }) => {
                                         </ActionButton>
                                     )}
                                     {!u.email_verified && <ActionButton onClick={() => handleResend(u.id)}>Resend</ActionButton>}
+                                    {destructiveActive && (
+                                        <ActionButton destructive onClick={() => handleDelete(u.id, u.email)}>
+                                            Delete
+                                        </ActionButton>
+                                    )}
                                 </Td>
                             </tr>
                         ))}
@@ -241,9 +261,19 @@ const UsersTab: React.FC<UsersTabProps> = ({ destructiveActive }) => {
     );
 };
 
-const OrgsTab: React.FC = () => {
+const OrgsTab: React.FC<{ destructiveActive: boolean }> = ({ destructiveActive }) => {
     const fetcher = useCallback((page: number) => adminService.listOrgs({ page, page_size: PAGE_SIZE }), []);
-    const { items, total, page, setPage, loading, error } = usePagedList<AdminOrgListItem>(fetcher);
+    const { items, total, page, setPage, loading, error, reload } = usePagedList<AdminOrgListItem>(fetcher);
+
+    const handleDelete = async (id: string, label: string) => {
+        if (!window.confirm(`Permanently delete organization ${label}? This cannot be undone.`)) return;
+        try {
+            await adminService.deleteOrganization(id);
+            reload();
+        } catch (err) {
+            window.alert(errorMessage(err, 'Failed to delete organization.'));
+        }
+    };
 
     return (
         <>
@@ -259,6 +289,7 @@ const OrgsTab: React.FC = () => {
                             <Th>Members</Th>
                             <Th>Teams</Th>
                             <Th>Created</Th>
+                            <Th>Actions</Th>
                         </tr>
                     </thead>
                     <tbody>
@@ -269,6 +300,13 @@ const OrgsTab: React.FC = () => {
                                 <Td>{o.member_count}</Td>
                                 <Td>{o.team_count}</Td>
                                 <Td>{formatDate(o.created_at)}</Td>
+                                <Td>
+                                    {destructiveActive && (
+                                        <ActionButton destructive onClick={() => handleDelete(o.id, o.name)}>
+                                            Delete
+                                        </ActionButton>
+                                    )}
+                                </Td>
                             </tr>
                         ))}
                     </tbody>
@@ -279,9 +317,19 @@ const OrgsTab: React.FC = () => {
     );
 };
 
-const TeamsTab: React.FC = () => {
+const TeamsTab: React.FC<{ destructiveActive: boolean }> = ({ destructiveActive }) => {
     const fetcher = useCallback((page: number) => adminService.listTeams({ page, page_size: PAGE_SIZE }), []);
-    const { items, total, page, setPage, loading, error } = usePagedList<AdminTeamListItem>(fetcher);
+    const { items, total, page, setPage, loading, error, reload } = usePagedList<AdminTeamListItem>(fetcher);
+
+    const handleDelete = async (id: string, label: string) => {
+        if (!window.confirm(`Permanently delete team ${label}? This cannot be undone.`)) return;
+        try {
+            await adminService.deleteTeam(id);
+            reload();
+        } catch (err) {
+            window.alert(errorMessage(err, 'Failed to delete team.'));
+        }
+    };
 
     return (
         <>
@@ -296,6 +344,7 @@ const TeamsTab: React.FC = () => {
                             <Th>Organization</Th>
                             <Th>Owner</Th>
                             <Th>Created</Th>
+                            <Th>Actions</Th>
                         </tr>
                     </thead>
                     <tbody>
@@ -305,6 +354,13 @@ const TeamsTab: React.FC = () => {
                                 <Td>{t.organization_name || '— (orphaned)'}</Td>
                                 <Td>{t.owner_email || t.owner_id}</Td>
                                 <Td>{formatDate(t.created_at)}</Td>
+                                <Td>
+                                    {destructiveActive && (
+                                        <ActionButton destructive onClick={() => handleDelete(t.id, t.name)}>
+                                            Delete
+                                        </ActionButton>
+                                    )}
+                                </Td>
                             </tr>
                         ))}
                     </tbody>

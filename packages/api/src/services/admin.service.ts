@@ -1,5 +1,6 @@
-import { query } from '../config/database';
+import { query, transaction } from '../config/database';
 import authService from './auth.service';
+import organizationService from './organization.service';
 import type {
     AdminUserListItem,
     AdminUserDetail,
@@ -222,6 +223,83 @@ export class AdminService {
         if (u.email_verified) return { sent: false, reason: 'Email already verified' };
         await authService.issueAndSendVerification(u.id, u.email, u.first_name);
         return { sent: true };
+    }
+
+    /**
+     * Hard-delete a user. Blocked when the user still owns teams or
+     * organizations — those are also the NOT NULL foreign keys that would
+     * otherwise abort the delete, and deleting the user shouldn't silently
+     * orphan that data. Pending invites the user sent are cleared in the same
+     * transaction; back-references that allow NULL are nulled. Any remaining
+     * FK violation (e.g. games the user created) rolls back and reports a
+     * friendly reason rather than a 500.
+     */
+    async deleteUser(userId: string): Promise<{ deleted: boolean; reason?: string; snapshot?: Record<string, unknown> }> {
+        const userRow = await query(`SELECT id, email, first_name, last_name FROM users WHERE id = $1`, [userId]);
+        if (userRow.rows.length === 0) return { deleted: false, reason: 'User not found' };
+        const u = userRow.rows[0];
+
+        const [teamsOwned, orgsCreated] = await Promise.all([
+            query(`SELECT COUNT(*)::int AS c FROM teams WHERE owner_id = $1`, [userId]),
+            query(`SELECT COUNT(*)::int AS c FROM organizations WHERE created_by = $1`, [userId]),
+        ]);
+        const teamCount: number = teamsOwned.rows[0].c;
+        const orgCount: number = orgsCreated.rows[0].c;
+        if (teamCount > 0 || orgCount > 0) {
+            const parts: string[] = [];
+            if (teamCount > 0) parts.push(`${teamCount} team${teamCount === 1 ? '' : 's'}`);
+            if (orgCount > 0) parts.push(`${orgCount} organization${orgCount === 1 ? '' : 's'}`);
+            return { deleted: false, reason: `User still owns ${parts.join(' and ')} — delete those first.` };
+        }
+
+        try {
+            await transaction(async (client) => {
+                await client.query(`DELETE FROM invites WHERE invited_by = $1`, [userId]);
+                await client.query(`UPDATE invites SET accepted_by = NULL WHERE accepted_by = $1`, [userId]);
+                await client.query(`UPDATE join_requests SET reviewed_by = NULL WHERE reviewed_by = $1`, [userId]);
+                const del = await client.query(`DELETE FROM users WHERE id = $1`, [userId]);
+                if (del.rowCount === 0) throw new Error('User not found');
+            });
+        } catch (err) {
+            if ((err as { code?: string }).code === '23503') {
+                return {
+                    deleted: false,
+                    reason: 'User still has associated records (e.g. games they created). Remove those first.',
+                };
+            }
+            throw err;
+        }
+        return { deleted: true, snapshot: { email: u.email, first_name: u.first_name, last_name: u.last_name } };
+    }
+
+    /** Hard-delete a team. Dependent rows cascade; a leftover FK violation is reported, not thrown. */
+    async deleteTeam(teamId: string): Promise<{ deleted: boolean; reason?: string; snapshot?: Record<string, unknown> }> {
+        const teamRow = await query(`SELECT id, name FROM teams WHERE id = $1`, [teamId]);
+        if (teamRow.rows.length === 0) return { deleted: false, reason: 'Team not found' };
+        try {
+            await query(`DELETE FROM teams WHERE id = $1`, [teamId]);
+        } catch (err) {
+            if ((err as { code?: string }).code === '23503') {
+                return { deleted: false, reason: 'Team still has associated records that must be removed first.' };
+            }
+            throw err;
+        }
+        return { deleted: true, snapshot: { name: teamRow.rows[0].name } };
+    }
+
+    /** Hard-delete an organization. Teams are unlinked (kept); a leftover FK violation is reported, not thrown. */
+    async deleteOrganization(orgId: string): Promise<{ deleted: boolean; reason?: string; snapshot?: Record<string, unknown> }> {
+        const orgRow = await query(`SELECT id, name FROM organizations WHERE id = $1`, [orgId]);
+        if (orgRow.rows.length === 0) return { deleted: false, reason: 'Organization not found' };
+        try {
+            await organizationService.deleteOrganization(orgId);
+        } catch (err) {
+            if ((err as { code?: string }).code === '23503') {
+                return { deleted: false, reason: 'Organization still has associated records that must be removed first.' };
+            }
+            throw err;
+        }
+        return { deleted: true, snapshot: { name: orgRow.rows[0].name } };
     }
 }
 

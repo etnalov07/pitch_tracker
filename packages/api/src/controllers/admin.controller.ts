@@ -164,6 +164,78 @@ export class AdminController {
             next(err);
         }
     }
+
+    async deleteUser(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.params.id as string;
+            const result = await adminService.deleteUser(userId);
+            if (!result.deleted) {
+                res.status(result.reason === 'User not found' ? 404 : 409).json({ error: result.reason });
+                return;
+            }
+            if (req.user) {
+                await auditService.write({
+                    actor_user_id: req.user.id,
+                    actor_role: 'super',
+                    action: 'admin.users.delete',
+                    target_table: 'users',
+                    target_id: userId,
+                    payload: result.snapshot,
+                });
+            }
+            res.status(200).json({ message: 'User deleted' });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async deleteTeam(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const teamId = req.params.id as string;
+            const result = await adminService.deleteTeam(teamId);
+            if (!result.deleted) {
+                res.status(result.reason === 'Team not found' ? 404 : 409).json({ error: result.reason });
+                return;
+            }
+            if (req.user) {
+                await auditService.write({
+                    actor_user_id: req.user.id,
+                    actor_role: 'super',
+                    action: 'admin.teams.delete',
+                    target_table: 'teams',
+                    target_id: teamId,
+                    payload: result.snapshot,
+                });
+            }
+            res.status(200).json({ message: 'Team deleted' });
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async deleteOrganization(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const orgId = req.params.id as string;
+            const result = await adminService.deleteOrganization(orgId);
+            if (!result.deleted) {
+                res.status(result.reason === 'Organization not found' ? 404 : 409).json({ error: result.reason });
+                return;
+            }
+            if (req.user) {
+                await auditService.write({
+                    actor_user_id: req.user.id,
+                    actor_role: 'super',
+                    action: 'admin.organizations.delete',
+                    target_table: 'organizations',
+                    target_id: orgId,
+                    payload: result.snapshot,
+                });
+            }
+            res.status(200).json({ message: 'Organization deleted' });
+        } catch (err) {
+            next(err);
+        }
+    }
 }
 
 export default new AdminController();

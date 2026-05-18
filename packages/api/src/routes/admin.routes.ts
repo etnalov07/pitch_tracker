@@ -18,4 +18,8 @@ router.post('/users/:id/force-verify-email', adminController.forceVerifyEmail.bi
 router.post('/users/:id/resend-verification', adminController.resendVerification.bind(adminController));
 router.post('/users/:id/set-registration-type', adminController.setRegistrationType.bind(adminController));
 
+router.delete('/users/:id', adminController.deleteUser.bind(adminController));
+router.delete('/teams/:id', adminController.deleteTeam.bind(adminController));
+router.delete('/organizations/:id', adminController.deleteOrganization.bind(adminController));
+
 export default router;

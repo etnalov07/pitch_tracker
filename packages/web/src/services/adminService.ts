@@ -54,4 +54,13 @@ export const adminService = {
     resendVerification: async (userId: string): Promise<void> => {
         await api.post(`/admin/users/${userId}/resend-verification`);
     },
+    deleteUser: async (userId: string): Promise<void> => {
+        await api.delete(`/admin/users/${userId}`);
+    },
+    deleteTeam: async (teamId: string): Promise<void> => {
+        await api.delete(`/admin/teams/${teamId}`);
+    },
+    deleteOrganization: async (orgId: string): Promise<void> => {
+        await api.delete(`/admin/organizations/${orgId}`);
+    },
 };
