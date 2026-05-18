@@ -191,6 +191,21 @@ export function useLiveGameState() {
         }
     }, [dispatch, gameId]);
 
+    // Persist the chosen role to the server. Claiming "charter" when another
+    // user already holds it comes back as "viewer" — one charter per game.
+    const chooseRole = async (requested: GameRole) => {
+        if (!gameId) return;
+        try {
+            const rec = await gameRoleService.assignRole(gameId, requested);
+            setGameRole(rec.role);
+            if (requested === 'charter' && rec.role === 'viewer') {
+                window.alert('Someone is already charting this game — you have joined as a viewer.');
+            }
+        } catch {
+            setGameRole(requested);
+        }
+    };
+
     // Load my team lineup — skip entirely in scouting mode (both teams are opponents)
     // Guard game.id === gameId to avoid firing with stale Redux state from a previous game
     useEffect(() => {
@@ -358,6 +373,7 @@ export function useLiveGameState() {
         scoutingPitchingSide,
         gameRole,
         setGameRole,
+        chooseRole,
         // My team lineup
         myTeamLineup,
         setMyTeamLineup,

@@ -24,7 +24,7 @@ class GameRoleController {
                 res.status(400).json({ error: 'role must be charter or viewer' });
                 return;
             }
-            const record = await gameRoleService.upsertRole(userId, gameId, role);
+            const record = await gameRoleService.claimRole(userId, gameId, role);
             res.json({ role: record });
         } catch (err) {
             console.error('assignRole error:', err);

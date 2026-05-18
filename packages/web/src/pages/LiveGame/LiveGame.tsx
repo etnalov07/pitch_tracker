@@ -181,7 +181,7 @@ const LiveGame: React.FC = () => {
         scoutingBattingSide,
         scoutingPitchingSide,
         gameRole,
-        setGameRole,
+        chooseRole,
         setStatsRefreshTrigger,
         myTeamLineup,
         setMyTeamLineup,
@@ -231,8 +231,8 @@ const LiveGame: React.FC = () => {
                     <RoleSelectTitle>Join Game</RoleSelectTitle>
                     <RoleSelectSubtitle>Select your role for this session</RoleSelectSubtitle>
                     <RoleSelectButtons>
-                        <RoleButton onClick={() => setGameRole('charter')}>Charter</RoleButton>
-                        <RoleButton onClick={() => setGameRole('viewer')}>Viewer</RoleButton>
+                        <RoleButton onClick={() => chooseRole('charter')}>Charter</RoleButton>
+                        <RoleButton onClick={() => chooseRole('viewer')}>Viewer</RoleButton>
                     </RoleSelectButtons>
                 </RoleSelectCard>
             </RoleSelectOverlay>

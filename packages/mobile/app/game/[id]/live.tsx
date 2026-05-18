@@ -1465,12 +1465,37 @@ export default function LiveGameScreen() {
                         Select your role for this session
                     </Text>
                     <View style={styles.roleSelectButtons}>
-                        <Button mode="contained" onPress={() => dispatch(setCurrentGameRole('charter'))} style={styles.roleButton}>
+                        <Button
+                            mode="contained"
+                            onPress={async () => {
+                                // Claim charter — server returns "viewer" if
+                                // another user already holds it (one per game).
+                                try {
+                                    const rec = await gamesApi.assignGameRole(id, 'charter');
+                                    dispatch(setCurrentGameRole(rec.role));
+                                    if (rec.role === 'viewer') {
+                                        Alert.alert(
+                                            'Already being charted',
+                                            'Someone is already charting this game — you have joined as a viewer.'
+                                        );
+                                        router.push(`/game/${id}/viewer` as any);
+                                    }
+                                } catch {
+                                    dispatch(setCurrentGameRole('charter'));
+                                }
+                            }}
+                            style={styles.roleButton}
+                        >
                             Charter
                         </Button>
                         <Button
                             mode="outlined"
-                            onPress={() => {
+                            onPress={async () => {
+                                try {
+                                    await gamesApi.assignGameRole(id, 'viewer');
+                                } catch {
+                                    // Non-fatal — still enter as a viewer locally.
+                                }
                                 dispatch(setCurrentGameRole('viewer'));
                                 router.push(`/game/${id}/viewer` as any);
                             }}

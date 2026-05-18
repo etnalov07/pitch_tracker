@@ -45,14 +45,28 @@ describe('GameRole Routes - /bt-api/game/:gameId/role', () => {
             expect(res.body.error).toBe('role must be charter or viewer');
         });
 
-        it('upserts a charter role', async () => {
+        it('claims the charter role when no charter exists yet', async () => {
             const record = { user_id: 'test-user-id', game_id: 'g1', role: 'charter' };
-            mockQuery.mockResolvedValueOnce({ rows: [record] } as any);
+            mockQuery
+                .mockResolvedValueOnce({ rows: [] } as any) // existing-charter check: none
+                .mockResolvedValueOnce({ rows: [record] } as any); // upsert
 
             const res = await getAgent().post('/bt-api/game/g1/role').set('Authorization', authHeader()).send({ role: 'charter' });
 
             expect(res.status).toBe(200);
             expect(res.body.role).toEqual(record);
+        });
+
+        it('falls back to viewer when another user already holds charter', async () => {
+            const viewerRecord = { user_id: 'test-user-id', game_id: 'g1', role: 'viewer' };
+            mockQuery
+                .mockResolvedValueOnce({ rows: [{ user_id: 'another-user' }] } as any) // charter held by someone else
+                .mockResolvedValueOnce({ rows: [viewerRecord] } as any); // writeRole(viewer)
+
+            const res = await getAgent().post('/bt-api/game/g1/role').set('Authorization', authHeader()).send({ role: 'charter' });
+
+            expect(res.status).toBe(200);
+            expect(res.body.role.role).toBe('viewer');
         });
 
         it('upserts a viewer role', async () => {
