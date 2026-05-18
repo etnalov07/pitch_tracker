@@ -56,6 +56,13 @@ export const scoutingReportsApi = {
         await api.delete(`/scouting-reports/batters/${batterId}`);
     },
 
+    importLineup: async (reportId: string, sourceGameId: string): Promise<ScoutingReportBatter[]> => {
+        const res = await api.post<{ batters: ScoutingReportBatter[] }>(
+            `/scouting-reports/${reportId}/import-lineup/${sourceGameId}`
+        );
+        return res.data.batters;
+    },
+
     getLiveMatch: async (gameId: string, name: string, jersey?: number | null): Promise<LiveScoutingMatch | null> => {
         const params = new URLSearchParams();
         if (name) params.set('name', name);

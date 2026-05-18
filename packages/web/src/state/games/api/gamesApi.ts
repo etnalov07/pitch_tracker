@@ -35,6 +35,11 @@ export const gamesApi = {
         return response.data.game;
     },
 
+    getGamesByTeam: async (teamId: string): Promise<Game[]> => {
+        const response = await api.get<{ games: Game[] }>(`/games/team/${teamId}`);
+        return response.data.games;
+    },
+
     createGame: async (gameData: Partial<Game>): Promise<Game> => {
         const response = await api.post<{ game: Game }>('/games', gameData);
         return response.data.game;

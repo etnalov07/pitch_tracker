@@ -104,6 +104,15 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
                                 ))}
                             </View>
                         )}
+                        {scouting.batter.zone_weakness && Object.keys(scouting.batter.zone_weakness).length > 0 && (
+                            <Text style={[styles.scoutingZones, { color: theme.colors.onSurfaceVariant }]}>
+                                Pre-filled zone map:{' '}
+                                {Object.entries(scouting.batter.zone_weakness)
+                                    .filter(([, v]) => v !== 'neutral')
+                                    .map(([id, v]) => `${id}=${v}`)
+                                    .join(' · ') || 'none set'}
+                            </Text>
+                        )}
                     </View>
                 )}
 
@@ -266,6 +275,7 @@ const styles = StyleSheet.create({
         marginBottom: 6,
     },
     scoutingNotes: { fontSize: 13, marginBottom: 6 },
+    scoutingZones: { fontSize: 11, marginTop: 4 },
     scoutingChips: { flexDirection: 'row', flexWrap: 'wrap' },
     scoutingChip: { marginRight: 4, marginBottom: 4 },
 });

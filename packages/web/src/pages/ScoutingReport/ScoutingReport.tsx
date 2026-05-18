@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import scoutingReportService from '../../services/scoutingReportService';
+import { gamesApi } from '../../state/games/api/gamesApi';
 import {
+    Game,
     HandednessType,
     ScoutingReportBatter,
     ScoutingReportBatterInput,
@@ -55,6 +57,11 @@ const FREQUENCIES: Array<{ value: '' | TeamTendencyFrequency; label: string }> =
 
 const ZONE_IDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
+const gameLabel = (g: Game): string => {
+    const d = g.game_date ? new Date(g.game_date).toLocaleDateString() : 'no date';
+    return `${g.opponent_name || 'Opponent'} — ${d}`;
+};
+
 const cycleZoneState = (state: ScoutingZoneCell | undefined): ScoutingZoneCell => {
     if (state === 'hot') return 'cold';
     if (state === 'cold') return 'neutral';
@@ -76,6 +83,9 @@ const ScoutingReport: React.FC = () => {
         player_name: '',
         bats: 'R',
     });
+    const [games, setGames] = useState<Game[]>([]);
+    const [importGameId, setImportGameId] = useState('');
+    const [importing, setImporting] = useState(false);
 
     const load = useCallback(async () => {
         if (!reportId) return;
@@ -85,6 +95,7 @@ const ScoutingReport: React.FC = () => {
             setReport(data);
             setTeamDraft({
                 opponent_name: data.opponent_name,
+                game_id: data.game_id ?? null,
                 game_date: data.game_date ?? null,
                 notes: data.notes ?? '',
                 steal_frequency: data.steal_frequency ?? null,
@@ -102,6 +113,14 @@ const ScoutingReport: React.FC = () => {
     useEffect(() => {
         load();
     }, [load]);
+
+    useEffect(() => {
+        if (!teamId) return;
+        gamesApi
+            .getGamesByTeam(teamId)
+            .then(setGames)
+            .catch(() => setGames([]));
+    }, [teamId]);
 
     const saveTeamFields = async () => {
         if (!reportId) return;
@@ -126,6 +145,21 @@ const ScoutingReport: React.FC = () => {
             await load();
         } catch {
             setError('Failed to add batter.');
+        }
+    };
+
+    const importFromGame = async () => {
+        if (!reportId || !importGameId) return;
+        setImporting(true);
+        try {
+            await scoutingReportService.importLineup(reportId, importGameId);
+            setImportGameId('');
+            await load();
+            setError('');
+        } catch {
+            setError('Failed to import lineup from that game.');
+        } finally {
+            setImporting(false);
         }
     };
 
@@ -202,6 +236,20 @@ const ScoutingReport: React.FC = () => {
                                 value={teamDraft.game_date ?? ''}
                                 onChange={(e) => setTeamDraft({ ...teamDraft, game_date: e.target.value || null })}
                             />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label>Linked game (enables in-game scouting)</Label>
+                            <Select
+                                value={teamDraft.game_id ?? ''}
+                                onChange={(e) => setTeamDraft({ ...teamDraft, game_id: e.target.value || null })}
+                            >
+                                <option value="">— Not linked —</option>
+                                {games.map((g) => (
+                                    <option key={g.id} value={g.id}>
+                                        {gameLabel(g)}
+                                    </option>
+                                ))}
+                            </Select>
                         </FormGroup>
                         <FormGroup>
                             <Label>&nbsp;</Label>
@@ -319,6 +367,22 @@ const ScoutingReport: React.FC = () => {
                                 ))}
                             </tbody>
                         </BatterTable>
+                    )}
+
+                    {games.length > 0 && (
+                        <AddBatterRow style={{ marginTop: 16 }}>
+                            <Select value={importGameId} onChange={(e) => setImportGameId(e.target.value)}>
+                                <option value="">Import batters from a past game…</option>
+                                {games.map((g) => (
+                                    <option key={g.id} value={g.id}>
+                                        {gameLabel(g)}
+                                    </option>
+                                ))}
+                            </Select>
+                            <GhostButton onClick={importFromGame} disabled={!importGameId || importing}>
+                                {importing ? 'Importing…' : 'Import lineup'}
+                            </GhostButton>
+                        </AddBatterRow>
                     )}
 
                     {showAddBatter ? (

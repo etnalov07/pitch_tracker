@@ -12,9 +12,11 @@ import {
     SegmentedButtons,
     IconButton,
     Chip,
+    Menu,
 } from 'react-native-paper';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import {
+    Game,
     HandednessType,
     ScoutingReportBatter,
     ScoutingReportBatterInput,
@@ -24,6 +26,7 @@ import {
     TeamTendencyFrequency,
 } from '@pitch-tracker/shared';
 import scoutingReportsApi from '../../../../src/state/scouting/api/scoutingReportsApi';
+import { gamesApi } from '../../../../src/state/games/api/gamesApi';
 
 const FREQUENCY_OPTIONS = [
     { value: '', label: '—' },
@@ -51,6 +54,11 @@ const cycleZoneState = (s: ScoutingZoneCell | undefined): ScoutingZoneCell => {
     return 'hot';
 };
 
+const gameLabel = (g: Game): string => {
+    const d = g.game_date ? new Date(g.game_date).toLocaleDateString() : 'no date';
+    return `${g.opponent_name || 'Opponent'} — ${d}`;
+};
+
 export default function ScoutingReportEditorScreen() {
     const { id: teamId, reportId } = useLocalSearchParams<{ id: string; reportId: string }>();
     const router = useRouter();
@@ -66,6 +74,11 @@ export default function ScoutingReportEditorScreen() {
 
     const [editingBatter, setEditingBatter] = useState<ScoutingReportBatter | null>(null);
 
+    const [games, setGames] = useState<Game[]>([]);
+    const [gameMenuOpen, setGameMenuOpen] = useState(false);
+    const [importMenuOpen, setImportMenuOpen] = useState(false);
+    const [importing, setImporting] = useState(false);
+
     const load = useCallback(async () => {
         if (!reportId) return;
         setLoading(true);
@@ -74,6 +87,7 @@ export default function ScoutingReportEditorScreen() {
             setReport(data);
             setDraft({
                 opponent_name: data.opponent_name,
+                game_id: data.game_id ?? null,
                 game_date: data.game_date ?? null,
                 notes: data.notes ?? '',
                 steal_frequency: data.steal_frequency ?? null,
@@ -90,6 +104,28 @@ export default function ScoutingReportEditorScreen() {
     useEffect(() => {
         load();
     }, [load]);
+
+    useEffect(() => {
+        if (!teamId) return;
+        gamesApi
+            .getGamesByTeam(teamId)
+            .then(setGames)
+            .catch(() => setGames([]));
+    }, [teamId]);
+
+    const importFromGame = async (sourceGameId: string) => {
+        if (!reportId) return;
+        setImportMenuOpen(false);
+        setImporting(true);
+        try {
+            await scoutingReportsApi.importLineup(reportId, sourceGameId);
+            await load();
+        } catch {
+            Alert.alert('Error', 'Failed to import lineup from that game');
+        } finally {
+            setImporting(false);
+        }
+    };
 
     const saveReport = async () => {
         if (!reportId) return;
@@ -164,6 +200,8 @@ export default function ScoutingReportEditorScreen() {
         );
     }
 
+    const linkedGame = games.find((g) => g.id === draft.game_id) ?? null;
+
     return (
         <>
             <Stack.Screen
@@ -195,6 +233,41 @@ export default function ScoutingReportEditorScreen() {
                             mode="outlined"
                             style={styles.field}
                         />
+                        <Text variant="bodySmall" style={styles.label}>
+                            Linked game (enables in-game scouting)
+                        </Text>
+                        <Menu
+                            visible={gameMenuOpen}
+                            onDismiss={() => setGameMenuOpen(false)}
+                            anchor={
+                                <Button
+                                    mode="outlined"
+                                    icon="link-variant"
+                                    onPress={() => setGameMenuOpen(true)}
+                                    style={{ alignSelf: 'flex-start' }}
+                                >
+                                    {linkedGame ? gameLabel(linkedGame) : 'Not linked'}
+                                </Button>
+                            }
+                        >
+                            <Menu.Item
+                                onPress={() => {
+                                    setDraft({ ...draft, game_id: null });
+                                    setGameMenuOpen(false);
+                                }}
+                                title="— Not linked —"
+                            />
+                            {games.map((g) => (
+                                <Menu.Item
+                                    key={g.id}
+                                    onPress={() => {
+                                        setDraft({ ...draft, game_id: g.id });
+                                        setGameMenuOpen(false);
+                                    }}
+                                    title={gameLabel(g)}
+                                />
+                            ))}
+                        </Menu>
                         <TextInput
                             label="Team-level notes"
                             value={draft.notes ?? ''}
@@ -254,6 +327,28 @@ export default function ScoutingReportEditorScreen() {
                                 + Add
                             </Button>
                         </View>
+                        {games.length > 0 && (
+                            <Menu
+                                visible={importMenuOpen}
+                                onDismiss={() => setImportMenuOpen(false)}
+                                anchor={
+                                    <Button
+                                        mode="text"
+                                        compact
+                                        icon="import"
+                                        loading={importing}
+                                        onPress={() => setImportMenuOpen(true)}
+                                        style={{ alignSelf: 'flex-start', marginTop: 4 }}
+                                    >
+                                        Import batters from a past game
+                                    </Button>
+                                }
+                            >
+                                {games.map((g) => (
+                                    <Menu.Item key={g.id} onPress={() => importFromGame(g.id)} title={gameLabel(g)} />
+                                ))}
+                            </Menu>
+                        )}
                         {report.batters.length === 0 ? (
                             <Text variant="bodySmall" style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>
                                 No batters yet.

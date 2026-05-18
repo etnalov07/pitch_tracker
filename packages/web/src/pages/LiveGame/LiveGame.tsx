@@ -380,6 +380,14 @@ const LiveGame: React.FC = () => {
                                 🪧 Batter Breakdown
                             </SwapButton>
                         )}
+                        {gameId && currentBatter && (
+                            <SwapButton
+                                onClick={() => setShowHitterTendencies(true)}
+                                title="Scouting report & tendencies for the current hitter"
+                            >
+                                🎯 Hitter
+                            </SwapButton>
+                        )}
                         {/* Settings gear — opens a small panel to toggle velocity + pitch calls */}
                         <div style={{ position: 'relative' }}>
                             <SwapButton title="Settings" onClick={() => setShowSettingsPanel((v) => !v)}>
