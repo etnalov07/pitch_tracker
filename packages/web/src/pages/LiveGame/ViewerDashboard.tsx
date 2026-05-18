@@ -254,7 +254,6 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                             <BatterBreakdownPanel
                                 sections={[{ title: `Opponent Lineup vs. ${pitcherName}`, batters: oppBreakdown ?? [] }]}
                                 loading={breakdownLoading}
-                                pitcherId={pitcherId}
                                 gameId={game.id}
                             />
                         ) : (

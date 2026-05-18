@@ -208,14 +208,12 @@ function PitchCardItem({ pitch }: { pitch: BatterAtBatPitch }) {
 
 function BatterRow({
     batter,
-    pitcherId,
     gameId,
     opponentTeamId,
     opponentName,
     scrollToBatterId,
 }: {
     batter: BatterBreakdown;
-    pitcherId?: string;
     gameId?: string;
     opponentTeamId?: string;
     opponentName?: string;
@@ -248,9 +246,12 @@ function BatterRow({
             // Opponent Lineup view: single-game scope (no opponent params).
             const useOpponentScope = Boolean(opponentTeamId || opponentName);
             const sprayGameId = useOpponentScope ? undefined : gameId;
+            // Pitch locations are NOT scoped to a single pitcher — the
+            // opponent-lineup charts are a scouting view of the hitter and
+            // should reflect every pitch they saw (matching the spray chart).
             const [spray, locations] = await Promise.all([
                 analyticsService.getSprayChart(batter.batter_id, sprayGameId, opponentTeamId, opponentName),
-                analyticsService.getPitchLocations(batter.batter_id, pitcherId, opponentTeamId, opponentName),
+                analyticsService.getPitchLocations(batter.batter_id, undefined, opponentTeamId, opponentName),
             ]);
             setSprayData(spray);
             setPitchLocations(locations);
@@ -260,7 +261,7 @@ function BatterRow({
         } finally {
             setChartsLoading(false);
         }
-    }, [showCharts, sprayData, batter.batter_id, gameId, pitcherId, opponentTeamId, opponentName]);
+    }, [showCharts, sprayData, batter.batter_id, gameId, opponentTeamId, opponentName]);
 
     return (
         <BatterRowContainer ref={rowRef}>
@@ -347,7 +348,6 @@ interface Section {
 interface Props {
     sections: Section[];
     loading?: boolean;
-    pitcherId?: string;
     gameId?: string;
     /** Scope the heat map to all games against this opponent team (Our Lineup view). */
     opponentTeamId?: string;
@@ -357,15 +357,7 @@ interface Props {
     scrollToBatterId?: string;
 }
 
-const BatterBreakdownPanel: React.FC<Props> = ({
-    sections,
-    loading,
-    pitcherId,
-    gameId,
-    opponentTeamId,
-    opponentName,
-    scrollToBatterId,
-}) => {
+const BatterBreakdownPanel: React.FC<Props> = ({ sections, loading, gameId, opponentTeamId, opponentName, scrollToBatterId }) => {
     if (loading) {
         return <EmptyText>Loading batter breakdown…</EmptyText>;
     }
@@ -406,7 +398,6 @@ const BatterBreakdownPanel: React.FC<Props> = ({
                                     <BatterRow
                                         key={batter.batter_id}
                                         batter={batter}
-                                        pitcherId={pitcherId}
                                         gameId={gameId}
                                         opponentTeamId={opponentTeamId}
                                         opponentName={opponentName}

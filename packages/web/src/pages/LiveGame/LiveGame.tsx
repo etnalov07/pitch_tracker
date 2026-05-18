@@ -1046,7 +1046,6 @@ const LiveGame: React.FC = () => {
             {showBreakdown && gameId && (
                 <BatterBreakdownModal
                     gameId={gameId}
-                    pitcherId={currentPitcher?.player_id}
                     currentBatterId={currentBatter?.id}
                     currentBatterName={currentBatter?.player_name}
                     onClose={() => setShowBreakdown(false)}

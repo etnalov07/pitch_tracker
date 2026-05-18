@@ -6,13 +6,12 @@ import { Body, CloseBtn, Header, LoadingText, Modal, Overlay, Subtitle, Title } 
 
 interface Props {
     gameId: string;
-    pitcherId?: string;
     currentBatterId?: string;
     currentBatterName?: string;
     onClose: () => void;
 }
 
-const BatterBreakdownModal: React.FC<Props> = ({ gameId, pitcherId, currentBatterId, currentBatterName, onClose }) => {
+const BatterBreakdownModal: React.FC<Props> = ({ gameId, currentBatterId, currentBatterName, onClose }) => {
     const [breakdown, setBreakdown] = useState<BatterBreakdown[] | null>(null);
 
     useEffect(() => {
@@ -48,7 +47,6 @@ const BatterBreakdownModal: React.FC<Props> = ({ gameId, pitcherId, currentBatte
                     ) : (
                         <BatterBreakdownPanel
                             sections={[{ title: 'Opponent Lineup', batters: breakdown }]}
-                            pitcherId={pitcherId}
                             gameId={gameId}
                             scrollToBatterId={currentBatterId}
                         />
