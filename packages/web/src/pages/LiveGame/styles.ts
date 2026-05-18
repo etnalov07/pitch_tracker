@@ -259,30 +259,6 @@ export const ResultButton = styled.button<{ active: boolean; color: string }>((p
     },
 }));
 
-export const LogButton = styled.button({
-    flex: 1,
-    width: '100%',
-    padding: theme.spacing.sm,
-    backgroundColor: theme.accents.blue,
-    color: 'white',
-    border: 'none',
-    borderRadius: theme.borderRadius.sm,
-    fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.semibold,
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    marginTop: theme.spacing.md,
-
-    '&:hover:not(:disabled)': {
-        backgroundColor: theme.accents.blueHover,
-    },
-
-    '&:disabled': {
-        opacity: 0.5,
-        cursor: 'not-allowed',
-    },
-});
-
 export const LogRow = styled.div({
     display: 'flex',
     gap: theme.spacing.sm,

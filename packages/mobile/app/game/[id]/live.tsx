@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput, Pressable, TouchableOpacity } from 'react-native';
 import { Text, Button, useTheme, IconButton, Portal, Chip } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -140,6 +140,8 @@ export default function LiveGameScreen() {
     const [pitchLocation, setPitchLocation] = useState<{ x: number; y: number } | null>(null);
     const [targetZone, setTargetZone] = useState<PitchCallZone | null>(null);
     const [isLogging, setIsLogging] = useState(false);
+    // Synchronous in-flight guard — blocks a double-tap from logging the pitch twice.
+    const isLoggingRef = useRef(false);
 
     // Pitcher/Batter selection state
     const [currentPitcher, setCurrentPitcher] = useState<GamePitcherWithPlayer | null>(null);
@@ -945,9 +947,11 @@ export default function LiveGameScreen() {
         );
     }, [pitches, dispatch]);
 
-    const handleLogPitch = async () => {
-        if (!selectedPitchType || !selectedResult || !pitchLocation) {
-            Alert.alert('Missing Info', 'Please select pitch type, location, and result');
+    const handleLogPitch = async (resultOverride?: PitchResult) => {
+        if (isLoggingRef.current) return;
+        const effectiveResult = resultOverride ?? selectedResult;
+        if (!selectedPitchType || !effectiveResult || !pitchLocation) {
+            Alert.alert('Missing Info', 'Please select pitch type and location');
             return;
         }
         if (!isScoutingMode && gameMode === 'our_pitcher' && !currentPitcher) {
@@ -958,6 +962,7 @@ export default function LiveGameScreen() {
             Alert.alert('No Pitcher/Batter', 'Please select a pitcher and batter first');
             return;
         }
+        isLoggingRef.current = true;
         setIsLogging(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         try {
@@ -967,7 +972,7 @@ export default function LiveGameScreen() {
                 game_id: id!,
                 pitcher_id: !isScoutingMode && gameMode === 'our_pitcher' ? currentPitcher?.player_id : undefined,
                 pitch_type: selectedPitchType,
-                pitch_result: selectedResult,
+                pitch_result: effectiveResult,
                 location_x: pitchLocation.x,
                 location_y: pitchLocation.y,
                 target_location_x: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].x : undefined,
@@ -988,22 +993,22 @@ export default function LiveGameScreen() {
                 return;
             }
             setStatsRefreshTrigger((prev) => prev + 1);
-            const newBalls = balls + (selectedResult === 'ball' ? 1 : 0);
+            const newBalls = balls + (effectiveResult === 'ball' ? 1 : 0);
             const newStrikes =
                 effectiveStrikes +
-                (selectedResult === 'called_strike' || selectedResult === 'swinging_strike'
+                (effectiveResult === 'called_strike' || effectiveResult === 'swinging_strike'
                     ? 1
-                    : selectedResult === 'foul' && effectiveStrikes < 2
+                    : effectiveResult === 'foul' && effectiveStrikes < 2
                       ? 1
                       : 0);
             // Log result on active pitch call
             if (activeCall) {
                 const callResult =
-                    selectedResult === 'called_strike' || selectedResult === 'swinging_strike'
+                    effectiveResult === 'called_strike' || effectiveResult === 'swinging_strike'
                         ? 'strike'
-                        : selectedResult === 'hit_by_pitch'
+                        : effectiveResult === 'hit_by_pitch'
                           ? 'ball'
-                          : (selectedResult as 'ball' | 'foul' | 'in_play');
+                          : (effectiveResult as 'ball' | 'foul' | 'in_play');
                 try {
                     await pitchCallingApi.logResult(activeCall.id, callResult);
                 } catch {
@@ -1015,8 +1020,8 @@ export default function LiveGameScreen() {
             // in at-bat history when the at-bat ends (walk/strikeout) in the same call, before
             // the Redux pitches selector has a chance to reflect the new pitch.
             const finalPitch: Partial<Pitch> = {
-                pitch_type: selectedPitchType!,
-                pitch_result: selectedResult!,
+                pitch_type: selectedPitchType,
+                pitch_result: effectiveResult,
                 location_x: pitchLocation!.x,
                 location_y: pitchLocation!.y,
                 target_location_x: targetZone ? PITCH_CALL_ZONE_COORDS[targetZone].x : undefined,
@@ -1033,8 +1038,8 @@ export default function LiveGameScreen() {
             setChangingCallId(null);
             setPendingShakeCount(0);
             if (result.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            if (selectedResult === 'hit_by_pitch' || newBalls >= 4) {
-                const endResult = selectedResult === 'hit_by_pitch' ? 'hit_by_pitch' : 'walk';
+            if (effectiveResult === 'hit_by_pitch' || newBalls >= 4) {
+                const endResult = effectiveResult === 'hit_by_pitch' ? 'hit_by_pitch' : 'walk';
                 const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
                 if (hasRunnersOnBase) {
                     setPendingHitResult(endResult);
@@ -1066,10 +1071,11 @@ export default function LiveGameScreen() {
                 } else {
                     await handleEndAtBat('strikeout', finalPitch);
                 }
-            } else if (selectedResult === 'in_play') setShowInPlayModal(true);
+            } else if (effectiveResult === 'in_play') setShowInPlayModal(true);
         } catch {
             Alert.alert('Error', 'Failed to log pitch');
         } finally {
+            isLoggingRef.current = false;
             setIsLogging(false);
         }
     };
@@ -1381,7 +1387,6 @@ export default function LiveGameScreen() {
         [baseRunners]
     );
 
-    const canLogPitch = selectedPitchType && selectedResult && pitchLocation && !isLogging;
     const canStartAtBat =
         gameMode === 'opp_pitcher'
             ? currentOpposingPitcher && currentMyBatter && !currentAtBat
@@ -2127,6 +2132,23 @@ export default function LiveGameScreen() {
                                 </View>
                             </View>
                         )}
+                        {/* Velocity (optional, setting-gated) — before Result so it's entered before the pitch is logged */}
+                        {!isReadOnly && velocityEnabled && (
+                            <View style={styles.veloRow}>
+                                <Text style={styles.veloLabel}>MPH</Text>
+                                <TextInput
+                                    style={styles.veloInput}
+                                    value={velocity}
+                                    onChangeText={setVelocity}
+                                    keyboardType="numeric"
+                                    placeholder="—"
+                                    placeholderTextColor="#9ca3af"
+                                    maxLength={3}
+                                    selectTextOnFocus
+                                />
+                                {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
+                            </View>
+                        )}
                         {!isReadOnly && (
                             <View style={styles.controlsRow}>
                                 <View style={styles.controlsHalf}>
@@ -2144,7 +2166,10 @@ export default function LiveGameScreen() {
                                 <View style={styles.controlsHalf}>
                                     <ResultButtons
                                         selectedResult={selectedResult}
-                                        onSelect={setSelectedResult}
+                                        onSelect={(r) => {
+                                            setSelectedResult(r);
+                                            handleLogPitch(r);
+                                        }}
                                         disabled={isLogging}
                                     />
                                 </View>
@@ -2166,46 +2191,18 @@ export default function LiveGameScreen() {
                                 </TouchableOpacity>
                             </View>
                         )}
-                        {!isReadOnly && velocityEnabled && (
-                            <View style={styles.veloRow}>
-                                <Text style={styles.veloLabel}>MPH</Text>
-                                <TextInput
-                                    style={styles.veloInput}
-                                    value={velocity}
-                                    onChangeText={setVelocity}
-                                    keyboardType="numeric"
-                                    placeholder="—"
-                                    placeholderTextColor="#9ca3af"
-                                    maxLength={3}
-                                    selectTextOnFocus
-                                />
-                                {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
-                            </View>
-                        )}
-                        {!isReadOnly && (
+                        {!isReadOnly && pitches.length > 0 && !isLogging && (
                             <View style={styles.logRow}>
                                 <Button
-                                    mode="contained"
-                                    onPress={handleLogPitch}
-                                    disabled={!canLogPitch}
-                                    loading={isLogging}
-                                    style={styles.logButtonGrow}
+                                    mode="outlined"
+                                    onPress={handleUndoLastPitch}
+                                    style={styles.undoButton}
                                     contentStyle={styles.logButtonContent}
+                                    textColor="#b91c1c"
+                                    icon="undo"
                                 >
-                                    Log Pitch
+                                    Undo
                                 </Button>
-                                {pitches.length > 0 && !isLogging && (
-                                    <Button
-                                        mode="outlined"
-                                        onPress={handleUndoLastPitch}
-                                        style={styles.undoButton}
-                                        contentStyle={styles.logButtonContent}
-                                        textColor="#b91c1c"
-                                        icon="undo"
-                                    >
-                                        Undo
-                                    </Button>
-                                )}
                             </View>
                         )}
                         {!isReadOnly && hasPreviousAtBats && (
@@ -2407,11 +2404,7 @@ export default function LiveGameScreen() {
                         </TouchableOpacity>
                     </View>
                 )}
-                {/* 4. Result */}
-                {!isReadOnly && (
-                    <ResultButtons selectedResult={selectedResult} onSelect={setSelectedResult} disabled={isLogging} compact />
-                )}
-                {/* 5. Velocity (optional, setting-gated) */}
+                {/* 4. Velocity (optional, setting-gated) — before Result so it's entered before the pitch is logged */}
                 {!isReadOnly && velocityEnabled && (
                     <View style={styles.veloRow}>
                         <Text style={styles.veloLabel}>MPH</Text>
@@ -2428,31 +2421,31 @@ export default function LiveGameScreen() {
                         {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
                     </View>
                 )}
-                {/* 6. Log Pitch */}
+                {/* 5. Result — tapping a result logs the pitch */}
                 {!isReadOnly && (
+                    <ResultButtons
+                        selectedResult={selectedResult}
+                        onSelect={(r) => {
+                            setSelectedResult(r);
+                            handleLogPitch(r);
+                        }}
+                        disabled={isLogging}
+                        compact
+                    />
+                )}
+                {/* 6. Undo */}
+                {!isReadOnly && pitches.length > 0 && !isLogging && (
                     <View style={styles.logRow}>
                         <Button
-                            mode="contained"
-                            onPress={handleLogPitch}
-                            disabled={!canLogPitch}
-                            loading={isLogging}
-                            style={styles.logButtonGrow}
+                            mode="outlined"
+                            onPress={handleUndoLastPitch}
+                            style={styles.undoButton}
                             contentStyle={styles.logButtonContent}
+                            textColor="#b91c1c"
+                            icon="undo"
                         >
-                            Log Pitch
+                            Undo
                         </Button>
-                        {pitches.length > 0 && !isLogging && (
-                            <Button
-                                mode="outlined"
-                                onPress={handleUndoLastPitch}
-                                style={styles.undoButton}
-                                contentStyle={styles.logButtonContent}
-                                textColor="#b91c1c"
-                                icon="undo"
-                            >
-                                Undo
-                            </Button>
-                        )}
                     </View>
                 )}
                 {/* 7. Previous At-Bats (hidden on first at-bat) */}
@@ -2504,7 +2497,6 @@ const styles = StyleSheet.create({
     placeholder: { marginTop: 4, opacity: 0.7 },
     logButton: { marginTop: 4 },
     logRow: { flexDirection: 'row', gap: 8, marginTop: 4, alignItems: 'center' },
-    logButtonGrow: { flex: 1 },
     undoButton: { borderColor: '#b91c1c' },
     logButtonContent: { paddingVertical: 6 },
     previousAtBatsButton: { marginTop: 8 },

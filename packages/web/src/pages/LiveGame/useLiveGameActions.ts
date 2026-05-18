@@ -14,6 +14,7 @@ import {
     getNextBatter,
     getInningLeadoffBatter,
 } from '@pitch-tracker/shared';
+import { useRef } from 'react';
 import { pitchCallService } from '../../services/pitchCallService';
 import {
     fetchGameById,
@@ -27,7 +28,7 @@ import {
     toggleHomeAway,
 } from '../../state';
 import { gamesApi } from '../../state/games/api/gamesApi';
-import { MyTeamLineupPlayer, OpponentLineupPlayer, GamePitcherWithPlayer, getOutsForResult } from '../../types';
+import { MyTeamLineupPlayer, OpponentLineupPlayer, GamePitcherWithPlayer, PitchResult, getOutsForResult } from '../../types';
 import type { ErrorAdvancement, Throwout } from './RunnerAdvancementModal';
 import { LiveGameState } from './useLiveGameState';
 
@@ -84,6 +85,9 @@ export function useLiveGameActions(state: LiveGameState) {
         inningEndedByBaserunnerOut,
         setInningEndedByBaserunnerOut,
     } = state;
+
+    // Synchronous in-flight guard — blocks a double-tap from logging the pitch twice.
+    const isLoggingRef = useRef(false);
 
     const gameMode = deriveGameMode(game?.is_home_game ?? true, game?.inning_half ?? 'top');
     const isScoutingMode = game?.charting_mode === 'scouting';
@@ -345,7 +349,8 @@ export function useLiveGameActions(state: LiveGameState) {
         }
     };
 
-    const handleLogPitch = async () => {
+    const handleLogPitch = async (resultOverride?: PitchResult) => {
+        if (isLoggingRef.current) return;
         if (!currentAtBat || !pitchLocation) {
             alert('Please select a pitch location');
             return;
@@ -359,6 +364,8 @@ export function useLiveGameActions(state: LiveGameState) {
             return;
         }
 
+        const result = resultOverride ?? pitchResult;
+        isLoggingRef.current = true;
         try {
             const loggedPitch = await dispatch(
                 logPitch({
@@ -373,7 +380,7 @@ export function useLiveGameActions(state: LiveGameState) {
                     location_x: pitchLocation.x,
                     location_y: pitchLocation.y,
                     target_zone: targetZone ?? undefined,
-                    pitch_result: pitchResult,
+                    pitch_result: result,
                     balls_before: currentAtBat.balls,
                     strikes_before: currentAtBat.strikes,
                     team_side:
@@ -386,11 +393,11 @@ export function useLiveGameActions(state: LiveGameState) {
             let newBalls = currentAtBat.balls;
             let newStrikes = currentAtBat.strikes;
 
-            if (pitchResult === 'ball') {
+            if (result === 'ball') {
                 newBalls++;
-            } else if (pitchResult === 'called_strike' || pitchResult === 'swinging_strike') {
+            } else if (result === 'called_strike' || result === 'swinging_strike') {
                 newStrikes++;
-            } else if (pitchResult === 'foul' && newStrikes < 2) {
+            } else if (result === 'foul' && newStrikes < 2) {
                 newStrikes++;
             }
 
@@ -411,16 +418,16 @@ export function useLiveGameActions(state: LiveGameState) {
 
             // Link the logged pitch back to the outstanding call (fire-and-forget — non-critical)
             if (activeCallId && loggedPitch?.id) {
-                pitchCallService.linkPitch(activeCallId, loggedPitch.id, toPitchCallResult(pitchResult)).catch(() => {});
+                pitchCallService.linkPitch(activeCallId, loggedPitch.id, toPitchCallResult(result)).catch(() => {});
                 setActiveCallId(null);
             }
 
-            if (pitchResult === 'in_play') {
+            if (result === 'in_play') {
                 // Pitch is now saved — auto-open diamond so the user records hit location & at-bat result.
                 // Without this, pitchResult resets to 'ball' and the button disappears before it can be clicked.
                 setShowDiamondModal(true);
-            } else if (pitchResult === 'hit_by_pitch' || newBalls >= 4) {
-                const endResult = pitchResult === 'hit_by_pitch' ? 'hit_by_pitch' : 'walk';
+            } else if (result === 'hit_by_pitch' || newBalls >= 4) {
+                const endResult = result === 'hit_by_pitch' ? 'hit_by_pitch' : 'walk';
                 const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
                 if (hasRunnersOnBase) {
                     setPendingHitResult(endResult);
@@ -446,6 +453,8 @@ export function useLiveGameActions(state: LiveGameState) {
             }
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : 'Failed to log pitch');
+        } finally {
+            isLoggingRef.current = false;
         }
     };
 

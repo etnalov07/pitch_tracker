@@ -44,7 +44,6 @@ import {
     Input,
     ResultButtons,
     ResultButton,
-    LogButton,
     LogRow,
     UndoButton,
     NoAtBatContainer,
@@ -118,7 +117,6 @@ const LiveGame: React.FC = () => {
         currentAtBat,
         pitches,
         loading,
-        pitchLocation,
         targetZone,
         pitchType,
         setPitchType,
@@ -792,42 +790,60 @@ const LiveGame: React.FC = () => {
                                     <ResultButtons>
                                         <ResultButton
                                             active={pitchResult === 'ball'}
-                                            onClick={() => setPitchResult('ball')}
+                                            onClick={() => {
+                                                setPitchResult('ball');
+                                                actions.handleLogPitch('ball');
+                                            }}
                                             color={theme.colors.gray[400]}
                                         >
                                             Ball
                                         </ResultButton>
                                         <ResultButton
                                             active={pitchResult === 'called_strike'}
-                                            onClick={() => setPitchResult('called_strike')}
+                                            onClick={() => {
+                                                setPitchResult('called_strike');
+                                                actions.handleLogPitch('called_strike');
+                                            }}
                                             color={theme.colors.green[500]}
                                         >
                                             Called Strike
                                         </ResultButton>
                                         <ResultButton
                                             active={pitchResult === 'swinging_strike'}
-                                            onClick={() => setPitchResult('swinging_strike')}
+                                            onClick={() => {
+                                                setPitchResult('swinging_strike');
+                                                actions.handleLogPitch('swinging_strike');
+                                            }}
                                             color={theme.colors.red[500]}
                                         >
                                             Swinging Strike
                                         </ResultButton>
                                         <ResultButton
                                             active={pitchResult === 'foul'}
-                                            onClick={() => setPitchResult('foul')}
+                                            onClick={() => {
+                                                setPitchResult('foul');
+                                                actions.handleLogPitch('foul');
+                                            }}
                                             color={theme.colors.yellow[500]}
                                         >
                                             Foul
                                         </ResultButton>
                                         <ResultButton
                                             active={pitchResult === 'hit_by_pitch'}
-                                            onClick={() => setPitchResult('hit_by_pitch')}
+                                            onClick={() => {
+                                                setPitchResult('hit_by_pitch');
+                                                actions.handleLogPitch('hit_by_pitch');
+                                            }}
                                             color={theme.colors.orange[500]}
                                         >
                                             HBP
                                         </ResultButton>
                                         <ResultButton
                                             active={pitchResult === 'in_play'}
-                                            onClick={() => setPitchResult('in_play')}
+                                            onClick={() => {
+                                                setPitchResult('in_play');
+                                                actions.handleLogPitch('in_play');
+                                            }}
                                             color={theme.accents.green}
                                         >
                                             In Play
@@ -835,16 +851,13 @@ const LiveGame: React.FC = () => {
                                     </ResultButtons>
                                 </FormGroup>
 
-                                <LogRow>
-                                    <LogButton onClick={actions.handleLogPitch} disabled={!pitchLocation}>
-                                        Log Pitch
-                                    </LogButton>
-                                    {pitches.length > 0 && (
+                                {pitches.length > 0 && (
+                                    <LogRow>
                                         <UndoButton onClick={() => setShowUndoPitch(true)} type="button">
                                             ↶ Undo
                                         </UndoButton>
-                                    )}
-                                </LogRow>
+                                    </LogRow>
+                                )}
 
                                 {pitchResult === 'in_play' && (
                                     <OpenDiamondButton onClick={() => setShowDiamondModal(true)}>
