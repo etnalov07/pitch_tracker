@@ -1,10 +1,7 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, ScrollView, TextInput, Pressable, TouchableOpacity } from 'react-native';
-import { Text, Button, useTheme, IconButton, Portal, Chip } from 'react-native-paper';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Text, Button, IconButton, Portal, Chip } from 'react-native-paper';
 import * as Haptics from '../../../src/utils/haptics';
-import { useToast } from '../../../src/hooks/useToast';
-import { useConfirm } from '../../../src/hooks/useConfirm';
 import { colors, semantic } from '../../../src/styles/theme';
 import {
     Pitch,
@@ -16,46 +13,28 @@ import {
     PITCH_CALL_ZONE_LABELS,
     PITCH_CALL_ZONE_COORDS,
     PITCH_TYPE_TO_ABBREV,
-    ABBREV_TO_PITCH_TYPE,
-    Player,
-    GamePitcherWithPlayer,
-    OpponentLineupPlayer,
     Inning,
-    isOutResult,
     getOutsForResult,
     BaseRunners,
     RunnerBase,
     BaserunnerEventType,
     getSuggestedAdvancement,
     clearBases,
-    deriveGameMode,
-    GameMode,
     ContactType,
     PlayerPosition,
-    getNextBatter,
+    OpponentLineupPlayer,
+    Player,
 } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
 import scoutingReportsApi from '../../../src/state/scouting/api/scoutingReportsApi';
 import { BatterBreakdownSheet } from '../../../src/components/batterBreakdown';
-import { speakPitchCall, activateBTAudio, forceDeactivateBTAudio } from '../../../src/utils/pitchCallAudio';
+import { speakPitchCall } from '../../../src/utils/pitchCallAudio';
 import { startPassthrough, stopPassthrough, isPassthroughActive } from '../../../src/utils/walkieTalkie';
-import { useDeviceType } from '../../../src/hooks/useDeviceType';
-import { useOfflineActions } from '../../../src/hooks/useOfflineActions';
 import {
-    useAppDispatch,
-    useAppSelector,
-    fetchCurrentGameState,
-    fetchGameById,
     toggleHomeAway,
-    fetchTeamPlayers,
-    fetchCurrentInning,
-    fetchGamePitchers,
     changePitcher,
-    fetchOpponentLineup,
-    fetchTeamPitcherRoster,
     createAtBat,
-    updateAtBat,
     endAtBat,
     endGame,
     setCurrentAtBat,
@@ -65,18 +44,19 @@ import {
     setBaseRunners,
     updateBaseRunners,
     recordBaserunnerEvent,
-    fetchBaseRunners,
+    fetchCurrentInning,
+    fetchOpponentLineup,
+    fetchMyTeamLineup,
     fetchOpposingPitchers,
+    fetchGameById,
     createOpposingPitcher,
     deleteOpposingPitcher,
     setCurrentOpposingPitcher,
-    setCurrentGameRole,
-    fetchMyTeamLineup,
     setCurrentMyBatter,
+    setCurrentGameRole,
 } from '../../../src/state';
-import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
-import { useStalkerRadar } from '../../../src/hooks/useStalkerRadar';
 import RadarStatusPill from '../../../src/components/radar/RadarStatusPill';
+import { useLiveGameController } from './useLiveGameController';
 import {
     StrikeZone,
     PITCH_TYPE_COLORS,
@@ -107,18 +87,20 @@ import { SyncStatusBadge, LoadingScreen, ErrorScreen } from '../../../src/compon
 import { HitLocation } from '../../../src/components/live/InPlayModal';
 
 export default function LiveGameScreen() {
-    const { id } = useLocalSearchParams<{ id: string }>();
-    const router = useRouter();
-    const theme = useTheme();
-    const dispatch = useAppDispatch();
-    const toast = useToast();
-    const confirm = useConfirm();
-    const { isTablet, isLandscape } = useDeviceType();
-    const { isOnline, logPitchOffline } = useOfflineActions();
-
+    // All state, effects, derived values, and WebSocket subscription live in this hook.
+    // Handlers remain in the component below — they close over destructured values.
+    // See `useLiveGameController.ts`.
+    const ctl = useLiveGameController();
     const {
-        currentGameState,
-        selectedGame,
+        id,
+        router,
+        theme,
+        dispatch,
+        toast,
+        confirm,
+        isTablet,
+        isLandscape,
+        logPitchOffline,
         currentAtBat,
         currentInning,
         gamePitchers,
@@ -133,237 +115,118 @@ export default function LiveGameScreen() {
         gameStateLoading,
         loading,
         error,
-    } = useAppSelector((state) => state.games);
-    const teamPlayers = useAppSelector((state) => state.teams.players) || [];
-
-    // Historical pitches for completed-game read-only view
-    const [allGamePitches, setAllGamePitches] = useState<Pitch[]>([]);
-    const [pitchTypeFilter, setPitchTypeFilter] = useState<string>('all');
-    const [showBreakdown, setShowBreakdown] = useState(false);
-
-    // Local state for pitch entry
-    const [selectedPitchType, setSelectedPitchType] = useState<PitchType | null>(null);
-    const [selectedResult, setSelectedResult] = useState<PitchResult | null>(null);
-    const [pitchLocation, setPitchLocation] = useState<{ x: number; y: number } | null>(null);
-    const [targetZone, setTargetZone] = useState<PitchCallZone | null>(null);
-    const [isLogging, setIsLogging] = useState(false);
-    // Synchronous in-flight guard — blocks a double-tap from logging the pitch twice.
-    const isLoggingRef = useRef(false);
-
-    // Pitcher/Batter selection state
-    const [currentPitcher, setCurrentPitcher] = useState<GamePitcherWithPlayer | null>(null);
-    const [currentBatter, setCurrentBatter] = useState<OpponentLineupPlayer | null>(null);
-    const [pitcherModalVisible, setPitcherModalVisible] = useState(false);
-    const [batterModalVisible, setBatterModalVisible] = useState(false);
-    const [pitcherPitchTypes, setPitcherPitchTypes] = useState<PitchType[]>([]);
-
-    // At-bat tracking state
-    const [currentOuts, setCurrentOuts] = useState(0);
-    const [currentBattingOrder, setCurrentBattingOrder] = useState(1);
-
-    // In-play modal state
-    const [showInPlayModal, setShowInPlayModal] = useState(false);
-
-    // Inning change modal state
-    const [showInningChange, setShowInningChange] = useState(false);
-    const [teamRunsScored, setTeamRunsScored] = useState('0');
-    const [inningChangeInfo, setInningChangeInfo] = useState<{ inning: number; half: string } | null>(null);
-    // True when the inning-ending out was recorded by a baserunner (caught stealing,
-    // pickoff, thrown_out_advancing). When set, the leadoff batter when this team
-    // returns is the on-deck slot — do NOT advance the lineup pointer further.
-    const [inningEndedByBaserunnerOut, setInningEndedByBaserunnerOut] = useState(false);
-
-    // Base runner modals state
-    const [showRunnerEventModal, setShowRunnerEventModal] = useState(false);
-    const [runnerEventDefaultTab, setRunnerEventDefaultTab] = useState<'advance' | 'out'>('advance');
-    const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
-    const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
-    const [showDoublePlayModal, setShowDoublePlayModal] = useState(false);
-
-    // Team at bat modal state (visitor games)
-    const [showTeamAtBat, setShowTeamAtBat] = useState(false);
-    const [teamAtBatRuns, setTeamAtBatRuns] = useState('0');
-
-    // Previous at-bats tracking (keyed by opponent_batter_id)
-    const [completedAtBatsByBatter, setCompletedAtBatsByBatter] = useState<Record<string, CompletedAtBatEntry[]>>({});
-    const [showPreviousAtBats, setShowPreviousAtBats] = useState(false);
-
-    // Pitch call state (integrated from pitch-calling screen)
-    const [activeCall, setActiveCall] = useState<PitchCall | null>(null);
-    const [sendingCall, setSendingCall] = useState(false);
-    const [changingCallId, setChangingCallId] = useState<string | null>(null);
-
-    // Tendencies modal state
-    const [showPitcherTendencies, setShowPitcherTendencies] = useState(false);
-    const [showHitterTendencies, setShowHitterTendencies] = useState(false);
-
-    // Shake count — number of times SHAKE pressed since last pitch logged
-    const [pendingShakeCount, setPendingShakeCount] = useState(0);
-
-    // Velocity state (optional)
-    const [velocity, setVelocity] = useState<string>('');
-
-    // Opposing pitcher modal
-    const [showOpposingPitcherModal, setShowOpposingPitcherModal] = useState(false);
-    const [myBatterModalVisible, setMyBatterModalVisible] = useState(false);
-    const [showCountBreakdownModal, setShowCountBreakdownModal] = useState(false);
-    const [showPitcherStatsModal, setShowPitcherStatsModal] = useState(false);
-    const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
-
-    // Pitch count state — populated by the effect below, after gameMode/isScoutingMode are derived.
-    const [pitcherGamePitchCount, setPitcherGamePitchCount] = useState<number | undefined>(undefined);
-
-    // Fix Last Pitch — tracks the most-recent logged pitch so the snackbar EDIT action
-    // can open EditResultModal for it (UX-LG-01).
-    const [editResultPitch, setEditResultPitch] = useState<{ id: string; result: PitchResult } | null>(null);
-    const [editResultModalVisible, setEditResultModalVisible] = useState(false);
-
-    // Settings
-    const { pitchCallingEnabled, velocityEnabled, radarEnabled } = useAppSelector((state) => state.settings);
-
-    // Stalker radar — auto-fills the velocity field as readings arrive.
-    const radar = useStalkerRadar();
-    useEffect(() => {
-        if (radar.lastReadingAt != null && radar.lastVelocity != null) {
-            setVelocity(String(radar.lastVelocity));
-        }
-    }, [radar.lastReadingAt, radar.lastVelocity]);
-
-    const game = currentGameState?.game || selectedGame;
-    const gameMode: GameMode = game ? deriveGameMode(game.is_home_game ?? true, game.inning_half) : 'our_pitcher';
-    const isScoutingMode = game?.charting_mode === 'scouting';
-    // TOP = away bats (home pitches), BOTTOM = home bats (away pitches)
-    const scoutingBattingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'away' : 'home') : null;
-    const scoutingPitchingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'home' : 'away') : null;
-    const scoutingFocus = game?.scouting_focus;
-    const shouldSkipHalf =
-        isScoutingMode &&
-        game?.status === 'in_progress' &&
-        scoutingFocus &&
-        scoutingFocus !== 'both' &&
-        ((scoutingFocus === 'home' && game?.inning_half === 'bottom') || (scoutingFocus === 'away' && game?.inning_half === 'top'));
-
-    // Cumulative pitch count for the current pitcher this game (per UX-LG-13).
-    // Refreshes when the pitcher changes or after each logged pitch (statsRefreshTrigger).
-    useEffect(() => {
-        if (!id || !currentPitcher?.player_id || isScoutingMode || gameMode === 'opp_pitcher') {
-            setPitcherGamePitchCount(undefined);
-            return;
-        }
-        gamesApi
-            .getPitcherGameStats(currentPitcher.player_id, id)
-            .then((stats) => setPitcherGamePitchCount(stats.total_pitches))
-            .catch(() => setPitcherGamePitchCount(undefined));
-    }, [id, currentPitcher?.player_id, isScoutingMode, gameMode, statsRefreshTrigger]);
-
-    // Walkie-talkie state
-    const [walkieTalkieActive, setWalkieTalkieActive] = useState(false);
-
-    // Activate Bluetooth audio for pitch calls (only when enabled)
-    useEffect(() => {
-        if (!pitchCallingEnabled) return;
-        activateBTAudio();
-        return () => {
-            if (isPassthroughActive()) {
-                stopPassthrough();
-            }
-            forceDeactivateBTAudio();
-        };
-    }, [pitchCallingEnabled]);
-
-    const activeBatters = opponentLineup
-        .filter((b) => !b.replaced_by_id && (isScoutingMode ? b.team_side === scoutingBattingSide : true))
-        .sort((a, b) => a.batting_order - b.batting_order);
-    const lineupSize = game?.lineup_size ?? 9;
-
-    // Load game state on mount
-    useEffect(() => {
-        if (id) {
-            // Always reset role/at-bat/batter so stale state from a previous game doesn't carry over
-            dispatch(setCurrentGameRole(null));
-            dispatch(setCurrentAtBat(null));
-            dispatch(setCurrentMyBatter(null));
-            dispatch(fetchCurrentGameState(id))
-                .unwrap()
-                .catch(() => {
-                    dispatch(fetchGameById(id));
-                });
-            dispatch(fetchCurrentInning(id));
-            dispatch(fetchGamePitchers(id));
-            dispatch(fetchOpponentLineup(id));
-            dispatch(fetchBaseRunners(id));
-            dispatch(fetchOpposingPitchers(id));
-            gamesApi
-                .getGamePitches(id)
-                .then(setAllGamePitches)
-                .catch(() => setAllGamePitches([]));
-        }
-    }, [id, dispatch]);
-
-    // Load my team lineup only after game is known and only in non-scouting modes
-    useEffect(() => {
-        if (id && game?.id === id && game.charting_mode !== 'scouting') {
-            dispatch(fetchMyTeamLineup(id));
-        }
-    }, [dispatch, id, game?.id, game?.charting_mode]);
-
-    useEffect(() => {
-        if (game?.id === id && game?.home_team_id && game?.charting_mode !== 'scouting') {
-            dispatch(fetchTeamPlayers(game.home_team_id));
-            dispatch(fetchTeamPitcherRoster(game.home_team_id));
-        }
-    }, [game?.id, game?.home_team_id, game?.charting_mode, dispatch, id]);
-
-    useEffect(() => {
-        if (gamePitchers.length > 0 && !currentPitcher) {
-            const active = gamePitchers.find((p) => !p.inning_exited);
-            if (active) setCurrentPitcher(active);
-        }
-    }, [gamePitchers, currentPitcher]);
-
-    useEffect(() => {
-        if (currentPitcher?.player_id) {
-            gamesApi
-                .getPitcherPitchTypes(currentPitcher.player_id)
-                .then((types) => {
-                    setPitcherPitchTypes(types as PitchType[]);
-                    if (types.length > 0 && selectedPitchType && !types.includes(selectedPitchType)) {
-                        setSelectedPitchType(types[0] as PitchType);
-                    }
-                })
-                .catch(() => setPitcherPitchTypes([]));
-        } else {
-            setPitcherPitchTypes([]);
-        }
-    }, [currentPitcher?.player_id]);
-
-    // Auto-show TeamAtBat modal when user's team is batting (visitor games),
-    // except when charting_mode is 'both' or 'scouting' — in those modes we chart at-bats directly.
-    const isUserBatting = game && game.status === 'in_progress' && !game.is_home_game && game.inning_half === 'top';
-    useEffect(() => {
-        if (isUserBatting && !showInningChange && game?.charting_mode !== 'both' && game?.charting_mode !== 'scouting') {
-            setShowTeamAtBat(true);
-        }
-    }, [isUserBatting, game?.current_inning, game?.inning_half, game?.charting_mode, showInningChange]);
-
-    // Must be here (before any conditional returns) to avoid "more hooks than previous render" violation
-    useEffect(() => {
-        if (currentGameRole === 'viewer' && id) {
-            router.replace(`/game/${id}/viewer` as any);
-        }
-    }, [currentGameRole, id, router]);
-
-    // Calculate count from pitches
-    const balls = pitches.filter((p) => p.pitch_result === 'ball').length;
-    const effectiveStrikes = (() => {
-        let s = 0;
-        for (const p of pitches) {
-            if (p.pitch_result === 'called_strike' || p.pitch_result === 'swinging_strike') s++;
-            else if (p.pitch_result === 'foul' && s < 2) s++;
-        }
-        return s;
-    })();
-    const strikes = Math.min(effectiveStrikes, 2);
+        teamPlayers,
+        pitchCallingEnabled,
+        velocityEnabled,
+        radarEnabled,
+        allGamePitches,
+        pitchTypeFilter,
+        setPitchTypeFilter,
+        showBreakdown,
+        setShowBreakdown,
+        selectedPitchType,
+        setSelectedPitchType,
+        selectedResult,
+        setSelectedResult,
+        pitchLocation,
+        setPitchLocation,
+        targetZone,
+        setTargetZone,
+        isLogging,
+        setIsLogging,
+        isLoggingRef,
+        currentPitcher,
+        setCurrentPitcher,
+        currentBatter,
+        setCurrentBatter,
+        pitcherModalVisible,
+        setPitcherModalVisible,
+        batterModalVisible,
+        setBatterModalVisible,
+        pitcherPitchTypes,
+        currentOuts,
+        setCurrentOuts,
+        currentBattingOrder,
+        setCurrentBattingOrder,
+        showInPlayModal,
+        setShowInPlayModal,
+        showInningChange,
+        setShowInningChange,
+        teamRunsScored,
+        setTeamRunsScored,
+        inningChangeInfo,
+        setInningChangeInfo,
+        inningEndedByBaserunnerOut,
+        setInningEndedByBaserunnerOut,
+        showRunnerEventModal,
+        setShowRunnerEventModal,
+        runnerEventDefaultTab,
+        setRunnerEventDefaultTab,
+        showRunnerAdvancementModal,
+        setShowRunnerAdvancementModal,
+        pendingHitResult,
+        setPendingHitResult,
+        showDoublePlayModal,
+        setShowDoublePlayModal,
+        showTeamAtBat,
+        setShowTeamAtBat,
+        teamAtBatRuns,
+        setTeamAtBatRuns,
+        setCompletedAtBatsByBatter,
+        showPreviousAtBats,
+        setShowPreviousAtBats,
+        activeCall,
+        setActiveCall,
+        sendingCall,
+        setSendingCall,
+        changingCallId,
+        setChangingCallId,
+        showPitcherTendencies,
+        setShowPitcherTendencies,
+        showHitterTendencies,
+        setShowHitterTendencies,
+        pendingShakeCount,
+        setPendingShakeCount,
+        velocity,
+        setVelocity,
+        showOpposingPitcherModal,
+        setShowOpposingPitcherModal,
+        myBatterModalVisible,
+        setMyBatterModalVisible,
+        showCountBreakdownModal,
+        setShowCountBreakdownModal,
+        showPitcherStatsModal,
+        setShowPitcherStatsModal,
+        statsRefreshTrigger,
+        setStatsRefreshTrigger,
+        pitcherGamePitchCount,
+        editResultPitch,
+        setEditResultPitch,
+        editResultModalVisible,
+        setEditResultModalVisible,
+        walkieTalkieActive,
+        setWalkieTalkieActive,
+        radar,
+        game,
+        gameMode,
+        isScoutingMode,
+        scoutingBattingSide,
+        scoutingFocus,
+        shouldSkipHalf,
+        activeBatters,
+        lineupSize,
+        balls,
+        effectiveStrikes,
+        strikes,
+        isReadOnly,
+        filteredGamePitches,
+        previousAtBatsForCurrentBatter,
+        hasPreviousAtBats,
+        hasRunnersOnBase,
+        canStartAtBat,
+        activePitcherDisplay,
+        activeBatterDisplay,
+    } = ctl;
 
     const updateScoreForRuns = useCallback(
         async (runsScored: number) => {
@@ -1495,50 +1358,6 @@ export default function LiveGameScreen() {
         [baseRunners]
     );
 
-    const canStartAtBat =
-        gameMode === 'opp_pitcher'
-            ? currentOpposingPitcher && currentMyBatter && !currentAtBat
-            : currentPitcher && currentBatter && !currentAtBat;
-    const activePitcherDisplay =
-        gameMode === 'opp_pitcher'
-            ? currentOpposingPitcher
-                ? ({
-                      first_name: currentOpposingPitcher.pitcher_name.split(' ')[0] ?? currentOpposingPitcher.pitcher_name,
-                      last_name: currentOpposingPitcher.pitcher_name.split(' ').slice(1).join(' ') || '',
-                  } as Player)
-                : null
-            : currentPitcher?.player || null;
-    const activeBatterDisplay =
-        gameMode === 'opp_pitcher' && currentMyBatter?.player
-            ? {
-                  name: `${currentMyBatter.player.first_name} ${currentMyBatter.player.last_name}`,
-                  batting_order: currentMyBatter.batting_order,
-              }
-            : currentBatter
-              ? { name: currentBatter.player_name, batting_order: currentBatter.batting_order }
-              : null;
-
-    useGameWebSocket(id ?? null, {
-        pitch_logged: () => setStatsRefreshTrigger((prev) => prev + 1),
-        at_bat_ended: () => setStatsRefreshTrigger((prev) => prev + 1),
-        inning_changed: () => setStatsRefreshTrigger((prev) => prev + 1),
-        runners_updated: () => setStatsRefreshTrigger((prev) => prev + 1),
-        // Coach sends a pitch call → pre-fill pitch type + target zone on receiver devices (catcher, etc.)
-        pitch_call: (payload) => {
-            const abbrev = payload.pitch_type as PitchCallAbbrev;
-            const zone = payload.zone as PitchCallZone;
-            if (abbrev && ABBREV_TO_PITCH_TYPE[abbrev]) {
-                setSelectedPitchType(ABBREV_TO_PITCH_TYPE[abbrev]);
-            }
-            if (zone && PITCH_CALL_ZONE_COORDS[zone]) {
-                setTargetZone(zone);
-                // Pre-fill location to zone center so receiver only needs to pick result → Log Pitch
-                const zc = PITCH_CALL_ZONE_COORDS[zone];
-                setPitchLocation({ x: zc.x, y: zc.y });
-            }
-        },
-    });
-
     if (gameStateLoading || loading) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -1564,8 +1383,6 @@ export default function LiveGameScreen() {
             </SafeAreaView>
         );
     }
-
-    const isReadOnly = game.status !== 'in_progress';
 
     if (game.status === 'in_progress' && currentGameRole === null) {
         return (
@@ -1621,9 +1438,6 @@ export default function LiveGameScreen() {
             </SafeAreaView>
         );
     }
-
-    const filteredGamePitches =
-        pitchTypeFilter === 'all' ? allGamePitches : allGamePitches.filter((p) => (p.pitch_type || 'other') === pitchTypeFilter);
 
     const renderPitchTypeFilterBar = () => {
         if (!isReadOnly || allGamePitches.length === 0) return null;
@@ -1877,8 +1691,6 @@ export default function LiveGameScreen() {
         return null;
     };
 
-    const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
-
     const renderModals = () => (
         <Portal>
             <PitcherSelectorModal
@@ -2036,9 +1848,6 @@ export default function LiveGameScreen() {
             />
         </Portal>
     );
-
-    const previousAtBatsForCurrentBatter = currentBatter ? completedAtBatsByBatter[currentBatter.id] || [] : [];
-    const hasPreviousAtBats = previousAtBatsForCurrentBatter.length > 0;
 
     const renderRunnerOutButton = () => {
         if (isScoutingMode || game.status !== 'in_progress' || !hasRunnersOnBase) return null;
