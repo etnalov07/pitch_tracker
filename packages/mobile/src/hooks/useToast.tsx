@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { Snackbar, Text, useTheme } from 'react-native-paper';
 import { StyleSheet } from 'react-native';
 
@@ -21,25 +21,7 @@ interface ToastContextValue {
     hide: () => void;
 }
 
-// ============================================================
-// DIAGNOSTIC INSTRUMENTATION — temp, remove once root-caused.
-// Detects (a) double-bundling of this module (= two different
-// ToastContext objects), (b) provider never mounted, (c) provider
-// mounted but useToast called from outside its subtree.
-// ============================================================
-const TOAST_MODULE_ID = Math.random().toString(36).slice(2, 8);
-let toastProviderMountCount = 0;
-let toastProviderLiveCount = 0;
-let toastUseCallCount = 0;
-let toastUseFailCount = 0;
-// Expose to other modules that want to log a snapshot (e.g. live-game controller)
-// without re-importing private state.
-export function _toastDiagnostics(): string {
-    return `mod=${TOAST_MODULE_ID} providersMounted=${toastProviderMountCount} live=${toastProviderLiveCount} uses=${toastUseCallCount} fails=${toastUseFailCount}`;
-}
-
 const ToastContext = createContext<ToastContextValue | null>(null);
-ToastContext.displayName = `ToastContext[${TOAST_MODULE_ID}]`;
 
 interface ActiveToast extends ToastOptions {
     key: number;
@@ -48,18 +30,6 @@ interface ActiveToast extends ToastOptions {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const theme = useTheme();
     const [toast, setToast] = useState<ActiveToast | null>(null);
-    const instanceIdRef = useRef<number>(0);
-    if (instanceIdRef.current === 0) {
-        instanceIdRef.current = ++toastProviderMountCount;
-    }
-    useEffect(() => {
-        toastProviderLiveCount++;
-        console.log(`[ToastProvider#${instanceIdRef.current}] mount (${_toastDiagnostics()})`);
-        return () => {
-            toastProviderLiveCount--;
-            console.log(`[ToastProvider#${instanceIdRef.current}] UNMOUNT (${_toastDiagnostics()})`);
-        };
-    }, []);
 
     const show = useCallback((opts: ToastOptions) => {
         setToast({ ...opts, key: Date.now() });
@@ -114,17 +84,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 };
 
 export function useToast(): ToastContextValue {
-    toastUseCallCount++;
     const ctx = useContext(ToastContext);
     if (!ctx) {
-        toastUseFailCount++;
-        const diag = _toastDiagnostics();
-        const stack = new Error().stack ?? '(no stack)';
-        // Surface diagnostics in the error message so they show up in the
-        // ErrorBoundary screen on TestFlight (where console logs are invisible).
-        // First 6 stack lines is enough to identify the caller.
-        const stackTop = stack.split('\n').slice(0, 8).join(' | ');
-        throw new Error(`useToast: ctx=null. ${diag}. callerStack: ${stackTop}`);
+        throw new Error('useToast must be used within a ToastProvider');
     }
     return ctx;
 }
