@@ -5,6 +5,7 @@ import PitcherSelector from '../../components/game/PitcherSelector';
 import BaseRunnerDisplay from '../../components/live/BaseRunnerDisplay';
 import BatterHistory from '../../components/live/BatterHistory';
 import CountBreakdownPanel from '../../components/live/CountBreakdownPanel';
+import EditResultModal from '../../components/live/EditResultModal';
 import HitterTendenciesPanel from '../../components/live/HitterTendenciesPanel';
 import OpposingPitcherPanel from '../../components/live/OpposingPitcherPanel';
 import PitcherStats from '../../components/live/PitcherStats';
@@ -192,6 +193,9 @@ const LiveGame: React.FC = () => {
         activeCallId,
         setTargetZone,
         setActiveCallId,
+        editResultPitch,
+        showEditResultModal,
+        setShowEditResultModal,
     } = state;
 
     // Pull out settings flags for readability
@@ -347,11 +351,9 @@ const LiveGame: React.FC = () => {
                                   ? 'In Progress'
                                   : 'Completed'}
                         </GameStatus>
-                        {!game.total_pitches && (
-                            <SwapButton onClick={actions.handleToggleHomeAway} title="Swap home/away">
-                                ⇄ Home/Away
-                            </SwapButton>
-                        )}
+                        <SwapButton onClick={actions.handleToggleHomeAway} title="Swap home/away">
+                            ⇄ Home/Away
+                        </SwapButton>
                         {game.home_team_id && gameId && (
                             <SwapButton
                                 onClick={async () => {
@@ -386,6 +388,14 @@ const LiveGame: React.FC = () => {
                                 title="Scouting report & tendencies for the current hitter"
                             >
                                 🎯 Hitter
+                            </SwapButton>
+                        )}
+                        {gameId && currentPitcher && !isScoutingMode && gameMode !== 'opp_pitcher' && (
+                            <SwapButton
+                                onClick={() => setShowPitcherTendencies(true)}
+                                title="Pitch mix, zone tendencies, and suggested sequence for the current pitcher"
+                            >
+                                📊 Pitcher
                             </SwapButton>
                         )}
                         {/* Settings gear — opens a small panel to toggle velocity + pitch calls */}
@@ -1080,6 +1090,14 @@ const LiveGame: React.FC = () => {
                     batterType="opponent"
                     onClose={() => setShowHitterTendencies(false)}
                     gameId={gameId || undefined}
+                />
+            )}
+
+            {showEditResultModal && (
+                <EditResultModal
+                    currentResult={editResultPitch?.result}
+                    onCancel={() => setShowEditResultModal(false)}
+                    onSelect={actions.handleEditLastPitchResult}
                 />
             )}
         </Container>

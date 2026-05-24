@@ -71,33 +71,42 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
                         No players found. Add players to your team first.
                     </Text>
                 ) : (
-                    teamPlayers.map((player) => {
-                        const alreadyInGame = gamePitchers.some((gp) => gp.player_id === player.id && !gp.inning_exited);
-                        return (
-                            <Pressable
-                                key={player.id}
-                                style={[styles.playerOption, alreadyInGame && styles.playerOptionDisabled]}
-                                onPress={() => !alreadyInGame && onSelectNewPitcher(player)}
-                                disabled={alreadyInGame}
-                            >
-                                <View style={styles.playerOptionInfo}>
-                                    <Text
-                                        style={[
-                                            styles.playerOptionName,
-                                            { color: alreadyInGame ? theme.colors.onSurfaceVariant : theme.colors.onSurface },
-                                        ]}
-                                    >
-                                        {player.first_name} {player.last_name}
-                                    </Text>
-                                    <Text style={[styles.playerOptionDetail, { color: theme.colors.onSurfaceVariant }]}>
-                                        #{player.jersey_number} · {player.primary_position}
-                                        {player.throws ? ` · ${player.throws === 'R' ? 'RHP' : 'LHP'}` : ''}
-                                        {alreadyInGame ? ' · Already Active' : ''}
-                                    </Text>
-                                </View>
-                            </Pressable>
-                        );
-                    })
+                    // Sort pitchers (primary_position === 'P') to the top, then alphabetical.
+                    // Position players still appear (emergency-relief case) but below the regular pitchers.
+                    [...teamPlayers]
+                        .sort((a, b) => {
+                            const aIsP = a.primary_position === 'P' ? 0 : 1;
+                            const bIsP = b.primary_position === 'P' ? 0 : 1;
+                            if (aIsP !== bIsP) return aIsP - bIsP;
+                            return (a.last_name || '').localeCompare(b.last_name || '');
+                        })
+                        .map((player) => {
+                            const alreadyInGame = gamePitchers.some((gp) => gp.player_id === player.id && !gp.inning_exited);
+                            return (
+                                <Pressable
+                                    key={player.id}
+                                    style={[styles.playerOption, alreadyInGame && styles.playerOptionDisabled]}
+                                    onPress={() => !alreadyInGame && onSelectNewPitcher(player)}
+                                    disabled={alreadyInGame}
+                                >
+                                    <View style={styles.playerOptionInfo}>
+                                        <Text
+                                            style={[
+                                                styles.playerOptionName,
+                                                { color: alreadyInGame ? theme.colors.onSurfaceVariant : theme.colors.onSurface },
+                                            ]}
+                                        >
+                                            {player.first_name} {player.last_name}
+                                        </Text>
+                                        <Text style={[styles.playerOptionDetail, { color: theme.colors.onSurfaceVariant }]}>
+                                            #{player.jersey_number} · {player.primary_position}
+                                            {player.throws ? ` · ${player.throws === 'R' ? 'RHP' : 'LHP'}` : ''}
+                                            {alreadyInGame ? ' · Already Active' : ''}
+                                        </Text>
+                                    </View>
+                                </Pressable>
+                            );
+                        })
                 )}
             </ScrollView>
             <Button onPress={onDismiss} style={styles.modalClose}>

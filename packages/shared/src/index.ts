@@ -549,6 +549,18 @@ export interface Pitch {
     created_at: string;
 }
 
+// Request body for PATCH /bt-api/pitches/:id — see UX-LG-01 "Fix Last Pitch" plan.
+// Only result-only edits are supported, and only for the most-recent pitch in its at-bat
+// when neither the old nor new result crosses an at-bat-ending boundary
+// (4 balls / 3 strikes / in_play / hit_by_pitch).
+export interface UpdatePitchResultRequest {
+    pitch_result: PitchResult;
+}
+
+// Error code emitted by PATCH /bt-api/pitches/:id when the requested edit would
+// cross an at-bat-ending boundary. Clients should fall back to the Undo flow.
+export type PitchUpdateErrorCode = 'AB_BOUNDARY' | 'NOT_LATEST' | 'NO_PREV_STATE';
+
 // ============================================================================
 // Play Types (Ball in Play)
 // ============================================================================

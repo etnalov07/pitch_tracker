@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { Text, Button, useTheme, IconButton, ActivityIndicator, Chip } from 'react-native-paper';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from '../../src/utils/haptics';
@@ -14,11 +14,13 @@ import {
 } from '../../src/state';
 import { createBullpenSession } from '../../src/state/bullpen/bullpenSlice';
 import { IntensitySelector } from '../../src/components/bullpen';
+import { useToast } from '../../src/hooks/useToast';
 
 export default function NewBullpenScreen() {
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    const toast = useToast();
     const { teamId: teamIdParam } = useLocalSearchParams<{ teamId: string }>();
 
     const teams = useAppSelector((state) => state.teams.teams) || [];
@@ -115,7 +117,7 @@ export default function NewBullpenScreen() {
                 `/bullpen/${session.id}/live?pitcherName=${encodeURIComponent(selectedPitcher.first_name + ' ' + selectedPitcher.last_name)}&jerseyNumber=${selectedPitcher.jersey_number || ''}&intensity=${intensity}` as any
             );
         } catch {
-            Alert.alert('Error', 'Failed to create bullpen session');
+            toast.show({ message: 'Failed to create bullpen session', type: 'error' });
         } finally {
             setCreating(false);
         }

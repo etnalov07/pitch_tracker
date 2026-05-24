@@ -13,3 +13,8 @@
 | 2026-05-12 | Command Grade six-level scoring (Dial 2)                       | Not adopted | [command-grade-six-level](2026-05-12-command-grade-six-level.md)                      |
 | 2026-05-12 | Standalone opponent roster (add pitchers & batters w/o a game) | Approved    | [standalone-opponent-roster](2026-05-12-standalone-opponent-roster.md)                |
 | 2026-05-12 | Command / pitch accuracy audit (3 paths, 4 proposals tested)   | Review only | [command-grade-audit](2026-05-12-command-grade-audit.md)                              |
+| 2026-05-23 | UX audit — primary in-game surfaces (127 findings)             | Review only | [ux-audit](2026-05-23-ux-audit.md)                                                    |
+| 2026-05-23 | Snackbar foundation — replace Alert.alert / alert()            | Approved    | [snackbar-foundation](2026-05-23-snackbar-foundation.md)                              |
+| 2026-05-23 | Phase 1 quick wins batch 2 (escape modals, pitch count, etc.)  | Approved    | [phase1-quickwins-batch](2026-05-23-phase1-quickwins-batch.md)                        |
+| 2026-05-23 | Fix Last Pitch — result-only PATCH + snackbar Edit action      | Approved    | [fix-last-pitch](2026-05-23-fix-last-pitch.md)                                        |
+| 2026-05-23 | Phase 1 quick wins batch 3 (date pickers, zone-tap UX, home/away recovery) | Approved | [phase1-batch3](2026-05-23-phase1-batch3.md)                                          |

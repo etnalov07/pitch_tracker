@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../../../hooks/useToast';
 import { gamesApi } from '../../../state/games/api/gamesApi';
 import { Player, GamePitcherWithPlayer } from '../../../types';
 import {
@@ -27,6 +28,7 @@ interface PitcherSelectorProps {
 }
 
 const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, currentInning, onPitcherSelected, onClose }) => {
+    const toast = useToast();
     const [roster, setRoster] = useState<Player[]>([]);
     const [gamePitchers, setGamePitchers] = useState<GamePitcherWithPlayer[]>([]);
     const [loading, setLoading] = useState(true);
@@ -34,9 +36,10 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch team pitchers only (position = 'P')
-                const pitchers = await gamesApi.getTeamPitchers(teamId);
-                setRoster(pitchers || []);
+                // Fetch the full team roster so position players show up too — emergency-relief
+                // scenarios need them. Display sorts pitchers (primary_position === 'P') to the top.
+                const players = await gamesApi.getTeamPlayers(teamId);
+                setRoster(players || []);
 
                 // Fetch game pitchers (who has pitched in this game)
                 const gamePitchersList = await gamesApi.getGamePitchers(gameId);
@@ -67,7 +70,7 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
             onClose();
         } catch (error) {
             console.error('Failed to set pitcher:', error);
-            alert('Failed to set pitcher');
+            toast.show({ message: 'Failed to set pitcher', type: 'error' });
         }
     };
 
@@ -76,7 +79,15 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
     // Players who have already pitched today
     const usedPitcherIds = new Set(gamePitchers.map((p) => p.player_id));
     const usedPitchers = roster.filter((p) => usedPitcherIds.has(p.id));
-    const availablePitchers = roster.filter((p) => !usedPitcherIds.has(p.id));
+    // Sort pitchers (primary_position === 'P') to the top, then alphabetical by last name.
+    const availablePitchers = roster
+        .filter((p) => !usedPitcherIds.has(p.id))
+        .sort((a, b) => {
+            const aIsP = a.primary_position === 'P' ? 0 : 1;
+            const bIsP = b.primary_position === 'P' ? 0 : 1;
+            if (aIsP !== bIsP) return aIsP - bIsP;
+            return (a.last_name || '').localeCompare(b.last_name || '');
+        });
 
     return (
         <Overlay onClick={onClose}>

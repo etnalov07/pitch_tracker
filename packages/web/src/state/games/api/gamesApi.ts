@@ -5,6 +5,7 @@ import {
     Player,
     AtBat,
     Pitch,
+    PitchResult,
     Play,
     Inning,
     BaseRunners,
@@ -116,6 +117,27 @@ export const gamesApi = {
     undoPitch: async (pitchId: string): Promise<{ pitch: Pitch; atBat: AtBat; game: Game }> => {
         const response = await api.delete<{ pitch: Pitch; atBat: AtBat; game: Game }>(`/pitches/${pitchId}`);
         return { pitch: response.data.pitch, atBat: response.data.atBat, game: response.data.game };
+    },
+
+    // Result-only edit of the most recent pitch (UX-LG-01 Fix Last Pitch).
+    // Throws Error with `.status` and `.code` so the caller can route 409/AB_BOUNDARY
+    // to a "use Undo" toast.
+    updatePitchResult: async (pitchId: string, pitchResult: PitchResult): Promise<{ pitch: Pitch; atBat: AtBat }> => {
+        try {
+            const response = await api.patch<{ pitch: Pitch; atBat: AtBat }>(`/pitches/${pitchId}`, {
+                pitch_result: pitchResult,
+            });
+            return { pitch: response.data.pitch, atBat: response.data.atBat };
+        } catch (err: unknown) {
+            const e = err as { response?: { status?: number; data?: { error?: string; code?: string } } };
+            const status = e.response?.status;
+            const code = e.response?.data?.code;
+            const message = e.response?.data?.error || 'Failed to update pitch';
+            const wrapped: Error & { status?: number; code?: string } = new Error(message);
+            wrapped.status = status;
+            wrapped.code = code;
+            throw wrapped;
+        }
     },
 
     // Play operations
@@ -232,10 +254,17 @@ export const gamesApi = {
         return response.data.lineup;
     },
 
-    // Team pitchers (roster)
+    // Team pitchers (roster, position='P' only)
     getTeamPitchers: async (teamId: string): Promise<Player[]> => {
         const response = await api.get<{ pitchers: Player[] }>(`/players/pitchers/team/${teamId}`);
         return response.data.pitchers;
+    },
+
+    // Full team roster — used by the pitcher selector so position players can pitch
+    // in emergencies (parity with mobile, per UX-PB-02).
+    getTeamPlayers: async (teamId: string): Promise<Player[]> => {
+        const response = await api.get<{ players: Player[] }>(`/players/team/${teamId}`);
+        return response.data.players;
     },
 
     // Pitcher's pitch types

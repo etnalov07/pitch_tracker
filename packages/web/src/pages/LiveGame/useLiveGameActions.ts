@@ -15,6 +15,8 @@ import {
     getInningLeadoffBatter,
 } from '@pitch-tracker/shared';
 import { useRef } from 'react';
+import { useConfirm } from '../../hooks/useConfirm';
+import { useToast } from '../../hooks/useToast';
 import { pitchCallService } from '../../services/pitchCallService';
 import {
     fetchGameById,
@@ -33,6 +35,9 @@ import type { ErrorAdvancement, Throwout } from './RunnerAdvancementModal';
 import { LiveGameState } from './useLiveGameState';
 
 export function useLiveGameActions(state: LiveGameState) {
+    const toast = useToast();
+    const confirm = useConfirm();
+    const showError = (message: string) => toast.show({ message, type: 'error' });
     const {
         gameId,
         dispatch,
@@ -84,6 +89,9 @@ export function useLiveGameActions(state: LiveGameState) {
         setActiveCallId,
         inningEndedByBaserunnerOut,
         setInningEndedByBaserunnerOut,
+        editResultPitch,
+        setEditResultPitch,
+        setShowEditResultModal,
     } = state;
 
     // Synchronous in-flight guard — blocks a double-tap from logging the pitch twice.
@@ -266,7 +274,7 @@ export function useLiveGameActions(state: LiveGameState) {
             setInningEndedByBaserunnerOut(false);
         } catch (error) {
             console.error('Failed to advance inning:', error);
-            alert('Failed to advance inning');
+            showError('Failed to advance inning');
         }
     };
 
@@ -345,14 +353,14 @@ export function useLiveGameActions(state: LiveGameState) {
                 await advanceToNextBatter(outsBefore);
             }
         } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : 'Failed to end at-bat');
+            showError(error instanceof Error ? error.message : 'Failed to end at-bat');
         }
     };
 
     const handleLogPitch = async (resultOverride?: PitchResult) => {
         if (isLoggingRef.current) return;
         if (!currentAtBat || !pitchLocation) {
-            alert('Please select a pitch location');
+            showError('Please select a pitch location');
             return;
         }
 
@@ -360,7 +368,7 @@ export function useLiveGameActions(state: LiveGameState) {
         const pitcherReady = isScoutingMode || isOppPitcherMode ? !!state.currentOpposingPitcher : !!currentPitcher;
         const batterReady = isOppPitcherMode ? !!state.currentMyBatter : !!currentBatter;
         if (!pitcherReady || !batterReady) {
-            alert('Pitcher and batter must be selected');
+            showError('Pitcher and batter must be selected');
             return;
         }
 
@@ -422,6 +430,24 @@ export function useLiveGameActions(state: LiveGameState) {
                 setActiveCallId(null);
             }
 
+            // Surface the EDIT affordance for the just-logged pitch (UX-LG-01 Fix Last Pitch).
+            if (loggedPitch?.id) {
+                const justLogged = { id: loggedPitch.id, result: loggedPitch.pitch_result };
+                setEditResultPitch(justLogged);
+                toast.show({
+                    message: `Logged: ${result.replace(/_/g, ' ')}`,
+                    type: 'success',
+                    duration: 5000,
+                    action: {
+                        label: 'EDIT',
+                        onPress: () => {
+                            setEditResultPitch(justLogged);
+                            setShowEditResultModal(true);
+                        },
+                    },
+                });
+            }
+
             if (result === 'in_play') {
                 // Pitch is now saved — auto-open diamond so the user records hit location & at-bat result.
                 // Without this, pitchResult resets to 'ball' and the button disappears before it can be clicked.
@@ -452,7 +478,7 @@ export function useLiveGameActions(state: LiveGameState) {
                 }
             }
         } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : 'Failed to log pitch');
+            showError(error instanceof Error ? error.message : 'Failed to log pitch');
         } finally {
             isLoggingRef.current = false;
         }
@@ -591,7 +617,7 @@ export function useLiveGameActions(state: LiveGameState) {
             setInningEndedByBaserunnerOut(false);
         } catch (error) {
             console.error('Failed to confirm team at bat:', error);
-            alert('Failed to advance inning');
+            showError('Failed to advance inning');
         }
     };
 
@@ -696,7 +722,7 @@ export function useLiveGameActions(state: LiveGameState) {
             }
         } catch (error) {
             console.error('Failed to update runner advancement:', error);
-            alert('Failed to update runner positions');
+            showError('Failed to update runner positions');
         }
     };
 
@@ -741,7 +767,7 @@ export function useLiveGameActions(state: LiveGameState) {
             setShowRunnerEventModal(false);
         } catch (error) {
             console.error('Failed to record baserunner out:', error);
-            alert('Failed to record baserunner out');
+            showError('Failed to record baserunner out');
         }
     };
 
@@ -769,7 +795,7 @@ export function useLiveGameActions(state: LiveGameState) {
             setShowRunnerEventModal(false);
         } catch (error) {
             console.error('Failed to record runner advancement:', error);
-            alert('Failed to record runner advancement');
+            showError('Failed to record runner advancement');
         }
     };
 
@@ -779,24 +805,24 @@ export function useLiveGameActions(state: LiveGameState) {
         const batterReady = isOppPitcherMode ? !!state.currentMyBatter : !!currentBatter;
 
         if (!gameId || !pitcherReady || !batterReady) {
-            alert('Please select both a pitcher and a batter first');
+            showError('Please select both a pitcher and a batter first');
             return;
         }
 
         if (!currentInning) {
-            alert('No current inning found. Please start the game first.');
+            showError('No current inning found. Please start the game first.');
             return;
         }
 
         if (isOppPitcherMode) {
             const success = await startAtBatForMyTeamBatter(state.currentMyBatter!, currentOuts, currentInning);
             if (!success) {
-                alert('Failed to start at-bat');
+                showError('Failed to start at-bat');
             }
         } else {
             const success = await startAtBatForBatter(currentBatter!, currentOuts, currentInning);
             if (!success) {
-                alert('Failed to start at-bat');
+                showError('Failed to start at-bat');
             }
         }
     };
@@ -820,7 +846,7 @@ export function useLiveGameActions(state: LiveGameState) {
             const inning = await gamesApi.getCurrentInning(gameId);
             setCurrentInning(inning);
         } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : 'Failed to start game');
+            showError(error instanceof Error ? error.message : 'Failed to start game');
         }
     };
 
@@ -838,7 +864,7 @@ export function useLiveGameActions(state: LiveGameState) {
             // Refresh game state — status becomes 'completed', which renders ViewerDashboard
             await dispatch(fetchGameById(gameId));
         } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : 'Failed to end game');
+            showError(error instanceof Error ? error.message : 'Failed to end game');
         }
     };
 
@@ -851,7 +877,7 @@ export function useLiveGameActions(state: LiveGameState) {
             const inning = await gamesApi.getCurrentInning(gameId);
             setCurrentInning(inning);
         } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : 'Failed to resume game');
+            showError(error instanceof Error ? error.message : 'Failed to resume game');
         }
     };
 
@@ -867,13 +893,24 @@ export function useLiveGameActions(state: LiveGameState) {
         setTargetZone(null);
     };
 
+    // Pre-pitch: silent flip. Post-pitch: confirm dialog explaining the implication (UX-LG-12).
     const handleToggleHomeAway = async () => {
-        if (!gameId) return;
+        if (!gameId || !game) return;
+
+        if ((game.total_pitches ?? 0) > 0) {
+            const newSide = game.is_home_game === false ? 'home' : 'away';
+            const ok = await confirm({
+                title: 'Swap home/away?',
+                message: `${game.total_pitches} pitches already logged. Switching makes your team the ${newSide} team going forward — already-logged pitches keep their inning-half. Scores (opponent vs. your team) stay attached to each team and don't move.`,
+                confirmLabel: 'Swap',
+            });
+            if (!ok) return;
+        }
 
         try {
             await dispatch(toggleHomeAway(gameId)).unwrap();
         } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : 'Failed to toggle home/away');
+            showError(error instanceof Error ? error.message : 'Failed to toggle home/away');
         }
     };
 
@@ -905,7 +942,7 @@ export function useLiveGameActions(state: LiveGameState) {
             await handleEndAtBat('double_play');
         } catch (error) {
             console.error('Failed to record double play:', error);
-            alert('Failed to record double play');
+            showError('Failed to record double play');
         }
     };
 
@@ -923,6 +960,43 @@ export function useLiveGameActions(state: LiveGameState) {
         await advanceInning(0);
     };
 
+    // Fix Last Pitch — result-only PATCH for the most recent pitch (UX-LG-01).
+    // Server rejects AB-boundary-crossing edits with 409/AB_BOUNDARY; we surface a
+    // toast steering the user to the existing Undo flow in that case.
+    const handleEditLastPitchResult = async (newResult: PitchResult) => {
+        if (!editResultPitch) return;
+        if (newResult === editResultPitch.result) {
+            setShowEditResultModal(false);
+            return;
+        }
+        const oldResult = editResultPitch.result;
+        try {
+            const { pitch: updated, atBat: updatedAb } = await gamesApi.updatePitchResult(editResultPitch.id, newResult);
+            dispatch(setCurrentAtBat(updatedAb));
+            setEditResultPitch({ id: updated.id, result: updated.pitch_result });
+            setShowEditResultModal(false);
+            setStatsRefreshTrigger((prev: number) => prev + 1);
+            toast.show({
+                message: `Updated: ${oldResult.replace(/_/g, ' ')} → ${newResult.replace(/_/g, ' ')}`,
+                type: 'success',
+            });
+        } catch (err: unknown) {
+            const e = err as { status?: number; code?: string; message?: string };
+            if (e.status === 409 && e.code === 'AB_BOUNDARY') {
+                toast.show({
+                    message: 'This pitch ended the at-bat — use Undo to revert and re-log.',
+                    type: 'info',
+                    duration: 5000,
+                });
+            } else if (e.status === 409) {
+                showError('Only the most recent pitch can be edited.');
+            } else {
+                showError(e.message || 'Failed to update pitch');
+            }
+            setShowEditResultModal(false);
+        }
+    };
+
     // Undo most recent pitch — fully reverses count, runners, score, AB lifecycle.
     // Server returns restored {atBat, game}; sync local out/runner state from response.
     const handleUndoLastPitch = async () => {
@@ -937,13 +1011,14 @@ export function useLiveGameActions(state: LiveGameState) {
                 setCurrentOuts(result.atBat.outs_after);
             }
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Failed to undo pitch');
+            showError(err instanceof Error ? err.message : 'Failed to undo pitch');
         }
     };
 
     return {
         handleLogPitch,
         handleUndoLastPitch,
+        handleEditLastPitchResult,
         handleEndAtBat,
         handleDiamondResult,
         handleInningChangeConfirm,

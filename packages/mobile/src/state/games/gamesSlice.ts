@@ -405,6 +405,13 @@ const gamesSlice = createSlice({
         addPitch: (state, action: PayloadAction<Pitch>) => {
             state.pitches.push(action.payload);
         },
+        // Merge an updated pitch into local state (used by Fix Last Pitch — UX-LG-01).
+        updatePitch: (state, action: PayloadAction<Pitch>) => {
+            const idx = state.pitches.findIndex((p) => p.id === action.payload.id);
+            if (idx >= 0) {
+                state.pitches[idx] = action.payload;
+            }
+        },
         clearPitches: (state) => {
             state.pitches = [];
         },
@@ -739,6 +746,7 @@ export const {
     setSelectedGame,
     setCurrentAtBat,
     addPitch,
+    updatePitch,
     clearPitches,
     setBaseRunners,
     clearBaseRunners,

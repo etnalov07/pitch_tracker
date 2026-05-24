@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { Text, Button, Modal, useTheme } from 'react-native-paper';
 
 interface TeamAtBatModalProps {
@@ -9,6 +9,7 @@ interface TeamAtBatModalProps {
     teamRunsScored: string;
     onRunsChange: (value: string) => void;
     onConfirm: () => void;
+    onDismiss: () => void;
     isTablet?: boolean;
 }
 
@@ -19,13 +20,14 @@ const TeamAtBatModal: React.FC<TeamAtBatModalProps> = ({
     teamRunsScored,
     onRunsChange,
     onConfirm,
+    onDismiss,
     isTablet,
 }) => {
     const theme = useTheme();
     return (
         <Modal
             visible={visible}
-            onDismiss={() => {}}
+            onDismiss={onDismiss}
             contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }, isTablet && styles.modalTablet]}
         >
             <Text variant="titleLarge" style={styles.modalTitle}>
@@ -43,9 +45,14 @@ const TeamAtBatModal: React.FC<TeamAtBatModalProps> = ({
                 keyboardType="number-pad"
                 selectTextOnFocus
             />
-            <Button mode="contained" onPress={onConfirm} style={styles.confirmButton}>
-                Continue
-            </Button>
+            <View style={styles.buttonRow}>
+                <Button mode="text" onPress={onDismiss} style={styles.dismissButton}>
+                    Cancel
+                </Button>
+                <Button mode="contained" onPress={onConfirm} style={styles.confirmButton}>
+                    Continue
+                </Button>
+            </View>
         </Modal>
     );
 };
@@ -66,7 +73,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 16,
     },
-    confirmButton: { marginTop: 4 },
+    buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
+    dismissButton: {},
+    confirmButton: {},
 });
 
 export default TeamAtBatModal;

@@ -32,6 +32,31 @@ export class PitchController {
         }
     }
 
+    async updatePitchResult(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const { pitch_result } = req.body as { pitch_result?: string };
+            if (!pitch_result) {
+                res.status(400).json({ error: 'pitch_result is required' });
+                return;
+            }
+            const result = await pitchService.updatePitchResult(id as string, pitch_result);
+            res.status(200).json({
+                message: 'Pitch updated successfully',
+                pitch: result.pitch,
+                atBat: result.atBat,
+            });
+        } catch (error) {
+            const status = (error as { status?: number })?.status;
+            const code = (error as { code?: string })?.code;
+            if (status) {
+                res.status(status).json({ error: (error as Error).message, code });
+                return;
+            }
+            next(error);
+        }
+    }
+
     async getPitchById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;

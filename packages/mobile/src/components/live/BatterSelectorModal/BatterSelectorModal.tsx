@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Alert, Keyboard } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable, Keyboard } from 'react-native';
 import { Text, Button, Modal, TextInput, SegmentedButtons, IconButton, useTheme } from 'react-native-paper';
 import { OpponentLineupPlayer } from '@pitch-tracker/shared';
 import api from '../../../services/api';
+import { useToast } from '../../../hooks/useToast';
 
 type FormMode = 'add' | 'edit' | 'substitute';
 
@@ -32,6 +33,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
     currentInningNumber,
 }) => {
     const theme = useTheme();
+    const toast = useToast();
     const [formMode, setFormMode] = useState<FormMode | null>(null);
     const [editingBatter, setEditingBatter] = useState<OpponentLineupPlayer | null>(null);
     const [newName, setNewName] = useState('');
@@ -97,7 +99,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
             resetForm();
         } catch (error) {
             console.error('Failed to add batter:', error);
-            Alert.alert('Error', 'Failed to add batter. Please try again.');
+            toast.show({ message: 'Failed to add batter. Please try again.', type: 'error' });
         } finally {
             setSaving(false);
         }
@@ -116,7 +118,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
             resetForm();
         } catch (error) {
             console.error('Failed to update batter:', error);
-            Alert.alert('Error', 'Failed to update batter. Please try again.');
+            toast.show({ message: 'Failed to update batter. Please try again.', type: 'error' });
         } finally {
             setSaving(false);
         }
@@ -136,7 +138,7 @@ const BatterSelectorModal: React.FC<BatterSelectorModalProps> = ({
             resetForm();
         } catch (error) {
             console.error('Failed to substitute batter:', error);
-            Alert.alert('Error', 'Failed to substitute batter. Please try again.');
+            toast.show({ message: 'Failed to substitute batter. Please try again.', type: 'error' });
         } finally {
             setSaving(false);
         }

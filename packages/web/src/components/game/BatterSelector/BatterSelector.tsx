@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useToast } from '../../../hooks/useToast';
 import api from '../../../services/api';
 import { gamesApi } from '../../../state/games/api/gamesApi';
 import { OpponentLineupPlayer, OpponentRosterPlayer } from '../../../types';
@@ -53,6 +54,7 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({
     onClose,
     teamSide,
 }) => {
+    const toast = useToast();
     const [lineup, setLineup] = useState<OpponentLineupPlayer[]>([]);
     const [knownPlayers, setKnownPlayers] = useState<OpponentRosterPlayer[]>([]);
     const [loading, setLoading] = useState(true);
@@ -160,7 +162,7 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({
             handleCancelAdd();
         } catch (error) {
             console.error('Failed to add batter:', error);
-            alert('Failed to add batter. Please try again.');
+            toast.show({ message: 'Failed to add batter. Please try again.', type: 'error' });
         } finally {
             setSaving(false);
         }
@@ -214,7 +216,7 @@ const BatterSelector: React.FC<BatterSelectorProps> = ({
             }
         } catch (error) {
             console.error('Failed to substitute batter:', error);
-            alert('Failed to substitute batter. Please try again.');
+            toast.show({ message: 'Failed to substitute batter. Please try again.', type: 'error' });
         } finally {
             setSaving(false);
         }

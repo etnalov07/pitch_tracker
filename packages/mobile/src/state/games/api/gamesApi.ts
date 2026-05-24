@@ -22,6 +22,7 @@ import {
     CreateOpposingPitcherParams,
     CountBucketBreakdown,
     TeamSide,
+    PitchResult,
 } from '@pitch-tracker/shared';
 
 export interface GameState {
@@ -129,6 +130,27 @@ export const gamesApi = {
     undoPitch: async (pitchId: string): Promise<{ pitch: Pitch; atBat: AtBat; game: Game }> => {
         const response = await api.delete<{ pitch: Pitch; atBat: AtBat; game: Game }>(`/pitches/${pitchId}`);
         return { pitch: response.data.pitch, atBat: response.data.atBat, game: response.data.game };
+    },
+
+    // Result-only edit of the most recent pitch (UX-LG-01 Fix Last Pitch).
+    // Throws an Error with `.status` and `.code` for 409 cases so the caller can
+    // route AB_BOUNDARY errors to a "use Undo" toast.
+    updatePitchResult: async (pitchId: string, pitchResult: PitchResult): Promise<{ pitch: Pitch; atBat: AtBat }> => {
+        try {
+            const response = await api.patch<{ pitch: Pitch; atBat: AtBat }>(`/pitches/${pitchId}`, {
+                pitch_result: pitchResult,
+            });
+            return { pitch: response.data.pitch, atBat: response.data.atBat };
+        } catch (err: unknown) {
+            const e = err as { response?: { status?: number; data?: { error?: string; code?: string } } };
+            const status = e.response?.status;
+            const code = e.response?.data?.code;
+            const message = e.response?.data?.error || 'Failed to update pitch';
+            const wrapped: Error & { status?: number; code?: string } = new Error(message);
+            wrapped.status = status;
+            wrapped.code = code;
+            throw wrapped;
+        }
     },
 
     getGamePitches: async (gameId: string): Promise<Pitch[]> => {

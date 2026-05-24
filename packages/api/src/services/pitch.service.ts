@@ -245,6 +245,109 @@ export class PitchService {
         return result;
     }
 
+    /**
+     * Update the result of the most recent pitch in its at-bat (UX-LG-01 "Fix Last Pitch").
+     *
+     * Deliberately narrow: only result-only edits where neither the old nor new result
+     * crosses an at-bat-ending boundary (4th ball / 3rd strike / in_play / hit_by_pitch).
+     * Boundary cases get a 409 with code AB_BOUNDARY — the client falls back to Undo.
+     */
+    async updatePitchResult(pitchId: string, newResult: string): Promise<{ pitch: Pitch; atBat: AtBat }> {
+        return await transaction(async (client) => {
+            // 1. Lock pitch row + read snapshot
+            const pitchRes = await client.query(`SELECT * FROM pitches WHERE id = $1 FOR UPDATE`, [pitchId]);
+            if (pitchRes.rows.length === 0) {
+                const err: Error & { status?: number; code?: string } = new Error('Pitch not found');
+                err.status = 404;
+                throw err;
+            }
+            const pitch: Pitch & { prev_state: PitchPrevState | null } = pitchRes.rows[0];
+
+            if (!pitch.prev_state) {
+                const err: Error & { status?: number; code?: string } = new Error(
+                    'Pitch was logged before edit support — cannot be edited'
+                );
+                err.status = 400;
+                err.code = 'NO_PREV_STATE';
+                throw err;
+            }
+
+            // 2. Must be the most-recent pitch in this at-bat
+            const latestRes = await client.query(`SELECT id FROM pitches WHERE at_bat_id = $1 ORDER BY pitch_number DESC LIMIT 1`, [
+                pitch.at_bat_id,
+            ]);
+            if (latestRes.rows[0]?.id !== pitchId) {
+                const err: Error & { status?: number; code?: string } = new Error('Only the most recent pitch can be edited');
+                err.status = 409;
+                err.code = 'NOT_LATEST';
+                throw err;
+            }
+
+            // 3. Old result must not be at-bat-ending
+            const oldResult = pitch.pitch_result;
+            const isAbEnding = (r: string, balls: number, strikes: number): boolean => {
+                if (r === 'in_play' || r === 'hit_by_pitch') return true;
+                if (r === 'ball' && balls + 1 >= 4) return true;
+                if ((r === 'called_strike' || r === 'swinging_strike') && strikes + 1 >= 3) return true;
+                // a foul at 2 strikes is NOT a strike (stays at 2), so it doesn't end the AB
+                return false;
+            };
+            const ballsBefore = pitch.balls_before;
+            const strikesBefore = pitch.strikes_before;
+            if (isAbEnding(oldResult, ballsBefore, strikesBefore)) {
+                const err: Error & { status?: number; code?: string } = new Error(
+                    'Pitch ended the at-bat; use Undo to revert and re-log'
+                );
+                err.status = 409;
+                err.code = 'AB_BOUNDARY';
+                throw err;
+            }
+            if (isAbEnding(newResult, ballsBefore, strikesBefore)) {
+                const err: Error & { status?: number; code?: string } = new Error(
+                    'New result would end the at-bat; use Undo + re-log instead'
+                );
+                err.status = 409;
+                err.code = 'AB_BOUNDARY';
+                throw err;
+            }
+
+            // 4. Compute new at-bat count from snapshot + new result
+            let newBalls = ballsBefore;
+            let newStrikes = strikesBefore;
+            if (newResult === 'ball') {
+                newBalls++;
+            } else if (newResult === 'called_strike' || newResult === 'swinging_strike') {
+                newStrikes++;
+            } else if (newResult === 'foul' && newStrikes < 2) {
+                newStrikes++;
+            }
+
+            // 5. Update the pitch row and the at-bat count
+            const updatedPitchRes = await client.query(`UPDATE pitches SET pitch_result = $1 WHERE id = $2 RETURNING *`, [
+                newResult,
+                pitchId,
+            ]);
+            const updatedAbRes = await client.query(`UPDATE at_bats SET balls = $1, strikes = $2 WHERE id = $3 RETURNING *`, [
+                newBalls,
+                newStrikes,
+                pitch.at_bat_id,
+            ]);
+
+            const result = { pitch: updatedPitchRes.rows[0], atBat: updatedAbRes.rows[0] };
+
+            // 6. Tendencies cache invalidation, same as logPitch / undoPitch
+            if (pitch.opponent_batter_id) {
+                try {
+                    await scoutingService.markTendenciesStale(pitch.opponent_batter_id);
+                } catch (error) {
+                    console.error('Failed to mark tendencies as stale on edit:', error);
+                }
+            }
+
+            return result;
+        });
+    }
+
     async getPitchById(pitchId: string): Promise<Pitch | null> {
         const result = await query('SELECT * FROM pitches WHERE id = $1', [pitchId]);
         return result.rows[0] || null;

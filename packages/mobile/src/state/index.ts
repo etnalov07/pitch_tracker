@@ -42,6 +42,7 @@ export {
     setSelectedGame,
     setCurrentAtBat,
     addPitch,
+    updatePitch,
     clearPitches,
     setBaseRunners,
     clearBaseRunners,

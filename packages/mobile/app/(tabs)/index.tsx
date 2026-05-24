@@ -1,10 +1,12 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Pressable, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { Text, Card, Button, useTheme, FAB, ActivityIndicator, Chip } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import * as Haptics from '../../src/utils/haptics';
 import { useAppSelector, useAppDispatch, fetchAllGames, startGame, deleteGame } from '../../src/state';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
+import { useToast } from '../../src/hooks/useToast';
+import { useConfirm } from '../../src/hooks/useConfirm';
 import { SyncStatusBadge, EmptyState } from '../../src/components/common';
 import { Game } from '@pitch-tracker/shared';
 
@@ -79,6 +81,8 @@ export default function DashboardScreen() {
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    const toast = useToast();
+    const confirm = useConfirm();
     const { user } = useAppSelector((state) => state.auth);
     const { games, loading } = useAppSelector((state) => state.games);
     const { isTablet } = useDeviceType();
@@ -125,31 +129,27 @@ export default function DashboardScreen() {
         router.push('/game/new' as any);
     };
 
-    const handleDeleteGame = (game: Game) => {
+    const handleDeleteGame = async (game: Game) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         const opponent =
             game.charting_mode === 'scouting'
                 ? `${game.opponent_name || 'Away'} @ ${game.scouting_home_team || 'Home'}`
                 : game.opponent_name || 'this game';
-        Alert.alert(
-            'Delete game?',
-            `Delete ${opponent}? This permanently removes all pitches, at-bats, lineups, and scoring data. This cannot be undone.`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await dispatch(deleteGame(game.id)).unwrap();
-                        } catch (err) {
-                            const message = err instanceof Error ? err.message : 'Failed to delete game';
-                            Alert.alert('Delete failed', message);
-                        }
-                    },
-                },
-            ]
-        );
+        const ok = await confirm({
+            title: 'Delete game?',
+            message: `Delete ${opponent}? This permanently removes all pitches, at-bats, lineups, and scoring data. This cannot be undone.`,
+            destructive: true,
+            confirmLabel: 'Delete',
+        });
+        if (!ok) return;
+        try {
+            await dispatch(deleteGame(game.id)).unwrap();
+        } catch (err) {
+            toast.show({
+                message: err instanceof Error ? err.message : 'Failed to delete game',
+                type: 'error',
+            });
+        }
     };
 
     return (

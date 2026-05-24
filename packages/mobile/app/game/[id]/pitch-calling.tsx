@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Alert, Pressable } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, Pressable } from 'react-native';
 import { Text, IconButton } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
+import { useToast } from '../../../src/hooks/useToast';
 import { PitchCallAbbrev, PitchCallZone, PitchCallResult, PITCH_CALL_LABELS, PITCH_CALL_ZONE_LABELS } from '@pitch-tracker/shared';
 import {
     useAppDispatch,
@@ -32,6 +33,7 @@ export default function PitchCallingScreen() {
     const { id: gameId } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const dispatch = useAppDispatch();
+    const toast = useToast();
 
     const { calls, activeCall, sendingCall } = useAppSelector((state) => state.pitchCalling);
     const { selectedGame, opponentLineup, gamePitchers } = useAppSelector((state) => state.games);
@@ -81,9 +83,12 @@ export default function PitchCallingScreen() {
             setWalkieTalkieActive(true);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         } catch (err: any) {
-            Alert.alert('Walkie-Talkie Error', err?.message || 'Failed to start mic passthrough');
+            toast.show({
+                message: err?.message || 'Failed to start mic passthrough',
+                type: 'error',
+            });
         }
-    }, [btConnected]);
+    }, [btConnected, toast]);
 
     const handleTalkPressOut = useCallback(async () => {
         if (isPassthroughActive()) {
@@ -146,9 +151,9 @@ export default function PitchCallingScreen() {
 
             setIsChanging(false);
         } catch {
-            Alert.alert('Error', 'Failed to send pitch call');
+            toast.show({ message: 'Failed to send pitch call', type: 'error' });
         }
-    }, [selectedPitch, selectedZone, gameId, teamId, isChanging, activeCall, btConnected, selectedGame, dispatch]);
+    }, [selectedPitch, selectedZone, gameId, teamId, isChanging, activeCall, btConnected, selectedGame, dispatch, toast]);
 
     const handleResend = useCallback(async () => {
         if (!activeCall || !btConnected) return;
@@ -180,10 +185,10 @@ export default function PitchCallingScreen() {
                 setSelectedZone(null);
                 setIsChanging(false);
             } catch {
-                Alert.alert('Error', 'Failed to log result');
+                toast.show({ message: 'Failed to log result', type: 'error' });
             }
         },
-        [activeCall, dispatch]
+        [activeCall, dispatch, toast]
     );
 
     const canSend = selectedPitch && selectedZone && !sendingCall;

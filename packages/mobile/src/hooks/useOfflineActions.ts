@@ -50,7 +50,7 @@ export const useOfflineActions = () => {
     const isOnline = true;
 
     const logPitchOffline = useCallback(
-        async (payload: LogPitchPayload): Promise<{ success: boolean; queued: boolean }> => {
+        async (payload: LogPitchPayload): Promise<{ success: boolean; queued: boolean; pitch?: Pitch }> => {
             const pitchData: Partial<Pitch> & { opponent_batter_id?: string } = {
                 at_bat_id: payload.at_bat_id,
                 game_id: payload.game_id,
@@ -70,8 +70,8 @@ export const useOfflineActions = () => {
             };
 
             try {
-                await dispatch(logPitch(pitchData)).unwrap();
-                return { success: true, queued: false };
+                const pitch = await dispatch(logPitch(pitchData)).unwrap();
+                return { success: true, queued: false, pitch };
             } catch {
                 // No offline queue - just fail
                 return { success: false, queued: false };

@@ -8,6 +8,10 @@ interface InningChangeModalProps {
     teamRunsScored: string;
     onRunsChange: (value: string) => void;
     onConfirm: () => void;
+    /** Called when the modal is dismissed without an explicit confirm. Parent should still
+     * advance the inning (the local outs counter was already reset before opening),
+     * just treating it as "0 runs this half". */
+    onDismiss: () => void;
     isTablet?: boolean;
     showRunsInput?: boolean;
 }
@@ -18,6 +22,7 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
     teamRunsScored,
     onRunsChange,
     onConfirm,
+    onDismiss,
     isTablet,
     showRunsInput = true,
 }) => {
@@ -25,7 +30,7 @@ const InningChangeModal: React.FC<InningChangeModalProps> = ({
     return (
         <Modal
             visible={visible}
-            onDismiss={() => {}}
+            onDismiss={onDismiss}
             contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }, isTablet && styles.modalTablet]}
         >
             <Text variant="titleLarge" style={styles.modalTitle} testID="inning-change-modal">

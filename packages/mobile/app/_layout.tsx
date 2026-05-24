@@ -9,6 +9,8 @@ import { PaperProvider } from 'react-native-paper';
 
 import { store, useAppDispatch, useAppSelector, initializeAuth, initializeSettings } from '../src/state';
 import { KeyboardDismissBar } from '../src/components/common';
+import { ToastProvider } from '../src/hooks/useToast';
+import { ConfirmProvider } from '../src/hooks/useConfirm';
 import { lightTheme, darkTheme } from '../src/styles/theme';
 
 export { ErrorBoundary } from 'expo-router';
@@ -106,33 +108,37 @@ function RootLayoutContent() {
 
     return (
         <PaperProvider theme={theme}>
-            <KeyboardDismissBar />
-            <AuthGuard>
-                <Stack>
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                    <Stack.Screen
-                        name="game/[id]/index"
-                        options={{
-                            headerShown: false,
-                        }}
-                    />
-                    <Stack.Screen
-                        name="game/[id]/live"
-                        options={{
-                            headerShown: false,
-                            gestureEnabled: false,
-                        }}
-                    />
-                    <Stack.Screen name="game/[id]/setup" options={{ title: 'Game Setup' }} />
-                    <Stack.Screen name="game/[id]/lineup" options={{ title: 'Opponent Lineup' }} />
-                    <Stack.Screen name="team/[id]" options={{ title: 'Team Details' }} />
-                    <Stack.Screen name="invite/[token]" options={{ title: 'Team Invite' }} />
-                    <Stack.Screen name="games/history" options={{ title: 'Game History' }} />
-                    <Stack.Screen name="join-team" options={{ title: 'Find a Team' }} />
-                    <Stack.Screen name="+not-found" />
-                </Stack>
-            </AuthGuard>
+            <ConfirmProvider>
+                <ToastProvider>
+                    <KeyboardDismissBar />
+                    <AuthGuard>
+                        <Stack>
+                            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                            <Stack.Screen
+                                name="game/[id]/index"
+                                options={{
+                                    headerShown: false,
+                                }}
+                            />
+                            <Stack.Screen
+                                name="game/[id]/live"
+                                options={{
+                                    headerShown: false,
+                                    gestureEnabled: false,
+                                }}
+                            />
+                            <Stack.Screen name="game/[id]/setup" options={{ title: 'Game Setup' }} />
+                            <Stack.Screen name="game/[id]/lineup" options={{ title: 'Opponent Lineup' }} />
+                            <Stack.Screen name="team/[id]" options={{ title: 'Team Details' }} />
+                            <Stack.Screen name="invite/[token]" options={{ title: 'Team Invite' }} />
+                            <Stack.Screen name="games/history" options={{ title: 'Game History' }} />
+                            <Stack.Screen name="join-team" options={{ title: 'Find a Team' }} />
+                            <Stack.Screen name="+not-found" />
+                        </Stack>
+                    </AuthGuard>
+                </ToastProvider>
+            </ConfirmProvider>
         </PaperProvider>
     );
 }

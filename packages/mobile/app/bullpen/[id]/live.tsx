@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput as RNTextInput } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, TextInput as RNTextInput } from 'react-native';
 import { Text, Button, useTheme, IconButton, Modal, TextInput, Card } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
+import { useToast } from '../../../src/hooks/useToast';
+import { useConfirm } from '../../../src/hooks/useConfirm';
 import {
     PitchType,
     PitchCallZone,
@@ -47,6 +49,8 @@ export default function BullpenLiveScreen() {
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    const toast = useToast();
+    const confirm = useConfirm();
 
     const { currentSession, pitches, currentPlan } = useAppSelector((state) => state.bullpen);
 
@@ -137,7 +141,7 @@ export default function BullpenLiveScreen() {
 
     const handleLogPitch = useCallback(async () => {
         if (!selectedPitchType || !pitchLocation || !id) {
-            Alert.alert('Missing Info', 'Please select pitch type and location');
+            toast.show({ message: 'Please select pitch type and location', type: 'error' });
             return;
         }
         setIsLogging(true);
@@ -163,11 +167,11 @@ export default function BullpenLiveScreen() {
                 setTargetZone(null);
             }
         } catch {
-            Alert.alert('Error', 'Failed to log pitch');
+            toast.show({ message: 'Failed to log pitch', type: 'error' });
         } finally {
             setIsLogging(false);
         }
-    }, [id, selectedPitchType, pitchLocation, targetZone, velocity, dispatch]);
+    }, [id, selectedPitchType, pitchLocation, targetZone, velocity, dispatch, toast, hasSequencePlan]);
 
     const handleEndSession = useCallback(async () => {
         if (!id) return;
@@ -177,9 +181,9 @@ export default function BullpenLiveScreen() {
             setShowEndModal(false);
             router.replace(`/bullpen/${id}/summary` as any);
         } catch {
-            Alert.alert('Error', 'Failed to end session');
+            toast.show({ message: 'Failed to end session', type: 'error' });
         }
-    }, [id, sessionNotes, dispatch, router]);
+    }, [id, sessionNotes, dispatch, router, toast]);
 
     const canLogPitch = selectedPitchType && pitchLocation && !isLogging && !pitchLimitReached;
 
@@ -188,11 +192,13 @@ export default function BullpenLiveScreen() {
             <View style={styles.header}>
                 <IconButton
                     icon="arrow-left"
-                    onPress={() => {
-                        Alert.alert('Leave Session', 'Are you sure? The session will remain in progress.', [
-                            { text: 'Cancel', style: 'cancel' },
-                            { text: 'Leave', onPress: () => router.back() },
-                        ]);
+                    onPress={async () => {
+                        const ok = await confirm({
+                            title: 'Leave Session',
+                            message: 'Are you sure? The session will remain in progress.',
+                            confirmLabel: 'Leave',
+                        });
+                        if (ok) router.back();
                     }}
                 />
                 <Text variant="titleLarge">Bullpen</Text>

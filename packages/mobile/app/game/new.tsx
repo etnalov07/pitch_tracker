@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Platform, Pressable } from 'react-native';
 import { Text, Button, useTheme, IconButton, ActivityIndicator, TextInput, SegmentedButtons } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as Haptics from '../../src/utils/haptics';
 import { OpponentTeam, Team } from '@pitch-tracker/shared';
 import { useAppDispatch, useAppSelector, fetchAllTeams, createGame } from '../../src/state';
 import { opponentsApi } from '../../src/state/opponents/api/opponentsApi';
+import { useToast } from '../../src/hooks/useToast';
 
 export default function NewGameScreen() {
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    const toast = useToast();
 
     const { user } = useAppSelector((state) => state.auth);
     const teams = useAppSelector((state) => state.teams.teams) || [];
@@ -26,8 +29,15 @@ export default function NewGameScreen() {
     const [totalInnings, setTotalInnings] = useState('7');
     const [chartingMode, setChartingMode] = useState<'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting'>('our_pitcher');
     const [scoutingFocus, setScoutingFocus] = useState<'both' | 'home' | 'away'>('both');
-    const [gameDate, setGameDate] = useState(new Date().toISOString().split('T')[0]);
-    const [gameTime, setGameTime] = useState('18:00');
+    // Game date+time stored as a single Date; rendered via Pressable + native picker (UX-NG-08/09).
+    const initialDateTime = (() => {
+        const d = new Date();
+        d.setHours(18, 0, 0, 0);
+        return d;
+    })();
+    const [gameDateTime, setGameDateTime] = useState<Date>(initialDateTime);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
     const [location, setLocation] = useState('');
     const [creating, setCreating] = useState(false);
 
@@ -71,26 +81,25 @@ export default function NewGameScreen() {
 
     const handleCreate = async () => {
         if (!selectedTeamId) {
-            Alert.alert('Missing Info', 'Please select your team');
+            toast.show({ message: 'Please select your team', type: 'error' });
             return;
         }
         if (isScoutingMode) {
             if (!opponentName.trim()) {
-                Alert.alert('Missing Info', 'Please enter the away team name');
+                toast.show({ message: 'Please enter the away team name', type: 'error' });
                 return;
             }
             if (!scoutingHomeTeam.trim()) {
-                Alert.alert('Missing Info', 'Please enter the home team name');
+                toast.show({ message: 'Please enter the home team name', type: 'error' });
                 return;
             }
         } else if (!opponentName.trim()) {
-            Alert.alert('Missing Info', 'Please enter the opponent name');
+            toast.show({ message: 'Please enter the opponent name', type: 'error' });
             return;
         }
 
         setCreating(true);
         try {
-            const gameDateTime = new Date(`${gameDate}T${gameTime}`);
             const newGame = await dispatch(
                 createGame({
                     home_team_id: selectedTeamId,
@@ -115,7 +124,7 @@ export default function NewGameScreen() {
                 router.replace(`/game/${newGame.id}/my-lineup` as any);
             }
         } catch {
-            Alert.alert('Error', 'Failed to create game');
+            toast.show({ message: 'Failed to create game', type: 'error' });
         } finally {
             setCreating(false);
         }
@@ -337,25 +346,87 @@ export default function NewGameScreen() {
                             </>
                         )}
 
-                        {/* Date */}
-                        <TextInput
-                            label="Game Date"
-                            value={gameDate}
-                            onChangeText={setGameDate}
-                            mode="outlined"
-                            placeholder="YYYY-MM-DD"
-                            style={styles.input}
-                        />
-
-                        {/* Time */}
-                        <TextInput
-                            label="Game Time"
-                            value={gameTime}
-                            onChangeText={setGameTime}
-                            mode="outlined"
-                            placeholder="HH:MM"
-                            style={styles.input}
-                        />
+                        {/* Date + Time — native pickers (UX-NG-08/09) */}
+                        <View style={styles.dateTimeRow}>
+                            <Pressable
+                                onPress={() => {
+                                    Haptics.selectionAsync();
+                                    setShowDatePicker(true);
+                                }}
+                                style={[
+                                    styles.dateTimeButton,
+                                    { borderColor: theme.colors.outline, backgroundColor: theme.colors.surface },
+                                ]}
+                                testID="new-game-date-picker"
+                            >
+                                <Text style={[styles.dateTimeLabel, { color: theme.colors.onSurfaceVariant }]}>Date</Text>
+                                <Text style={[styles.dateTimeValue, { color: theme.colors.onSurface }]}>
+                                    {gameDateTime.toLocaleDateString(undefined, {
+                                        weekday: 'short',
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                    })}
+                                </Text>
+                            </Pressable>
+                            <Pressable
+                                onPress={() => {
+                                    Haptics.selectionAsync();
+                                    setShowTimePicker(true);
+                                }}
+                                style={[
+                                    styles.dateTimeButton,
+                                    { borderColor: theme.colors.outline, backgroundColor: theme.colors.surface },
+                                ]}
+                                testID="new-game-time-picker"
+                            >
+                                <Text style={[styles.dateTimeLabel, { color: theme.colors.onSurfaceVariant }]}>Time</Text>
+                                <Text style={[styles.dateTimeValue, { color: theme.colors.onSurface }]}>
+                                    {gameDateTime.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                                </Text>
+                            </Pressable>
+                        </View>
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={gameDateTime}
+                                mode="date"
+                                display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                                onChange={(_event: DateTimePickerEvent, selected?: Date) => {
+                                    // Android closes on selection; iOS inline stays open until user dismisses.
+                                    if (Platform.OS !== 'ios') setShowDatePicker(false);
+                                    if (selected) {
+                                        const next = new Date(gameDateTime);
+                                        next.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+                                        setGameDateTime(next);
+                                    }
+                                }}
+                            />
+                        )}
+                        {Platform.OS === 'ios' && showDatePicker && (
+                            <Button mode="text" onPress={() => setShowDatePicker(false)} compact>
+                                Done
+                            </Button>
+                        )}
+                        {showTimePicker && (
+                            <DateTimePicker
+                                value={gameDateTime}
+                                mode="time"
+                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                onChange={(_event: DateTimePickerEvent, selected?: Date) => {
+                                    if (Platform.OS !== 'ios') setShowTimePicker(false);
+                                    if (selected) {
+                                        const next = new Date(gameDateTime);
+                                        next.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
+                                        setGameDateTime(next);
+                                    }
+                                }}
+                            />
+                        )}
+                        {Platform.OS === 'ios' && showTimePicker && (
+                            <Button mode="text" onPress={() => setShowTimePicker(false)} compact>
+                                Done
+                            </Button>
+                        )}
 
                         {/* Location */}
                         <TextInput
@@ -439,6 +510,16 @@ const styles = StyleSheet.create({
         color: '#1d4ed8',
         fontWeight: '600',
     },
+    dateTimeRow: { flexDirection: 'row', gap: 8 },
+    dateTimeButton: {
+        flex: 1,
+        borderWidth: 1,
+        borderRadius: 6,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+    },
+    dateTimeLabel: { fontSize: 11, marginBottom: 2 },
+    dateTimeValue: { fontSize: 15, fontWeight: '600' },
     createButton: {
         marginTop: 8,
     },

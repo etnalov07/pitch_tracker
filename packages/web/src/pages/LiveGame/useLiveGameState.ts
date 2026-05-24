@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
 import useHeatZones from '../../hooks/useHeatZones';
 import { useSettings } from '../../hooks/useSettings';
+import { useToast } from '../../hooks/useToast';
 import { gameRoleService } from '../../services/gameRoleService';
 import { myTeamLineupService } from '../../services/myTeamLineupService';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
@@ -39,6 +40,7 @@ export function useLiveGameState() {
     const { gameId } = useParams<{ gameId: string }>();
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
+    const toast = useToast();
 
     const { selectedGame: game, currentAtBat, pitches, loading } = useAppSelector((state) => state.games);
 
@@ -108,6 +110,11 @@ export function useLiveGameState() {
     const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
     const [showDroppedThirdModal, setShowDroppedThirdModal] = useState(false);
     const [showDoublePlayModal, setShowDoublePlayModal] = useState(false);
+
+    // Fix Last Pitch — tracks the most-recent logged pitch so the snackbar EDIT action
+    // can open EditResultModal (UX-LG-01).
+    const [editResultPitch, setEditResultPitch] = useState<{ id: string; result: PitchResult } | null>(null);
+    const [showEditResultModal, setShowEditResultModal] = useState(false);
 
     // Tendencies panels
     const [showPitcherTendencies, setShowPitcherTendencies] = useState(false);
@@ -199,7 +206,10 @@ export function useLiveGameState() {
             const rec = await gameRoleService.assignRole(gameId, requested);
             setGameRole(rec.role);
             if (requested === 'charter' && rec.role === 'viewer') {
-                window.alert('Someone is already charting this game — you have joined as a viewer.');
+                toast.show({
+                    message: 'Someone is already charting this game — you have joined as a viewer.',
+                    type: 'info',
+                });
             }
         } catch {
             setGameRole(requested);
@@ -350,6 +360,11 @@ export function useLiveGameState() {
         setShowDroppedThirdModal,
         showDoublePlayModal,
         setShowDoublePlayModal,
+        // Fix Last Pitch (UX-LG-01)
+        editResultPitch,
+        setEditResultPitch,
+        showEditResultModal,
+        setShowEditResultModal,
         // Tendencies panels
         showPitcherTendencies,
         setShowPitcherTendencies,

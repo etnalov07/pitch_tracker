@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import packageJson from '../package.json';
+import { ConfirmProvider } from './hooks/useConfirm';
+import { ToastProvider } from './hooks/useToast';
 import Admin from './pages/Admin';
 import BullpenLive from './pages/BullpenLive';
 import BullpenNew from './pages/BullpenNew';
@@ -42,237 +44,241 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
 function App() {
     return (
         <Router>
-            <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/invite/:token" element={<InviteAccept />} />
-                <Route path="/report/:gameId" element={<PublicReport />} />
-                <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route
-                    path="/join-team"
-                    element={
-                        <ProtectedRoute>
-                            <JoinTeam />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/"
-                    element={
-                        <ProtectedRoute>
-                            <Dashboard />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/game/:gameId"
-                    element={
-                        <ProtectedRoute>
-                            <LiveGame />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/game/:gameId/replay"
-                    element={
-                        <ProtectedRoute>
-                            <Replay />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/game/:gameId/scouting-lineup"
-                    element={
-                        <ProtectedRoute>
-                            <ScoutingLineup />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/game/:gameId/lineup"
-                    element={
-                        <ProtectedRoute>
-                            <OpponentLineup />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/game/:gameId/my-lineup"
-                    element={
-                        <ProtectedRoute>
-                            <MyTeamLineup />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams"
-                    element={
-                        <ProtectedRoute>
-                            <Teams />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/new"
-                    element={
-                        <ProtectedRoute>
-                            <Teams />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id"
-                    element={
-                        <ProtectedRoute>
-                            <TeamDetail />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/bullpen"
-                    element={
-                        <ProtectedRoute>
-                            <BullpenSessions />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/bullpen/new"
-                    element={
-                        <ProtectedRoute>
-                            <BullpenNew />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/bullpen/:session_id/live"
-                    element={
-                        <ProtectedRoute>
-                            <BullpenLive />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/bullpen/plans"
-                    element={
-                        <ProtectedRoute>
-                            <BullpenPlans />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/bullpen/plans/new"
-                    element={
-                        <ProtectedRoute>
-                            <BullpenPlanEditor />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/bullpen/plans/:plan_id/edit"
-                    element={
-                        <ProtectedRoute>
-                            <BullpenPlanEditor />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/opponents"
-                    element={
-                        <ProtectedRoute>
-                            <Opponents />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/opponents/:id"
-                    element={
-                        <ProtectedRoute>
-                            <OpponentDetail />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/scouting"
-                    element={
-                        <ProtectedRoute>
-                            <ScoutingReports />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/scouting/:report_id"
-                    element={
-                        <ProtectedRoute>
-                            <ScoutingReport />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/settings"
-                    element={
-                        <ProtectedRoute>
-                            <TeamSettings />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/teams/:team_id/pitcher/:pitcher_id"
-                    element={
-                        <ProtectedRoute>
-                            <PitcherProfile />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/games/new"
-                    element={
-                        <ProtectedRoute>
-                            <GameSetup />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/games/history"
-                    element={
-                        <ProtectedRoute>
-                            <GameHistory />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/settings"
-                    element={
-                        <ProtectedRoute>
-                            <Settings />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin"
-                    element={
-                        <ProtectedRoute>
-                            <Admin />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/onboarding/player"
-                    element={
-                        <ProtectedRoute>
-                            <PlayerWaiting />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/onboarding/org"
-                    element={
-                        <ProtectedRoute>
-                            <OrgCreate />
-                        </ProtectedRoute>
-                    }
-                />
-            </Routes>
+            <ConfirmProvider>
+                <ToastProvider>
+                    <Routes>
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/invite/:token" element={<InviteAccept />} />
+                        <Route path="/report/:gameId" element={<PublicReport />} />
+                        <Route path="/verify-email" element={<VerifyEmail />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
+                        <Route
+                            path="/join-team"
+                            element={
+                                <ProtectedRoute>
+                                    <JoinTeam />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/"
+                            element={
+                                <ProtectedRoute>
+                                    <Dashboard />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/game/:gameId"
+                            element={
+                                <ProtectedRoute>
+                                    <LiveGame />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/game/:gameId/replay"
+                            element={
+                                <ProtectedRoute>
+                                    <Replay />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/game/:gameId/scouting-lineup"
+                            element={
+                                <ProtectedRoute>
+                                    <ScoutingLineup />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/game/:gameId/lineup"
+                            element={
+                                <ProtectedRoute>
+                                    <OpponentLineup />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/game/:gameId/my-lineup"
+                            element={
+                                <ProtectedRoute>
+                                    <MyTeamLineup />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams"
+                            element={
+                                <ProtectedRoute>
+                                    <Teams />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/new"
+                            element={
+                                <ProtectedRoute>
+                                    <Teams />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id"
+                            element={
+                                <ProtectedRoute>
+                                    <TeamDetail />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/bullpen"
+                            element={
+                                <ProtectedRoute>
+                                    <BullpenSessions />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/bullpen/new"
+                            element={
+                                <ProtectedRoute>
+                                    <BullpenNew />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/bullpen/:session_id/live"
+                            element={
+                                <ProtectedRoute>
+                                    <BullpenLive />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/bullpen/plans"
+                            element={
+                                <ProtectedRoute>
+                                    <BullpenPlans />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/bullpen/plans/new"
+                            element={
+                                <ProtectedRoute>
+                                    <BullpenPlanEditor />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/bullpen/plans/:plan_id/edit"
+                            element={
+                                <ProtectedRoute>
+                                    <BullpenPlanEditor />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/opponents"
+                            element={
+                                <ProtectedRoute>
+                                    <Opponents />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/opponents/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <OpponentDetail />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/scouting"
+                            element={
+                                <ProtectedRoute>
+                                    <ScoutingReports />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/scouting/:report_id"
+                            element={
+                                <ProtectedRoute>
+                                    <ScoutingReport />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/settings"
+                            element={
+                                <ProtectedRoute>
+                                    <TeamSettings />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/pitcher/:pitcher_id"
+                            element={
+                                <ProtectedRoute>
+                                    <PitcherProfile />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/games/new"
+                            element={
+                                <ProtectedRoute>
+                                    <GameSetup />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/games/history"
+                            element={
+                                <ProtectedRoute>
+                                    <GameHistory />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/settings"
+                            element={
+                                <ProtectedRoute>
+                                    <Settings />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin"
+                            element={
+                                <ProtectedRoute>
+                                    <Admin />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/onboarding/player"
+                            element={
+                                <ProtectedRoute>
+                                    <PlayerWaiting />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/onboarding/org"
+                            element={
+                                <ProtectedRoute>
+                                    <OrgCreate />
+                                </ProtectedRoute>
+                            }
+                        />
+                    </Routes>
+                </ToastProvider>
+            </ConfirmProvider>
             <div
                 style={{
                     position: 'fixed',

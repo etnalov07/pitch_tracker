@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Text, Button, Modal, TextInput, IconButton, useTheme } from 'react-native-paper';
 import { MyTeamLineupPlayer, Player } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../state/games/api/gamesApi';
+import { useToast } from '../../../hooks/useToast';
 
 interface MyBatterSelectorModalProps {
     visible: boolean;
@@ -31,6 +32,7 @@ const MyBatterSelectorModal: React.FC<MyBatterSelectorModalProps> = ({
     isTablet,
 }) => {
     const theme = useTheme();
+    const toast = useToast();
     const [subBatter, setSubBatter] = useState<MyTeamLineupPlayer | null>(null);
     const [subPlayerId, setSubPlayerId] = useState<string | null>(null);
     const [subInning, setSubInning] = useState('');
@@ -66,7 +68,7 @@ const MyBatterSelectorModal: React.FC<MyBatterSelectorModalProps> = ({
             resetForm();
         } catch (error) {
             console.error('Failed to substitute batter:', error);
-            Alert.alert('Error', 'Failed to substitute batter. Please try again.');
+            toast.show({ message: 'Failed to substitute batter. Please try again.', type: 'error' });
         } finally {
             setSaving(false);
         }

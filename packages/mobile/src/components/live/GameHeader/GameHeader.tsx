@@ -12,6 +12,8 @@ interface GameHeaderProps {
     strikes: number;
     outs: number;
     runners?: BaseRunners;
+    /** Cumulative pitch count for the current pitcher across the current game (per UX-LG-13). */
+    pitcherGamePitchCount?: number;
     onPitcherPress?: () => void;
     onPitcherStatsPress?: () => void;
     onBatterPress?: () => void;
@@ -27,6 +29,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
     strikes,
     outs,
     runners = { first: false, second: false, third: false },
+    pitcherGamePitchCount,
     onPitcherPress,
     onPitcherStatsPress,
     onBatterPress,
@@ -116,6 +119,12 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                             {currentPitcher ? `${currentPitcher.first_name[0]}. ${currentPitcher.last_name}` : 'Select'}
                         </Text>
                     </Pressable>
+                    {currentPitcher && typeof pitcherGamePitchCount === 'number' && (
+                        <View testID="game-header-pitch-count" style={styles.pitchCountPill}>
+                            <Text style={styles.pitchCountValue}>{pitcherGamePitchCount}</Text>
+                            <Text style={styles.pitchCountLabel}>PC</Text>
+                        </View>
+                    )}
                     {currentPitcher && onPitcherStatsPress && (
                         <Pressable
                             testID="game-header-pitcher-stats"
@@ -260,6 +269,26 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '700',
         color: '#ffffff',
+        letterSpacing: 0.4,
+    },
+    pitchCountPill: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        gap: 3,
+        backgroundColor: 'rgba(255,255,255,0.18)',
+        borderRadius: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+    },
+    pitchCountValue: {
+        fontSize: 13,
+        fontWeight: '800',
+        color: '#ffffff',
+    },
+    pitchCountLabel: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: 'rgba(255,255,255,0.7)',
         letterSpacing: 0.4,
     },
     playerInfo: {

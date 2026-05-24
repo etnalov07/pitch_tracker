@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, StyleSheet, SafeAreaView, ScrollView, Alert, TextInput, Pressable, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView, TextInput, Pressable, TouchableOpacity } from 'react-native';
 import { Text, Button, useTheme, IconButton, Portal, Chip } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
+import { useToast } from '../../../src/hooks/useToast';
+import { useConfirm } from '../../../src/hooks/useConfirm';
 import {
     Pitch,
     PitchType,
@@ -57,6 +59,7 @@ import {
     endGame,
     setCurrentAtBat,
     clearPitches,
+    updatePitch,
     undoLastPitch,
     setBaseRunners,
     updateBaseRunners,
@@ -91,6 +94,7 @@ import {
     PitcherTendenciesModal,
     HitterTendenciesModal,
     PitcherStatsModal,
+    EditResultModal,
 } from '../../../src/components/live';
 import DoublePlayModal from '../../../src/components/live/DoublePlayModal';
 import RunnerEventModal from '../../../src/components/live/RunnerEventModal';
@@ -106,6 +110,8 @@ export default function LiveGameScreen() {
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    const toast = useToast();
+    const confirm = useConfirm();
     const { isTablet, isLandscape } = useDeviceType();
     const { isOnline, logPitchOffline } = useOfflineActions();
 
@@ -203,6 +209,14 @@ export default function LiveGameScreen() {
     const [showPitcherStatsModal, setShowPitcherStatsModal] = useState(false);
     const [statsRefreshTrigger, setStatsRefreshTrigger] = useState(0);
 
+    // Pitch count state — populated by the effect below, after gameMode/isScoutingMode are derived.
+    const [pitcherGamePitchCount, setPitcherGamePitchCount] = useState<number | undefined>(undefined);
+
+    // Fix Last Pitch — tracks the most-recent logged pitch so the snackbar EDIT action
+    // can open EditResultModal for it (UX-LG-01).
+    const [editResultPitch, setEditResultPitch] = useState<{ id: string; result: PitchResult } | null>(null);
+    const [editResultModalVisible, setEditResultModalVisible] = useState(false);
+
     // Settings
     const { pitchCallingEnabled, velocityEnabled, radarEnabled } = useAppSelector((state) => state.settings);
 
@@ -227,6 +241,19 @@ export default function LiveGameScreen() {
         scoutingFocus &&
         scoutingFocus !== 'both' &&
         ((scoutingFocus === 'home' && game?.inning_half === 'bottom') || (scoutingFocus === 'away' && game?.inning_half === 'top'));
+
+    // Cumulative pitch count for the current pitcher this game (per UX-LG-13).
+    // Refreshes when the pitcher changes or after each logged pitch (statsRefreshTrigger).
+    useEffect(() => {
+        if (!id || !currentPitcher?.player_id || isScoutingMode || gameMode === 'opp_pitcher') {
+            setPitcherGamePitchCount(undefined);
+            return;
+        }
+        gamesApi
+            .getPitcherGameStats(currentPitcher.player_id, id)
+            .then((stats) => setPitcherGamePitchCount(stats.total_pitches))
+            .catch(() => setPitcherGamePitchCount(undefined));
+    }, [id, currentPitcher?.player_id, isScoutingMode, gameMode, statsRefreshTrigger]);
 
     // Walkie-talkie state
     const [walkieTalkieActive, setWalkieTalkieActive] = useState(false);
@@ -513,7 +540,7 @@ export default function LiveGameScreen() {
                 setInningEndedByBaserunnerOut(false);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {
-                Alert.alert('Error', 'Failed to advance inning');
+                toast.show({ message: 'Failed to advance inning', type: 'error' });
             }
         },
         [
@@ -530,6 +557,7 @@ export default function LiveGameScreen() {
             findInningLeadoffBatter,
             inningEndedByBaserunnerOut,
             router,
+            toast,
         ]
     );
 
@@ -608,7 +636,7 @@ export default function LiveGameScreen() {
                 }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {
-                Alert.alert('Error', 'Failed to end at-bat');
+                toast.show({ message: 'Failed to end at-bat', type: 'error' });
             }
         },
         [
@@ -628,6 +656,7 @@ export default function LiveGameScreen() {
             startAtBatForBatter,
             findNextActiveBatter,
             advanceInningWithRuns,
+            toast,
         ]
     );
 
@@ -693,7 +722,7 @@ export default function LiveGameScreen() {
             setInningEndedByBaserunnerOut(false);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {
-            Alert.alert('Error', 'Failed to advance inning');
+            toast.show({ message: 'Failed to advance inning', type: 'error' });
         }
     }, [
         id,
@@ -706,6 +735,7 @@ export default function LiveGameScreen() {
         findInningLeadoffBatter,
         inningEndedByBaserunnerOut,
         router,
+        toast,
     ]);
 
     const handleSelectPitcher = async (player: Player) => {
@@ -723,7 +753,7 @@ export default function LiveGameScreen() {
             setCurrentPitcher(result);
             setPitcherModalVisible(false);
         } catch {
-            Alert.alert('Error', 'Failed to change pitcher');
+            toast.show({ message: 'Failed to change pitcher', type: 'error' });
         }
     };
 
@@ -745,31 +775,42 @@ export default function LiveGameScreen() {
         [currentAtBat, currentInning, currentOuts, startAtBatForBatter]
     );
 
-    const handleEndGame = useCallback(() => {
+    const handleEndGame = useCallback(async () => {
         if (!id || !game) return;
-        Alert.alert('End Game', 'Are you sure you want to end this game? This will mark it as completed.', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'End Game',
-                style: 'destructive',
-                onPress: async () => {
-                    try {
-                        await gamesApi.endGame(id, { home_score: game.home_score || 0, away_score: game.away_score || 0 });
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        router.replace(`/game/${id}/viewer` as any);
-                    } catch {
-                        Alert.alert('Error', 'Failed to end game');
-                    }
-                },
-            },
-        ]);
-    }, [id, game, router]);
+        const ok = await confirm({
+            title: 'End Game',
+            message: 'Are you sure you want to end this game? This will mark it as completed.',
+            confirmLabel: 'End Game',
+            destructive: true,
+        });
+        if (!ok) return;
+        try {
+            await gamesApi.endGame(id, { home_score: game.home_score || 0, away_score: game.away_score || 0 });
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            router.replace(`/game/${id}/viewer` as any);
+        } catch {
+            toast.show({ message: 'Failed to end game', type: 'error' });
+        }
+    }, [id, game, router, confirm, toast]);
 
+    // Toggle home/away. Pre-pitch: silent flip. Post-pitch: confirm dialog explaining
+    // what's about to happen (UX-LG-12). The server flip is a clean one-field update
+    // (game.service.ts toggleHomeAway), so the data stays consistent — only the inning-half
+    // batting context flips for future pitches.
     const handleToggleHomeAway = useCallback(async () => {
-        if (!id) return;
+        if (!id || !game) return;
+        if ((game.total_pitches ?? 0) > 0) {
+            const newSide = game.is_home_game === false ? 'home' : 'away';
+            const ok = await confirm({
+                title: 'Swap home/away?',
+                message: `${game.total_pitches} pitches already logged. Switching makes your team the ${newSide} team going forward — already-logged pitches keep their inning-half. Scores (opponent vs. your team) stay attached to each team and don't move.`,
+                confirmLabel: 'Swap',
+            });
+            if (!ok) return;
+        }
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         await dispatch(toggleHomeAway(id));
-    }, [id, dispatch]);
+    }, [id, game, dispatch, confirm]);
 
     const handleStartAtBat = useCallback(async () => {
         if (!id || !currentInning) return;
@@ -792,7 +833,10 @@ export default function LiveGameScreen() {
                 if (!currentOpposingPitcher || !currentMyBatter) return;
                 const batterId = currentMyBatter.player_id ?? currentMyBatter.player?.id;
                 if (!batterId) {
-                    Alert.alert('Error', 'Batter player record not found. Please re-select the batter.');
+                    toast.show({
+                        message: 'Batter player record not found. Please re-select the batter.',
+                        type: 'error',
+                    });
                     return;
                 }
                 await dispatch(
@@ -824,7 +868,10 @@ export default function LiveGameScreen() {
             }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {
-            Alert.alert('Error', 'Failed to create at-bat. You can still log pitches offline.');
+            toast.show({
+                message: 'Failed to create at-bat. You can still log pitches offline.',
+                type: 'error',
+            });
         }
     }, [
         gameMode,
@@ -837,6 +884,7 @@ export default function LiveGameScreen() {
         currentInning,
         currentOuts,
         dispatch,
+        toast,
     ]);
 
     // Map PitchType to PitchCallAbbrev using the shared canonical mapping
@@ -873,7 +921,7 @@ export default function LiveGameScreen() {
             await speakPitchCall(abbrev, targetZone, false, pendingShakeCount);
             await pitchCallingApi.markTransmitted(call.id);
         } catch {
-            Alert.alert('Error', 'Failed to send pitch call');
+            toast.show({ message: 'Failed to send pitch call', type: 'error' });
         } finally {
             setSendingCall(false);
         }
@@ -886,7 +934,7 @@ export default function LiveGameScreen() {
             await speakPitchCall(activeCall.pitch_type, activeCall.zone, false, pendingShakeCount);
             await pitchCallingApi.markTransmitted(activeCall.id);
         } catch {
-            Alert.alert('Error', 'Failed to re-send call');
+            toast.show({ message: 'Failed to re-send call', type: 'error' });
         }
     };
 
@@ -910,7 +958,7 @@ export default function LiveGameScreen() {
             setWalkieTalkieActive(true);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         } catch (err: any) {
-            Alert.alert('Mic Error', err?.message || 'Failed to start walkie-talkie');
+            toast.show({ message: err?.message || 'Failed to start walkie-talkie', type: 'error' });
         }
     };
 
@@ -921,45 +969,84 @@ export default function LiveGameScreen() {
         }
     };
 
-    const handleUndoLastPitch = useCallback(() => {
+    // Fix Last Pitch — result-only PATCH for the most recent pitch (UX-LG-01).
+    // Server rejects AB-boundary-crossing edits with 409/AB_BOUNDARY; we surface a
+    // toast that steers the user to the existing Undo flow in those cases.
+    const handleEditLastPitchResult = useCallback(
+        async (newResult: PitchResult) => {
+            if (!editResultPitch) return;
+            if (newResult === editResultPitch.result) {
+                setEditResultModalVisible(false);
+                return;
+            }
+            const oldResult = editResultPitch.result;
+            try {
+                const { pitch: updated, atBat: updatedAb } = await gamesApi.updatePitchResult(editResultPitch.id, newResult);
+                // Refresh local state so the StrikeZone preview re-colors and AB count updates.
+                dispatch(updatePitch(updated));
+                dispatch(setCurrentAtBat(updatedAb));
+                setEditResultPitch({ id: updated.id, result: updated.pitch_result });
+                setEditResultModalVisible(false);
+                setStatsRefreshTrigger((prev) => prev + 1);
+                toast.show({
+                    message: `Updated: ${oldResult.replace(/_/g, ' ')} → ${newResult.replace(/_/g, ' ')}`,
+                    type: 'success',
+                });
+            } catch (err: unknown) {
+                const e = err as { status?: number; code?: string; message?: string };
+                if (e.status === 409 && e.code === 'AB_BOUNDARY') {
+                    toast.show({
+                        message: 'This pitch ended the at-bat — use Undo to revert and re-log.',
+                        type: 'info',
+                        duration: 5000,
+                    });
+                } else if (e.status === 409) {
+                    toast.show({ message: 'Only the most recent pitch can be edited.', type: 'error' });
+                } else {
+                    toast.show({ message: e.message || 'Failed to update pitch', type: 'error' });
+                }
+                setEditResultModalVisible(false);
+            }
+        },
+        [editResultPitch, dispatch, id, toast]
+    );
+
+    const handleUndoLastPitch = useCallback(async () => {
         if (pitches.length === 0) return;
         const last = pitches[pitches.length - 1];
         const formatPitchType = (t: string) => t.replace(/_/g, ' ');
         const formatResult = (r: string) => r.replace(/_/g, ' ');
-        Alert.alert(
-            'Undo last pitch?',
-            `${formatPitchType(last.pitch_type)} — ${formatResult(last.pitch_result)}\nCount before: ${last.balls_before}-${last.strikes_before}`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Undo',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await dispatch(undoLastPitch(last.id)).unwrap();
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        } catch (err) {
-                            Alert.alert('Undo failed', err instanceof Error ? err.message : 'Could not undo pitch');
-                        }
-                    },
-                },
-            ]
-        );
-    }, [pitches, dispatch]);
+        const ok = await confirm({
+            title: 'Undo last pitch?',
+            message: `${formatPitchType(last.pitch_type)} — ${formatResult(last.pitch_result)}\nCount before: ${last.balls_before}-${last.strikes_before}`,
+            confirmLabel: 'Undo',
+            destructive: true,
+        });
+        if (!ok) return;
+        try {
+            await dispatch(undoLastPitch(last.id)).unwrap();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (err) {
+            toast.show({
+                message: err instanceof Error ? err.message : 'Could not undo pitch',
+                type: 'error',
+            });
+        }
+    }, [pitches, dispatch, confirm, toast]);
 
     const handleLogPitch = async (resultOverride?: PitchResult) => {
         if (isLoggingRef.current) return;
         const effectiveResult = resultOverride ?? selectedResult;
         if (!selectedPitchType || !effectiveResult || !pitchLocation) {
-            Alert.alert('Missing Info', 'Please select pitch type and location');
+            toast.show({ message: 'Please select pitch type and location', type: 'error' });
             return;
         }
         if (!isScoutingMode && gameMode === 'our_pitcher' && !currentPitcher) {
-            Alert.alert('No Pitcher', 'Please select a pitcher first');
+            toast.show({ message: 'Please select a pitcher first', type: 'error' });
             return;
         }
         if (isScoutingMode && (!currentOpposingPitcher || !currentBatter)) {
-            Alert.alert('No Pitcher/Batter', 'Please select a pitcher and batter first');
+            toast.show({ message: 'Please select a pitcher and batter first', type: 'error' });
             return;
         }
         isLoggingRef.current = true;
@@ -967,7 +1054,7 @@ export default function LiveGameScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         try {
             const veloNum = velocity ? parseFloat(velocity) : undefined;
-            const result = await logPitchOffline({
+            const logResult = await logPitchOffline({
                 at_bat_id: currentAtBat?.id || '',
                 game_id: id!,
                 pitcher_id: !isScoutingMode && gameMode === 'our_pitcher' ? currentPitcher?.player_id : undefined,
@@ -988,9 +1075,27 @@ export default function LiveGameScreen() {
                 strikes_before: strikes,
                 team_side: isScoutingMode ? 'opponent' : gameMode === 'our_pitcher' ? 'our_team' : 'opponent',
             });
-            if (!result.success) {
-                Alert.alert('Error', 'Failed to log pitch');
+            if (!logResult.success) {
+                toast.show({ message: 'Failed to log pitch', type: 'error' });
                 return;
+            }
+            // Surface the EDIT affordance for the just-logged pitch (UX-LG-01 Fix Last Pitch).
+            // The snackbar's action button opens EditResultModal pre-loaded with this pitch.
+            if (logResult.pitch?.id) {
+                const justLogged = { id: logResult.pitch.id, result: logResult.pitch.pitch_result };
+                setEditResultPitch(justLogged);
+                toast.show({
+                    message: `Logged: ${effectiveResult.replace(/_/g, ' ')}`,
+                    type: 'success',
+                    duration: 5000,
+                    action: {
+                        label: 'EDIT',
+                        onPress: () => {
+                            setEditResultPitch(justLogged);
+                            setEditResultModalVisible(true);
+                        },
+                    },
+                });
             }
             setStatsRefreshTrigger((prev) => prev + 1);
             const newBalls = balls + (effectiveResult === 'ball' ? 1 : 0);
@@ -1037,7 +1142,7 @@ export default function LiveGameScreen() {
             setVelocity('');
             setChangingCallId(null);
             setPendingShakeCount(0);
-            if (result.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            if (logResult.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             if (effectiveResult === 'hit_by_pitch' || newBalls >= 4) {
                 const endResult = effectiveResult === 'hit_by_pitch' ? 'hit_by_pitch' : 'walk';
                 const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
@@ -1056,24 +1161,26 @@ export default function LiveGameScreen() {
                 // is unoccupied, OR when there are 2 outs. Prompt the user to distinguish.
                 const canDropThird = !baseRunners.first || currentOuts >= 2;
                 if (canDropThird) {
-                    Alert.alert('Third strike', 'Was the third strike dropped?', [
-                        { text: 'No', style: 'cancel', onPress: () => handleEndAtBat('strikeout', finalPitch) },
-                        {
-                            text: 'Yes',
-                            onPress: () => {
-                                // Show runner advancement for the dropped K3. The suggested
-                                // advancement places the batter on 1st and force-advances runners.
-                                setPendingHitResult('strikeout_dropped');
-                                setShowRunnerAdvancementModal(true);
-                            },
-                        },
-                    ]);
+                    const droppedYes = await confirm({
+                        title: 'Third strike',
+                        message: 'Was the third strike dropped?',
+                        confirmLabel: 'Yes',
+                        cancelLabel: 'No',
+                    });
+                    if (droppedYes) {
+                        // Show runner advancement for the dropped K3. The suggested
+                        // advancement places the batter on 1st and force-advances runners.
+                        setPendingHitResult('strikeout_dropped');
+                        setShowRunnerAdvancementModal(true);
+                    } else {
+                        await handleEndAtBat('strikeout', finalPitch);
+                    }
                 } else {
                     await handleEndAtBat('strikeout', finalPitch);
                 }
             } else if (effectiveResult === 'in_play') setShowInPlayModal(true);
         } catch {
-            Alert.alert('Error', 'Failed to log pitch');
+            toast.show({ message: 'Failed to log pitch', type: 'error' });
         } finally {
             isLoggingRef.current = false;
             setIsLogging(false);
@@ -1265,10 +1372,10 @@ export default function LiveGameScreen() {
                 });
                 setPendingHitResult(null);
             } catch {
-                Alert.alert('Error', 'Failed to update runner positions');
+                toast.show({ message: 'Failed to update runner positions', type: 'error' });
             }
         },
-        [pendingHitResult, id, dispatch, handleEndAtBat, updateScoreForRuns, currentInning, currentAtBat, currentOuts, game]
+        [pendingHitResult, id, dispatch, handleEndAtBat, updateScoreForRuns, currentInning, currentAtBat, currentOuts, game, toast]
     );
 
     const handleRecordBaserunnerOut = useCallback(
@@ -1302,10 +1409,10 @@ export default function LiveGameScreen() {
                 }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {
-                Alert.alert('Error', 'Failed to record baserunner out');
+                toast.show({ message: 'Failed to record baserunner out', type: 'error' });
             }
         },
-        [id, currentInning, currentAtBat, currentOuts, game, dispatch, baseRunners, advanceInningWithRuns]
+        [id, currentInning, currentAtBat, currentOuts, game, dispatch, baseRunners, advanceInningWithRuns, toast]
     );
 
     const handleRecordAdvancement = useCallback(
@@ -1334,10 +1441,10 @@ export default function LiveGameScreen() {
                 await updateScoreForRuns(runsScored);
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {
-                Alert.alert('Error', 'Failed to record runner advancement');
+                toast.show({ message: 'Failed to record runner advancement', type: 'error' });
             }
         },
-        [id, currentInning, currentAtBat, currentOuts, dispatch, updateScoreForRuns]
+        [id, currentInning, currentAtBat, currentOuts, dispatch, updateScoreForRuns, toast]
     );
 
     const handleDoublePlayConfirm = useCallback(
@@ -1371,10 +1478,10 @@ export default function LiveGameScreen() {
                 await handleEndAtBat('double_play');
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch {
-                Alert.alert('Error', 'Failed to record double play');
+                toast.show({ message: 'Failed to record double play', type: 'error' });
             }
         },
-        [id, currentInning, currentAtBat, currentOuts, baseRunners, dispatch, handleEndAtBat]
+        [id, currentInning, currentAtBat, currentOuts, baseRunners, dispatch, handleEndAtBat, toast]
     );
 
     const handleRunnerPress = useCallback(
@@ -1479,10 +1586,10 @@ export default function LiveGameScreen() {
                                     const rec = await gamesApi.assignGameRole(id, 'charter');
                                     dispatch(setCurrentGameRole(rec.role));
                                     if (rec.role === 'viewer') {
-                                        Alert.alert(
-                                            'Already being charted',
-                                            'Someone is already charting this game — you have joined as a viewer.'
-                                        );
+                                        toast.show({
+                                            message: 'Someone is already charting this game — you have joined as a viewer.',
+                                            type: 'info',
+                                        });
                                         router.push(`/game/${id}/viewer` as any);
                                     }
                                 } catch {
@@ -1605,6 +1712,48 @@ export default function LiveGameScreen() {
         );
     };
 
+    // Zone-tap UX cues (UX-LG-02 / UX-LG-03). Subtitle communicates which tap is being
+    // captured; the "Actual = Target" pill is a one-tap shortcut for on-spot pitches so
+    // the coach doesn't have to tap the same zone twice.
+    const renderZoneTapHint = () => {
+        if (!targetZone) {
+            return (
+                <Text style={styles.zoneHint}>
+                    <Text style={styles.zoneHintBold}>Tap target zone</Text>
+                    {' · 1st tap'}
+                </Text>
+            );
+        }
+        if (!pitchLocation) {
+            return (
+                <Text style={styles.zoneHint}>
+                    <Text style={styles.zoneHintBold}>Tap actual location</Text>
+                    {' · 2nd tap (or pin to target below)'}
+                </Text>
+            );
+        }
+        return <Text style={[styles.zoneHint, styles.zoneHintReady]}>✓ Target + actual set — tap result to log</Text>;
+    };
+
+    const renderActualEqualsTargetButton = () => {
+        if (!targetZone || pitchLocation) return null;
+        const zc = PITCH_CALL_ZONE_COORDS[targetZone];
+        return (
+            <Button
+                mode="outlined"
+                compact
+                icon="target"
+                style={styles.actualEqualsTargetButton}
+                onPress={() => {
+                    Haptics.selectionAsync();
+                    setPitchLocation({ x: zc.x, y: zc.y });
+                }}
+            >
+                Pitch hit target ({PITCH_CALL_ZONE_LABELS[targetZone]})
+            </Button>
+        );
+    };
+
     const renderGameHeader = () => (
         <GameHeader
             game={game}
@@ -1614,6 +1763,7 @@ export default function LiveGameScreen() {
             strikes={strikes}
             outs={currentOuts}
             runners={baseRunners}
+            pitcherGamePitchCount={pitcherGamePitchCount}
             onPitcherPress={
                 game.status === 'in_progress'
                     ? isScoutingMode || gameMode === 'opp_pitcher'
@@ -1632,7 +1782,7 @@ export default function LiveGameScreen() {
                     : undefined
             }
             onRunnerPress={game.status === 'in_progress' ? handleRunnerPress : undefined}
-            onSwapPress={!game.total_pitches ? handleToggleHomeAway : undefined}
+            onSwapPress={handleToggleHomeAway}
         />
     );
 
@@ -1788,6 +1938,7 @@ export default function LiveGameScreen() {
                 teamRunsScored={teamRunsScored}
                 onRunsChange={setTeamRunsScored}
                 onConfirm={handleInningChangeConfirm}
+                onDismiss={() => advanceInningWithRuns(0)}
                 isTablet={isTablet}
                 showRunsInput={game?.scouting_focus === 'home' || game?.scouting_focus === 'away'}
             />
@@ -1798,6 +1949,7 @@ export default function LiveGameScreen() {
                 teamRunsScored={teamAtBatRuns}
                 onRunsChange={setTeamAtBatRuns}
                 onConfirm={handleTeamAtBatConfirm}
+                onDismiss={() => setShowTeamAtBat(false)}
                 isTablet={isTablet}
             />
             <RunnerEventModal
@@ -2045,6 +2197,7 @@ export default function LiveGameScreen() {
                     </View>
                     <ScrollView style={styles.mainPanel} contentContainerStyle={styles.mainPanelContent}>
                         {renderPitchTypeFilterBar()}
+                        {!isReadOnly && renderZoneTapHint()}
                         <StrikeZone
                             onLocationSelect={(x, y) => setPitchLocation({ x, y })}
                             onTargetZoneSelect={setTargetZone}
@@ -2067,6 +2220,7 @@ export default function LiveGameScreen() {
                                     : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
                             }
                         />
+                        {!isReadOnly && renderActualEqualsTargetButton()}
                         {renderPitchBreakdown()}
                         {/* Send Call (optional, setting-gated) */}
                         {!isReadOnly &&
@@ -2225,6 +2379,12 @@ export default function LiveGameScreen() {
                     completedAtBats={previousAtBatsForCurrentBatter}
                 />
                 <InPlayModal visible={showInPlayModal} onDismiss={() => setShowInPlayModal(false)} onResult={handleInPlayResult} />
+                <EditResultModal
+                    visible={editResultModalVisible}
+                    currentResult={editResultPitch?.result}
+                    onDismiss={() => setEditResultModalVisible(false)}
+                    onSelect={handleEditLastPitchResult}
+                />
                 {id && (
                     <BatterBreakdownSheet
                         visible={showBreakdown}
@@ -2306,6 +2466,7 @@ export default function LiveGameScreen() {
                 )}
                 {/* 2. Strike Zone (1st tap = target zone, 2nd tap = actual location) */}
                 {renderPitchTypeFilterBar()}
+                {!isReadOnly && renderZoneTapHint()}
                 <StrikeZone
                     onLocationSelect={(x, y) => setPitchLocation({ x, y })}
                     onTargetZoneSelect={setTargetZone}
@@ -2329,6 +2490,7 @@ export default function LiveGameScreen() {
                             : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
                     }
                 />
+                {!isReadOnly && renderActualEqualsTargetButton()}
                 {renderPitchBreakdown()}
                 {/* 3. Pitch Calling (optional, setting-gated) */}
                 {!isReadOnly && !isScoutingMode && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
@@ -2468,6 +2630,12 @@ export default function LiveGameScreen() {
                 completedAtBats={previousAtBatsForCurrentBatter}
             />
             <InPlayModal visible={showInPlayModal} onDismiss={() => setShowInPlayModal(false)} onResult={handleInPlayResult} />
+            <EditResultModal
+                visible={editResultModalVisible}
+                currentResult={editResultPitch?.result}
+                onDismiss={() => setEditResultModalVisible(false)}
+                onSelect={handleEditLastPitchResult}
+            />
         </SafeAreaView>
     );
 }
@@ -2500,6 +2668,10 @@ const styles = StyleSheet.create({
     undoButton: { borderColor: '#b91c1c' },
     logButtonContent: { paddingVertical: 6 },
     previousAtBatsButton: { marginTop: 8 },
+    zoneHint: { fontSize: 12, opacity: 0.75, marginBottom: 4, marginTop: 2 },
+    zoneHintBold: { fontWeight: '700' },
+    zoneHintReady: { color: '#16a34a' },
+    actualEqualsTargetButton: { marginTop: 4 },
     startAtBatButton: { marginTop: 6 },
     selectPrompt: { marginTop: 6, padding: 12, backgroundColor: '#fef3c7', borderRadius: 8, alignItems: 'center' },
     selectPromptText: { color: '#92400e', fontSize: 14, fontWeight: '500' },
