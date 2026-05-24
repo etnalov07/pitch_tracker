@@ -1,7 +1,7 @@
 # Phase 2 — C (partial) — Phone layout reorder for thumb-zone tap path · 2026-05-23
 
 **Type:** `style`
-**Commit:** _(pending)_
+**Commit:** `bd449a1`
 **Versions:** `mobile@2.12.0 → 2.13.0`
 
 ## Context
