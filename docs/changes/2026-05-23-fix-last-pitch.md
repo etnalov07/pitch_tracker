@@ -1,7 +1,7 @@
 # Fix Last Pitch — result-only PATCH + snackbar Edit action · 2026-05-23
 
 **Type:** `feat`
-**Commit:** _(pending)_
+**Commit:** `9b2a8fd`
 **Versions:** `api@1.15.0 → 1.16.0` · `mobile@2.9.0 → 2.10.0` · `web@1.20.0 → 1.21.0`
 
 ## Context

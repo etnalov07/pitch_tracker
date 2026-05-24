@@ -1,7 +1,7 @@
 # Snackbar Foundation — Toast + ConfirmDialog · 2026-05-23
 
 **Type:** `feat`
-**Commit:** _(pending)_
+**Commit:** `9b2a8fd`
 **Versions:** `mobile@2.7.0 → 2.8.0` · `web@1.18.0 → 1.19.0`
 
 ## Context

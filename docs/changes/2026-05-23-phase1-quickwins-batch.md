@@ -1,7 +1,7 @@
 # Phase 1 Quick Wins · Batch 2 — escape modals, pitch count, web tendencies, selector parity · 2026-05-23
 
 **Type:** `feat`
-**Commit:** _(pending)_
+**Commit:** `9b2a8fd`
 **Versions:** `mobile@2.8.0 → 2.9.0` · `web@1.19.0 → 1.20.0`
 
 ## Context
