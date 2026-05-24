@@ -1,7 +1,7 @@
 # Phase 2 — C continuation 2 — Extract `LiveGameModals` and `LiveGameTopBar` · 2026-05-23
 
 **Type:** `refactor`
-**Commit:** _(pending)_
+**Commit:** `1bce870`
 **Versions:** `mobile@2.14.0 → 2.15.0`
 
 ## Context
