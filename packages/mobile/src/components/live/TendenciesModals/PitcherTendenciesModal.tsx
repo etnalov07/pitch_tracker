@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator
 import { Modal, useTheme } from 'react-native-paper';
 import { PitcherTendenciesLive } from '@pitch-tracker/shared';
 import { analyticsApi } from '../../../state/analytics/api/analyticsApi';
+import { colors, semantic } from '../../../styles/theme';
 import TendencyZoneGrid from './TendencyZoneGrid';
 import SuggestedSequence from './SuggestedSequence';
 
@@ -158,9 +159,9 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: colors.gray[200],
     },
-    title: { fontSize: 17, fontWeight: '700', color: '#0B1F3A' },
+    title: { fontSize: 17, fontWeight: '700', color: colors.primary[900] },
     subtitle: { fontSize: 13, marginTop: 2 },
     closeBtn: {
         width: 28,
@@ -176,15 +177,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         borderRadius: 6,
         borderWidth: 1,
-        borderColor: '#d1d5db',
+        borderColor: colors.gray[300],
     },
-    handBtnActive: { backgroundColor: '#1d4ed8', borderColor: '#1d4ed8' },
+    handBtnActive: { backgroundColor: colors.blue[700], borderColor: colors.blue[700] },
     handBtnText: { fontSize: 13, fontWeight: '600' },
     handBtnTextActive: { color: 'white' },
     scroll: { flex: 1 },
     scrollContent: { padding: 16, paddingTop: 4 },
-    noData: { padding: 20, backgroundColor: '#fefce8', borderRadius: 8 },
-    noDataText: { color: '#854d0e', fontSize: 13, textAlign: 'center' },
+    noData: { padding: 20, backgroundColor: semantic.warningBg, borderRadius: 8 },
+    noDataText: { color: semantic.warningText, fontSize: 13, textAlign: 'center' },
     sectionTitle: {
         fontSize: 10,
         fontWeight: '700',
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     mixRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
     mixType: { width: 64, fontSize: 11, textTransform: 'capitalize' },
     mixBarBg: { flex: 1, height: 12, borderRadius: 6, overflow: 'hidden' },
-    mixBar: { height: '100%', backgroundColor: '#3b82f6', borderRadius: 6 },
+    mixBar: { height: '100%', backgroundColor: colors.blue[500], borderRadius: 6 },
     mixPct: { width: 28, fontSize: 11, textAlign: 'right' },
     mixStats: { width: 80, fontSize: 10 },
 });

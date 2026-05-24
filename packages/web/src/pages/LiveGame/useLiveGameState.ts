@@ -2,7 +2,6 @@ import { deriveGameMode, GameMode, GameRole, MyTeamLineupPlayer, OpposingPitcher
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HitType, HitLocation } from '../../components/live/BaseballDiamond';
-import useHeatZones from '../../hooks/useHeatZones';
 import { useSettings } from '../../hooks/useSettings';
 import { useToast } from '../../hooks/useToast';
 import { gameRoleService } from '../../services/gameRoleService';
@@ -95,10 +94,6 @@ export function useLiveGameState() {
     const [showPitcherStatsModal, setShowPitcherStatsModal] = useState(false);
     const [hitType, setHitType] = useState<HitType>('line_drive');
     const [hitLocation, setHitLocation] = useState<HitLocation | null>(null);
-
-    // Heat zones - automatically filter by currently selected pitch type
-    const [showHeatZones, setShowHeatZones] = useState(false);
-    const { zones: heatZones } = useHeatZones(currentPitcher?.player_id, gameId, pitchType);
 
     // Base runners state
     const [baseRunners, setBaseRunners] = useState<BaseRunners>({ first: false, second: false, third: false });
@@ -341,10 +336,6 @@ export function useLiveGameState() {
         setHitType,
         hitLocation,
         setHitLocation,
-        // Heat zones
-        showHeatZones,
-        setShowHeatZones,
-        heatZones,
         // Base runners
         baseRunners,
         setBaseRunners,

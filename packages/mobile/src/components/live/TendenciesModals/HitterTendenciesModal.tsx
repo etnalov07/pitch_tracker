@@ -4,6 +4,7 @@ import { Modal, Chip, useTheme } from 'react-native-paper';
 import { HitterTendenciesLive } from '@pitch-tracker/shared';
 import { analyticsApi } from '../../../state/analytics/api/analyticsApi';
 import scoutingReportsApi, { LiveScoutingMatch } from '../../../state/scouting/api/scoutingReportsApi';
+import { colors, semantic } from '../../../styles/theme';
 import TendencyZoneGrid from './TendencyZoneGrid';
 import SuggestedSequence from './SuggestedSequence';
 
@@ -150,17 +151,17 @@ const HitterTendenciesModal: React.FC<HitterTendenciesModalProps> = ({
                             ZONE WEAKNESS MAP (swing rate)
                         </Text>
                         <View style={styles.zoneRow}>
-                            <TendencyZoneGrid cells={zoneGridCells} highColor="#ef4444" lowColor="#dcfce7" />
+                            <TendencyZoneGrid cells={zoneGridCells} highColor={colors.red[500]} lowColor={colors.green[100]} />
                             <View style={styles.legend}>
                                 <View style={styles.legendItem}>
-                                    <View style={[styles.legendSwatch, { backgroundColor: '#ef4444' }]} />
+                                    <View style={[styles.legendSwatch, { backgroundColor: colors.red[500] }]} />
                                     <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>High swing</Text>
                                 </View>
                                 <View style={styles.legendItem}>
                                     <View
                                         style={[
                                             styles.legendSwatch,
-                                            { backgroundColor: '#dcfce7', borderWidth: 1, borderColor: '#d1d5db' },
+                                            { backgroundColor: colors.green[100], borderWidth: 1, borderColor: colors.gray[300] },
                                         ]}
                                     />
                                     <Text style={[styles.legendText, { color: theme.colors.onSurfaceVariant }]}>Low swing</Text>
@@ -216,9 +217,9 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        borderBottomColor: colors.gray[200],
     },
-    title: { fontSize: 17, fontWeight: '700', color: '#0B1F3A' },
+    title: { fontSize: 17, fontWeight: '700', color: colors.primary[900] },
     subtitle: { fontSize: 13, marginTop: 2 },
     closeBtn: {
         width: 28,
@@ -230,8 +231,8 @@ const styles = StyleSheet.create({
     closeBtnText: { fontSize: 14 },
     scroll: { flex: 1 },
     scrollContent: { padding: 16 },
-    noData: { padding: 20, backgroundColor: '#fefce8', borderRadius: 8 },
-    noDataText: { color: '#854d0e', fontSize: 13, textAlign: 'center' },
+    noData: { padding: 20, backgroundColor: semantic.warningBg, borderRadius: 8 },
+    noDataText: { color: semantic.warningText, fontSize: 13, textAlign: 'center' },
     statsRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
     statBox: {
         flex: 1,
@@ -239,7 +240,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
     },
-    statValue: { fontSize: 15, fontWeight: '700', color: '#1d4ed8' },
+    statValue: { fontSize: 15, fontWeight: '700', color: colors.blue[700] },
     statLabel: { fontSize: 10, marginTop: 2, textAlign: 'center' },
     sectionTitle: {
         fontSize: 10,
@@ -256,21 +257,21 @@ const styles = StyleSheet.create({
     vulnRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
     vulnType: { width: 64, fontSize: 11, textTransform: 'capitalize' },
     vulnBarBg: { flex: 1, height: 12, borderRadius: 6, overflow: 'hidden' },
-    vulnBar: { height: '100%', backgroundColor: '#f87171', borderRadius: 6 },
+    vulnBar: { height: '100%', backgroundColor: colors.red[400], borderRadius: 6 },
     vulnPct: { width: 28, fontSize: 11, textAlign: 'right' },
     vulnN: { width: 36, fontSize: 10 },
     scoutingBox: {
         padding: 12,
-        backgroundColor: '#eff6ff',
+        backgroundColor: semantic.infoBg,
         borderRadius: 8,
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#bfdbfe',
+        borderColor: semantic.infoBorder,
     },
     scoutingHeading: {
         fontSize: 10,
         fontWeight: '700',
-        color: '#1d4ed8',
+        color: semantic.infoText,
         letterSpacing: 0.8,
         marginBottom: 6,
     },

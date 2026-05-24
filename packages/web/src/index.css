@@ -59,6 +59,27 @@
     --color-orange-500: #f97316;
     --color-orange-600: #ea580c;
 
+    --color-purple-50: #f5f3ff;
+    --color-purple-100: #ede9fe;
+    --color-purple-500: #8b5cf6;
+    --color-purple-600: #7c3aed;
+    --color-purple-700: #6d28d9;
+
+    /* Semantic aliases — common tints used together for the same UI state.
+       Wraps the scale palette so callers don't pick individual stops. */
+    --semantic-warning-bg: #fef3c7;
+    --semantic-warning-text: #92400e;
+    --semantic-warning-border: #fcd34d;
+    --semantic-success-bg: #dcfce7;
+    --semantic-success-text: #15803d;
+    --semantic-success-border: #86efac;
+    --semantic-error-bg: #fee2e2;
+    --semantic-error-text: #b91c1c;
+    --semantic-error-border: #fca5a5;
+    --semantic-info-bg: #eff6ff;
+    --semantic-info-text: #1d4ed8;
+    --semantic-info-border: #bfdbfe;
+
     /* Surface tokens for body / app shell */
     --surface-body: #ffffff;
     --surface-card: #ffffff;
@@ -170,6 +191,26 @@
 
     --color-orange-500: #fb923c;
     --color-orange-600: #fdba74;
+
+    --color-purple-50: #2e1065;
+    --color-purple-100: #4c1d95;
+    --color-purple-500: #a78bfa;
+    --color-purple-600: #c4b5fd;
+    --color-purple-700: #ddd6fe;
+
+    /* Semantic aliases — dark-mode inverted */
+    --semantic-warning-bg: #713f12;
+    --semantic-warning-text: #fef3c7;
+    --semantic-warning-border: #a16207;
+    --semantic-success-bg: #14532d;
+    --semantic-success-text: #bbf7d0;
+    --semantic-success-border: #15803d;
+    --semantic-error-bg: #7f1d1d;
+    --semantic-error-text: #fee2e2;
+    --semantic-error-border: #b91c1c;
+    --semantic-info-bg: #1e293b;
+    --semantic-info-text: #bfdbfe;
+    --semantic-info-border: #3b82f6;
 
     /* Layered surfaces — gives depth instead of one flat dark color */
     --surface-body: #0f172a; /* app background */

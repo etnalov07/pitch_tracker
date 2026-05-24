@@ -74,11 +74,6 @@ import {
     OutsLabel,
     OutIndicator,
     OpenDiamondButton,
-    HeatZoneToggleContainer,
-    HeatZoneToggleLabel,
-    ToggleSwitch,
-    ToggleSwitchInput,
-    ToggleSwitchSlider,
     PitchTypeSelector,
     PitchTypeSelectorTitle,
     PitchTypeGrid,
@@ -96,6 +91,13 @@ import {
     DroppedThirdMessage,
     DroppedThirdButtons,
     DroppedThirdBtn,
+    SettingsAnchor,
+    SettingsPanel,
+    SettingsPanelTitle,
+    SettingsRow,
+    SettingsCheckbox,
+    SettingsRowLabel,
+    SettingsRowSub,
 } from './styles';
 import TeamAtBatModal from './TeamAtBatModal';
 import UndoPitchModal from './UndoPitchModal';
@@ -147,9 +149,6 @@ const LiveGame: React.FC = () => {
         setHitType,
         hitLocation,
         setHitLocation,
-        showHeatZones,
-        setShowHeatZones,
-        heatZones,
         baseRunners,
         showRunnerEventModal,
         setShowRunnerEventModal,
@@ -399,35 +398,13 @@ const LiveGame: React.FC = () => {
                             </SwapButton>
                         )}
                         {/* Settings gear — opens a small panel to toggle velocity + pitch calls */}
-                        <div style={{ position: 'relative' }}>
+                        <SettingsAnchor>
                             <SwapButton title="Settings" onClick={() => setShowSettingsPanel((v) => !v)}>
                                 ⚙ Settings
                             </SwapButton>
                             {showSettingsPanel && (
-                                <div
-                                    style={{
-                                        position: 'absolute',
-                                        top: '110%',
-                                        right: 0,
-                                        background: theme.surfaces.card,
-                                        border: `1px solid ${theme.colors.gray[200]}`,
-                                        borderRadius: '10px',
-                                        boxShadow: theme.shadows.md,
-                                        padding: '14px 18px',
-                                        minWidth: '220px',
-                                        zIndex: 200,
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            fontWeight: 700,
-                                            fontSize: '13px',
-                                            color: theme.colors.gray[700],
-                                            marginBottom: '12px',
-                                        }}
-                                    >
-                                        Chart Settings
-                                    </div>
+                                <SettingsPanel>
+                                    <SettingsPanelTitle>Chart Settings</SettingsPanelTitle>
                                     {[
                                         {
                                             key: 'showVelocity' as const,
@@ -440,33 +417,21 @@ const LiveGame: React.FC = () => {
                                             sub: 'Send calls to catcher before each pitch',
                                         },
                                     ].map(({ key, label, sub }) => (
-                                        <label
-                                            key={key}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'flex-start',
-                                                gap: '10px',
-                                                marginBottom: '10px',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            <input
+                                        <SettingsRow key={key}>
+                                            <SettingsCheckbox
                                                 type="checkbox"
                                                 checked={settings[key]}
                                                 onChange={(e) => updateSetting(key, e.target.checked)}
-                                                style={{ marginTop: '2px', cursor: 'pointer' }}
                                             />
                                             <div>
-                                                <div style={{ fontSize: '13px', fontWeight: 600, color: theme.colors.gray[800] }}>
-                                                    {label}
-                                                </div>
-                                                <div style={{ fontSize: '11px', color: theme.colors.gray[500] }}>{sub}</div>
+                                                <SettingsRowLabel>{label}</SettingsRowLabel>
+                                                <SettingsRowSub>{sub}</SettingsRowSub>
                                             </div>
-                                        </label>
+                                        </SettingsRow>
                                     ))}
-                                </div>
+                                </SettingsPanel>
                             )}
-                        </div>
+                        </SettingsAnchor>
                         {game.status === 'in_progress' && <EndGameButton onClick={actions.handleEndGame}>End Game</EndGameButton>}
                     </TopBarRight>
                 </TopBar>
@@ -758,27 +723,12 @@ const LiveGame: React.FC = () => {
 
                         <StrikeZoneRow>
                             <StrikeZoneContainer>
-                                {!isScoutingMode && (
-                                    <HeatZoneToggleContainer>
-                                        <HeatZoneToggleLabel>{showHeatZones ? 'Hide' : 'Show'} Heat Zones</HeatZoneToggleLabel>
-                                        <ToggleSwitch>
-                                            <ToggleSwitchInput
-                                                type="checkbox"
-                                                checked={showHeatZones}
-                                                onChange={() => setShowHeatZones(!showHeatZones)}
-                                            />
-                                            <ToggleSwitchSlider />
-                                        </ToggleSwitch>
-                                    </HeatZoneToggleContainer>
-                                )}
                                 <StrikeZone
                                     onLocationSelect={actions.handleLocationSelect}
                                     onTargetZoneSelect={actions.handleTargetZoneSelect}
                                     onTargetClear={actions.handleTargetClear}
                                     targetZone={targetZone}
                                     previousPitches={pitches}
-                                    heatZones={heatZones}
-                                    showHeatZones={showHeatZones}
                                     batterSide={currentBatter?.bats as 'R' | 'L' | 'S' | undefined}
                                     pitcherThrows={
                                         (isScoutingMode || gameMode === 'opp_pitcher'

@@ -59,6 +59,61 @@ export const colors = {
         700: '#a16207',
         800: '#854d0e',
     },
+    blue: {
+        50: '#eff6ff',
+        100: '#dbeafe',
+        200: '#bfdbfe',
+        300: '#93c5fd',
+        400: '#60a5fa',
+        500: '#3b82f6',
+        600: '#2563eb',
+        700: '#1d4ed8',
+        800: '#1e40af',
+    },
+    orange: {
+        50: '#fff7ed',
+        100: '#ffedd5',
+        200: '#fed7aa',
+        300: '#fdba74',
+        400: '#fb923c',
+        500: '#f97316',
+        600: '#ea580c',
+        700: '#c2410c',
+        800: '#9a3412',
+    },
+    amber: {
+        50: '#fffbeb',
+        100: '#fef3c7',
+        300: '#fcd34d',
+        500: '#f59e0b',
+        600: '#d97706',
+        700: '#b45309',
+        800: '#92400e',
+    },
+    purple: {
+        50: '#f5f3ff',
+        100: '#ede9fe',
+        500: '#8b5cf6',
+        600: '#7c3aed',
+        700: '#6d28d9',
+    },
+};
+
+// Semantic aliases for common UI patterns — tints used together for the same
+// notional state. Keeps callers from picking individual scale stops.
+export const semantic = {
+    warningBg: colors.amber[100], // #fef3c7
+    warningText: colors.amber[800], // #92400e
+    warningBorder: colors.amber[300], // #fcd34d
+    successBg: colors.green[100], // #dcfce7
+    successText: colors.green[700], // #15803d
+    successBorder: colors.green[300], // #86efac
+    errorBg: colors.red[100], // #fee2e2
+    errorText: colors.red[700], // #b91c1c
+    errorBorder: colors.red[300], // #fca5a5
+    infoBg: colors.blue[50], // #eff6ff
+    infoText: colors.blue[700], // #1d4ed8
+    infoBorder: colors.blue[200], // #bfdbfe
 };
 
 // Accent palette — for CTA backgrounds. Stays vibrant in both light and dark

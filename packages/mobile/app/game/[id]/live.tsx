@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import { useToast } from '../../../src/hooks/useToast';
 import { useConfirm } from '../../../src/hooks/useConfirm';
+import { colors, semantic } from '../../../src/styles/theme';
 import {
     Pitch,
     PitchType,
@@ -1645,7 +1646,7 @@ export default function LiveGameScreen() {
                         onPress={() => setPitchTypeFilter(type)}
                         style={[
                             styles.pitchFilterChip,
-                            pitchTypeFilter === type && { backgroundColor: PITCH_TYPE_COLORS[type] ?? '#6b7280' },
+                            pitchTypeFilter === type && { backgroundColor: PITCH_TYPE_COLORS[type] ?? colors.gray[500] },
                         ]}
                         textStyle={pitchTypeFilter === type ? styles.pitchFilterChipTextActive : styles.pitchFilterChipText}
                         compact
@@ -1692,7 +1693,7 @@ export default function LiveGameScreen() {
                 {entries.map(([type, stats]) => (
                     <View key={type} style={styles.breakdownRow}>
                         <View style={[styles.breakdownTypeCell, { flexDirection: 'row', alignItems: 'center', gap: 6 }]}>
-                            <View style={[styles.typeColorDot, { backgroundColor: PITCH_TYPE_COLORS[type] ?? '#9ca3af' }]} />
+                            <View style={[styles.typeColorDot, { backgroundColor: PITCH_TYPE_COLORS[type] ?? colors.gray[400] }]} />
                             <Text style={styles.breakdownText}>{PITCH_TYPE_LABELS[type] ?? type}</Text>
                         </View>
                         <Text style={styles.breakdownNumCell}>{stats.count}</Text>
@@ -2236,7 +2237,7 @@ export default function LiveGameScreen() {
                                         loading={sendingCall}
                                         disabled={sendingCall}
                                         style={styles.sendCallButton}
-                                        labelStyle={{ color: '#0A1628', fontWeight: '800', letterSpacing: 0.5 }}
+                                        labelStyle={{ color: colors.primary[900], fontWeight: '800', letterSpacing: 0.5 }}
                                     >
                                         {sendingCall
                                             ? 'SENDING...'
@@ -2266,8 +2267,8 @@ export default function LiveGameScreen() {
                                         mode="contained"
                                         onPress={handleResendCall}
                                         compact
-                                        style={{ backgroundColor: '#F5A623' }}
-                                        labelStyle={{ color: '#0A1628', fontWeight: '700', fontSize: 12 }}
+                                        style={{ backgroundColor: colors.amber[500] }}
+                                        labelStyle={{ color: colors.primary[900], fontWeight: '700', fontSize: 12 }}
                                     >
                                         Re-send
                                     </Button>
@@ -2296,7 +2297,7 @@ export default function LiveGameScreen() {
                                     onChangeText={setVelocity}
                                     keyboardType="numeric"
                                     placeholder="—"
-                                    placeholderTextColor="#9ca3af"
+                                    placeholderTextColor={colors.gray[400]}
                                     maxLength={3}
                                     selectTextOnFocus
                                 />
@@ -2352,7 +2353,7 @@ export default function LiveGameScreen() {
                                     onPress={handleUndoLastPitch}
                                     style={styles.undoButton}
                                     contentStyle={styles.logButtonContent}
-                                    textColor="#b91c1c"
+                                    textColor={colors.red[700]}
                                     icon="undo"
                                 >
                                     Undo
@@ -2501,7 +2502,7 @@ export default function LiveGameScreen() {
                             loading={sendingCall}
                             disabled={sendingCall}
                             style={styles.sendCallButton}
-                            labelStyle={{ color: '#0A1628', fontWeight: '800', letterSpacing: 0.5 }}
+                            labelStyle={{ color: colors.primary[900], fontWeight: '800', letterSpacing: 0.5 }}
                         >
                             {sendingCall
                                 ? 'SENDING...'
@@ -2529,8 +2530,8 @@ export default function LiveGameScreen() {
                                 mode="contained"
                                 onPress={handleResendCall}
                                 compact
-                                style={{ backgroundColor: '#F5A623' }}
-                                labelStyle={{ color: '#0A1628', fontWeight: '700', fontSize: 12 }}
+                                style={{ backgroundColor: colors.amber[500] }}
+                                labelStyle={{ color: colors.primary[900], fontWeight: '700', fontSize: 12 }}
                             >
                                 Re-send
                             </Button>
@@ -2576,7 +2577,7 @@ export default function LiveGameScreen() {
                             onChangeText={setVelocity}
                             keyboardType="numeric"
                             placeholder="—"
-                            placeholderTextColor="#9ca3af"
+                            placeholderTextColor={colors.gray[400]}
                             maxLength={3}
                             selectTextOnFocus
                         />
@@ -2603,7 +2604,7 @@ export default function LiveGameScreen() {
                             onPress={handleUndoLastPitch}
                             style={styles.undoButton}
                             contentStyle={styles.logButtonContent}
-                            textColor="#b91c1c"
+                            textColor={colors.red[700]}
                             icon="undo"
                         >
                             Undo
@@ -2665,23 +2666,23 @@ const styles = StyleSheet.create({
     placeholder: { marginTop: 4, opacity: 0.7 },
     logButton: { marginTop: 4 },
     logRow: { flexDirection: 'row', gap: 8, marginTop: 4, alignItems: 'center' },
-    undoButton: { borderColor: '#b91c1c' },
+    undoButton: { borderColor: colors.red[700] },
     logButtonContent: { paddingVertical: 6 },
     previousAtBatsButton: { marginTop: 8 },
     zoneHint: { fontSize: 12, opacity: 0.75, marginBottom: 4, marginTop: 2 },
     zoneHintBold: { fontWeight: '700' },
-    zoneHintReady: { color: '#16a34a' },
+    zoneHintReady: { color: colors.green[600] },
     actualEqualsTargetButton: { marginTop: 4 },
     startAtBatButton: { marginTop: 6 },
-    selectPrompt: { marginTop: 6, padding: 12, backgroundColor: '#fef3c7', borderRadius: 8, alignItems: 'center' },
-    selectPromptText: { color: '#92400e', fontSize: 14, fontWeight: '500' },
+    selectPrompt: { marginTop: 6, padding: 12, backgroundColor: semantic.warningBg, borderRadius: 8, alignItems: 'center' },
+    selectPromptText: { color: semantic.warningText, fontSize: 14, fontWeight: '500' },
     runnerActionRow: { flexDirection: 'row' as const, gap: 8, marginTop: 6, flexWrap: 'wrap' as const },
     runnerOutButton: { alignSelf: 'flex-start' },
     tendenciesRow: { flexDirection: 'row' as const, gap: 8, marginTop: 6 },
     tendencyBtn: { flex: 1 },
-    tendencyBtnHitter: { borderColor: '#16a34a' },
+    tendencyBtnHitter: { borderColor: colors.green[600] },
     tendencyBtnLabel: { fontSize: 11 },
-    tendencyBtnLabelHitter: { color: '#16a34a' },
+    tendencyBtnLabelHitter: { color: colors.green[600] },
     callRow: {
         flexDirection: 'row' as const,
         gap: 8,
@@ -2689,11 +2690,11 @@ const styles = StyleSheet.create({
     },
     sendCallButton: {
         flex: 1,
-        backgroundColor: '#F5A623',
+        backgroundColor: colors.amber[500],
     },
     talkHoldButton: {
         borderWidth: 2,
-        borderColor: '#6366f1',
+        borderColor: colors.purple[600],
         borderRadius: 8,
         paddingVertical: 8,
         paddingHorizontal: 10,
@@ -2702,8 +2703,8 @@ const styles = StyleSheet.create({
         gap: 2,
     },
     talkHoldButtonActive: {
-        borderColor: '#EF4444',
-        backgroundColor: '#EF444420',
+        borderColor: colors.red[500],
+        backgroundColor: 'rgba(239, 68, 68, 0.13)',
     },
     talkHoldIcon: {
         fontSize: 16,
@@ -2712,14 +2713,14 @@ const styles = StyleSheet.create({
     talkHoldLabel: {
         fontSize: 9,
         fontWeight: '700' as const,
-        color: '#6366f1',
+        color: colors.purple[600],
     },
     talkHoldLabelActive: {
-        color: '#EF4444',
+        color: colors.red[500],
     },
     talkHoldSmall: {
         borderWidth: 1,
-        borderColor: '#6366f1',
+        borderColor: colors.purple[600],
         borderRadius: 6,
         paddingVertical: 6,
         paddingHorizontal: 8,
@@ -2729,12 +2730,12 @@ const styles = StyleSheet.create({
     talkHoldSmallLabel: {
         fontSize: 11,
         fontWeight: '600' as const,
-        color: '#6366f1',
+        color: colors.purple[600],
     },
     callBadge: {
-        backgroundColor: '#f0fdf4',
+        backgroundColor: semantic.successBg,
         borderWidth: 1,
-        borderColor: '#86efac',
+        borderColor: semantic.successBorder,
         borderRadius: 8,
         padding: 8,
         alignItems: 'center' as const,
@@ -2742,7 +2743,7 @@ const styles = StyleSheet.create({
     callBadgeText: {
         fontSize: 13,
         fontWeight: '600' as const,
-        color: '#15803d',
+        color: semantic.successText,
     },
     callActions: {
         flexDirection: 'row' as const,
@@ -2754,7 +2755,7 @@ const styles = StyleSheet.create({
         alignItems: 'center' as const,
         paddingVertical: 4,
         borderTopWidth: 1,
-        borderTopColor: '#e5e7eb',
+        borderTopColor: colors.gray[200],
         marginTop: 4,
     },
     shakeBtn: {
@@ -2765,23 +2766,23 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         borderRadius: 6,
         borderWidth: 1,
-        borderColor: '#d97706',
+        borderColor: colors.amber[600],
     },
     shakeBtnText: {
         fontSize: 11,
         fontWeight: '700' as const,
-        color: '#d97706',
+        color: colors.amber[600],
     },
     shakeBadge: {
         width: 16,
         height: 16,
         borderRadius: 8,
-        backgroundColor: '#d97706',
+        backgroundColor: colors.amber[600],
         alignItems: 'center' as const,
         justifyContent: 'center' as const,
     },
     shakeBadgeText: {
-        color: 'white',
+        color: '#ffffff',
         fontSize: 9,
         fontWeight: '700' as const,
     },
@@ -2900,9 +2901,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row' as const,
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#fef3c7',
+        backgroundColor: semantic.warningBg,
         borderWidth: 1,
-        borderColor: '#fcd34d',
+        borderColor: semantic.warningBorder,
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 8,
@@ -2911,10 +2912,10 @@ const styles = StyleSheet.create({
     lineupBannerText: {
         fontSize: 13,
         fontWeight: '600' as const,
-        color: '#92400e',
+        color: semantic.warningText,
         flex: 1,
     },
     lineupBannerBtn: {
-        backgroundColor: '#d97706',
+        backgroundColor: colors.amber[600],
     },
 });
