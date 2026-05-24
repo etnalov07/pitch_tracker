@@ -23,3 +23,4 @@
 | 2026-05-23 | Phase 2 — C cont 1 — extract useLiveGameController hook        | Approved    | [phase2-c-cont-hook-extraction](2026-05-23-phase2-c-cont-hook-extraction.md)          |
 | 2026-05-23 | Phase 2 — C cont 2 — extract LiveGameModals + LiveGameTopBar   | Approved    | [phase2-c-cont-jsx-split](2026-05-23-phase2-c-cont-jsx-split.md)                      |
 | 2026-05-23 | Phase 2 — C cont 3a — extract useLiveGameActions hook          | Approved    | [phase2-c-cont-3a-actions-hook](2026-05-23-phase2-c-cont-3a-actions-hook.md)          |
+| 2026-05-23 | Phase 2 — C cont 3b — extract LiveGameTablet/Phone + helpers   | Approved    | [phase2-c-cont-3b-layout-components](2026-05-23-phase2-c-cont-3b-layout-components.md) |
