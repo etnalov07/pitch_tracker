@@ -1,7 +1,7 @@
 # Phase 2 — C continuation 3b — Extract layout components + render helpers + styles · 2026-05-23
 
 **Type:** `refactor`
-**Commit:** _(pending)_
+**Commit:** `067e9e9`
 **Versions:** `mobile@2.16.0 → 2.17.0`
 
 ## Context
