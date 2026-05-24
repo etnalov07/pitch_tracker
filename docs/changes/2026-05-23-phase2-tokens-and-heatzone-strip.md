@@ -1,7 +1,7 @@
 # Phase 2 Batch 1 · Design tokens (A) + Heat-zone strip (K) · 2026-05-23
 
 **Type:** `refactor`
-**Commit:** _(pending)_
+**Commit:** `66bfe29`
 **Versions:** `mobile@2.11.0 → 2.12.0` · `web@1.22.0 → 1.23.0`
 
 ## Context
