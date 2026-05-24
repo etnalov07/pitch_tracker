@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PitchChart UX Audit — 2026-05-23</title>
+<style>
+:root {
+    --bg: #f7f7f8;
+    --card: #ffffff;
+    --card-2: #f0f2f5;
+    --border: #d8dde4;
+    --text: #1a1f2e;
+    --text-muted: #5a6478;
+    --text-dim: #8b93a8;
+    --accent: #2a5fc9;
+    --accent-soft: #e7efff;
+    --s0: #b91c1c;
+    --s1: #d97706;
+    --s2: #ca8a04;
+    --s3: #6b7280;
+    --eff-s: #16a34a;
+    --eff-m: #d97706;
+    --eff-l: #b91c1c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+}
+html.dark {
+    --bg: #0a1628;
+    --card: #132240;
+    --card-2: #1a2c48;
+    --border: #2a3a55;
+    --text: #f0ede6;
+    --text-muted: #c8c3ba;
+    --text-dim: #8b93a8;
+    --accent: #f5a623;
+    --accent-soft: #1f2d4f;
+    --s0: #ef4444;
+    --s1: #f97316;
+    --s2: #facc15;
+    --s3: #94a3b8;
+    --eff-s: #22c55e;
+    --eff-m: #f59e0b;
+    --eff-l: #ef4444;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.4);
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+}
+header.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow);
+}
+.topbar .title {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.topbar .meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: 8px;
+}
+.topbar nav {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.topbar nav a {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+}
+.topbar nav a:hover {
+    color: var(--text);
+    background: var(--card-2);
+    border-color: var(--border);
+}
+.theme-toggle {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+}
+.theme-toggle:hover { background: var(--accent-soft); }
+main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 28px 24px 96px;
+}
+h1 {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 6px;
+}
+.subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+h2 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+}
+h3 {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 28px 0 12px;
+    color: var(--text);
+}
+h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 20px 0 8px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+p { margin: 0 0 12px; }
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin: 24px 0;
+}
+.stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+}
+.stat-card .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+.stat-card .value {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+.stat-card.sev-1 .value { color: var(--s1); }
+.stat-card.sev-2 .value { color: var(--s2); }
+.stat-card.sev-3 .value { color: var(--s3); }
+.exec-list {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+}
+.exec-list ol { margin: 0; padding-left: 22px; }
+.exec-list li { margin-bottom: 12px; }
+.exec-list li:last-child { margin-bottom: 0; }
+.exec-list .fid {
+    display: inline-block;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 6px;
+}
+.honor {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+.honor ul { margin: 0; padding-left: 22px; }
+.honor li { margin-bottom: 6px; font-size: 13px; color: var(--text-muted); }
+.honor li b { color: var(--text); font-weight: 600; }
+.filter-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin: 16px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: center;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 56px;
+    z-index: 30;
+}
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.filter-group .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-right: 4px;
+}
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--card-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.12s;
+}
+.chip:hover { border-color: var(--accent); }
+.chip.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+}
+html.dark .chip.active { color: var(--bg); }
+.search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+}
+.search-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+.findings-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin: 8px 0 24px;
+}
+.findings-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 10px 12px;
+    background: var(--card-2);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+}
+.findings-table th:hover { color: var(--accent); }
+.findings-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+}
+.findings-table tr:last-child td { border-bottom: none; }
+.findings-table tr:hover td { background: var(--accent-soft); }
+.fid-cell {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--accent);
+    font-weight: 700;
+    white-space: nowrap;
+}
+.screen-cell {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.sev {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: white;
+}
+.sev.s1 { background: var(--s1); }
+.sev.s2 { background: var(--s2); color: #1a1f2e; }
+.sev.s3 { background: var(--s3); }
+.eff {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    border: 1px solid;
+}
+.eff.s { color: var(--eff-s); border-color: var(--eff-s); }
+.eff.m { color: var(--eff-m); border-color: var(--eff-m); }
+.eff.l { color: var(--eff-l); border-color: var(--eff-l); }
+.platform {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+details {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0;
+    margin: 12px 0;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+details summary {
+    padding: 14px 18px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--card-2);
+    list-style: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::after {
+    content: '▸';
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+details[open] summary::after { transform: rotate(90deg); }
+details summary .count {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 2px 8px;
+    background: var(--bg);
+    border-radius: 999px;
+    border: 1px solid var(--border);
+}
+details .body {
+    padding: 16px 20px 20px;
+}
+details .flow {
+    background: var(--card-2);
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin: 12px 0;
+    font-size: 13px;
+}
+details .flow b { color: var(--accent); }
+details ol, details ul { padding-left: 22px; margin: 8px 0; }
+details li { margin-bottom: 8px; font-size: 13px; }
+.finding-item {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+}
+.finding-item:last-child { border-bottom: none; }
+.finding-item .fid-inline {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 6px;
+}
+.finding-item .meta-inline {
+    display: inline-flex;
+    gap: 4px;
+    margin-left: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+}
+code, pre {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    background: var(--card-2);
+    padding: 1px 6px;
+    border-radius: 3px;
+}
+.phase-bundle {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 12px 0 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+.phase-bundle .item {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 14px;
+    align-items: start;
+}
+.phase-bundle .item:last-child { border-bottom: none; }
+.phase-bundle .item .num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 800;
+    font-size: 13px;
+}
+html.dark .phase-bundle .item .num { color: var(--bg); }
+.phase-bundle .item .label {
+    font-weight: 700;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+.phase-bundle .item .label .meta {
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 12px;
+}
+.phase-bundle .item .desc {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+.callout {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 12px 0;
+    font-size: 13px;
+}
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    align-items: center;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+ol.numbered, ul.bullet {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px 16px 38px;
+    box-shadow: var(--shadow);
+}
+ol.numbered li, ul.bullet li { margin-bottom: 10px; font-size: 14px; }
+ol.numbered li:last-child, ul.bullet li:last-child { margin-bottom: 0; }
+.next-step {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 24px;
+}
+.next-step h2 { margin-top: 0; border-bottom: none; }
+.no-match {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+    font-style: italic;
+    display: none;
+}
+.no-match.show { display: block; }
+@media (max-width: 720px) {
+    main { padding: 20px 14px 80px; }
+    h1 { font-size: 24px; }
+    .topbar { padding: 10px 14px; }
+    .topbar nav { display: none; }
+    .findings-table th, .findings-table td { padding: 8px 8px; font-size: 12px; }
+    .filter-bar { position: static; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+    <div>
+        <span class="title">PitchChart UX Audit</span>
+        <span class="meta">2026-05-23 · 127 findings</span>
+    </div>
+    <nav>
+        <a href="#summary">Summary</a>
+        <a href="#findings">Findings</a>
+        <a href="#screens">Per-screen</a>
+        <a href="#phase1">Phase 1</a>
+        <a href="#phase2">Phase 2</a>
+        <a href="#questions">Open Qs</a>
+    </nav>
+    <button class="theme-toggle" id="themeToggle" type="button">🌙 Dark</button>
+</header>
+
+<main>
+
+<h1>PitchChart UX Audit</h1>
+<div class="subtitle">
+    Review only · 127 findings across primary in-game surfaces (mobile + web) · Code-based heuristic walkthrough · Audit-first planning input
+</div>
+
+<section id="summary">
+<h2>At a glance</h2>
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="label">Total findings</div><div class="value">127</div></div>
+    <div class="stat-card sev-1"><div class="label">S1 — Major</div><div class="value" id="cnt-s1">—</div></div>
+    <div class="stat-card sev-2"><div class="label">S2 — Moderate</div><div class="value" id="cnt-s2">—</div></div>
+    <div class="stat-card sev-3"><div class="label">S3 — Minor</div><div class="value" id="cnt-s3">—</div></div>
+    <div class="stat-card"><div class="label">Screens audited</div><div class="value">8</div></div>
+    <div class="stat-card"><div class="label">Phase 1 picks</div><div class="value">10</div></div>
+</div>
+
+<h3>Top 5 highest impact-per-effort</h3>
+<div class="exec-list">
+<ol>
+<li><span class="fid">UX-LG-01</span> <b>Result-only edit / Fix-Last-Pitch path</b> <span class="sev s1">S1</span> <span class="eff m">M</span> · Biggest mid-inning frustration source. Today a mis-tapped result requires a 6–8-tap Undo + full re-entry. Add a "Fix Last Pitch" affordance that lets the coach change only the result without re-entering type/zone/velocity.</li>
+<li><span class="fid">UX-PC-01</span> <b>Consolidate pitch-calling into one implementation</b> <span class="sev s1">S1</span> <span class="eff l">L</span> · Two parallel flows (<code>/live</code> inline + dedicated <code>/pitch-calling</code>) maintain duplicate state, components, and behavior. Pick one, deprecate the other.</li>
+<li><span class="fid">UX-LG-04</span> <b>Replace native <code>Alert.alert</code> with a Snackbar/Toast pattern</b> <span class="sev s2">S2</span> <span class="eff s">S</span> · Recurs across Undo, Dropped-K3, End Game, Delete Game, validation errors. One <code>useToast()</code> hook lights up ~10 findings.</li>
+<li><span class="fid">UX-LG-13</span> <b>Show current pitcher's pitch count on the live screen header</b> <span class="sev s1">S1</span> <span class="eff s">S</span> · Coaches need this for pitch-count rules; missing from phone entirely. Cheap, high-impact glanceability win.</li>
+<li><span class="fid">UX-NG-02</span> <b>Smart defaults from last game on New Game setup</b> <span class="sev s1">S1</span> <span class="eff s">S</span> · 80% of games reuse the same opponent / lineup / mode / innings. Pre-fill and let the coach confirm in one tap.</li>
+</ol>
+
+<div class="honor">
+    <h4>Honorable mentions worth exec-level attention</h4>
+    <ul>
+        <li><b>UX-TD-01</b> Web has no entry point to Pitcher Tendencies modal — dead-code path; shipped feature is invisible to web coaches.</li>
+        <li><b>UX-IP-01 / UX-PB-01</b> Unescapable modals — <code>InningChangeModal</code>, <code>TeamAtBatModal</code> have <code>onDismiss={() => {}}</code> no-ops. Coach can get stuck.</li>
+        <li><b>UX-LG-12</b> <code>is_home_game</code> toggle disappears after first pitch logged — no recovery from a wrong-side setup.</li>
+        <li><b>UX-PB-02</b> Pitcher selector parity gap — web filters by <code>position='P'</code>; mobile shows full roster. Pick one.</li>
+        <li><b>UX-GLB-01</b> Design token consolidation — every screen has hardcoded color literals. Light-mode-only. Foundation for any future dark-mode or rebrand work.</li>
+    </ul>
+</div>
+</div>
+</section>
+
+<section id="findings">
+<h2>All findings</h2>
+
+<div class="legend">
+    <div class="legend-item"><span class="sev s1">S1</span> Major · primary-flow friction</div>
+    <div class="legend-item"><span class="sev s2">S2</span> Moderate · inconsistency / secondary friction</div>
+    <div class="legend-item"><span class="sev s3">S3</span> Minor · polish / cosmetic</div>
+    <div class="legend-item"><span class="eff s">S</span> ≤½ day</div>
+    <div class="legend-item"><span class="eff m">M</span> ½–2 days</div>
+    <div class="legend-item"><span class="eff l">L</span> &gt;2 days</div>
+</div>
+
+<div class="filter-bar">
+    <div class="filter-group">
+        <span class="label">Sev</span>
+        <span class="chip active" data-filter="sev" data-value="all">All</span>
+        <span class="chip" data-filter="sev" data-value="s1">S1</span>
+        <span class="chip" data-filter="sev" data-value="s2">S2</span>
+        <span class="chip" data-filter="sev" data-value="s3">S3</span>
+    </div>
+    <div class="filter-group">
+        <span class="label">Effort</span>
+        <span class="chip active" data-filter="eff" data-value="all">All</span>
+        <span class="chip" data-filter="eff" data-value="s">S</span>
+        <span class="chip" data-filter="eff" data-value="m">M</span>
+        <span class="chip" data-filter="eff" data-value="l">L</span>
+    </div>
+    <div class="filter-group">
+        <span class="label">Screen</span>
+        <span class="chip active" data-filter="screen" data-value="all">All</span>
+        <span class="chip" data-filter="screen" data-value="LG">Live Game</span>
+        <span class="chip" data-filter="screen" data-value="PC">Pitch Calling</span>
+        <span class="chip" data-filter="screen" data-value="PB">Selectors</span>
+        <span class="chip" data-filter="screen" data-value="TD">Tendencies</span>
+        <span class="chip" data-filter="screen" data-value="IP">In-Play</span>
+        <span class="chip" data-filter="screen" data-value="NG">New Game</span>
+        <span class="chip" data-filter="screen" data-value="BP">Bullpen</span>
+        <span class="chip" data-filter="screen" data-value="DB">Dashboard</span>
+        <span class="chip" data-filter="screen" data-value="GLB">Global</span>
+    </div>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search findings...">
+</div>
+
+<table class="findings-table" id="findingsTable">
+<thead>
+    <tr>
+        <th data-sort="id">ID</th>
+        <th data-sort="screen">Screen</th>
+        <th data-sort="desc">Description</th>
+        <th data-sort="sev">Sev</th>
+        <th data-sort="eff">Eff</th>
+        <th data-sort="plat">Platform</th>
+    </tr>
+</thead>
+<tbody id="findingsBody">
+</tbody>
+</table>
+<div class="no-match" id="noMatch">No findings match the current filters.</div>
+</section>
+
+<section id="screens">
+<h2>Per-screen findings</h2>
+
+<details open>
+<summary>Live Game — mobile (<code>packages/mobile/app/game/[id]/live.tsx</code>) <span class="count">33 findings</span></summary>
+<div class="body">
+<p><b>Size:</b> 2647 lines in one file. Worth flagging on its own (<code>UX-LG-00</code>).</p>
+<div class="flow">
+<b>Current flow — log an on-call strike (phone, our_pitcher mode):</b><br>
+1. Tap pitch type chip · 2. Tap target zone (1st tap) · 3. Tap actual location (2nd tap) · 4. Tap <b>SEND</b> (TTS) · 5. Type velocity · 6. Tap result → auto-logs<br>
+<b>Tap count:</b> 4–6 per pitch.
+</div>
+<div class="flow">
+<b>Current flow — fix a mis-tapped result:</b><br>
+1. Tap Undo · 2. Confirm in <code>Alert.alert</code> · 3–8. Re-enter pitch type + target + actual + (velocity) + correct result<br>
+<b>Tap count:</b> 6–8 to fix one wrong tap.
+</div>
+<h4>Issues</h4>
+<div id="screen-LG"></div>
+</div>
+</details>
+
+<details>
+<summary>Live Game — web (<code>packages/web/src/pages/LiveGame/</code>) <span class="count">12 findings</span></summary>
+<div class="body">
+<p><b>Size:</b> 1046 lines; uses <code>useLiveGameState</code> + <code>useLiveGameActions</code> hooks (mobile should follow this split). Layout: 2 columns (left stats panel, main panel with top bar + game header + players row + pitch form).</p>
+<div class="flow">
+<b>Tap count:</b> 4–6 to log a pitch (same as mobile). Undo uses a real modal (<code>UndoPitchModal</code>) — better than mobile's <code>Alert.alert</code>, but still 5–6 taps to fix.
+</div>
+<h4>Issues</h4>
+<div id="screen-LG-web"></div>
+</div>
+</details>
+
+<details>
+<summary>Pitch Calling — mobile (<code>app/game/[id]/pitch-calling.tsx</code> + BT/TTS) <span class="count">12 findings</span></summary>
+<div class="body">
+<div class="flow">
+<b>Current flow — send + log a call (dedicated screen):</b><br>
+1. Tap pitch type · 2. Tap zone · 3. Tap <b>SEND</b> (TTS speaks <code>"&lt;Pitch&gt;, &lt;Zone&gt;... &lt;Pitch&gt;, &lt;Zone&gt;"</code> over A2DP) · 4. Tap result chip (strike / ball / foul / in-play)
+</div>
+<p><b>Stack reality:</b> Calls are spoken via <code>expo-speech</code> TTS, routed via <code>react-native-audio-api</code> (iOS A2DP) / <code>expo-av</code> (Android). Double-speak repeats once for crowd resilience (~3–4s). Walkie-talkie uses separate <code>walkieTalkie.ts</code> mic passthrough.</p>
+<h4>Issues</h4>
+<div id="screen-PC"></div>
+</div>
+</details>
+
+<details>
+<summary>Pitcher/Batter switching modals <span class="count">11 findings</span></summary>
+<div class="body">
+<p>Mobile: <code>PitcherSelectorModal</code> (128 ln), <code>BatterSelectorModal</code> (348 ln), <code>MyBatterSelectorModal</code> (243 ln), <code>TeamAtBatModal</code> (68 ln). Web counterparts: <code>PitcherSelector</code> (145 ln), <code>BatterSelector</code> (382 ln).</p>
+<h4>Issues</h4>
+<div id="screen-PB"></div>
+</div>
+</details>
+
+<details>
+<summary>In-game scouting &amp; tendencies modals <span class="count">11 findings</span></summary>
+<div class="body">
+<p>Mobile: <code>HitterTendenciesModal</code> (266 ln), <code>PitcherTendenciesModal</code> (189 ln), <code>TendencyZoneGrid</code> (91 ln), <code>SuggestedSequence</code> (86 ln), <code>SituationalCallsRow</code> (77 ln). Web: panel equivalents under <code>components/live/</code>.</p>
+<h4>Issues</h4>
+<div id="screen-TD"></div>
+</div>
+</details>
+
+<details>
+<summary>In-play event modals <span class="count">15 findings</span></summary>
+<div class="body">
+<p>Seven mobile modals: <code>InPlayModal</code> (480 ln), <code>RunnerEventModal</code> (384 ln), <code>RunnerAdvancementModal</code> (592 ln), <code>BaserunnerOutModal</code> (191 ln), <code>DoublePlayModal</code> (230 ln), <code>PickoffModal</code> (134 ln), <code>InningChangeModal</code> (75 ln).</p>
+<h4>Issues</h4>
+<div id="screen-IP"></div>
+</div>
+</details>
+
+<details>
+<summary>New Game / Setup (mobile + web) <span class="count">14 findings</span></summary>
+<div class="body">
+<p>Mobile: <code>app/game/new.tsx</code> (437 ln) — single scrollable form. Web: <code>pages/GameSetup/GameSetup.tsx</code> (613 ln) — <b>3-step wizard</b> (Teams &amp; Mode → Game Details → Confirm).</p>
+<h4>Issues</h4>
+<div id="screen-NG"></div>
+</div>
+</details>
+
+<details>
+<summary>Bullpen Live charting (mobile + web) <span class="count">14 findings</span></summary>
+<div class="body">
+<p>Mobile: <code>app/bullpen/[id]/live.tsx</code> (376 ln). Web: <code>pages/BullpenLive/BullpenLive.tsx</code> (383 ln). Plus web-only <code>BullpenPlans</code> and <code>BullpenPlanEditor</code>.</p>
+<div class="flow">
+<b>Tap count:</b> 4–5 per pitch (type + target + actual + log button [+ velocity]).
+</div>
+<h4>Issues</h4>
+<div id="screen-BP"></div>
+</div>
+</details>
+
+<details>
+<summary>Dashboard entry path (mobile + web) <span class="count">10 findings</span></summary>
+<div class="body">
+<p>Mobile: <code>app/(tabs)/index.tsx</code> (425 ln). Web: <code>pages/Dashboard/Dashboard.tsx</code> (19 ln, role router) → <code>CoachDashboard.tsx</code> (445 ln).</p>
+<div class="flow">
+<b>Path to charting a pitch:</b> in-progress game → tap card → /live (2 taps). Scheduled → tap "Start Game" → /live (2 taps). New game → FAB → /game/new → fill form → submit → my-lineup → ... → /live (5+ screens).
+</div>
+<h4>Issues</h4>
+<div id="screen-DB"></div>
+</div>
+</details>
+
+<details>
+<summary>Global / cross-cutting <span class="count">5 findings</span></summary>
+<div class="body">
+<h4>Issues</h4>
+<div id="screen-GLB"></div>
+</div>
+</details>
+
+</section>
+
+<section id="phase1">
+<h2>Phase 1 quick wins (recommended bundle)</h2>
+<p>Tight bundle that together meaningfully improves daily-use UX without touching the design system. <b>Estimated effort: ~1.5–2 sprints for one engineer.</b></p>
+<div class="phase-bundle">
+    <div class="item">
+        <div class="num">1</div>
+        <div>
+            <div class="label"><span class="fid-inline">UX-LG-04</span> / <span class="fid-inline">UX-GLB-02</span> Replace Alert.alert with Snackbar <span class="meta">· S2/S+M</span></div>
+            <div class="desc">Cross-cutting; one component lights up ~10 findings. Pre-requisite for several other items. Single visible pattern improvement.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">2</div>
+        <div>
+            <div class="label"><span class="fid-inline">UX-LG-01</span> / <span class="fid-inline">UX-LG-22</span> Fix Last Pitch (result-only edit) <span class="meta">· S1/M</span></div>
+            <div class="desc">Biggest mid-inning friction source. Needs new <code>PATCH /pitches/:id</code> (result-only) endpoint + Snackbar "Edit" affordance after each pitch.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">3</div>
+        <div>
+            <div class="label"><span class="fid-inline">UX-LG-13</span> Pitch count in live header <span class="meta">· S1/S</span></div>
+            <div class="desc">Coaches need this for pitch-count rules. Trivial layout addition; immediate glanceability win.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">4</div>
+        <div>
+            <div class="label"><span class="fid-inline">UX-LG-12</span> <code>is_home_game</code> recoverable after first pitch <span class="meta">· S1/M</span></div>
+            <div class="desc">Recovery from wrong-side setup. Currently no exit ramp.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">5</div>
+        <div>
+            <div class="label"><span class="fid-inline">UX-NG-02</span> Smart defaults from last game <span class="meta">· S1/S</span></div>
+            <div class="desc">Setup tap-count cut in half for the 80% case. Pre-fill opponent / lineup_size / innings / charting_mode; coach confirms in one tap.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">6</div>
+        <div>
+            <div class="label"><span class="fid-inline">UX-PB-01</span> + <span class="fid-inline">UX-IP-01</span> Make all modals escapable <span class="meta">· S1/S each</span></div>
+            <div class="desc">Fix <code>onDismiss={() => {}}</code> no-ops in <code>TeamAtBatModal</code> and <code>InningChangeModal</code>. Two-line fixes; eliminate "stuck modal" reports.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">7</div>
+        <div>
+            <div class="label"><span class="fid-inline">UX-TD-01</span> Wire up Pitcher Tendencies button on web <span class="meta">· S1/S</span></div>
+            <div class="desc">Dead-code path hides a shipped feature from web users. Add the button + a sensible spot in the TopBar.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">8</div>
+        <div>
+            <div class="label"><span class="fid-inline">UX-PB-02</span> Pitcher selector position filter parity <span class="meta">· S1/S</span></div>
+            <div class="desc">Pick: filter to <code>position='P'</code> (web's behavior) or show full roster (mobile's). Make both surfaces match.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">9</div>
+        <div>
+            <div class="label"><span class="fid-inline">UX-LG-02</span> + <span class="fid-inline">UX-LG-03</span> Zone-tap UX cleanup <span class="meta">· S1/S each</span></div>
+            <div class="desc">Add a visible cue distinguishing "target" tap from "actual" tap. Default to <code>actual = target</code> if coach only taps once; long-press for off-call entry.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">10</div>
+        <div>
+            <div class="label"><span class="fid-inline">UX-NG-08</span> + <span class="fid-inline">UX-NG-09</span> Real date/time pickers on mobile new-game <span class="meta">· S1/S each</span></div>
+            <div class="desc">Native pickers; eliminates fat-finger typos.</div>
+        </div>
+    </div>
+</div>
+<div class="callout">
+<b>Sequencing:</b> Items 1–2 should go first (Snackbar pattern unblocks others). Item 3 can ship standalone. 4–10 can run in parallel.
+</div>
+</section>
+
+<section id="phase2">
+<h2>Phase 2 investments</h2>
+<p>Larger workstreams. Each warrants its own <code>docs/plans/</code> doc; not bundle-able into Phase 1.</p>
+
+<div class="phase-bundle">
+    <div class="item">
+        <div class="num">A</div>
+        <div>
+            <div class="label">Design token consolidation</div>
+            <div class="desc">Roll up <code>UX-GLB-01</code>, <code>UX-GLB-03</code>, plus all "-18", "-24", "-30", "-06", "-10", "-12" (hardcoded color literals). Lift hex literals into a single mobile + web token set. Unlocks dark mode + future re-skin. Cross-cuts web and mobile theme files.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">B</div>
+        <div>
+            <div class="label">Pitch calling consolidation</div>
+            <div class="desc">Roll up <code>UX-PC-01, 02, 04, 05, 07, 08, 09</code>. Pick a single canonical implementation, deprecate the other. Add <code>pitch_calls.pitch_id</code> FK + 6-bucket call result enum. Cross-cuts API + DB + web + mobile.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">C</div>
+        <div>
+            <div class="label">Live screen refactor (mobile)</div>
+            <div class="desc"><code>UX-LG-00, 07, 11, 31</code>. Split <code>live.tsx</code> (2647 ln) into <code>useLiveGameController</code> hook + 4–5 layout components. Reorder phone layout so StrikeZone + ResultButtons are thumb-reachable. Strong tendencies-button placement.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">D</div>
+        <div>
+            <div class="label">New Game flow alignment</div>
+            <div class="desc"><code>UX-NG-01, 04, 12, 11, 13</code>. Pick mobile-form vs web-wizard paradigm. Add edit-in-place on web confirm. Smart-defaults (Phase 1) is the gateway.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">E</div>
+        <div>
+            <div class="label">In-play modal cleanup</div>
+            <div class="desc"><code>UX-IP-02, 03, 04, 07, 08, 09, 15</code>. Standardize modal scaffolding (Paper Portal everywhere); replace View+onTouchEnd with Pressable; split RunnerEventModal; tackle RunnerAdvancementModal (592 ln).</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">F</div>
+        <div>
+            <div class="label">Tendencies side-by-side mode (tablet)</div>
+            <div class="desc"><code>UX-TD-11, 10, LG-11</code>. On iPad landscape, render Tendencies panel beside strike zone instead of blocking modal. Lifts biggest in-game info-glanceability finding.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">G</div>
+        <div>
+            <div class="label">Snackbar / Toast library (foundation)</div>
+            <div class="desc"><code>UX-GLB-02</code> underpinned in Phase 1. If Phase 1 ships hand-rolled toast, Phase 2 evaluates a real lib (e.g. RNP Snackbar or <code>react-native-paper-toast</code>).</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">H</div>
+        <div>
+            <div class="label">Scoreboard aesthetic (navy/amber/Oswald)</div>
+            <div class="desc"><code>UX-PC-02, GLB-04, GLB-05</code>. Aesthetic already exists in <code>/pitch-calling</code>. Decision needed first (see Open Questions). If yes: load 3 fonts, lift tokens, theme refresh.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">I</div>
+        <div>
+            <div class="label">Bullpen feature parity</div>
+            <div class="desc"><code>UX-BP-10, 13, 14, 02</code>. Mobile plan editor; Undo last pitch; truthful display for unscored pitches; verify Command Grade integration.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">J</div>
+        <div>
+            <div class="label">Mobile role routing</div>
+            <div class="desc"><code>UX-DB-10</code>. Player-role mobile users see coach-shaped dashboard. Mirror web's <code>RoleRouter</code>.</div>
+        </div>
+    </div>
+    <div class="item">
+        <div class="num">K</div>
+        <div>
+            <div class="label">Heat zones parity decision</div>
+            <div class="desc"><code>UX-LG-29</code>. Either lift to mobile or strip from web. Quick discussion → either S or M effort.</div>
+        </div>
+    </div>
+</div>
+</section>
+
+<section id="questions">
+<h2>Open questions</h2>
+<p>Things the audit cannot answer from code alone. Each will reshape Phase 1 / 2 picks if answered differently.</p>
+<ol class="numbered">
+<li><b>Should PitchChart adopt the navy/amber scoreboard aesthetic from <code>/pitch-calling</code>?</b> Three options: (a) yes, lift to tokens and propagate; (b) no, refactor <code>/pitch-calling</code> back to neutral; (c) keep as-is and tolerate inconsistency. Affects whether to load Oswald/Source Sans/JetBrains Mono fonts.</li>
+<li><b>Real-coach pain ranking</b> — I scored on principle, not usage data. Recent support-ticket or coach-feedback snapshot would re-prioritize Phase 1.</li>
+<li><b>Pitch_call ↔ pitch link priority</b> — <code>UX-PC-05</code> proposes a <code>pitch_calls.pitch_id</code> FK + 6-bucket result enum. Is the call-execution analytic a real product priority?</li>
+<li><b>Bullpen Command Grade integration status</b> — <code>UX-BP-02</code> flags bullpen doesn't show result classification. Is Command Grade <em>visible</em> after each logged pitch, or computed-but-hidden?</li>
+<li><b>iOS 26.2 beta status</b> — CLAUDE.md bans several expo libs. Phase 2 (Snackbar lib, bottom-sheet, fonts) needs to verify old-arch compat. Stable shipping soon?</li>
+<li><b>Mobile + web setup paradigm</b> — <code>UX-NG-01</code> flags a fundamental divergence. Wizard or single form? My read: single-form-with-smart-defaults wins for repeat coaches.</li>
+<li><b>Scoreboard team-column convention</b> — <code>UX-LG-26</code>. Opponent always left, your team always right (regardless of <code>is_home_game</code>). MLB convention is home-right. Hold the line or align?</li>
+<li><b><code>/pitch-calling</code> route — deprecate or rebrand?</b> <code>UX-PC-08</code>. If the WebSocket relay is a real use case, screen has a purpose as catcher's view. Otherwise dead.</li>
+<li><b><code>SituationalCallsRow</code> — wire up or delete?</b> <code>UX-TD-02</code>. Component built (PO/BNT/1&amp;3/SHK) but referenced from nowhere. Abandoned mid-feature or scoped for later?</li>
+<li><b>Web heat zones useful?</b> <code>UX-LG-29</code>. Mobile doesn't have it. If useful on web, lift to mobile. If unused, kill.</li>
+<li><b>What's missing from the audit?</b> Phase 1 surfaces only. Out-of-scope: replay, performance summary, history, scouting editor, team mgmt, settings, admin. If pain lives there, Phase 2 covers them.</li>
+</ol>
+</section>
+
+<section class="next-step">
+<h2>Next step</h2>
+<p>User reviews this doc, picks 3–5 Phase 1 items to attack. For each chosen item I'll write a <code>docs/plans/&lt;date&gt;-&lt;slug&gt;.md</code> implementation plan (per <code>/preflight</code> convention), then ship per the CLAUDE.md pre-commit checklist with a paired <code>docs/changes/</code> doc.</p>
+<p><b>Recommended first slice for fastest user-visible improvement:</b> #1 Snackbar foundation + #3 pitch count in header + #5 smart defaults + #6 escape-modal fix + #7 web Pitcher Tendencies button. That's 5 items, all S/M effort, lights up ~15 individual findings, and ships a tangible "the app feels nicer this week" set of changes without touching the data model or design system.</p>
+</section>
+
+</main>
+
+<script>
+const FINDINGS = [
+    // Live Game
+    {id:'UX-LG-00', screen:'Live Game', screenKey:'LG', sev:'s3', eff:'m', plat:'mobile', desc:'live.tsx is 2647 lines; split into hook + components'},
+    {id:'UX-LG-01', screen:'Live Game', screenKey:'LG', sev:'s1', eff:'m', plat:'both', desc:'No result-only edit; Undo deletes everything'},
+    {id:'UX-LG-02', screen:'Live Game', screenKey:'LG', sev:'s1', eff:'s', plat:'both', desc:'Two-tap zone semantics (target vs actual) have no UI cue'},
+    {id:'UX-LG-03', screen:'Live Game', screenKey:'LG', sev:'s1', eff:'s', plat:'both', desc:'No "actual = target" shortcut for on-spot pitches'},
+    {id:'UX-LG-04', screen:'Live Game', screenKey:'LG', sev:'s2', eff:'s', plat:'mobile', desc:'Undo uses native Alert.alert (umbrella)'},
+    {id:'UX-LG-05', screen:'Live Game', screenKey:'LG', sev:'s2', eff:'s', plat:'mobile', desc:'3rd-strike-dropped uses native Alert.alert'},
+    {id:'UX-LG-06', screen:'Live Game', screenKey:'LG', sev:'s3', eff:'s', plat:'mobile', desc:'End Game uses native Alert.alert'},
+    {id:'UX-LG-07', screen:'Live Game', screenKey:'LG', sev:'s1', eff:'m', plat:'mobile', desc:'Phone layout puts StrikeZone deep in scroll'},
+    {id:'UX-LG-08', screen:'Live Game', screenKey:'LG', sev:'s2', eff:'s', plat:'both', desc:'No pending-pitch summary after type+zone selection'},
+    {id:'UX-LG-09', screen:'Live Game', screenKey:'LG', sev:'s1', eff:'m', plat:'both', desc:'Undo wipes call-execution analytic for UI mistakes'},
+    {id:'UX-LG-10', screen:'Live Game', screenKey:'LG', sev:'s2', eff:'m', plat:'mobile', desc:'Velocity input pulls system keyboard mid-inning'},
+    {id:'UX-LG-11', screen:'Live Game', screenKey:'LG', sev:'s2', eff:'m', plat:'mobile', desc:'Pitcher/Hitter tendency buttons visually de-prioritized'},
+    {id:'UX-LG-12', screen:'Live Game', screenKey:'LG', sev:'s1', eff:'m', plat:'both', desc:'home/away toggle disappears after first pitch'},
+    {id:'UX-LG-13', screen:'Live Game', screenKey:'LG', sev:'s1', eff:'s', plat:'mobile', desc:'No pitch count for current pitcher in header (phone)'},
+    {id:'UX-LG-14', screen:'Live Game', screenKey:'LG', sev:'s2', eff:'s', plat:'mobile', desc:'Walkie-Talkie only visible inside call flow'},
+    {id:'UX-LG-15', screen:'Live Game', screenKey:'LG', sev:'s3', eff:'s', plat:'mobile', desc:'Shake button semantics opaque'},
+    {id:'UX-LG-16', screen:'Live Game', screenKey:'LG', sev:'s3', eff:'s', plat:'mobile', desc:'Opp. Pitcher button last-name truncates'},
+    {id:'UX-LG-17', screen:'Live Game', screenKey:'LG', sev:'s2', eff:'m', plat:'both', desc:'No smart-ordering of PitchTypeGrid in opp_pitcher mode'},
+    {id:'UX-LG-18', screen:'Live Game', screenKey:'LG', sev:'s2', eff:'m', plat:'mobile', desc:'Hardcoded color literals throughout'},
+    {id:'UX-LG-19', screen:'Live Game', screenKey:'LG', sev:'s2', eff:'s', plat:'mobile', desc:'New batter mid-AB silently preserves count/outs'},
+    {id:'UX-LG-20', screen:'Live Game', screenKey:'LG', sev:'s3', eff:'s', plat:'both', desc:'OpposingPitcherModal vs PitcherStatsModal overlap'},
+    {id:'UX-LG-21', screen:'Live Game (web)', screenKey:'LG', sev:'s3', eff:'s', plat:'web', desc:'Step labels skip Step 2 (strike zone unlabeled)'},
+    {id:'UX-LG-22', screen:'Live Game (web)', screenKey:'LG', sev:'s1', eff:'m', plat:'web', desc:'No result-only edit (same as LG-01)'},
+    {id:'UX-LG-23', screen:'Live Game (web)', screenKey:'LG', sev:'s2', eff:'m', plat:'web', desc:'TopBar mixes 5+ emoji icon families'},
+    {id:'UX-LG-24', screen:'Live Game (web)', screenKey:'LG', sev:'s2', eff:'s', plat:'web', desc:'Settings panel uses 60+ lines of inline styles'},
+    {id:'UX-LG-25', screen:'Live Game (web)', screenKey:'LG', sev:'s1', eff:'s', plat:'web', desc:'<select> nested inside <button> (invalid HTML)'},
+    {id:'UX-LG-26', screen:'Live Game (web)', screenKey:'LG', sev:'s2', eff:'s', plat:'both', desc:'Score columns positionally fixed regardless of home/away'},
+    {id:'UX-LG-27', screen:'Live Game (web)', screenKey:'LG', sev:'s2', eff:'s', plat:'web', desc:'Send Call button far from strike zone'},
+    {id:'UX-LG-28', screen:'Live Game (web)', screenKey:'LG', sev:'s2', eff:'m', plat:'web', desc:'TopBar overcrowded with 8 controls'},
+    {id:'UX-LG-29', screen:'Live Game', screenKey:'LG', sev:'s2', eff:'m', plat:'mobile', desc:'Heat-zone toggle is web-only (parity gap)'},
+    {id:'UX-LG-30', screen:'Live Game (web)', screenKey:'LG', sev:'s3', eff:'m', plat:'web', desc:'Heavy inline style={{...}} use bypasses theme'},
+    {id:'UX-LG-31', screen:'Live Game (web)', screenKey:'LG', sev:'s3', eff:'m', plat:'web', desc:'LiveGame.tsx is 1046 lines despite hook split'},
+    {id:'UX-LG-32', screen:'Live Game (web)', screenKey:'LG', sev:'s3', eff:'s', plat:'web', desc:'Settings label drift vs mobile'},
+    // Pitch Calling
+    {id:'UX-PC-01', screen:'Pitch Calling', screenKey:'PC', sev:'s1', eff:'l', plat:'mobile', desc:'TWO parallel pitch-calling implementations'},
+    {id:'UX-PC-02', screen:'Pitch Calling', screenKey:'PC', sev:'s2', eff:'m', plat:'mobile', desc:'/pitch-calling already uses navy/amber tokens locally'},
+    {id:'UX-PC-03', screen:'Pitch Calling', screenKey:'PC', sev:'s2', eff:'s', plat:'mobile', desc:'SEND hard-disabled without BT (WebSocket relay ignored)'},
+    {id:'UX-PC-04', screen:'Pitch Calling', screenKey:'PC', sev:'s2', eff:'m', plat:'both', desc:'Call result enum loses HBP and called-vs-swinging info'},
+    {id:'UX-PC-05', screen:'Pitch Calling', screenKey:'PC', sev:'s1', eff:'m', plat:'both', desc:'No pitch_id ↔ pitch_call_id link'},
+    {id:'UX-PC-06', screen:'Pitch Calling', screenKey:'PC', sev:'s3', eff:'s', plat:'mobile', desc:'Double-speak TTS can\'t be skipped (3-4s)'},
+    {id:'UX-PC-07', screen:'Pitch Calling', screenKey:'PC', sev:'s2', eff:'s', plat:'both', desc:'"Change" behaves differently on /live vs /pitch-calling'},
+    {id:'UX-PC-08', screen:'Pitch Calling', screenKey:'PC', sev:'s2', eff:'s', plat:'mobile', desc:'/pitch-calling is a stale entry point'},
+    {id:'UX-PC-09', screen:'Pitch Calling', screenKey:'PC', sev:'s2', eff:'m', plat:'mobile', desc:'No receive-side ack/signal indicator'},
+    {id:'UX-PC-10', screen:'Pitch Calling', screenKey:'PC', sev:'s3', eff:'s', plat:'mobile', desc:'Back-button iconColor hardcoded #F0EDE6'},
+    {id:'UX-PC-11', screen:'Pitch Calling', screenKey:'PC', sev:'s2', eff:'s', plat:'mobile', desc:'CallPitchTypeGrid probably not arsenal-aware'},
+    {id:'UX-PC-12', screen:'Pitch Calling', screenKey:'PC', sev:'s3', eff:'s', plat:'mobile', desc:'Walkie-talkie auto-pause during TTS is invisible'},
+    // Selectors
+    {id:'UX-PB-01', screen:'Selectors', screenKey:'PB', sev:'s1', eff:'s', plat:'mobile', desc:'TeamAtBatModal is unescapable (onDismiss no-op)'},
+    {id:'UX-PB-02', screen:'Selectors', screenKey:'PB', sev:'s1', eff:'s', plat:'both', desc:'Pitcher selector parity gap (web filters pos="P")'},
+    {id:'UX-PB-03', screen:'Selectors', screenKey:'PB', sev:'s3', eff:'m', plat:'mobile', desc:'BatterSelectorModal does 4 things in 348 lines'},
+    {id:'UX-PB-04', screen:'Selectors', screenKey:'PB', sev:'s3', eff:'s', plat:'mobile', desc:'Double "Cancel" buttons in batter modal'},
+    {id:'UX-PB-05', screen:'Selectors', screenKey:'PB', sev:'s2', eff:'s', plat:'both', desc:'Tap-to-select commits with no confirm/undo'},
+    {id:'UX-PB-06', screen:'Selectors', screenKey:'PB', sev:'s2', eff:'m', plat:'both', desc:'Hardcoded light-mode colors'},
+    {id:'UX-PB-07', screen:'Selectors', screenKey:'PB', sev:'s2', eff:'s', plat:'mobile', desc:'No KeyboardAvoidingView on selector modals'},
+    {id:'UX-PB-08', screen:'Selectors', screenKey:'PB', sev:'s2', eff:'s', plat:'web', desc:'Web PitcherSelector uses native alert()'},
+    {id:'UX-PB-09', screen:'Selectors', screenKey:'PB', sev:'s3', eff:'s', plat:'both', desc:'No "recent pitchers" / "frequent" sort'},
+    {id:'UX-PB-10', screen:'Selectors', screenKey:'PB', sev:'s3', eff:'s', plat:'web', desc:'Active vs exited pitchers visually indistinct on web'},
+    {id:'UX-PB-11', screen:'Selectors', screenKey:'PB', sev:'s2', eff:'m', plat:'mobile', desc:'MyBatterSelectorModal can\'t add new player inline'},
+    // Tendencies
+    {id:'UX-TD-01', screen:'Tendencies', screenKey:'TD', sev:'s1', eff:'s', plat:'web', desc:'Web has no entry point to PitcherTendenciesPanel (dead)'},
+    {id:'UX-TD-02', screen:'Tendencies', screenKey:'TD', sev:'s2', eff:'s', plat:'both', desc:'SituationalCallsRow is dead code on both platforms'},
+    {id:'UX-TD-03', screen:'Tendencies', screenKey:'TD', sev:'s2', eff:'s', plat:'both', desc:'Hitter modal lacks pitcher-handedness context'},
+    {id:'UX-TD-04', screen:'Tendencies', screenKey:'TD', sev:'s2', eff:'s', plat:'mobile', desc:'TendencyZoneGrid is width: 168px hardcoded'},
+    {id:'UX-TD-05', screen:'Tendencies', screenKey:'TD', sev:'s3', eff:'s', plat:'both', desc:'Zone label codes (UI/UA/MM) have no legend'},
+    {id:'UX-TD-06', screen:'Tendencies', screenKey:'TD', sev:'s2', eff:'m', plat:'both', desc:'Hardcoded heatmap colors everywhere'},
+    {id:'UX-TD-07', screen:'Tendencies', screenKey:'TD', sev:'s3', eff:'s', plat:'both', desc:'pitch_vulnerabilities chips not color-coded by type'},
+    {id:'UX-TD-08', screen:'Tendencies', screenKey:'TD', sev:'s2', eff:'s', plat:'both', desc:'"No data" warnings use light-mode-only colors'},
+    {id:'UX-TD-09', screen:'Tendencies', screenKey:'TD', sev:'s3', eff:'s', plat:'mobile', desc:'Own-team scouting context not loaded (intent?)'},
+    {id:'UX-TD-10', screen:'Tendencies', screenKey:'TD', sev:'s3', eff:'m', plat:'mobile', desc:'Hitter/Pitcher modals duplicate 80% of code'},
+    {id:'UX-TD-11', screen:'Tendencies', screenKey:'TD', sev:'s2', eff:'m', plat:'tablet', desc:'No "pin tendencies open" while selecting'},
+    // In-Play
+    {id:'UX-IP-01', screen:'In-Play', screenKey:'IP', sev:'s1', eff:'s', plat:'mobile', desc:'InningChangeModal is unescapable'},
+    {id:'UX-IP-02', screen:'In-Play', screenKey:'IP', sev:'s2', eff:'m', plat:'mobile', desc:'Modal implementations inconsistent (Paper vs custom overlay)'},
+    {id:'UX-IP-03', screen:'In-Play', screenKey:'IP', sev:'s2', eff:'m', plat:'mobile', desc:'InPlayModal uses View+onTouchEnd (no Pressable)'},
+    {id:'UX-IP-04', screen:'In-Play', screenKey:'IP', sev:'s2', eff:'m', plat:'mobile', desc:'InPlayModal field SVG is fixed 280×280'},
+    {id:'UX-IP-05', screen:'In-Play', screenKey:'IP', sev:'s3', eff:'s', plat:'mobile', desc:'Hit location required even for fielders_choice / sac_bunt'},
+    {id:'UX-IP-06', screen:'In-Play', screenKey:'IP', sev:'s3', eff:'s', plat:'mobile', desc:'Field instruction text is 11pt'},
+    {id:'UX-IP-07', screen:'In-Play', screenKey:'IP', sev:'s3', eff:'m', plat:'mobile', desc:'RunnerEventModal packs 2 flows in 384 lines'},
+    {id:'UX-IP-08', screen:'In-Play', screenKey:'IP', sev:'s3', eff:'s', plat:'mobile', desc:'DiamondToggle rotated-square diamond renders oddly'},
+    {id:'UX-IP-09', screen:'In-Play', screenKey:'IP', sev:'s2', eff:'l', plat:'mobile', desc:'RunnerAdvancementModal is 592 lines'},
+    {id:'UX-IP-10', screen:'In-Play', screenKey:'IP', sev:'s3', eff:'s', plat:'mobile', desc:'"Fielded by: SS" affordance non-discoverable'},
+    {id:'UX-IP-11', screen:'In-Play', screenKey:'IP', sev:'s2', eff:'s', plat:'mobile', desc:'OUT_RESULTS duplicate hitType chips above'},
+    {id:'UX-IP-12', screen:'In-Play', screenKey:'IP', sev:'s3', eff:'s', plat:'mobile', desc:'Mixed theme tokens + hardcoded literals'},
+    {id:'UX-IP-13', screen:'In-Play', screenKey:'IP', sev:'s3', eff:'s', plat:'mobile', desc:'"In Play" vs "Record Play Result" vocabulary inconsistency'},
+    {id:'UX-IP-14', screen:'In-Play', screenKey:'IP', sev:'s3', eff:'s', plat:'mobile', desc:'"Advance on Throw / Error" label too long'},
+    {id:'UX-IP-15', screen:'In-Play', screenKey:'IP', sev:'s2', eff:'s', plat:'mobile', desc:'No visible Cancel/Back in modal action area'},
+    // New Game
+    {id:'UX-NG-01', screen:'New Game', screenKey:'NG', sev:'s2', eff:'l', plat:'both', desc:'Mobile single-form vs web 3-step wizard divergence'},
+    {id:'UX-NG-02', screen:'New Game', screenKey:'NG', sev:'s1', eff:'s', plat:'both', desc:'No smart defaults from last game'},
+    {id:'UX-NG-03', screen:'New Game', screenKey:'NG', sev:'s1', eff:'s', plat:'web', desc:'total_innings is mobile-only (web missing)'},
+    {id:'UX-NG-04', screen:'New Game', screenKey:'NG', sev:'s2', eff:'m', plat:'web', desc:'Web 3-step wizard adds friction for repeat users'},
+    {id:'UX-NG-05', screen:'New Game', screenKey:'NG', sev:'s2', eff:'s', plat:'mobile', desc:'Validation uses Alert.alert on mobile'},
+    {id:'UX-NG-06', screen:'New Game', screenKey:'NG', sev:'s3', eff:'m', plat:'web', desc:'Known-opponents chip pattern web should adopt'},
+    {id:'UX-NG-07', screen:'New Game', screenKey:'NG', sev:'s2', eff:'s', plat:'web', desc:'lineup_size options may differ web vs mobile'},
+    {id:'UX-NG-08', screen:'New Game', screenKey:'NG', sev:'s1', eff:'s', plat:'mobile', desc:'Date input is free-text YYYY-MM-DD (no DatePicker)'},
+    {id:'UX-NG-09', screen:'New Game', screenKey:'NG', sev:'s1', eff:'s', plat:'mobile', desc:'Time input is free-text HH:MM'},
+    {id:'UX-NG-10', screen:'New Game', screenKey:'NG', sev:'s2', eff:'s', plat:'mobile', desc:'Hardcoded chip colors'},
+    {id:'UX-NG-11', screen:'New Game', screenKey:'NG', sev:'s2', eff:'s', plat:'mobile', desc:'chartingMode abbreviated labels are cryptic'},
+    {id:'UX-NG-12', screen:'New Game', screenKey:'NG', sev:'s2', eff:'m', plat:'web', desc:'Web wizard Confirm has no edit-in-place'},
+    {id:'UX-NG-13', screen:'New Game', screenKey:'NG', sev:'s3', eff:'s', plat:'both', desc:'No "last location" suggestions'},
+    {id:'UX-NG-14', screen:'New Game', screenKey:'NG', sev:'s3', eff:'s', plat:'both', desc:'Post-create redirect logic duplicated and divergent'},
+    // Bullpen
+    {id:'UX-BP-01', screen:'Bullpen', screenKey:'BP', sev:'s2', eff:'s', plat:'both', desc:'"Log Pitch" button vs game live\'s auto-log inconsistency'},
+    {id:'UX-BP-02', screen:'Bullpen', screenKey:'BP', sev:'s2', eff:'m', plat:'both', desc:'No result classification (verify Command Grade surfaces)'},
+    {id:'UX-BP-03', screen:'Bullpen', screenKey:'BP', sev:'s2', eff:'s', plat:'mobile', desc:'Back button uses Alert.alert'},
+    {id:'UX-BP-04', screen:'Bullpen', screenKey:'BP', sev:'s3', eff:'s', plat:'mobile', desc:'Velocity uses raw RNTextInput (not Paper)'},
+    {id:'UX-BP-05', screen:'Bullpen', screenKey:'BP', sev:'s3', eff:'m', plat:'both', desc:'No live pitch breakdown inline'},
+    {id:'UX-BP-06', screen:'Bullpen', screenKey:'BP', sev:'s2', eff:'s', plat:'both', desc:'Plan-mode UI is subtle; freestyle vs plan unclear'},
+    {id:'UX-BP-07', screen:'Bullpen', screenKey:'BP', sev:'s3', eff:'s', plat:'mobile', desc:'Plan instruction text truncates silently'},
+    {id:'UX-BP-08', screen:'Bullpen', screenKey:'BP', sev:'s3', eff:'s', plat:'both', desc:'"Limit Reached" disables only Log btn, not form'},
+    {id:'UX-BP-09', screen:'Bullpen', screenKey:'BP', sev:'s3', eff:'s', plat:'mobile', desc:'displayName falls back to "Pitcher" placeholder'},
+    {id:'UX-BP-10', screen:'Bullpen', screenKey:'BP', sev:'s2', eff:'l', plat:'mobile', desc:'Plan editor is web-only'},
+    {id:'UX-BP-11', screen:'Bullpen', screenKey:'BP', sev:'s3', eff:'s', plat:'shared', desc:'Pitch type lists hardcoded in 3 places'},
+    {id:'UX-BP-12', screen:'Bullpen', screenKey:'BP', sev:'s2', eff:'m', plat:'both', desc:'Hardcoded color literals'},
+    {id:'UX-BP-13', screen:'Bullpen', screenKey:'BP', sev:'s2', eff:'s', plat:'both', desc:'No Undo last pitch'},
+    {id:'UX-BP-14', screen:'Bullpen', screenKey:'BP', sev:'s2', eff:'m', plat:'both', desc:'Null bullpen pitch_result casts to called_strike (lying colors)'},
+    // Dashboard
+    {id:'UX-DB-01', screen:'Dashboard', screenKey:'DB', sev:'s2', eff:'s', plat:'mobile', desc:'Delete via 400ms long-press is non-discoverable'},
+    {id:'UX-DB-02', screen:'Dashboard', screenKey:'DB', sev:'s2', eff:'s', plat:'mobile', desc:'Delete uses Alert.alert'},
+    {id:'UX-DB-03', screen:'Dashboard', screenKey:'DB', sev:'s3', eff:'s', plat:'mobile', desc:'No "Resume Last" hero CTA'},
+    {id:'UX-DB-04', screen:'Dashboard', screenKey:'DB', sev:'s2', eff:'m', plat:'mobile', desc:'In-progress bullpen sessions invisible on dashboard'},
+    {id:'UX-DB-05', screen:'Dashboard', screenKey:'DB', sev:'s3', eff:'s', plat:'mobile', desc:'Stats cards duplicate section-header info'},
+    {id:'UX-DB-06', screen:'Dashboard', screenKey:'DB', sev:'s3', eff:'s', plat:'mobile', desc:'"Find a Team" buried mid-dashboard'},
+    {id:'UX-DB-07', screen:'Dashboard', screenKey:'DB', sev:'s3', eff:'s', plat:'mobile', desc:'Completed-status chip uses tertiary color (off-pattern)'},
+    {id:'UX-DB-08', screen:'Dashboard', screenKey:'DB', sev:'s3', eff:'s', plat:'mobile', desc:'Section visual hierarchy weak (no dividers)'},
+    {id:'UX-DB-09', screen:'Dashboard', screenKey:'DB', sev:'s3', eff:'m', plat:'both', desc:'CoachDashboard 445 ln + 450 ln styles'},
+    {id:'UX-DB-10', screen:'Dashboard', screenKey:'DB', sev:'s2', eff:'m', plat:'mobile', desc:'Mobile shows same dashboard regardless of role'},
+    // Global
+    {id:'UX-GLB-01', screen:'Global', screenKey:'GLB', sev:'s2', eff:'l', plat:'both', desc:'Design token consolidation (colors, spacing, type)'},
+    {id:'UX-GLB-02', screen:'Global', screenKey:'GLB', sev:'s2', eff:'m', plat:'both', desc:'Alert.alert / native alert() audit & replace with Snackbar'},
+    {id:'UX-GLB-03', screen:'Global', screenKey:'GLB', sev:'s2', eff:'l', plat:'both', desc:'Dark mode silently broken everywhere (literal colors)'},
+    {id:'UX-GLB-04', screen:'Global', screenKey:'GLB', sev:'s3', eff:'l', plat:'mobile', desc:'Fonts (Oswald/Source Sans/JetBrains Mono) not loaded'},
+    {id:'UX-GLB-05', screen:'Global', screenKey:'GLB', sev:'s3', eff:'m', plat:'both', desc:'Mixed icon families (emoji + Material Community Icons)'},
+];
+
+const filters = { sev: 'all', eff: 'all', screen: 'all', search: '' };
+
+function renderTable() {
+    const body = document.getElementById('findingsBody');
+    const matches = FINDINGS.filter(f => {
+        if (filters.sev !== 'all' && f.sev !== filters.sev) return false;
+        if (filters.eff !== 'all' && f.eff !== filters.eff) return false;
+        if (filters.screen !== 'all' && f.screenKey !== filters.screen) return false;
+        if (filters.search) {
+            const q = filters.search.toLowerCase();
+            if (!f.id.toLowerCase().includes(q) && !f.desc.toLowerCase().includes(q) && !f.screen.toLowerCase().includes(q)) {
+                return false;
+            }
+        }
+        return true;
+    });
+    body.innerHTML = matches.map(f => `
+        <tr>
+            <td class="fid-cell">${f.id}</td>
+            <td class="screen-cell">${f.screen}</td>
+            <td>${f.desc}</td>
+            <td><span class="sev ${f.sev}">${f.sev.toUpperCase()}</span></td>
+            <td><span class="eff ${f.eff}">${f.eff.toUpperCase()}</span></td>
+            <td class="platform">${f.plat}</td>
+        </tr>
+    `).join('');
+    document.getElementById('noMatch').classList.toggle('show', matches.length === 0);
+}
+
+function renderScreenSections() {
+    const groups = {};
+    FINDINGS.forEach(f => {
+        const key = f.screenKey === 'LG' && f.screen.includes('web') ? 'LG-web' : f.screenKey;
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(f);
+    });
+    Object.keys(groups).forEach(key => {
+        const el = document.getElementById('screen-' + key);
+        if (!el) return;
+        el.innerHTML = groups[key].map(f => `
+            <div class="finding-item">
+                <span class="fid-inline">${f.id}</span>
+                <span>${f.desc}</span>
+                <span class="meta-inline">
+                    <span class="sev ${f.sev}">${f.sev.toUpperCase()}</span>
+                    <span class="eff ${f.eff}">${f.eff.toUpperCase()}</span>
+                </span>
+                <span class="platform" style="margin-left: 4px;">${f.plat}</span>
+            </div>
+        `).join('');
+    });
+}
+
+function updateCounts() {
+    const counts = { s1: 0, s2: 0, s3: 0 };
+    FINDINGS.forEach(f => { counts[f.sev]++; });
+    document.getElementById('cnt-s1').textContent = counts.s1;
+    document.getElementById('cnt-s2').textContent = counts.s2;
+    document.getElementById('cnt-s3').textContent = counts.s3;
+}
+
+document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        const filterType = chip.dataset.filter;
+        document.querySelectorAll(`.chip[data-filter="${filterType}"]`).forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        filters[filterType] = chip.dataset.value;
+        renderTable();
+    });
+});
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    filters.search = e.target.value;
+    renderTable();
+});
+
+// Sortable columns
+let sortBy = null;
+let sortAsc = true;
+document.querySelectorAll('.findings-table th').forEach(th => {
+    th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        if (sortBy === key) sortAsc = !sortAsc;
+        else { sortBy = key; sortAsc = true; }
+        const map = { id: 'id', screen: 'screen', desc: 'desc', sev: 'sev', eff: 'eff', plat: 'plat' };
+        const k = map[key];
+        FINDINGS.sort((a, b) => {
+            const av = String(a[k]);
+            const bv = String(b[k]);
+            return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+        });
+        renderTable();
+    });
+});
+
+// Theme toggle
+const themeToggle = document.getElementById('themeToggle');
+function setTheme(dark) {
+    document.documentElement.classList.toggle('dark', dark);
+    themeToggle.textContent = dark ? '☀ Light' : '🌙 Dark';
+    try { localStorage.setItem('ux-audit-theme', dark ? 'dark' : 'light'); } catch (e) {}
+}
+themeToggle.addEventListener('click', () => {
+    setTheme(!document.documentElement.classList.contains('dark'));
+});
+try {
+    const saved = localStorage.getItem('ux-audit-theme');
+    if (saved === 'dark') setTheme(true);
+    else if (saved === 'light') setTheme(false);
+    else setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+} catch (e) {
+    setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+
+updateCounts();
+renderTable();
+renderScreenSections();
+</script>
+
+</body>
+</html>
