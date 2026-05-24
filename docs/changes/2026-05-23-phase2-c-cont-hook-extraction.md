@@ -1,7 +1,7 @@
 # Phase 2 — C continuation 1 — Extract `useLiveGameController` hook · 2026-05-23
 
 **Type:** `refactor`
-**Commit:** _(pending)_
+**Commit:** `35571a4`
 **Versions:** `mobile@2.13.0 → 2.14.0`
 
 ## Context
