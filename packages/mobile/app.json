@@ -38,6 +38,7 @@
         },
         "plugins": [
             "expo-router",
+            "./plugins/withFmtConstevalFix",
             [
                 "react-native-audio-api",
                 {
