@@ -42,8 +42,6 @@ export const styles = StyleSheet.create({
     startAtBatButton: { marginTop: 6 },
     selectPrompt: { marginTop: 6, padding: 12, backgroundColor: semantic.warningBg, borderRadius: 8, alignItems: 'center' },
     selectPromptText: { color: semantic.warningText, fontSize: 14, fontWeight: '500' },
-    runnerActionRow: { flexDirection: 'row' as const, gap: 8, marginTop: 6, flexWrap: 'wrap' as const },
-    runnerOutButton: { alignSelf: 'flex-start' },
     tendenciesRow: { flexDirection: 'row' as const, gap: 8, marginTop: 6 },
     tendencyBtn: { flex: 1 },
     tendencyBtnHitter: { borderColor: colors.green[600] },
@@ -123,6 +121,18 @@ export const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: colors.gray[200],
         marginTop: 4,
+    },
+    // SHAKE + Undo on one row — saves the vertical space of two separate rows
+    // on the phone layout (and gives the tablet sidebar the same treatment).
+    shakeUndoRow: {
+        flexDirection: 'row' as const,
+        alignItems: 'center' as const,
+        gap: 8,
+        paddingVertical: 4,
+        borderTopWidth: 1,
+        borderTopColor: colors.gray[200],
+        marginTop: 4,
+        flexWrap: 'wrap' as const,
     },
     shakeBtn: {
         flexDirection: 'row' as const,

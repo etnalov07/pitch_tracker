@@ -331,43 +331,6 @@ export function AtBatControls({ ctl, actions }: CtlActionsProp) {
 }
 
 // ----------------------------------------------------------------
-// Runner advancement / out buttons (Coach-mode only, when runners on)
-// ----------------------------------------------------------------
-
-export function RunnerOutButton({ ctl }: CtlProp) {
-    const { isScoutingMode, game, hasRunnersOnBase, setRunnerEventDefaultTab, setShowRunnerEventModal } = ctl;
-    if (isScoutingMode || !game || game.status !== 'in_progress' || !hasRunnersOnBase) return null;
-    return (
-        <View style={styles.runnerActionRow}>
-            <Button
-                mode="outlined"
-                onPress={() => {
-                    setRunnerEventDefaultTab('advance');
-                    setShowRunnerEventModal(true);
-                }}
-                style={styles.runnerOutButton}
-                icon="run-fast"
-                compact
-            >
-                Runner Adv
-            </Button>
-            <Button
-                mode="outlined"
-                onPress={() => {
-                    setRunnerEventDefaultTab('out');
-                    setShowRunnerEventModal(true);
-                }}
-                style={styles.runnerOutButton}
-                icon="account-remove"
-                compact
-            >
-                Runner Out
-            </Button>
-        </View>
-    );
-}
-
-// ----------------------------------------------------------------
 // "My team lineup not set" banner — shown when opp_pitcher mode but
 // our team's lineup isn't configured yet.
 // ----------------------------------------------------------------

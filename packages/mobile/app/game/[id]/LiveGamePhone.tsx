@@ -23,7 +23,6 @@ import {
     LiveGameHeader,
     PitchBreakdown,
     PitchTypeFilterBar,
-    RunnerOutButton,
     ZoneTapHint,
 } from './LiveGameRenderHelpers';
 import { styles } from './liveGameStyles';
@@ -132,7 +131,6 @@ export default function LiveGamePhone({ ctl, actions }: LiveGamePhoneProps) {
             <ScrollView style={styles.phoneContent} contentContainerStyle={styles.phoneContentInner}>
                 <LiveGameHeader ctl={ctl} actions={actions} />
                 <LineupBanner ctl={ctl} />
-                <RunnerOutButton ctl={ctl} />
                 <AtBatControls ctl={ctl} actions={actions} />
                 {/* 1. Pitch Type */}
                 {!isReadOnly && (
@@ -260,36 +258,40 @@ export default function LiveGamePhone({ ctl, actions }: LiveGamePhoneProps) {
                         compact
                     />
                 )}
-                {/* Shake — used between pitches, not in per-pitch tap path. Below Result. */}
-                {!isReadOnly && !isScoutingMode && pitchCallingEnabled && (
-                    <View style={styles.shakeRow}>
-                        <TouchableOpacity
-                            onPress={handleShake}
-                            style={[styles.shakeBtn, { backgroundColor: theme.colors.surface }]}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={styles.shakeBtnText}>SHAKE</Text>
-                            {pendingShakeCount > 0 && (
-                                <View style={styles.shakeBadge}>
-                                    <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                )}
-                {/* Undo */}
-                {!isReadOnly && pitches.length > 0 && !isLogging && (
-                    <View style={styles.logRow}>
-                        <Button
-                            mode="outlined"
-                            onPress={handleUndoLastPitch}
-                            style={styles.undoButton}
-                            contentStyle={styles.logButtonContent}
-                            textColor={colors.red[700]}
-                            icon="undo"
-                        >
-                            Undo
-                        </Button>
+                {/*
+                    Shake (between-pitches, calling only) + Undo (after pitches exist) —
+                    inlined into one row to save vertical space. Each side is
+                    independently conditional.
+                */}
+                {!isReadOnly && (((!isScoutingMode && pitchCallingEnabled) as boolean) || (pitches.length > 0 && !isLogging)) && (
+                    <View style={styles.shakeUndoRow}>
+                        {!isScoutingMode && pitchCallingEnabled && (
+                            <TouchableOpacity
+                                onPress={handleShake}
+                                style={[styles.shakeBtn, { backgroundColor: theme.colors.surface }]}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={styles.shakeBtnText}>SHAKE</Text>
+                                {pendingShakeCount > 0 && (
+                                    <View style={styles.shakeBadge}>
+                                        <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        )}
+                        {pitches.length > 0 && !isLogging && (
+                            <Button
+                                mode="outlined"
+                                onPress={handleUndoLastPitch}
+                                style={styles.undoButton}
+                                contentStyle={styles.logButtonContent}
+                                textColor={colors.red[700]}
+                                icon="undo"
+                                compact
+                            >
+                                Undo
+                            </Button>
+                        )}
                     </View>
                 )}
                 {/* 7. Previous At-Bats (hidden on first at-bat) */}

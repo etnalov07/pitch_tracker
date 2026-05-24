@@ -14,6 +14,7 @@ import {
     PitchResult,
     PitchType,
     Player,
+    RunnerBase,
     deriveGameMode,
 } from '@pitch-tracker/shared';
 
@@ -136,6 +137,9 @@ export function useLiveGameController() {
     // Base runner modals state
     const [showRunnerEventModal, setShowRunnerEventModal] = useState(false);
     const [runnerEventDefaultTab, setRunnerEventDefaultTab] = useState<'advance' | 'out'>('advance');
+    // Which base's contextual action menu is open (tap a runner pip in
+    // BaseRunnerDiamond -> small dialog with Advance/Out buttons). null = closed.
+    const [runnerActionBase, setRunnerActionBase] = useState<RunnerBase | null>(null);
     const [showRunnerAdvancementModal, setShowRunnerAdvancementModal] = useState(false);
     const [pendingHitResult, setPendingHitResult] = useState<string | null>(null);
     const [showDoublePlayModal, setShowDoublePlayModal] = useState(false);
@@ -474,6 +478,8 @@ export function useLiveGameController() {
         setShowRunnerEventModal,
         runnerEventDefaultTab,
         setRunnerEventDefaultTab,
+        runnerActionBase,
+        setRunnerActionBase,
         showRunnerAdvancementModal,
         setShowRunnerAdvancementModal,
         pendingHitResult,

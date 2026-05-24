@@ -111,6 +111,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
         setShowTeamAtBat,
         setShowRunnerEventModal,
         setRunnerEventDefaultTab,
+        setRunnerActionBase,
         setTeamRunsScored,
         setTeamAtBatRuns,
         setInningChangeInfo,
@@ -1258,12 +1259,14 @@ export function useLiveGameActions(ctl: LiveGameController) {
 
     const handleRunnerPress = useCallback(
         (base: RunnerBase) => {
+            // Tap a runner pip on BaseRunnerDiamond -> open the contextual
+            // Advance/Out dialog. The dialog itself routes to the existing
+            // RunnerEventModal with the chosen tab.
             if (baseRunners[base]) {
-                setRunnerEventDefaultTab('out');
-                setShowRunnerEventModal(true);
+                setRunnerActionBase(base);
             }
         },
-        [baseRunners, setRunnerEventDefaultTab, setShowRunnerEventModal]
+        [baseRunners, setRunnerActionBase]
     );
 
     return {

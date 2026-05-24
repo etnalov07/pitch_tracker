@@ -24,7 +24,6 @@ import {
     LiveGameHeader,
     PitchBreakdown,
     PitchTypeFilterBar,
-    RunnerOutButton,
     ZoneTapHint,
 } from './LiveGameRenderHelpers';
 import { styles } from './liveGameStyles';
@@ -143,7 +142,6 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                 <View style={styles.statsPanel}>
                     <LiveGameHeader ctl={ctl} actions={actions} />
                     <LineupBanner ctl={ctl} />
-                    <RunnerOutButton ctl={ctl} />
                     <AtBatControls ctl={ctl} actions={actions} />
                     {game.status === 'in_progress' && (currentPitcher || currentBatter) && (
                         <View style={styles.tendenciesRow}>
@@ -331,36 +329,39 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                             </View>
                         </View>
                     )}
-                    {!isReadOnly && !isScoutingMode && pitchCallingEnabled && (
-                        <View style={styles.shakeRow}>
-                            <TouchableOpacity
-                                onPress={handleShake}
-                                style={[styles.shakeBtn, { backgroundColor: theme.colors.surface }]}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={styles.shakeBtnText}>SHAKE</Text>
-                                {pendingShakeCount > 0 && (
-                                    <View style={styles.shakeBadge}>
-                                        <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
-                                    </View>
+                    {/* SHAKE + Undo inlined into one row to save vertical space. */}
+                    {!isReadOnly &&
+                        (((!isScoutingMode && pitchCallingEnabled) as boolean) || (pitches.length > 0 && !isLogging)) && (
+                            <View style={styles.shakeUndoRow}>
+                                {!isScoutingMode && pitchCallingEnabled && (
+                                    <TouchableOpacity
+                                        onPress={handleShake}
+                                        style={[styles.shakeBtn, { backgroundColor: theme.colors.surface }]}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={styles.shakeBtnText}>SHAKE</Text>
+                                        {pendingShakeCount > 0 && (
+                                            <View style={styles.shakeBadge}>
+                                                <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
+                                            </View>
+                                        )}
+                                    </TouchableOpacity>
                                 )}
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                    {!isReadOnly && pitches.length > 0 && !isLogging && (
-                        <View style={styles.logRow}>
-                            <Button
-                                mode="outlined"
-                                onPress={handleUndoLastPitch}
-                                style={styles.undoButton}
-                                contentStyle={styles.logButtonContent}
-                                textColor={colors.red[700]}
-                                icon="undo"
-                            >
-                                Undo
-                            </Button>
-                        </View>
-                    )}
+                                {pitches.length > 0 && !isLogging && (
+                                    <Button
+                                        mode="outlined"
+                                        onPress={handleUndoLastPitch}
+                                        style={styles.undoButton}
+                                        contentStyle={styles.logButtonContent}
+                                        textColor={colors.red[700]}
+                                        icon="undo"
+                                        compact
+                                    >
+                                        Undo
+                                    </Button>
+                                )}
+                            </View>
+                        )}
                     {!isReadOnly && hasPreviousAtBats && (
                         <Button
                             mode="outlined"

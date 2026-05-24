@@ -1,5 +1,5 @@
 import React from 'react';
-import { Portal } from 'react-native-paper';
+import { Button, Dialog, Portal } from 'react-native-paper';
 import { BaseRunners, BaserunnerEventType, OpponentLineupPlayer, RunnerBase } from '@pitch-tracker/shared';
 
 import {
@@ -96,7 +96,10 @@ const LiveGameModals: React.FC<LiveGameModalsProps> = ({ ctl, handlers }) => {
         setTeamAtBatRuns,
         showRunnerEventModal,
         setShowRunnerEventModal,
+        setRunnerEventDefaultTab,
         runnerEventDefaultTab,
+        runnerActionBase,
+        setRunnerActionBase,
         showRunnerAdvancementModal,
         setShowRunnerAdvancementModal,
         pendingHitResult,
@@ -274,6 +277,51 @@ const LiveGameModals: React.FC<LiveGameModalsProps> = ({ ctl, handlers }) => {
                 pitcherId={currentPitcher?.player_id}
                 gameId={id}
             />
+            {/*
+                Runner action dialog — opened when the user taps a runner pip
+                in BaseRunnerDiamond (via handleRunnerPress -> setRunnerActionBase).
+                Two big buttons route to the existing RunnerEventModal with the
+                appropriate tab pre-selected. Saves the vertical space of the
+                always-on Runner Adv / Runner Out button row, and gives the
+                action a clear target (the runner the coach actually tapped).
+            */}
+            <Dialog visible={runnerActionBase !== null} onDismiss={() => setRunnerActionBase(null)}>
+                <Dialog.Title>
+                    Runner on{' '}
+                    {runnerActionBase === 'first'
+                        ? '1B'
+                        : runnerActionBase === 'second'
+                          ? '2B'
+                          : runnerActionBase === 'third'
+                            ? '3B'
+                            : ''}
+                </Dialog.Title>
+                <Dialog.Actions>
+                    <Button onPress={() => setRunnerActionBase(null)}>Cancel</Button>
+                    <Button
+                        mode="outlined"
+                        icon="account-remove"
+                        onPress={() => {
+                            setRunnerEventDefaultTab('out');
+                            setShowRunnerEventModal(true);
+                            setRunnerActionBase(null);
+                        }}
+                    >
+                        Out
+                    </Button>
+                    <Button
+                        mode="contained"
+                        icon="run-fast"
+                        onPress={() => {
+                            setRunnerEventDefaultTab('advance');
+                            setShowRunnerEventModal(true);
+                            setRunnerActionBase(null);
+                        }}
+                    >
+                        Advance
+                    </Button>
+                </Dialog.Actions>
+            </Dialog>
         </Portal>
     );
 };
