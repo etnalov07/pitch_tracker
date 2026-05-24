@@ -1,7 +1,7 @@
 # iOS build fix — fmt Pod consteval failure on Xcode 26 · 2026-05-24
 
 **Type:** `fix`
-**Commits:** `f41ef43` (attempt 1, ineffective), _pending_ (attempt 2, real fix)
+**Commits:** `f41ef43` (attempt 1, ineffective), `e07107e` (attempt 2, real fix)
 **Versions:** `mobile@2.17.0 → 2.18.0 → 2.18.1`
 
 ## Context
