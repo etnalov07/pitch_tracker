@@ -56,6 +56,8 @@ import {
     setCurrentGameRole,
 } from '../../../src/state';
 import RadarStatusPill from '../../../src/components/radar/RadarStatusPill';
+import LiveGameModals from './LiveGameModals';
+import LiveGameTopBar from './LiveGameTopBar';
 import { useLiveGameController } from './useLiveGameController';
 import {
     StrikeZone,
@@ -1691,163 +1693,18 @@ export default function LiveGameScreen() {
         return null;
     };
 
-    const renderModals = () => (
-        <Portal>
-            <PitcherSelectorModal
-                visible={pitcherModalVisible}
-                onDismiss={() => setPitcherModalVisible(false)}
-                gamePitchers={gamePitchers}
-                currentPitcher={currentPitcher}
-                teamPlayers={teamPlayers}
-                onSelectExistingPitcher={(gp) => {
-                    setCurrentPitcher(gp);
-                    setPitcherModalVisible(false);
-                }}
-                onSelectNewPitcher={handleSelectPitcher}
-                isTablet={isTablet}
-            />
-            <BatterSelectorModal
-                visible={batterModalVisible}
-                onDismiss={() => setBatterModalVisible(false)}
-                activeBatters={activeBatters}
-                currentBatter={currentBatter}
-                onSelectBatter={handleSelectBatter}
-                isTablet={isTablet}
-                gameId={id!}
-                lineupSize={lineupSize}
-                onBatterAdded={() => dispatch(fetchOpponentLineup(id!))}
-                currentInningNumber={currentInning?.inning_number}
-            />
-            <MyBatterSelectorModal
-                visible={myBatterModalVisible}
-                onDismiss={() => setMyBatterModalVisible(false)}
-                lineup={myTeamLineup}
-                currentBatter={currentMyBatter}
-                onSelectBatter={(p) => {
-                    dispatch(setCurrentMyBatter(p));
-                    setMyBatterModalVisible(false);
-                }}
-                teamPlayers={teamPlayers}
-                currentInningNumber={currentInning?.inning_number}
-                onSubstituted={async () => {
-                    if (!id) return;
-                    const updated = await dispatch(fetchMyTeamLineup(id)).unwrap();
-                    // If the current batter was the one replaced, point at the new sub in that slot.
-                    if (currentMyBatter) {
-                        const stillActive = updated.find((p) => p.id === currentMyBatter.id && !p.replaced_by_id);
-                        if (!stillActive) {
-                            const replacement = updated.find(
-                                (p) => p.batting_order === currentMyBatter.batting_order && !p.replaced_by_id
-                            );
-                            if (replacement) dispatch(setCurrentMyBatter(replacement));
-                        }
-                    }
-                }}
-                isTablet={isTablet}
-            />
-            <InningChangeModal
-                visible={showInningChange}
-                inningChangeInfo={inningChangeInfo}
-                teamRunsScored={teamRunsScored}
-                onRunsChange={setTeamRunsScored}
-                onConfirm={handleInningChangeConfirm}
-                onDismiss={() => advanceInningWithRuns(0)}
-                isTablet={isTablet}
-                showRunsInput={game?.scouting_focus === 'home' || game?.scouting_focus === 'away'}
-            />
-            <TeamAtBatModal
-                visible={showTeamAtBat}
-                inning={game?.current_inning || 1}
-                inningHalf={game?.inning_half || 'top'}
-                teamRunsScored={teamAtBatRuns}
-                onRunsChange={setTeamAtBatRuns}
-                onConfirm={handleTeamAtBatConfirm}
-                onDismiss={() => setShowTeamAtBat(false)}
-                isTablet={isTablet}
-            />
-            <RunnerEventModal
-                visible={showRunnerEventModal}
-                onDismiss={() => setShowRunnerEventModal(false)}
-                runners={baseRunners}
-                currentOuts={currentOuts}
-                defaultTab={runnerEventDefaultTab}
-                onRecordAdvancement={handleRecordAdvancement}
-                onRecordOut={handleRecordBaserunnerOut}
-            />
-            <DoublePlayModal
-                visible={showDoublePlayModal}
-                onDismiss={() => setShowDoublePlayModal(false)}
-                runners={baseRunners}
-                currentOuts={currentOuts}
-                onConfirm={handleDoublePlayConfirm}
-            />
-            <RunnerAdvancementModal
-                visible={showRunnerAdvancementModal}
-                onDismiss={() => {
-                    setShowRunnerAdvancementModal(false);
-                    setPendingHitResult(null);
-                }}
-                currentRunners={baseRunners}
-                hitResult={pendingHitResult || 'single'}
-                onConfirm={handleRunnerAdvancementConfirm}
-            />
-            {currentPitcher && (
-                <PitcherTendenciesModal
-                    visible={showPitcherTendencies}
-                    onDismiss={() => setShowPitcherTendencies(false)}
-                    pitcherId={currentPitcher.player_id}
-                    pitcherName={
-                        currentPitcher.player ? `${currentPitcher.player.first_name} ${currentPitcher.player.last_name}` : 'Pitcher'
-                    }
-                    initialBatterHand={currentBatter?.bats === 'L' ? 'L' : 'R'}
-                />
-            )}
-            {currentBatter && (
-                <HitterTendenciesModal
-                    visible={showHitterTendencies}
-                    onDismiss={() => setShowHitterTendencies(false)}
-                    batterId={currentBatter.id}
-                    batterName={currentBatter.player_name}
-                    batterType="opponent"
-                    gameId={id}
-                />
-            )}
-            {game && game.charting_mode !== 'our_pitcher' && id && (
-                <OpposingPitcherModal
-                    visible={showOpposingPitcherModal}
-                    onDismiss={() => setShowOpposingPitcherModal(false)}
-                    gameId={id}
-                    opposingPitchers={opposingPitchers}
-                    currentOpposingPitcher={currentOpposingPitcher}
-                    onSelect={(p) => dispatch(setCurrentOpposingPitcher(p))}
-                    onCreate={async (params) => {
-                        await dispatch(createOpposingPitcher(params)).unwrap();
-                    }}
-                    onDelete={async (pid) => {
-                        await dispatch(deleteOpposingPitcher(pid)).unwrap();
-                    }}
-                    opponentName={game.opponent_name}
-                />
-            )}
-            {id && (
-                <CountBreakdownModal
-                    visible={showCountBreakdownModal}
-                    onDismiss={() => setShowCountBreakdownModal(false)}
-                    gameId={id}
-                    pitcherId={gameMode === 'our_pitcher' ? currentPitcher?.player_id : undefined}
-                    teamSide={gameMode === 'our_pitcher' ? 'our_team' : 'opponent'}
-                    refreshTrigger={statsRefreshTrigger}
-                />
-            )}
-            <PitcherStatsModal
-                visible={showPitcherStatsModal}
-                onDismiss={() => setShowPitcherStatsModal(false)}
-                pitcher={currentPitcher?.player ?? null}
-                pitcherId={currentPitcher?.player_id}
-                gameId={id}
-            />
-        </Portal>
-    );
+    // Modals are mounted via <LiveGameModals> below — see ./LiveGameModals.tsx.
+    const modalHandlers = {
+        handleSelectPitcher,
+        handleSelectBatter,
+        handleInningChangeConfirm,
+        handleTeamAtBatConfirm,
+        handleRecordAdvancement,
+        handleRecordBaserunnerOut,
+        handleDoublePlayConfirm,
+        handleRunnerAdvancementConfirm,
+        advanceInningWithRuns,
+    };
 
     const renderRunnerOutButton = () => {
         if (isScoutingMode || game.status !== 'in_progress' || !hasRunnersOnBase) return null;
@@ -1885,44 +1742,12 @@ export default function LiveGameScreen() {
     if (isTablet && isLandscape) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-                <View style={styles.header}>
-                    <IconButton icon="arrow-left" onPress={() => router.back()} />
-                    <View style={styles.headerCenter}>
-                        <Text variant="titleLarge">Live Game</Text>
-                        <SyncStatusBadge compact />
-                    </View>
-                    <View style={styles.headerRight}>
-                        {game.home_team_id && (
-                            <IconButton
-                                icon="clipboard-text"
-                                onPress={async () => {
-                                    try {
-                                        const existing = await scoutingReportsApi.getByGameId(id!);
-                                        if (existing) {
-                                            router.push(`/team/${game.home_team_id}/scouting/${existing.id}` as any);
-                                        } else {
-                                            router.push(`/team/${game.home_team_id}/scouting` as any);
-                                        }
-                                    } catch {
-                                        router.push(`/team/${game.home_team_id}/scouting` as any);
-                                    }
-                                }}
-                            />
-                        )}
-                        {id && (
-                            <IconButton
-                                icon="account-search"
-                                onPress={() => setShowBreakdown(true)}
-                                accessibilityLabel="Batter breakdown"
-                            />
-                        )}
-                        {game.status === 'in_progress' ? (
-                            <IconButton icon="flag-checkered" onPress={handleEndGame} />
-                        ) : (
-                            <View style={{ width: 48 }} />
-                        )}
-                    </View>
-                </View>
+                <LiveGameTopBar
+                    game={game}
+                    id={id}
+                    onEndGame={handleEndGame}
+                    onBatterBreakdown={id ? () => setShowBreakdown(true) : undefined}
+                />
                 <View style={styles.tabletContent}>
                     <View style={styles.statsPanel}>
                         {renderGameHeader()}
@@ -2181,7 +2006,7 @@ export default function LiveGameScreen() {
                         )}
                     </ScrollView>
                 </View>
-                {renderModals()}
+                <LiveGameModals ctl={ctl} handlers={modalHandlers} />
                 <PreviousAtBatsModal
                     visible={showPreviousAtBats}
                     onClose={() => setShowPreviousAtBats(false)}
@@ -2211,37 +2036,7 @@ export default function LiveGameScreen() {
     // Phone/tablet portrait layout
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-            <View style={styles.header}>
-                <IconButton icon="arrow-left" onPress={() => router.back()} />
-                <View style={styles.headerCenter}>
-                    <Text variant="titleLarge">Live Game</Text>
-                    <SyncStatusBadge compact />
-                </View>
-                <View style={styles.headerRight}>
-                    {game.home_team_id && (
-                        <IconButton
-                            icon="clipboard-text"
-                            onPress={async () => {
-                                try {
-                                    const existing = await scoutingReportsApi.getByGameId(id!);
-                                    if (existing) {
-                                        router.push(`/team/${game.home_team_id}/scouting/${existing.id}` as any);
-                                    } else {
-                                        router.push(`/team/${game.home_team_id}/scouting` as any);
-                                    }
-                                } catch {
-                                    router.push(`/team/${game.home_team_id}/scouting` as any);
-                                }
-                            }}
-                        />
-                    )}
-                    {game.status === 'in_progress' ? (
-                        <IconButton icon="flag-checkered" onPress={handleEndGame} />
-                    ) : (
-                        <View style={{ width: 48 }} />
-                    )}
-                </View>
-            </View>
+            <LiveGameTopBar game={game} id={id} onEndGame={handleEndGame} />
             <ScrollView style={styles.phoneContent} contentContainerStyle={styles.phoneContentInner}>
                 {renderGameHeader()}
                 {game.charting_mode !== 'our_pitcher' &&
@@ -2441,7 +2236,7 @@ export default function LiveGameScreen() {
                     </Button>
                 )}
             </ScrollView>
-            {renderModals()}
+            <LiveGameModals ctl={ctl} handlers={modalHandlers} />
             <PreviousAtBatsModal
                 visible={showPreviousAtBats}
                 onClose={() => setShowPreviousAtBats(false)}
