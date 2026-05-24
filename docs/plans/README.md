@@ -19,3 +19,4 @@
 | 2026-05-23 | Fix Last Pitch — result-only PATCH + snackbar Edit action      | Approved    | [fix-last-pitch](2026-05-23-fix-last-pitch.md)                                        |
 | 2026-05-23 | Phase 1 quick wins batch 3 (date pickers, zone-tap UX, home/away recovery) | Approved | [phase1-batch3](2026-05-23-phase1-batch3.md)                                          |
 | 2026-05-23 | Phase 2 batch 1 — design tokens (A) + heat-zone strip (K)      | Approved    | [phase2-tokens-and-heatzone-strip](2026-05-23-phase2-tokens-and-heatzone-strip.md)    |
+| 2026-05-23 | Phase 2 — C (partial) — phone layout reorder for thumb zone    | Approved    | [phase2-c-partial-phone-reorder](2026-05-23-phase2-c-partial-phone-reorder.md)        |

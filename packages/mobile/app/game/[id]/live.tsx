@@ -2493,7 +2493,16 @@ export default function LiveGameScreen() {
                 />
                 {!isReadOnly && renderActualEqualsTargetButton()}
                 {renderPitchBreakdown()}
-                {/* 3. Pitch Calling (optional, setting-gated) */}
+                {/*
+                    Phone tap-zone order (UX-LG-07 reorder):
+                    StrikeZone (above) -> Send Call (contextual, only when pitch type+zone set) ->
+                    Velocity (only if enabled) -> ResultButtons -> Shake (calling only, moved below) -> Undo.
+
+                    SendCall + Velocity have to stay above ResultButtons because tapping a result
+                    auto-logs the pitch. Shake is between pitches, not in the per-pitch tap path,
+                    so it moves below Result to tighten the zone -> result distance.
+                */}
+                {/* Pitch Calling — SEND row (only when pitch type+zone set but no call sent yet) */}
                 {!isReadOnly && !isScoutingMode && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
                     <View style={styles.callRow}>
                         <Button
@@ -2550,24 +2559,7 @@ export default function LiveGameScreen() {
                         </View>
                     </View>
                 )}
-                {/* 3b. Shake button */}
-                {!isReadOnly && !isScoutingMode && pitchCallingEnabled && (
-                    <View style={styles.shakeRow}>
-                        <TouchableOpacity
-                            onPress={handleShake}
-                            style={[styles.shakeBtn, { backgroundColor: theme.colors.surface }]}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={styles.shakeBtnText}>SHAKE</Text>
-                            {pendingShakeCount > 0 && (
-                                <View style={styles.shakeBadge}>
-                                    <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                )}
-                {/* 4. Velocity (optional, setting-gated) — before Result so it's entered before the pitch is logged */}
+                {/* Velocity (optional, setting-gated) — must stay above Result; result-tap logs the pitch */}
                 {!isReadOnly && velocityEnabled && (
                     <View style={styles.veloRow}>
                         <Text style={styles.veloLabel}>MPH</Text>
@@ -2584,7 +2576,7 @@ export default function LiveGameScreen() {
                         {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
                     </View>
                 )}
-                {/* 5. Result — tapping a result logs the pitch */}
+                {/* Result — tapping a result logs the pitch. Sits as close to the StrikeZone as possible. */}
                 {!isReadOnly && (
                     <ResultButtons
                         selectedResult={selectedResult}
@@ -2596,7 +2588,24 @@ export default function LiveGameScreen() {
                         compact
                     />
                 )}
-                {/* 6. Undo */}
+                {/* Shake — used between pitches, not in per-pitch tap path. Below Result. */}
+                {!isReadOnly && !isScoutingMode && pitchCallingEnabled && (
+                    <View style={styles.shakeRow}>
+                        <TouchableOpacity
+                            onPress={handleShake}
+                            style={[styles.shakeBtn, { backgroundColor: theme.colors.surface }]}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={styles.shakeBtnText}>SHAKE</Text>
+                            {pendingShakeCount > 0 && (
+                                <View style={styles.shakeBadge}>
+                                    <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                )}
+                {/* Undo */}
                 {!isReadOnly && pitches.length > 0 && !isLogging && (
                     <View style={styles.logRow}>
                         <Button
