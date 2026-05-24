@@ -108,21 +108,23 @@ function RootLayoutContent() {
 
     return (
         <PaperProvider theme={theme}>
-            {/*
-                Portal.Host MUST sit ABOVE ConfirmProvider + ToastProvider so
-                anything rendered via <Portal> (Paper Modals, Snackbar, our
-                LiveGameModals stack, etc.) lands BELOW those context providers
-                in the React tree. PaperProvider auto-mounts a Portal.Host at
-                its own top level — which is ABOVE the providers below — and
-                Portal'd children walk up to the NEAREST Portal.Host. So
-                without this explicit inner host, a modal that calls useToast
-                / useConfirm hits null context and throws (root cause of the
-                2026-05-24 TestFlight 2.18.1 "useToast must be used within a
-                ToastProvider" crash on the live screen).
-            */}
-            <Portal.Host>
-                <ConfirmProvider>
-                    <ToastProvider>
+            <ConfirmProvider>
+                <ToastProvider>
+                    {/*
+                        Portal.Host MUST sit BELOW ConfirmProvider + ToastProvider.
+                        Paper's <Portal> hands children to the nearest Portal.Host's
+                        PortalManager, which renders them as PortalManager's
+                        descendants — i.e. INSIDE Portal.Host's subtree. So for a
+                        Portal'd modal (BatterSelectorModal, etc.) to see
+                        ToastContext, ToastProvider must be an ANCESTOR of
+                        Portal.Host. PaperProvider auto-mounts a Portal.Host at its
+                        own top level (above our providers); without this explicit
+                        inner host, Portal children walk up past our providers and
+                        hit the outer host — null context, throw. Earlier attempt
+                        (b3932ad) put Portal.Host above the providers and didn't
+                        actually fix it for the same reason.
+                    */}
+                    <Portal.Host>
                         <KeyboardDismissBar />
                         <AuthGuard>
                             <Stack>
@@ -150,9 +152,9 @@ function RootLayoutContent() {
                                 <Stack.Screen name="+not-found" />
                             </Stack>
                         </AuthGuard>
-                    </ToastProvider>
-                </ConfirmProvider>
-            </Portal.Host>
+                    </Portal.Host>
+                </ToastProvider>
+            </ConfirmProvider>
         </PaperProvider>
     );
 }
