@@ -17,7 +17,7 @@ import {
     deriveGameMode,
 } from '@pitch-tracker/shared';
 
-import { useToast } from '../../../src/hooks/useToast';
+import { _toastDiagnostics, useToast } from '../../../src/hooks/useToast';
 import { useConfirm } from '../../../src/hooks/useConfirm';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
 import { useOfflineActions } from '../../../src/hooks/useOfflineActions';
@@ -66,6 +66,11 @@ export function useLiveGameController() {
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    // DIAGNOSTIC — temp breadcrumb. Logs before useToast() so we can see in
+    // console (when reachable) that the controller is being entered, and what
+    // the toast module thinks its state is right before the call. Remove with
+    // the rest of the toast-debug instrumentation once root-caused.
+    console.log(`[useLiveGameController] enter; ${_toastDiagnostics()}`);
     const toast = useToast();
     const confirm = useConfirm();
     const { isTablet, isLandscape } = useDeviceType();
