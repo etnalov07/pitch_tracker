@@ -30,3 +30,4 @@
 | 2026-05-25 | Org-scoped read-only team view (org coach can browse sibling teams) | Shipped  | [org-readonly-team-view](2026-05-25-org-readonly-team-view.md)                        |
 | 2026-05-25 | Phase 2 G — Snackbar / Toast library eval (decision: keep hand-rolled) | Closed | [phase2-g-snackbar-eval](2026-05-25-phase2-g-snackbar-eval.md)                        |
 | 2026-05-25 | Phase 2 J — Mobile role routing (player-role users see player dashboard) | Shipped | [phase2-j-mobile-role-routing](2026-05-25-phase2-j-mobile-role-routing.md)            |
+| 2026-05-25 | Phase 2 E — In-play modal cleanup (InPlayModal, RunnerEvent split, RunnerAdvancement trim) | Shipped | [phase2-e-inplay-modal-cleanup](2026-05-25-phase2-e-inplay-modal-cleanup.md)          |
