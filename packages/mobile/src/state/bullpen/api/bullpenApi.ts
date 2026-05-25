@@ -5,7 +5,9 @@ import {
     BullpenPitch,
     BullpenSessionSummary,
     BullpenPlan,
+    BullpenPlanAssignment,
     BullpenPlanWithPitches,
+    PitchType,
 } from '@pitch-tracker/shared';
 
 export const bullpenApi = {
@@ -93,5 +95,57 @@ export const bullpenApi = {
     getPitcherAssignments: async (pitcherId: string): Promise<BullpenPlanWithPitches[]> => {
         const response = await api.get<{ plans: BullpenPlanWithPitches[] }>(`/bullpen/pitcher/${pitcherId}/assignments`);
         return response.data.plans;
+    },
+
+    // Plan CRUD (mobile editor — UX-BP-10).
+    createPlan: async (data: {
+        team_id: string;
+        name: string;
+        description?: string;
+        max_pitches?: number;
+        pitches?: Array<{
+            sequence: number;
+            pitch_type: PitchType;
+            target_x?: number;
+            target_y?: number;
+            instruction?: string;
+        }>;
+    }): Promise<BullpenPlanWithPitches> => {
+        const response = await api.post<{ plan: BullpenPlanWithPitches }>('/bullpen/plans', data);
+        return response.data.plan;
+    },
+
+    updatePlan: async (
+        planId: string,
+        data: {
+            name?: string;
+            description?: string;
+            max_pitches?: number | null;
+            pitches?: Array<{
+                sequence: number;
+                pitch_type: PitchType;
+                target_x?: number;
+                target_y?: number;
+                instruction?: string;
+            }>;
+        }
+    ): Promise<BullpenPlanWithPitches> => {
+        const response = await api.put<{ plan: BullpenPlanWithPitches }>(`/bullpen/plans/${planId}`, data);
+        return response.data.plan;
+    },
+
+    deletePlan: async (planId: string): Promise<void> => {
+        await api.delete(`/bullpen/plans/${planId}`);
+    },
+
+    assignPlan: async (planId: string, pitcherIds: string[]): Promise<BullpenPlanAssignment[]> => {
+        const response = await api.post<{ assignments: BullpenPlanAssignment[] }>(`/bullpen/plans/${planId}/assign`, {
+            pitcher_ids: pitcherIds,
+        });
+        return response.data.assignments;
+    },
+
+    unassignPlan: async (planId: string, pitcherId: string): Promise<void> => {
+        await api.delete(`/bullpen/plans/${planId}/assign/${pitcherId}`);
     },
 };

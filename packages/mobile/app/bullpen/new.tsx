@@ -194,9 +194,21 @@ export default function NewBullpenScreen() {
                 {/* Plan Selection */}
                 {selectedPitcher && (
                     <>
-                        <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
-                            Bullpen Plan (optional)
-                        </Text>
+                        <View style={styles.planHeaderRow}>
+                            <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
+                                Bullpen Plan (optional)
+                            </Text>
+                            {resolvedTeamId && (
+                                <Button
+                                    mode="text"
+                                    compact
+                                    icon="cog"
+                                    onPress={() => router.push(`/bullpen/plans?teamId=${resolvedTeamId}` as any)}
+                                >
+                                    Manage
+                                </Button>
+                            )}
+                        </View>
                         {plansLoading ? (
                             <ActivityIndicator style={{ marginVertical: 8 }} />
                         ) : (
@@ -298,6 +310,11 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
+    },
+    planHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
     planChip: {
         marginBottom: 0,
