@@ -33,6 +33,23 @@ export const BackButton = styled.button({
     },
 });
 
+// Outlined button styled to match the Roster page's ReportButton — same
+// visual language for the same destination across both surfaces.
+export const ReportButton = styled.button({
+    background: 'none',
+    border: `1px solid ${theme.colors.primary[400]}`,
+    color: theme.colors.primary[600],
+    padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+    borderRadius: theme.borderRadius.md,
+    fontSize: theme.fontSize.sm,
+    cursor: 'pointer',
+    fontWeight: theme.fontWeight.semibold,
+
+    '&:hover': {
+        background: theme.colors.primary[50],
+    },
+});
+
 export const ProfileInfo = styled.div({});
 
 export const PitcherName = styled.h1({

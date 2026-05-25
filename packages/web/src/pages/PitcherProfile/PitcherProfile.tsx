@@ -18,6 +18,7 @@ import {
     Header,
     HeaderLeft,
     BackButton,
+    ReportButton,
     ProfileInfo,
     PitcherName,
     PitcherMeta,
@@ -183,21 +184,9 @@ const PitcherProfile: React.FC = () => {
                         </PitcherMeta>
                     </ProfileInfo>
                 </HeaderLeft>
-                <button
-                    onClick={() => navigate(`/teams/${team_id}/pitcher/${pitcher_id}/report`)}
-                    style={{
-                        background: 'var(--accent-blue)',
-                        color: '#fff',
-                        border: 'none',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '0.375rem',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                    }}
-                >
+                <ReportButton onClick={() => navigate(`/teams/${team_id}/pitcher/${pitcher_id}/report`)}>
                     View Performance Report →
-                </button>
+                </ReportButton>
             </Header>
 
             <Content>
