@@ -75,6 +75,7 @@ export default function LiveGamePhone({ ctl, actions }: LiveGamePhoneProps) {
         isLogging,
         activeCall,
         sendingCall,
+        changingCallId,
         walkieTalkieActive,
         pendingShakeCount,
         showInPlayModal,
@@ -187,7 +188,7 @@ export default function LiveGamePhone({ ctl, actions }: LiveGamePhoneProps) {
                         >
                             {sendingCall
                                 ? 'SENDING...'
-                                : `SEND: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
+                                : `${changingCallId ? 'SEND CHANGE' : 'SEND'}: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
                         </Button>
                         <Pressable
                             style={[styles.talkHoldButton, walkieTalkieActive && styles.talkHoldButtonActive]}

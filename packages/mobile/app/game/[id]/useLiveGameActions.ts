@@ -6,6 +6,7 @@ import {
     Inning,
     OpponentLineupPlayer,
     PITCH_CALL_ZONE_COORDS,
+    ABBREV_TO_PITCH_TYPE,
     PITCH_TYPE_TO_ABBREV,
     Pitch,
     PitchCall,
@@ -725,9 +726,13 @@ export function useLiveGameActions(ctl: LiveGameController) {
     const handleChangeCall = () => {
         if (!activeCall) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        // UX-PC-07: pre-fill the SEND row with the active call's pitch + zone so the
+        // coach can tweak one without re-picking both from scratch. Mirrors the
+        // deleted /pitch-calling screen's Change semantics.
         setChangingCallId(activeCall.id);
+        if (activeCall.pitch_type) setSelectedPitchType(ABBREV_TO_PITCH_TYPE[activeCall.pitch_type]);
+        if (activeCall.zone) setTargetZone(activeCall.zone);
         setActiveCall(null);
-        setTargetZone(null);
         setPitchLocation(null);
     };
 
