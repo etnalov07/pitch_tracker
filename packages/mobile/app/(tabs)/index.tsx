@@ -8,6 +8,7 @@ import { useDeviceType } from '../../src/hooks/useDeviceType';
 import { useToast } from '../../src/hooks/useToast';
 import { useConfirm } from '../../src/hooks/useConfirm';
 import { SyncStatusBadge, EmptyState } from '../../src/components/common';
+import { PlayerDashboardScreen } from '../../src/components/playerDashboard';
 import { Game } from '@pitch-tracker/shared';
 
 const GameCard: React.FC<{ game: Game; onPress: () => void; onLongPress: () => void }> = ({ game, onPress, onLongPress }) => {
@@ -86,6 +87,17 @@ export default function DashboardScreen() {
     const { user } = useAppSelector((state) => state.auth);
     const { games, loading } = useAppSelector((state) => state.games);
     const { isTablet } = useDeviceType();
+
+    // Route on registration_type — players see their own stats / recent games
+    // instead of the coach-shaped game-management surface. Mirrors web's
+    // Dashboard router (packages/web/src/pages/Dashboard/Dashboard.tsx). NULL
+    // falls through to the coach view so every pre-existing mobile user lands
+    // exactly where they did before this slice. org_admin would also benefit
+    // from a dedicated view, but that's a follow-up — mobile has no
+    // OrgDashboard screen yet.
+    if (user?.registration_type === 'player') {
+        return <PlayerDashboardScreen />;
+    }
 
     const loadGames = useCallback(() => {
         dispatch(fetchAllGames());
