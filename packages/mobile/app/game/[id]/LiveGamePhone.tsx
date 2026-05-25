@@ -218,6 +218,7 @@ export default function LiveGamePhone({ ctl, actions }: LiveGamePhoneProps) {
                     <View style={styles.callBadge}>
                         <Text style={styles.callBadgeText}>
                             Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
+                            {activeCall.bt_transmitted ? '  ✓ Received' : ''}
                         </Text>
                         <View style={styles.callActions}>
                             <Button

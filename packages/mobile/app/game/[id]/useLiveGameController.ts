@@ -394,6 +394,14 @@ export function useLiveGameController() {
                 setPitchLocation({ x: zc.x, y: zc.y });
             }
         },
+        // UX-PC-09: a catcher device POST'd /pitch-calls/:id/transmitted; flip the
+        // local activeCall's bt_transmitted so the active-call badge can light a
+        // ✓ Received pill. No-op if this device isn't the sender of that call.
+        pitch_call_transmitted: (payload) => {
+            const callId = payload.id as string | undefined;
+            if (!callId) return;
+            setActiveCall((prev) => (prev && prev.id === callId ? { ...prev, bt_transmitted: true } : prev));
+        },
     });
 
     return {

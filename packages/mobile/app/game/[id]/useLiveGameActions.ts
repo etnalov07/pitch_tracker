@@ -703,8 +703,10 @@ export function useLiveGameActions(ctl: LiveGameController) {
                 });
             }
             setActiveCall(call);
+            // UX-PC-09: don't ack our own call. The catcher's viewer.tsx POSTs
+            // /pitch-calls/:id/transmitted when it receives the WS event, which
+            // pg_notifies pitch_call_transmitted back to this device.
             await speakPitchCall(abbrev, targetZone, false, pendingShakeCount);
-            await pitchCallingApi.markTransmitted(call.id);
         } catch {
             toast.show({ message: 'Failed to send pitch call', type: 'error' });
         } finally {
@@ -716,8 +718,8 @@ export function useLiveGameActions(ctl: LiveGameController) {
         if (!activeCall) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         try {
+            // Local TTS only. Ack stays driven by the catcher's POST → WS event.
             await speakPitchCall(activeCall.pitch_type, activeCall.zone, false, pendingShakeCount);
-            await pitchCallingApi.markTransmitted(activeCall.id);
         } catch {
             toast.show({ message: 'Failed to re-send call', type: 'error' });
         }

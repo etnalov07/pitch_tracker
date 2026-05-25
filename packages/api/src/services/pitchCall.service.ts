@@ -192,7 +192,16 @@ export class PitchCallService {
             throw new Error('Call not found');
         }
 
-        return result.rows[0];
+        const call = result.rows[0];
+
+        // Broadcast ack to the sender's device so the coach's active-call badge
+        // can light up a ✓ Received pill — Phase 2 B4 (UX-PC-09).
+        await query('SELECT pg_notify($1, $2)', [
+            `game_${call.game_id}`,
+            JSON.stringify({ type: 'pitch_call_transmitted', id: call.id, game_id: call.game_id }),
+        ]);
+
+        return call;
     }
 
     async logResult(

@@ -14,6 +14,7 @@ import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
 import { BatterBreakdownView, EmailReportModal, OpponentAttackSummaryView } from '../../../src/components/performanceSummary';
 import PerformanceSummaryView from '../../../src/components/performanceSummary/PerformanceSummaryView';
 import { performanceSummaryApi } from '../../../src/state/performanceSummary/api/performanceSummaryApi';
+import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import api from '../../../src/services/api';
 
@@ -387,6 +388,12 @@ export default function ViewerScreen() {
             if (id) dispatch(fetchCurrentGameState(id)).catch(() => {});
         },
         runners_updated: () => setRefreshTrigger((prev) => prev + 1),
+        // Catcher-side ack (UX-PC-09): this device received the call, tell the API,
+        // which broadcasts a pitch_call_transmitted event back to the coach's /live.
+        pitch_call: (payload) => {
+            const callId = payload.id as string | undefined;
+            if (callId) pitchCallingApi.markTransmitted(callId).catch(() => {});
+        },
     });
 
     if (!game) {

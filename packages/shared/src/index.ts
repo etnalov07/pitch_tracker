@@ -1370,7 +1370,13 @@ export interface CreateOpposingPitcherParams {
 
 export type GameRole = 'charter' | 'viewer';
 
-export type WsMessageType = 'pitch_logged' | 'at_bat_ended' | 'inning_changed' | 'runners_updated' | 'pitch_call';
+export type WsMessageType =
+    | 'pitch_logged'
+    | 'at_bat_ended'
+    | 'inning_changed'
+    | 'runners_updated'
+    | 'pitch_call'
+    | 'pitch_call_transmitted'; // catcher device POST'd /pitch-calls/:id/transmitted (UX-PC-09)
 
 export interface WsMessage {
     type: WsMessageType;
