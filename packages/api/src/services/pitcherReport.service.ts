@@ -86,7 +86,7 @@ class PitcherReportService {
 
         // Upsert the cached row so the narrative job can update it. source_id
         // stays NULL — the partial unique index keys by (pitcher_id, window_key).
-        const cached = await this.upsertReportRow(pitcherId, pitcher.name, window, stats);
+        const cached = await this.upsertReportRow(pitcherId, pitcher.team_id, window, stats);
 
         let narrative: string | null = cached.narrative;
         let narrativeAt: string | null = cached.narrative_generated_at;
@@ -140,11 +140,14 @@ class PitcherReportService {
     // Pitcher lookup
     // -----------------------------------------------------------------
 
-    private async fetchPitcher(pitcherId: string): Promise<{ name: string } | null> {
-        const result = await query(`SELECT first_name, last_name FROM players WHERE id = $1`, [pitcherId]);
+    private async fetchPitcher(pitcherId: string): Promise<{ name: string; team_id: string | null } | null> {
+        const result = await query(`SELECT first_name, last_name, team_id FROM players WHERE id = $1`, [pitcherId]);
         if (result.rows.length === 0) return null;
         const r = result.rows[0];
-        return { name: `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || 'Pitcher' };
+        return {
+            name: `${r.first_name ?? ''} ${r.last_name ?? ''}`.trim() || 'Pitcher',
+            team_id: r.team_id ?? null,
+        };
     }
 
     // -----------------------------------------------------------------
@@ -587,7 +590,7 @@ class PitcherReportService {
 
     private async upsertReportRow(
         pitcherId: string,
-        pitcherName: string,
+        teamId: string | null,
         window: PitcherReportWindow,
         stats: PitcherReportStats
     ): Promise<{ id: string; narrative: string | null; narrative_generated_at: string | null }> {
@@ -614,9 +617,8 @@ class PitcherReportService {
                      innings_pitched = $7,
                      runs_allowed = $8,
                      hits_allowed = $9,
-                     pitcher_name = $10,
                      updated_at = NOW()
-                 WHERE id = $11`,
+                 WHERE id = $10`,
                 [
                     stats.total_pitches,
                     stats.strikes,
@@ -627,7 +629,6 @@ class PitcherReportService {
                     stats.innings_pitched,
                     stats.runs_allowed,
                     stats.hits_allowed,
-                    pitcherName,
                     row.id,
                 ]
             );
@@ -641,9 +642,16 @@ class PitcherReportService {
             };
         }
 
+        // team_id is NOT NULL on the table; if a pitcher has no team_id we
+        // surface explicitly rather than failing with a constraint violation.
+        // In practice every roster player has a team_id.
+        if (!teamId) {
+            throw new Error('Pitcher has no team_id — cannot create pitcher_report row');
+        }
+
         const inserted = await query(
             `INSERT INTO performance_summaries (
-                source_type, source_id, pitcher_id, pitcher_name, window_key,
+                source_type, source_id, pitcher_id, team_id, window_key,
                 total_pitches, strikes, balls, strike_percentage,
                 target_accuracy_percentage, batters_faced, innings_pitched,
                 runs_allowed, hits_allowed
@@ -652,7 +660,7 @@ class PitcherReportService {
              RETURNING id, narrative, narrative_generated_at`,
             [
                 pitcherId,
-                pitcherName,
+                teamId,
                 window,
                 stats.total_pitches,
                 stats.strikes,
