@@ -2016,6 +2016,10 @@ export interface PitcherTrendCallout {
     copy: string;
 }
 
+// 'low_sample' = not enough pitches to draw a meaningful verdict (per the
+// service's minimum-sample thresholds). UI renders these as a neutral tag.
+export type PitcherReportVerdict = 'works' | 'mixed' | 'struggles' | 'low_sample';
+
 export interface PitcherReportPitchTypeRow {
     pitch_type: string;
     count: number;
@@ -2024,7 +2028,7 @@ export interface PitcherReportPitchTypeRow {
     whiff_pct: number;
     avg_velocity: number | null;
     top_velocity: number | null;
-    success: 'works' | 'mixed' | 'struggles';
+    success: PitcherReportVerdict;
 }
 
 export interface PitcherReportZoneRow {
@@ -2035,7 +2039,7 @@ export interface PitcherReportZoneRow {
     weak_contact_pct: number;
     hard_contact_pct: number;
     whiff_pct: number;
-    success: 'works' | 'mixed' | 'struggles';
+    success: PitcherReportVerdict;
 }
 
 export interface PitcherReportGameLogRow {

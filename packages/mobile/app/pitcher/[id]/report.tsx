@@ -7,6 +7,7 @@ import { Button, Chip, Text, useTheme } from 'react-native-paper';
 import type {
     PitcherReportPayload,
     PitcherReportPitchTypeRow,
+    PitcherReportVerdict,
     PitcherReportWindow,
     PitcherReportZoneRow,
     PitcherTrendCallout,
@@ -389,9 +390,20 @@ function GameLogTable({ rows, onRowPress }: { rows: PitcherReportPayload['games'
     );
 }
 
-function SuccessTag({ success, hitLabel = false }: { success: 'works' | 'mixed' | 'struggles'; hitLabel?: boolean }) {
-    const bg = success === 'works' ? '#22c55e' : success === 'mixed' ? '#a78bfa' : '#ef4444';
-    const label = success === 'works' ? 'Working' : success === 'mixed' ? 'Mixed' : hitLabel ? 'Hit' : 'Struggles';
+function SuccessTag({ success, hitLabel = false }: { success: PitcherReportVerdict; hitLabel?: boolean }) {
+    // 'low_sample' = not enough pitches to draw a meaningful verdict; render
+    // a neutral muted tag so coaches don't read into a 1-of-2 strike rate.
+    const bg = success === 'works' ? '#22c55e' : success === 'mixed' ? '#a78bfa' : success === 'low_sample' ? '#9ca3af' : '#ef4444';
+    const label =
+        success === 'low_sample'
+            ? 'Low N'
+            : success === 'works'
+              ? 'Working'
+              : success === 'mixed'
+                ? 'Mixed'
+                : hitLabel
+                  ? 'Hit'
+                  : 'Struggles';
     return (
         <View style={[styles.successTag, { backgroundColor: bg }]}>
             <Text style={styles.successTagText}>{label}</Text>

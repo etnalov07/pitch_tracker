@@ -35,6 +35,13 @@ const WINDOW_LABELS: Record<PitcherReportWindow, string> = {
 const PITCH_TYPE_BENCHMARK = { works: 62, mixed: 50 }; // strike_pct
 const ZONE_BENCHMARK = { works: 60, mixed: 45 }; // strike_pct (zones)
 
+// Minimum sample size before a verdict is assigned. Below the threshold the
+// row is tagged 'low_sample' so coaches don't read meaning into a 1-of-2
+// strike rate. Zones get a lower bar than pitch types because individual
+// target zones see much less volume than overall pitch-type usage.
+const PITCH_TYPE_MIN_SAMPLE = 10;
+const ZONE_MIN_SAMPLE = 5;
+
 // Trend thresholds — last 3 games vs prior N for trend detection.
 const TREND_VELOCITY_DELTA = 1; // mph
 const TREND_PCT_DELTA = 5; // percentage points
@@ -385,11 +392,13 @@ class PitcherReportService {
                 const strikePct = count > 0 ? Math.round((ptStrikes / count) * 100) : 0;
                 const whiffPct = swings > 0 ? Math.round((whiffs / swings) * 100) : 0;
                 const success: PitcherReportPitchTypeRow['success'] =
-                    strikePct >= PITCH_TYPE_BENCHMARK.works
-                        ? 'works'
-                        : strikePct >= PITCH_TYPE_BENCHMARK.mixed
-                          ? 'mixed'
-                          : 'struggles';
+                    count < PITCH_TYPE_MIN_SAMPLE
+                        ? 'low_sample'
+                        : strikePct >= PITCH_TYPE_BENCHMARK.works
+                          ? 'works'
+                          : strikePct >= PITCH_TYPE_BENCHMARK.mixed
+                            ? 'mixed'
+                            : 'struggles';
                 return {
                     pitch_type: r.pitch_type,
                     count,
@@ -443,7 +452,13 @@ class PitcherReportService {
             const weakContact = parseInt(contact.weak_contact) || 0;
             const strikePct = count > 0 ? Math.round((zStrikes / count) * 100) : 0;
             const success: PitcherReportZoneRow['success'] =
-                strikePct >= ZONE_BENCHMARK.works ? 'works' : strikePct >= ZONE_BENCHMARK.mixed ? 'mixed' : 'struggles';
+                count < ZONE_MIN_SAMPLE
+                    ? 'low_sample'
+                    : strikePct >= ZONE_BENCHMARK.works
+                      ? 'works'
+                      : strikePct >= ZONE_BENCHMARK.mixed
+                        ? 'mixed'
+                        : 'struggles';
             return {
                 zone: r.target_zone,
                 count,

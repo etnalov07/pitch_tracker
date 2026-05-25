@@ -2,6 +2,7 @@ import styled from '@emotion/styled';
 import type {
     PitcherReportPayload,
     PitcherReportPitchTypeRow,
+    PitcherReportVerdict,
     PitcherReportWindow,
     PitcherReportZoneRow,
     PitcherTrendCallout,
@@ -307,9 +308,7 @@ const PitchTypeTable: React.FC<{ rows: PitcherReportPitchTypeRow[] }> = ({ rows 
                         <Td>{r.whiff_pct}%</Td>
                         <Td>{r.avg_velocity != null ? `${r.avg_velocity} / ${r.top_velocity}` : '—'}</Td>
                         <Td>
-                            <SuccessTag success={r.success}>
-                                {r.success === 'works' ? 'Working' : r.success === 'mixed' ? 'Mixed' : 'Struggles'}
-                            </SuccessTag>
+                            <SuccessTag success={r.success}>{verdictLabel(r.success, 'pitch_type')}</SuccessTag>
                         </Td>
                     </tr>
                 ))}
@@ -342,9 +341,7 @@ const ZoneTable: React.FC<{ rows: PitcherReportZoneRow[] }> = ({ rows }) => (
                             {r.weak_contact_pct}% / {r.hard_contact_pct}%
                         </Td>
                         <Td>
-                            <SuccessTag success={r.success}>
-                                {r.success === 'works' ? 'Working' : r.success === 'mixed' ? 'Mixed' : 'Hit'}
-                            </SuccessTag>
+                            <SuccessTag success={r.success}>{verdictLabel(r.success, 'zone')}</SuccessTag>
                         </Td>
                     </tr>
                 ))}
@@ -617,14 +614,29 @@ const ClickableRow = styled.tr`
     }
 `;
 
-const SuccessTag = styled.span<{ success: 'works' | 'mixed' | 'struggles' }>`
+// Labels differ per context — zones get "Hit" instead of "Struggles" so the
+// language matches the contact-quality framing. 'low_sample' is neutral.
+function verdictLabel(v: PitcherReportVerdict, ctx: 'pitch_type' | 'zone'): string {
+    if (v === 'low_sample') return 'Low N';
+    if (v === 'works') return 'Working';
+    if (v === 'mixed') return 'Mixed';
+    return ctx === 'zone' ? 'Hit' : 'Struggles';
+}
+
+const SuccessTag = styled.span<{ success: PitcherReportVerdict }>`
     display: inline-block;
     padding: 2px 8px;
     border-radius: ${theme.borderRadius.full};
     font-size: ${theme.fontSize.xs};
     font-weight: 600;
     background: ${(p) =>
-        p.success === 'works' ? theme.accents.green : p.success === 'mixed' ? theme.accents.violet : theme.accents.red};
+        p.success === 'works'
+            ? theme.accents.green
+            : p.success === 'mixed'
+              ? theme.accents.violet
+              : p.success === 'low_sample'
+                ? 'var(--text-muted)'
+                : theme.accents.red};
     color: #fff;
 `;
 
