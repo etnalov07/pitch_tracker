@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { Snackbar, Text, useTheme } from 'react-native-paper';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 export type ToastType = 'info' | 'error' | 'success';
 
@@ -58,27 +58,36 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (
         <ToastContext.Provider value={value}>
             {children}
-            <Snackbar
-                key={toast?.key}
-                visible={toast !== null}
-                onDismiss={hide}
-                duration={duration}
-                style={[styles.snackbar, { backgroundColor: bgColor }]}
-                action={
-                    toast?.action
-                        ? {
-                              label: toast.action.label,
-                              labelStyle: { color: textColor, fontWeight: '700' },
-                              onPress: () => {
-                                  toast.action!.onPress();
-                                  hide();
-                              },
-                          }
-                        : undefined
-                }
-            >
-                <Text style={{ color: textColor }}>{toast?.message ?? ''}</Text>
-            </Snackbar>
+            {/*
+                Wrapping View with accessibilityLiveRegion="polite" so screen
+                readers (VoiceOver / TalkBack) announce toast contents as they
+                appear. Matches the web ToastView's role="status" aria-live="polite"
+                pattern. Paper's Snackbar doesn't forward this prop cleanly, so
+                we hoist it to the wrapper.
+            */}
+            <View accessibilityLiveRegion="polite" pointerEvents="box-none">
+                <Snackbar
+                    key={toast?.key}
+                    visible={toast !== null}
+                    onDismiss={hide}
+                    duration={duration}
+                    style={[styles.snackbar, { backgroundColor: bgColor }]}
+                    action={
+                        toast?.action
+                            ? {
+                                  label: toast.action.label,
+                                  labelStyle: { color: textColor, fontWeight: '700' },
+                                  onPress: () => {
+                                      toast.action!.onPress();
+                                      hide();
+                                  },
+                              }
+                            : undefined
+                    }
+                >
+                    <Text style={{ color: textColor }}>{toast?.message ?? ''}</Text>
+                </Snackbar>
+            </View>
         </ToastContext.Provider>
     );
 };
