@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { opponentTeamService } from '../../services/opponentTeamService';
 import { useAppDispatch, useAppSelector, fetchAllTeams, createGame } from '../../state';
+import { gamesApi } from '../../state/games/api/gamesApi';
 import { OpponentTeam } from '../../types';
 import {
     Container,
@@ -95,6 +96,7 @@ const GameSetup: React.FC = () => {
     const [error, setError] = useState('');
     const [opponents, setOpponents] = useState<OpponentTeam[]>([]);
     const [opponentTeamId, setOpponentTeamId] = useState<string>('');
+    const [recentLocations, setRecentLocations] = useState<string[]>([]);
 
     const [formData, setFormData] = useState({
         home_team_id: '',
@@ -144,6 +146,29 @@ const GameSetup: React.FC = () => {
             .list(formData.home_team_id)
             .then(setOpponents)
             .catch(() => {});
+    }, [formData.home_team_id]);
+
+    // UX-NG-13: top 5 unique recent locations for this team — tap chip to fill.
+    useEffect(() => {
+        if (!formData.home_team_id) {
+            setRecentLocations([]);
+            return;
+        }
+        gamesApi
+            .getGamesByTeam(formData.home_team_id)
+            .then((games) => {
+                const seen = new Set<string>();
+                const out: string[] = [];
+                for (const g of games) {
+                    const loc = (g.location ?? '').trim();
+                    if (!loc || seen.has(loc)) continue;
+                    seen.add(loc);
+                    out.push(loc);
+                    if (out.length >= 5) break;
+                }
+                setRecentLocations(out);
+            })
+            .catch(() => setRecentLocations([]));
     }, [formData.home_team_id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -497,6 +522,20 @@ const GameSetup: React.FC = () => {
                                     onChange={handleChange}
                                     placeholder="e.g., Main Field, Stadium Name"
                                 />
+                                {recentLocations.length > 0 && (
+                                    <ChipRow>
+                                        {recentLocations.map((loc) => (
+                                            <Chip
+                                                key={loc}
+                                                type="button"
+                                                active={formData.location === loc}
+                                                onClick={() => setFormData((prev) => ({ ...prev, location: loc }))}
+                                            >
+                                                {loc}
+                                            </Chip>
+                                        ))}
+                                    </ChipRow>
+                                )}
                             </FormGroup>
 
                             {/* Actions */}

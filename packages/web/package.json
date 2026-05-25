@@ -1,6 +1,6 @@
 {
     "name": "@pitch-tracker/web",
-    "version": "1.27.0",
+    "version": "1.28.0",
     "private": true,
     "dependencies": {
         "@emotion/react": "^11.14.0",

@@ -7,7 +7,19 @@ import * as Haptics from '../../src/utils/haptics';
 import { OpponentTeam, Team } from '@pitch-tracker/shared';
 import { useAppDispatch, useAppSelector, fetchAllTeams, createGame } from '../../src/state';
 import { opponentsApi } from '../../src/state/opponents/api/opponentsApi';
+import { gamesApi } from '../../src/state/games/api/gamesApi';
 import { useToast } from '../../src/hooks/useToast';
+
+// UX-NG-11: a one-liner description below the abbreviated chartingMode segmented
+// control so first-time users know what each mode does. Copy mirrors the web
+// GameSetup ModeCards.
+const CHARTING_MODE_DESCRIPTIONS: Record<string, string> = {
+    our_pitcher: 'Chart every pitch your pitcher throws. Full velocity, location, and result tracking.',
+    both: 'Track both your pitcher and the opposing pitcher. Maximum coverage.',
+    opp_pitcher: 'Chart only the opposing pitcher. Good for scouting while your team bats.',
+    scouting: 'Neutral scouting mode — neither team is "yours". Chart any game from the stands.',
+    scrimmage: 'Intrasquad / practice game — no fixed innings, no score, manual end-half. Charts our pitcher only.',
+};
 
 export default function NewGameScreen() {
     const router = useRouter();
@@ -24,6 +36,7 @@ export default function NewGameScreen() {
     const [opponentName, setOpponentName] = useState('');
     const [opponentTeamId, setOpponentTeamId] = useState<string>('');
     const [knownOpponents, setKnownOpponents] = useState<OpponentTeam[]>([]);
+    const [recentLocations, setRecentLocations] = useState<string[]>([]);
     const [scoutingHomeTeam, setScoutingHomeTeam] = useState('');
     const [lineupSize, setLineupSize] = useState('9');
     const [totalInnings, setTotalInnings] = useState('7');
@@ -80,6 +93,30 @@ export default function NewGameScreen() {
             .list(selectedTeamId)
             .then(setKnownOpponents)
             .catch(() => {});
+    }, [selectedTeamId]);
+
+    // UX-NG-13: load recent unique locations (top 5) for the selected team so the
+    // coach can tap a chip below the Location input instead of retyping.
+    useEffect(() => {
+        if (!selectedTeamId) {
+            setRecentLocations([]);
+            return;
+        }
+        gamesApi
+            .getGamesByTeam(selectedTeamId)
+            .then((games) => {
+                const seen = new Set<string>();
+                const out: string[] = [];
+                for (const g of games) {
+                    const loc = (g.location ?? '').trim();
+                    if (!loc || seen.has(loc)) continue;
+                    seen.add(loc);
+                    out.push(loc);
+                    if (out.length >= 5) break;
+                }
+                setRecentLocations(out);
+            })
+            .catch(() => setRecentLocations([]));
     }, [selectedTeamId]);
 
     const handleCreate = async () => {
@@ -268,6 +305,9 @@ export default function NewGameScreen() {
                             ]}
                             style={styles.segmented}
                         />
+                        <Text variant="bodySmall" style={[styles.modeDesc, { color: theme.colors.onSurfaceVariant }]}>
+                            {CHARTING_MODE_DESCRIPTIONS[chartingMode]}
+                        </Text>
                         {isScrimmageMode && (
                             <Text variant="bodySmall" style={[styles.helperText, { color: theme.colors.onSurfaceVariant }]}>
                                 Intrasquad / practice: no fixed innings, no score, manual end-half.
@@ -455,6 +495,34 @@ export default function NewGameScreen() {
                             placeholder="e.g., Main Field"
                             style={styles.input}
                         />
+                        {recentLocations.length > 0 && (
+                            <View style={styles.chipGrid}>
+                                {recentLocations.map((loc) => (
+                                    <TouchableOpacity
+                                        key={loc}
+                                        onPress={() => {
+                                            Haptics.selectionAsync();
+                                            setLocation(loc);
+                                        }}
+                                        style={[
+                                            styles.opponentChip,
+                                            { backgroundColor: theme.colors.surfaceVariant },
+                                            location === loc && styles.opponentChipSelected,
+                                        ]}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.opponentChipText,
+                                                { color: theme.colors.onSurface },
+                                                location === loc && styles.opponentChipTextSelected,
+                                            ]}
+                                        >
+                                            {loc}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
 
                         {/* Create Button */}
                         <Button
@@ -506,6 +574,12 @@ const styles = StyleSheet.create({
         marginBottom: 4,
         fontSize: 12,
         fontStyle: 'italic',
+    },
+    modeDesc: {
+        marginTop: -8,
+        marginBottom: 4,
+        fontSize: 12,
+        lineHeight: 16,
     },
     chipGrid: {
         flexDirection: 'row',
