@@ -13,9 +13,7 @@ import {
     FormCard,
     Form,
     TeamSelectionSection,
-    GameDetailsSection,
     SectionTitle,
-    SectionSubtitle,
     TeamsRow,
     TeamSelectGroup,
     VsText,
@@ -23,23 +21,10 @@ import {
     TeamSelect,
     SelectedTeamPreview,
     TeamBadge,
-    FormRow,
     FormGroup,
     Input,
-    GamePreview,
-    PreviewTitle,
-    PreviewMatchup,
-    PreviewTeam,
-    PreviewAt,
-    PreviewDetails,
-    PreviewBadge,
-    ConfirmDetailsList,
-    ConfirmDetailRow,
-    ConfirmDetailKey,
-    ConfirmDetailValue,
     FormActions,
     CancelButton,
-    NextButton,
     SubmitButton,
     ErrorMessage,
     WarningCard,
@@ -50,15 +35,12 @@ import {
     LoadingText,
     HomeAwayToggle,
     ToggleOption,
-    StepperContainer,
-    StepItem,
-    StepDot,
-    StepLabel,
-    StepConnector,
     ModeGrid,
     ModeCard,
     ModeCardTitle,
     ModeCardDesc,
+    ChipRow,
+    Chip,
 } from './styles';
 
 type ChartingMode = 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting' | 'scrimmage';
@@ -92,13 +74,14 @@ const CHARTING_MODES: { value: ChartingMode; label: string; desc: string }[] = [
     },
 ];
 
-const STEP_LABELS = ['Teams & Mode', 'Game Details', 'Confirm'];
+const LINEUP_SIZE_OPTIONS: { value: number; label: string }[] = [
+    { value: 9, label: '9' },
+    { value: 10, label: '10 (EH)' },
+    { value: 11, label: '11' },
+    { value: 12, label: '12' },
+];
 
-function getStepStatus(stepIndex: number, currentStep: number): 'completed' | 'active' | 'pending' {
-    if (stepIndex < currentStep) return 'completed';
-    if (stepIndex === currentStep) return 'active';
-    return 'pending';
-}
+const INNINGS_OPTIONS = [5, 6, 7, 9];
 
 const GameSetup: React.FC = () => {
     const navigate = useNavigate();
@@ -108,7 +91,6 @@ const GameSetup: React.FC = () => {
     const { teamList: allTeams, loading } = useAppSelector((state) => state.teams);
     const userTeams = allTeams.filter((team) => team.owner_id === user?.id);
 
-    const [step, setStep] = useState(0);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [opponents, setOpponents] = useState<OpponentTeam[]>([]);
@@ -120,6 +102,7 @@ const GameSetup: React.FC = () => {
         scouting_home_team: '',
         is_home_game: true,
         lineup_size: 9,
+        total_innings: 7,
         charting_mode: 'our_pitcher' as ChartingMode,
         scouting_focus: 'both' as ScoutingFocus,
         game_date: new Date().toISOString().split('T')[0],
@@ -134,11 +117,23 @@ const GameSetup: React.FC = () => {
         dispatch(fetchAllTeams());
     }, [dispatch]);
 
+    // Auto-select sole team (parity with mobile).
     useEffect(() => {
         if (userTeams.length === 1 && !formData.home_team_id) {
             setFormData((prev) => ({ ...prev, home_team_id: userTeams[0].id }));
         }
     }, [userTeams, formData.home_team_id]);
+
+    // Auto-set innings by team_type (parity with mobile app/game/new.tsx:62-71).
+    useEffect(() => {
+        if (!formData.home_team_id) return;
+        const team = userTeams.find((t) => t.id === formData.home_team_id);
+        setFormData((prev) => ({
+            ...prev,
+            total_innings: team?.team_type === 'college' ? 9 : 7,
+        }));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.home_team_id]);
 
     useEffect(() => {
         if (!formData.home_team_id) {
@@ -163,17 +158,12 @@ const GameSetup: React.FC = () => {
         setError('');
     };
 
-    // ─── Step validation ───────────────────────────────────────────────────────
-
-    const step0Valid = (): boolean => {
+    const isValid = (): boolean => {
         if (!formData.home_team_id) return false;
         if (isScoutingMode) return !!formData.opponent_name.trim() && !!formData.scouting_home_team.trim();
-        // Scrimmage allows blank opponent (defaults to "Scrimmage" on submit).
         if (isScrimmageMode) return true;
         return !!formData.opponent_name.trim();
     };
-
-    // ─── Submit ────────────────────────────────────────────────────────────────
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -193,6 +183,7 @@ const GameSetup: React.FC = () => {
                     scouting_home_team: isScoutingMode ? formData.scouting_home_team.trim() : undefined,
                     is_home_game: resolvedIsHomeGame,
                     lineup_size: formData.lineup_size,
+                    total_innings: formData.total_innings,
                     charting_mode: formData.charting_mode,
                     scouting_focus: isScoutingMode ? formData.scouting_focus : undefined,
                     game_date: game_dateTime.toISOString(),
@@ -223,18 +214,6 @@ const GameSetup: React.FC = () => {
         return team ? `${team.city ? team.city + ' ' : ''}${team.name}` : '';
     };
 
-    const chartingModeLabel = CHARTING_MODES.find((m) => m.value === formData.charting_mode)?.label ?? '';
-
-    const gameDateTime = new Date(`${formData.game_date}T${formData.game_time}`);
-    const formattedDateTime = gameDateTime.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-    });
-
     if (loading)
         return (
             <Container>
@@ -246,7 +225,7 @@ const GameSetup: React.FC = () => {
         <Container>
             <Header>
                 <HeaderLeft>
-                    <BackButton onClick={() => (step > 0 ? setStep(step - 1) : navigate('/'))}>← Back</BackButton>
+                    <BackButton onClick={() => navigate('/')}>← Back</BackButton>
                     <Title>New Game</Title>
                 </HeaderLeft>
             </Header>
@@ -260,410 +239,283 @@ const GameSetup: React.FC = () => {
                         <CreateTeamButton onClick={() => navigate('/teams/new')}>Create Team</CreateTeamButton>
                     </WarningCard>
                 ) : (
-                    <>
-                        {/* ── Step Progress Indicator ── */}
-                        <StepperContainer>
-                            {STEP_LABELS.map((label, i) => (
-                                <React.Fragment key={label}>
-                                    <StepItem>
-                                        <StepDot status={getStepStatus(i, step)}>{i < step ? '✓' : i + 1}</StepDot>
-                                        <StepLabel active={i === step}>{label}</StepLabel>
-                                    </StepItem>
-                                    {i < STEP_LABELS.length - 1 && <StepConnector completed={i < step} />}
-                                </React.Fragment>
-                            ))}
-                        </StepperContainer>
+                    <FormCard>
+                        {error && <ErrorMessage>{error}</ErrorMessage>}
 
-                        <FormCard>
-                            {error && <ErrorMessage>{error}</ErrorMessage>}
+                        <Form onSubmit={handleSubmit}>
+                            <TeamSelectionSection>
+                                <SectionTitle>Who are you playing?</SectionTitle>
 
-                            <Form onSubmit={handleSubmit}>
-                                {/* ══════════════════════════════════════════════
-                                    STEP 0 — Teams & Charting Mode
-                                ═══════════════════════════════════════════════ */}
-                                {step === 0 && (
-                                    <TeamSelectionSection>
-                                        <SectionTitle>Who are you playing?</SectionTitle>
+                                {/* Charting mode — descriptive cards */}
+                                <Label>Charting Mode</Label>
+                                <ModeGrid>
+                                    {CHARTING_MODES.map((mode) => (
+                                        <ModeCard
+                                            key={mode.value}
+                                            type="button"
+                                            active={formData.charting_mode === mode.value}
+                                            onClick={() => setFormData((prev) => ({ ...prev, charting_mode: mode.value }))}
+                                        >
+                                            <ModeCardTitle active={formData.charting_mode === mode.value}>
+                                                {mode.label}
+                                            </ModeCardTitle>
+                                            <ModeCardDesc>{mode.desc}</ModeCardDesc>
+                                        </ModeCard>
+                                    ))}
+                                </ModeGrid>
 
-                                        {/* Charting mode */}
-                                        <Label>Charting Mode</Label>
-                                        <ModeGrid>
-                                            {CHARTING_MODES.map((mode) => (
-                                                <ModeCard
-                                                    key={mode.value}
+                                {/* Scouting focus (conditional) */}
+                                {isScoutingMode && (
+                                    <>
+                                        <Label style={{ marginTop: 20, marginBottom: 4, display: 'block' }}>Scout Which Team</Label>
+                                        <HomeAwayToggle>
+                                            {(['both', 'away', 'home'] as ScoutingFocus[]).map((focus) => (
+                                                <ToggleOption
+                                                    key={focus}
                                                     type="button"
-                                                    active={formData.charting_mode === mode.value}
-                                                    onClick={() => setFormData((prev) => ({ ...prev, charting_mode: mode.value }))}
+                                                    active={formData.scouting_focus === focus}
+                                                    onClick={() => setFormData((prev) => ({ ...prev, scouting_focus: focus }))}
                                                 >
-                                                    <ModeCardTitle active={formData.charting_mode === mode.value}>
-                                                        {mode.label}
-                                                    </ModeCardTitle>
-                                                    <ModeCardDesc>{mode.desc}</ModeCardDesc>
-                                                </ModeCard>
+                                                    {focus === 'both'
+                                                        ? 'Both Teams'
+                                                        : focus === 'away'
+                                                          ? 'Away Pitcher'
+                                                          : 'Home Pitcher'}
+                                                </ToggleOption>
                                             ))}
-                                        </ModeGrid>
+                                        </HomeAwayToggle>
+                                    </>
+                                )}
 
-                                        {/* Scouting sub-options */}
-                                        {isScoutingMode && (
-                                            <>
-                                                <Label style={{ marginTop: 20, marginBottom: 4, display: 'block' }}>
-                                                    Scout Which Team
-                                                </Label>
-                                                <HomeAwayToggle>
-                                                    {(['both', 'away', 'home'] as ScoutingFocus[]).map((focus) => (
-                                                        <ToggleOption
-                                                            key={focus}
-                                                            type="button"
-                                                            active={formData.scouting_focus === focus}
-                                                            onClick={() =>
-                                                                setFormData((prev) => ({ ...prev, scouting_focus: focus }))
-                                                            }
-                                                        >
-                                                            {focus === 'both'
-                                                                ? 'Both Teams'
-                                                                : focus === 'away'
-                                                                  ? 'Away Pitcher'
-                                                                  : 'Home Pitcher'}
-                                                        </ToggleOption>
-                                                    ))}
-                                                </HomeAwayToggle>
-                                            </>
-                                        )}
-
-                                        {/* Team name inputs */}
-                                        <div style={{ marginTop: 20 }}>
-                                            {isScoutingMode ? (
-                                                <TeamsRow>
-                                                    <TeamSelectGroup>
-                                                        <Label>Away Team</Label>
-                                                        <Input
-                                                            type="text"
-                                                            name="opponent_name"
-                                                            value={formData.opponent_name}
-                                                            onChange={handleChange}
-                                                            placeholder="Away team name…"
-                                                        />
-                                                    </TeamSelectGroup>
-                                                    <VsText>@</VsText>
-                                                    <TeamSelectGroup>
-                                                        <Label>Home Team</Label>
-                                                        <Input
-                                                            type="text"
-                                                            name="scouting_home_team"
-                                                            value={formData.scouting_home_team}
-                                                            onChange={handleChange}
-                                                            placeholder="Home team name…"
-                                                        />
-                                                    </TeamSelectGroup>
-                                                </TeamsRow>
-                                            ) : (
-                                                <TeamsRow>
-                                                    <TeamSelectGroup>
-                                                        <Label>Opponent</Label>
-                                                        <Input
-                                                            type="text"
-                                                            name="opponent_name"
-                                                            value={formData.opponent_name}
-                                                            onChange={handleChange}
-                                                            placeholder="Enter opponent name…"
-                                                            list="known-opponents-list"
-                                                        />
-                                                        {opponents.length > 0 && (
-                                                            <datalist id="known-opponents-list">
-                                                                {opponents.map((opp) => (
-                                                                    <option key={opp.id} value={opp.name} />
-                                                                ))}
-                                                            </datalist>
-                                                        )}
-                                                        {opponents.length > 0 && (
-                                                            <div
-                                                                style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}
+                                {/* Team names + your-team */}
+                                <div style={{ marginTop: 20 }}>
+                                    {isScoutingMode ? (
+                                        <TeamsRow>
+                                            <TeamSelectGroup>
+                                                <Label>Away Team</Label>
+                                                <Input
+                                                    type="text"
+                                                    name="opponent_name"
+                                                    value={formData.opponent_name}
+                                                    onChange={handleChange}
+                                                    placeholder="Away team name…"
+                                                />
+                                            </TeamSelectGroup>
+                                            <VsText>@</VsText>
+                                            <TeamSelectGroup>
+                                                <Label>Home Team</Label>
+                                                <Input
+                                                    type="text"
+                                                    name="scouting_home_team"
+                                                    value={formData.scouting_home_team}
+                                                    onChange={handleChange}
+                                                    placeholder="Home team name…"
+                                                />
+                                            </TeamSelectGroup>
+                                        </TeamsRow>
+                                    ) : (
+                                        <TeamsRow>
+                                            <TeamSelectGroup>
+                                                <Label>Opponent</Label>
+                                                <Input
+                                                    type="text"
+                                                    name="opponent_name"
+                                                    value={formData.opponent_name}
+                                                    onChange={handleChange}
+                                                    placeholder={
+                                                        isScrimmageMode
+                                                            ? 'e.g., Red squad (defaults to "Scrimmage")'
+                                                            : 'Enter opponent name…'
+                                                    }
+                                                />
+                                                {opponents.length > 0 && (
+                                                    <ChipRow>
+                                                        {opponents.map((opp) => (
+                                                            <Chip
+                                                                key={opp.id}
+                                                                type="button"
+                                                                active={opponentTeamId === opp.id}
+                                                                onClick={() => handleSelectKnownOpponent(opp)}
                                                             >
-                                                                {opponents.map((opp) => (
-                                                                    <button
-                                                                        key={opp.id}
-                                                                        type="button"
-                                                                        onClick={() => handleSelectKnownOpponent(opp)}
-                                                                        style={{
-                                                                            padding: '3px 10px',
-                                                                            borderRadius: 12,
-                                                                            border: `1px solid ${opponentTeamId === opp.id ? '#2563eb' : '#ccc'}`,
-                                                                            background:
-                                                                                opponentTeamId === opp.id ? '#eff6ff' : '#f5f5f5',
-                                                                            color: opponentTeamId === opp.id ? '#1d4ed8' : '#444',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: 12,
-                                                                            fontWeight: opponentTeamId === opp.id ? 600 : 400,
-                                                                        }}
-                                                                    >
-                                                                        {opp.name}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                        {formData.opponent_name && (
+                                                                {opp.name}
+                                                            </Chip>
+                                                        ))}
+                                                    </ChipRow>
+                                                )}
+                                                {formData.opponent_name && (
+                                                    <SelectedTeamPreview>
+                                                        <TeamBadge>{formData.opponent_name}</TeamBadge>
+                                                    </SelectedTeamPreview>
+                                                )}
+                                            </TeamSelectGroup>
+
+                                            <VsText>@</VsText>
+
+                                            <TeamSelectGroup>
+                                                <Label>Your Team</Label>
+                                                {userTeams.length === 1 ? (
+                                                    <>
+                                                        <Input type="text" value={getTeamName(userTeams[0].id)} disabled />
+                                                        <SelectedTeamPreview>
+                                                            <TeamBadge isHome>{getTeamName(userTeams[0].id)}</TeamBadge>
+                                                        </SelectedTeamPreview>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <TeamSelect
+                                                            name="home_team_id"
+                                                            value={formData.home_team_id}
+                                                            onChange={handleChange}
+                                                        >
+                                                            <option value="">Select your team…</option>
+                                                            {userTeams.map((team) => (
+                                                                <option key={team.id} value={team.id}>
+                                                                    {team.city ? `${team.city} ` : ''}
+                                                                    {team.name}
+                                                                </option>
+                                                            ))}
+                                                        </TeamSelect>
+                                                        {formData.home_team_id && (
                                                             <SelectedTeamPreview>
-                                                                <TeamBadge>{formData.opponent_name}</TeamBadge>
+                                                                <TeamBadge isHome>{getTeamName(formData.home_team_id)}</TeamBadge>
                                                             </SelectedTeamPreview>
                                                         )}
-                                                    </TeamSelectGroup>
-
-                                                    <VsText>@</VsText>
-
-                                                    <TeamSelectGroup>
-                                                        <Label>Your Team</Label>
-                                                        {userTeams.length === 1 ? (
-                                                            <>
-                                                                <Input type="text" value={getTeamName(userTeams[0].id)} disabled />
-                                                                <SelectedTeamPreview>
-                                                                    <TeamBadge isHome>{getTeamName(userTeams[0].id)}</TeamBadge>
-                                                                </SelectedTeamPreview>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <TeamSelect
-                                                                    name="home_team_id"
-                                                                    value={formData.home_team_id}
-                                                                    onChange={handleChange}
-                                                                >
-                                                                    <option value="">Select your team…</option>
-                                                                    {userTeams.map((team) => (
-                                                                        <option key={team.id} value={team.id}>
-                                                                            {team.city ? `${team.city} ` : ''}
-                                                                            {team.name}
-                                                                        </option>
-                                                                    ))}
-                                                                </TeamSelect>
-                                                                {formData.home_team_id && (
-                                                                    <SelectedTeamPreview>
-                                                                        <TeamBadge isHome>
-                                                                            {getTeamName(formData.home_team_id)}
-                                                                        </TeamBadge>
-                                                                    </SelectedTeamPreview>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </TeamSelectGroup>
-                                                </TeamsRow>
-                                            )}
-                                        </div>
-
-                                        {/* Your team (scouting mode) */}
-                                        {isScoutingMode && (
-                                            <FormGroup style={{ marginTop: 16 }}>
-                                                <Label>Your Team (for this session)</Label>
-                                                {userTeams.length === 1 ? (
-                                                    <Input type="text" value={getTeamName(userTeams[0].id)} disabled />
-                                                ) : (
-                                                    <TeamSelect
-                                                        name="home_team_id"
-                                                        value={formData.home_team_id}
-                                                        onChange={handleChange}
-                                                    >
-                                                        <option value="">Select your team…</option>
-                                                        {userTeams.map((team) => (
-                                                            <option key={team.id} value={team.id}>
-                                                                {team.city ? `${team.city} ` : ''}
-                                                                {team.name}
-                                                            </option>
-                                                        ))}
-                                                    </TeamSelect>
+                                                    </>
                                                 )}
-                                            </FormGroup>
-                                        )}
+                                            </TeamSelectGroup>
+                                        </TeamsRow>
+                                    )}
+                                </div>
 
-                                        {/* Home / Away (non-scouting) */}
-                                        {!isScoutingMode && (
-                                            <div style={{ marginTop: 16 }}>
-                                                <Label style={{ display: 'block', marginBottom: 4 }}>Your team is playing:</Label>
-                                                <HomeAwayToggle>
-                                                    <ToggleOption
-                                                        type="button"
-                                                        active={formData.is_home_game}
-                                                        onClick={() => setFormData((prev) => ({ ...prev, is_home_game: true }))}
-                                                    >
-                                                        Home
-                                                    </ToggleOption>
-                                                    <ToggleOption
-                                                        type="button"
-                                                        active={!formData.is_home_game}
-                                                        onClick={() => setFormData((prev) => ({ ...prev, is_home_game: false }))}
-                                                    >
-                                                        Away
-                                                    </ToggleOption>
-                                                </HomeAwayToggle>
-                                            </div>
-                                        )}
-                                    </TeamSelectionSection>
-                                )}
-
-                                {/* ══════════════════════════════════════════════
-                                    STEP 1 — Game Details
-                                ═══════════════════════════════════════════════ */}
-                                {step === 1 && (
-                                    <GameDetailsSection>
-                                        <div>
-                                            <SectionTitle>Game Details</SectionTitle>
-                                            <SectionSubtitle>When and where is this game?</SectionSubtitle>
-                                        </div>
-
-                                        <FormGroup>
-                                            <Label htmlFor="lineup_size">Lineup Size</Label>
-                                            <TeamSelect
-                                                id="lineup_size"
-                                                name="lineup_size"
-                                                value={formData.lineup_size}
-                                                onChange={(e) =>
-                                                    setFormData((prev) => ({
-                                                        ...prev,
-                                                        lineup_size: parseInt(e.target.value, 10),
-                                                    }))
-                                                }
-                                            >
-                                                <option value={9}>9 — Standard</option>
-                                                <option value={10}>10 — Extra Hitter (EH)</option>
-                                                <option value={11}>11</option>
-                                                <option value={12}>12</option>
+                                {/* Your team (scouting mode only — non-scouting has it in the TeamsRow above) */}
+                                {isScoutingMode && (
+                                    <FormGroup style={{ marginTop: 16 }}>
+                                        <Label>Your Team (for this session)</Label>
+                                        {userTeams.length === 1 ? (
+                                            <Input type="text" value={getTeamName(userTeams[0].id)} disabled />
+                                        ) : (
+                                            <TeamSelect name="home_team_id" value={formData.home_team_id} onChange={handleChange}>
+                                                <option value="">Select your team…</option>
+                                                {userTeams.map((team) => (
+                                                    <option key={team.id} value={team.id}>
+                                                        {team.city ? `${team.city} ` : ''}
+                                                        {team.name}
+                                                    </option>
+                                                ))}
                                             </TeamSelect>
-                                        </FormGroup>
-
-                                        <FormRow>
-                                            <FormGroup>
-                                                <Label htmlFor="game_date">Date</Label>
-                                                <Input
-                                                    type="date"
-                                                    id="game_date"
-                                                    name="game_date"
-                                                    value={formData.game_date}
-                                                    onChange={handleChange}
-                                                />
-                                            </FormGroup>
-                                            <FormGroup>
-                                                <Label htmlFor="game_time">Time</Label>
-                                                <Input
-                                                    type="time"
-                                                    id="game_time"
-                                                    name="game_time"
-                                                    value={formData.game_time}
-                                                    onChange={handleChange}
-                                                />
-                                            </FormGroup>
-                                        </FormRow>
-
-                                        <FormGroup>
-                                            <Label htmlFor="location">Location (optional)</Label>
-                                            <Input
-                                                type="text"
-                                                id="location"
-                                                name="location"
-                                                value={formData.location}
-                                                onChange={handleChange}
-                                                placeholder="e.g., Main Field, Stadium Name"
-                                            />
-                                        </FormGroup>
-                                    </GameDetailsSection>
+                                        )}
+                                    </FormGroup>
                                 )}
 
-                                {/* ══════════════════════════════════════════════
-                                    STEP 2 — Preview & Confirm
-                                ═══════════════════════════════════════════════ */}
-                                {step === 2 && (
-                                    <div>
-                                        <SectionTitle>Ready to go?</SectionTitle>
-                                        <SectionSubtitle>Review your game details before starting.</SectionSubtitle>
-
-                                        <GamePreview>
-                                            <PreviewTitle>Game Preview</PreviewTitle>
-                                            <PreviewMatchup>
-                                                {isScoutingMode ? (
-                                                    <>
-                                                        <PreviewTeam>{formData.opponent_name || 'Away Team'}</PreviewTeam>
-                                                        <PreviewAt>@</PreviewAt>
-                                                        <PreviewTeam>{formData.scouting_home_team || 'Home Team'}</PreviewTeam>
-                                                    </>
-                                                ) : formData.is_home_game ? (
-                                                    <>
-                                                        <PreviewTeam>{formData.opponent_name}</PreviewTeam>
-                                                        <PreviewAt>@</PreviewAt>
-                                                        <PreviewTeam>{getTeamName(formData.home_team_id)}</PreviewTeam>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <PreviewTeam>{getTeamName(formData.home_team_id)}</PreviewTeam>
-                                                        <PreviewAt>@</PreviewAt>
-                                                        <PreviewTeam>{formData.opponent_name}</PreviewTeam>
-                                                    </>
-                                                )}
-                                            </PreviewMatchup>
-                                            <PreviewDetails>
-                                                {formattedDateTime}
-                                                {formData.location && ` · ${formData.location}`}
-                                            </PreviewDetails>
-                                            <PreviewBadge>{chartingModeLabel}</PreviewBadge>
-
-                                            <ConfirmDetailsList>
-                                                <ConfirmDetailRow>
-                                                    <ConfirmDetailKey>Lineup size</ConfirmDetailKey>
-                                                    <ConfirmDetailValue>{formData.lineup_size} batters</ConfirmDetailValue>
-                                                </ConfirmDetailRow>
-                                                {!isScoutingMode && (
-                                                    <ConfirmDetailRow>
-                                                        <ConfirmDetailKey>Your team</ConfirmDetailKey>
-                                                        <ConfirmDetailValue>
-                                                            {formData.is_home_game ? 'Home' : 'Away'}
-                                                        </ConfirmDetailValue>
-                                                    </ConfirmDetailRow>
-                                                )}
-                                                {isScoutingMode && (
-                                                    <ConfirmDetailRow>
-                                                        <ConfirmDetailKey>Scouting focus</ConfirmDetailKey>
-                                                        <ConfirmDetailValue>
-                                                            {formData.scouting_focus === 'both'
-                                                                ? 'Both teams'
-                                                                : formData.scouting_focus === 'away'
-                                                                  ? 'Away pitcher'
-                                                                  : 'Home pitcher'}
-                                                        </ConfirmDetailValue>
-                                                    </ConfirmDetailRow>
-                                                )}
-                                                <ConfirmDetailRow>
-                                                    <ConfirmDetailKey>Charting mode</ConfirmDetailKey>
-                                                    <ConfirmDetailValue>{chartingModeLabel}</ConfirmDetailValue>
-                                                </ConfirmDetailRow>
-                                            </ConfirmDetailsList>
-                                        </GamePreview>
+                                {/* Home / Away (non-scouting, non-scrimmage) */}
+                                {!isScoutingMode && !isScrimmageMode && (
+                                    <div style={{ marginTop: 16 }}>
+                                        <Label style={{ display: 'block', marginBottom: 4 }}>Your team is playing:</Label>
+                                        <HomeAwayToggle>
+                                            <ToggleOption
+                                                type="button"
+                                                active={formData.is_home_game}
+                                                onClick={() => setFormData((prev) => ({ ...prev, is_home_game: true }))}
+                                            >
+                                                Home
+                                            </ToggleOption>
+                                            <ToggleOption
+                                                type="button"
+                                                active={!formData.is_home_game}
+                                                onClick={() => setFormData((prev) => ({ ...prev, is_home_game: false }))}
+                                            >
+                                                Away
+                                            </ToggleOption>
+                                        </HomeAwayToggle>
                                     </div>
                                 )}
+                            </TeamSelectionSection>
 
-                                {/* ─── Navigation ─────────────────────────────── */}
-                                <FormActions>
-                                    {step === 0 ? (
-                                        <CancelButton type="button" onClick={() => navigate('/')}>
-                                            Cancel
-                                        </CancelButton>
-                                    ) : (
-                                        <CancelButton type="button" onClick={() => setStep(step - 1)}>
-                                            ← Back
-                                        </CancelButton>
-                                    )}
-
-                                    {step < 2 ? (
-                                        <NextButton
+                            {/* Lineup Size — segmented chips (UX-NG-07) */}
+                            <FormGroup>
+                                <Label>Lineup Size</Label>
+                                <ChipRow>
+                                    {LINEUP_SIZE_OPTIONS.map((opt) => (
+                                        <Chip
+                                            key={opt.value}
                                             type="button"
-                                            disabled={step === 0 && !step0Valid()}
-                                            onClick={() => setStep(step + 1)}
+                                            active={formData.lineup_size === opt.value}
+                                            onClick={() => setFormData((prev) => ({ ...prev, lineup_size: opt.value }))}
                                         >
-                                            Next →
-                                        </NextButton>
-                                    ) : (
-                                        <SubmitButton type="submit" disabled={submitting}>
-                                            {submitting ? 'Creating…' : isScoutingMode ? '🔍 Start Scouting' : '⚾ Start Game'}
-                                        </SubmitButton>
-                                    )}
-                                </FormActions>
-                            </Form>
-                        </FormCard>
-                    </>
+                                            {opt.label}
+                                        </Chip>
+                                    ))}
+                                </ChipRow>
+                            </FormGroup>
+
+                            {/* Total Innings — segmented chips (UX-NG-03, new on web) */}
+                            <FormGroup>
+                                <Label>Innings</Label>
+                                <ChipRow>
+                                    {INNINGS_OPTIONS.map((n) => (
+                                        <Chip
+                                            key={n}
+                                            type="button"
+                                            active={formData.total_innings === n}
+                                            onClick={() => setFormData((prev) => ({ ...prev, total_innings: n }))}
+                                        >
+                                            {n}
+                                        </Chip>
+                                    ))}
+                                </ChipRow>
+                            </FormGroup>
+
+                            {/* Date + Time */}
+                            <FormGroup>
+                                <Label htmlFor="game_date">Date & Time</Label>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                    <Input
+                                        type="date"
+                                        id="game_date"
+                                        name="game_date"
+                                        value={formData.game_date}
+                                        onChange={handleChange}
+                                    />
+                                    <Input
+                                        type="time"
+                                        id="game_time"
+                                        name="game_time"
+                                        value={formData.game_time}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </FormGroup>
+
+                            {/* Location */}
+                            <FormGroup>
+                                <Label htmlFor="location">Location (optional)</Label>
+                                <Input
+                                    type="text"
+                                    id="location"
+                                    name="location"
+                                    value={formData.location}
+                                    onChange={handleChange}
+                                    placeholder="e.g., Main Field, Stadium Name"
+                                />
+                            </FormGroup>
+
+                            {/* Actions */}
+                            <FormActions>
+                                <CancelButton type="button" onClick={() => navigate('/')}>
+                                    Cancel
+                                </CancelButton>
+                                <SubmitButton type="submit" disabled={submitting || !isValid()}>
+                                    {submitting
+                                        ? 'Creating…'
+                                        : isScoutingMode
+                                          ? '🔍 Start Scouting'
+                                          : isScrimmageMode
+                                            ? '⚾ Start Scrimmage'
+                                            : '⚾ Start Game'}
+                                </SubmitButton>
+                            </FormActions>
+                        </Form>
+                    </FormCard>
                 )}
             </Content>
         </Container>

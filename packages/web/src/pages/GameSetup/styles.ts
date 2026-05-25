@@ -62,67 +62,29 @@ export const Form = styled.form({
     gap: theme.spacing.xl,
 });
 
-// ─── Stepper ──────────────────────────────────────────────────────────────────
+// ─── Segmented chip row (lineup size, innings, opponents) ────────────────────
 
-export const StepperContainer = styled.div({
+export const ChipRow = styled.div({
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: `${theme.spacing.xl} 0 ${theme.spacing.lg}`,
-    gap: 0,
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.xs,
 });
 
-export const StepItem = styled.div({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: theme.spacing.xs,
-    position: 'relative',
-});
-
-export const StepDot = styled.div<{ status: 'completed' | 'active' | 'pending' }>((props) => ({
-    width: 32,
-    height: 32,
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+export const Chip = styled.button<{ active?: boolean }>((props) => ({
+    padding: `${theme.spacing.sm} ${theme.spacing.lg}`,
+    border: `1px solid ${props.active ? theme.colors.primary[600] : theme.colors.gray[300]}`,
+    borderRadius: theme.borderRadius.full,
+    background: props.active ? theme.colors.primary[50] : theme.surfaces.card,
+    color: props.active ? theme.colors.primary[700] : theme.colors.gray[700],
     fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.bold,
-    transition: 'all 0.2s ease',
-    ...(props.status === 'completed' && {
-        background: theme.colors.primary[600],
-        color: 'white',
-        border: `2px solid ${theme.colors.primary[600]}`,
-    }),
-    ...(props.status === 'active' && {
-        background: theme.colors.primary[600],
-        color: 'white',
-        border: `2px solid ${theme.colors.primary[600]}`,
-        boxShadow: `0 0 0 4px ${theme.colors.primary[100]}`,
-    }),
-    ...(props.status === 'pending' && {
-        background: theme.colors.gray[100],
-        color: theme.colors.gray[400],
-        border: `2px solid ${theme.colors.gray[300]}`,
-    }),
-}));
-
-export const StepLabel = styled.div<{ active?: boolean }>((props) => ({
-    fontSize: '11px',
     fontWeight: props.active ? theme.fontWeight.semibold : theme.fontWeight.normal,
-    color: props.active ? theme.colors.primary[700] : theme.colors.gray[400],
-    whiteSpace: 'nowrap',
-    textAlign: 'center',
-}));
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
 
-export const StepConnector = styled.div<{ completed?: boolean }>((props) => ({
-    flex: 1,
-    height: 2,
-    minWidth: 48,
-    marginBottom: 20,
-    background: props.completed ? theme.colors.primary[400] : theme.colors.gray[200],
-    transition: 'background 0.2s ease',
+    '&:hover': {
+        borderColor: theme.colors.primary[400],
+    },
 }));
 
 // ─── Section titles ────────────────────────────────────────────────────────────
@@ -309,99 +271,6 @@ export const Input = styled.input({
     },
 });
 
-// ─── Preview / confirm ─────────────────────────────────────────────────────────
-
-export const GamePreview = styled.div({
-    background: `linear-gradient(135deg, ${theme.colors.primary[50]} 0%, ${theme.colors.primary[100]} 100%)`,
-    border: `1px solid ${theme.colors.primary[200]}`,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.xl,
-    textAlign: 'center',
-});
-
-export const PreviewTitle = styled.div({
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.primary[600],
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    marginBottom: theme.spacing.md,
-});
-
-export const PreviewMatchup = styled.div({
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-});
-
-export const PreviewTeam = styled.span({
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.gray[800],
-});
-
-export const PreviewAt = styled.span({
-    fontSize: theme.fontSize.lg,
-    color: theme.colors.gray[500],
-});
-
-export const PreviewDetails = styled.div({
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.gray[600],
-    marginBottom: theme.spacing.sm,
-});
-
-export const PreviewBadge = styled.span({
-    display: 'inline-block',
-    padding: `2px ${theme.spacing.sm}`,
-    background: theme.colors.primary[100],
-    color: theme.colors.primary[700],
-    borderRadius: theme.borderRadius.full,
-    fontSize: '11px',
-    fontWeight: theme.fontWeight.semibold,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-});
-
-export const ConfirmDetailsList = styled.div({
-    marginTop: theme.spacing.lg,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing.sm,
-    textAlign: 'left',
-    background: theme.surfaces.card,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    border: `1px solid ${theme.colors.primary[200]}`,
-});
-
-export const ConfirmDetailRow = styled.div({
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.gray[700],
-    paddingBottom: theme.spacing.sm,
-    borderBottom: `1px solid ${theme.colors.gray[100]}`,
-
-    '&:last-of-type': {
-        borderBottom: 'none',
-        paddingBottom: 0,
-    },
-});
-
-export const ConfirmDetailKey = styled.span({
-    color: theme.colors.gray[500],
-    fontWeight: theme.fontWeight.medium,
-});
-
-export const ConfirmDetailValue = styled.span({
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.gray[800],
-    textAlign: 'right',
-});
-
 // ─── Actions ───────────────────────────────────────────────────────────────────
 
 export const FormActions = styled.div({
@@ -423,26 +292,6 @@ export const CancelButton = styled.button({
 
     '&:hover': {
         background: theme.colors.gray[50],
-    },
-});
-
-export const NextButton = styled.button({
-    backgroundColor: theme.colors.primary[600],
-    color: 'white',
-    border: 'none',
-    padding: `${theme.spacing.md} ${theme.spacing['2xl']}`,
-    borderRadius: theme.borderRadius.md,
-    fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.semibold,
-    cursor: 'pointer',
-
-    '&:hover:not(:disabled)': {
-        backgroundColor: theme.colors.primary[700],
-    },
-
-    '&:disabled': {
-        opacity: 0.6,
-        cursor: 'not-allowed',
     },
 });
 
