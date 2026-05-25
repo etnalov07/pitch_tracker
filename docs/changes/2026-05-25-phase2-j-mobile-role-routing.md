@@ -1,7 +1,7 @@
 # Phase 2 J — Mobile role routing · 2026-05-25
 
 **Type:** `feat`
-**Commit:** _(pending)_
+**Commit:** `1b0f256`
 **Versions:** `mobile@2.22.1 → 2.23.0`
 
 ## Context
