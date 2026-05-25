@@ -74,3 +74,10 @@ Full plan: scratch plan file `wobbly-napping-glade.md` (approved this session; a
 - **Bullpen sessions in the report** — they live on `PitcherProfile` today.
 - **Cache invalidation on new pitch logged** — stats refresh on every GET, but narrative stays cached until Regenerate.
 - **Bumping `packages/shared`'s version** (per memory: never bump shared).
+
+## Follow-up commits (bundled — same feature)
+
+- **`d50ccf5`** (api 1.18.0 → 1.18.1) — schema-mismatch fix. The initial commit referenced `pitcher_name` as if it were a column on `performance_summaries`; it's actually joined from `players`. Also tripped the `source_id NOT NULL` constraint. **NEW migration `046_pitcher_report_nullable_source.sql`** drops `source_id NOT NULL`; service now looks up `team_id` from `players.team_id` and drops the `pitcher_name` writes.
+- **`9333695`** (shared types + api 1.18.1 → 1.18.2; web 1.25.0 → 1.25.1; mobile 2.21.0 → 2.21.1) — verdict minimum-sample gate. Pitch arsenal verdicts require ≥10 pitches; zone verdicts require ≥5. Below that, the row shows a neutral "Low N" tag instead of being labeled Working/Mixed/Struggles off noise. New `PitcherReportVerdict` union type adds `'low_sample'`.
+- **`f0042db`** (api 1.18.2 → 1.18.3; web 1.25.1 → 1.25.2; mobile 2.21.1 → 2.21.2) — Performance Report button on every Roster row that has pitch data. API `getPlayersByTeam` enriches each row with `has_pitches` via a single `EXISTS` subquery (new optional field on shared `Player` type); web `TeamDetail RosterTable` and mobile `team/[id] PlayerListItem` render a `ReportButton` / `chart-line` IconButton when the flag is true.
+- **`c7c0e8b`** (web 1.25.2 → 1.25.3) — restyle the original `PitcherProfile` "View Performance Report" button from its inline-styled hack to a proper `ReportButton` styled-component matching the Roster version. Same destination, zero behavior change.
