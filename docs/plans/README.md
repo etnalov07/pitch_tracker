@@ -26,3 +26,5 @@
 | 2026-05-23 | Phase 2 — C cont 3a — extract useLiveGameActions hook          | Approved    | [phase2-c-cont-3a-actions-hook](2026-05-23-phase2-c-cont-3a-actions-hook.md)          |
 | 2026-05-23 | Phase 2 — C cont 3b — extract LiveGameTablet/Phone + helpers   | Approved    | [phase2-c-cont-3b-layout-components](2026-05-23-phase2-c-cont-3b-layout-components.md) |
 | 2026-05-25 | Scrimmage game mode (no auto-3-out, manual end-half, no score) | Shipped     | [scrimmage-mode](2026-05-25-scrimmage-mode.md)                                        |
+| 2026-05-25 | Pitcher Performance Report (cross-game stats + Claude narrative) | Shipped     | [pitcher-performance-report](2026-05-25-pitcher-performance-report.md)                |
+| 2026-05-25 | Org-scoped read-only team view (org coach can browse sibling teams) | Shipped  | [org-readonly-team-view](2026-05-25-org-readonly-team-view.md)                        |
