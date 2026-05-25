@@ -176,6 +176,7 @@ const LiveGame: React.FC = () => {
         setShowCountBreakdown,
         gameMode,
         isScoutingMode,
+        isScrimmageMode,
         scoutingBattingSide,
         scoutingPitchingSide,
         gameRole,
@@ -449,7 +450,7 @@ const LiveGame: React.FC = () => {
                             land in away_score regardless of is_home_game — this column is always the
                             opponent outside of scouting. */}
                         <TeamName>{isScoutingMode ? game.opponent_name || 'Away Team' : game.opponent_name || 'Opponent'}</TeamName>
-                        <Score>{game.away_score || 0}</Score>
+                        <Score>{isScrimmageMode ? '—' : game.away_score || 0}</Score>
                         {isScoutingMode && (
                             <div style={{ fontSize: '10px', color: theme.colors.gray[500], marginTop: '2px' }}>
                                 {scoutingBattingSide === 'away' ? '⚾ BATTING' : '🏟 PITCHING'}
@@ -531,7 +532,7 @@ const LiveGame: React.FC = () => {
                         <TeamName>
                             {isScoutingMode ? game.scouting_home_team || 'Home Team' : game.home_team_name || 'Your Team'}
                         </TeamName>
-                        <Score>{game.home_score || 0}</Score>
+                        <Score>{isScrimmageMode ? '—' : game.home_score || 0}</Score>
                         {isScoutingMode && (
                             <div style={{ fontSize: '10px', color: theme.colors.gray[500], marginTop: '2px' }}>
                                 {scoutingPitchingSide === 'home' ? '🏟 PITCHING' : '⚾ BATTING'}
@@ -849,6 +850,18 @@ const LiveGame: React.FC = () => {
                         <StartAtBatButton onClick={actions.handleStartAtBat} disabled={needsSetup}>
                             Start New At-Bat
                         </StartAtBatButton>
+                    </NoAtBatContainer>
+                )}
+
+                {/*
+                    Scrimmage manual end-half. Always visible in scrimmage during
+                    in_progress games so the coach can flip whenever the pitcher hits
+                    their pitch / batter cap. Advances top -> bottom -> top of next
+                    inning in one call (gameMode stays 'our_pitcher').
+                */}
+                {isScrimmageMode && game.status === 'in_progress' && (
+                    <NoAtBatContainer style={{ marginTop: theme.spacing.md }}>
+                        <StartAtBatButton onClick={actions.handleEndHalfScrimmage}>End Half Inning →</StartAtBatButton>
                     </NoAtBatContainer>
                 )}
             </MainPanel>

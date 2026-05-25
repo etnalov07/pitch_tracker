@@ -61,7 +61,7 @@ import {
     ModeCardDesc,
 } from './styles';
 
-type ChartingMode = 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting';
+type ChartingMode = 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting' | 'scrimmage';
 type ScoutingFocus = 'both' | 'home' | 'away';
 
 const CHARTING_MODES: { value: ChartingMode; label: string; desc: string }[] = [
@@ -84,6 +84,11 @@ const CHARTING_MODES: { value: ChartingMode; label: string; desc: string }[] = [
         value: 'scouting',
         label: '🔍 Scouting',
         desc: 'Neutral scouting mode — neither team is "yours". Chart any game from the stands.',
+    },
+    {
+        value: 'scrimmage',
+        label: 'Scrimmage',
+        desc: 'Intrasquad / practice game — no fixed innings, no score, manual end-half. Charts our pitcher only.',
     },
 ];
 
@@ -123,6 +128,7 @@ const GameSetup: React.FC = () => {
     });
 
     const isScoutingMode = formData.charting_mode === 'scouting';
+    const isScrimmageMode = formData.charting_mode === 'scrimmage';
 
     useEffect(() => {
         dispatch(fetchAllTeams());
@@ -162,6 +168,8 @@ const GameSetup: React.FC = () => {
     const step0Valid = (): boolean => {
         if (!formData.home_team_id) return false;
         if (isScoutingMode) return !!formData.opponent_name.trim() && !!formData.scouting_home_team.trim();
+        // Scrimmage allows blank opponent (defaults to "Scrimmage" on submit).
+        if (isScrimmageMode) return true;
         return !!formData.opponent_name.trim();
     };
 
@@ -172,12 +180,18 @@ const GameSetup: React.FC = () => {
         try {
             setSubmitting(true);
             const game_dateTime = new Date(`${formData.game_date}T${formData.game_time}`);
+            // Scrimmage defaults: opponent_name -> "Scrimmage" if blank,
+            // is_home_game forced true so deriveGameMode -> 'our_pitcher' every inning.
+            const resolvedOpponentName = isScrimmageMode
+                ? formData.opponent_name.trim() || 'Scrimmage'
+                : formData.opponent_name.trim() || undefined;
+            const resolvedIsHomeGame = isScrimmageMode ? true : formData.is_home_game;
             const newGame = await dispatch(
                 createGame({
                     home_team_id: formData.home_team_id,
-                    opponent_name: formData.opponent_name.trim() || undefined,
+                    opponent_name: resolvedOpponentName,
                     scouting_home_team: isScoutingMode ? formData.scouting_home_team.trim() : undefined,
-                    is_home_game: formData.is_home_game,
+                    is_home_game: resolvedIsHomeGame,
                     lineup_size: formData.lineup_size,
                     charting_mode: formData.charting_mode,
                     scouting_focus: isScoutingMode ? formData.scouting_focus : undefined,
@@ -191,7 +205,8 @@ const GameSetup: React.FC = () => {
 
             if (isScoutingMode && formData.scouting_focus === 'both') {
                 navigate(`/game/${newGame.id}/scouting-lineup`);
-            } else if (isScoutingMode) {
+            } else if (isScoutingMode || isScrimmageMode) {
+                // Scrimmage skips my-lineup — coach picks a pitcher from the modal in live.
                 navigate(`/game/${newGame.id}`);
             } else {
                 navigate(`/game/${newGame.id}/my-lineup`);

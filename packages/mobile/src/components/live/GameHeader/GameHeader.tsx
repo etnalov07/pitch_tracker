@@ -52,7 +52,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                     <Text style={styles.teamLabel} numberOfLines={1}>
                         {game.charting_mode === 'scouting' ? (game.opponent_name || 'AWAY').substring(0, 6).toUpperCase() : 'OPP'}
                     </Text>
-                    <Text style={styles.score}>{game.away_score || 0}</Text>
+                    <Text style={styles.score}>{game.charting_mode === 'scrimmage' ? '—' : game.away_score || 0}</Text>
                 </View>
                 <View style={styles.centerColumn}>
                     <View style={styles.statusRow}>
@@ -98,7 +98,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                             ? (game.scouting_home_team || 'HOME').substring(0, 6).toUpperCase()
                             : 'YOU'}
                     </Text>
-                    <Text style={styles.score}>{game.home_score || 0}</Text>
+                    <Text style={styles.score}>{game.charting_mode === 'scrimmage' ? '—' : game.home_score || 0}</Text>
                 </View>
                 {/* Base runners diamond */}
                 <View style={styles.diamondContainer}>

@@ -224,6 +224,30 @@ export function LiveGameHeader({ ctl, actions }: CtlActionsProp) {
 }
 
 // ----------------------------------------------------------------
+// Scrimmage manual end-half button — only rendered in scrimmage mode.
+// Coaches use this when their pitcher hits the desired pitch / batter count
+// (no auto-end on 3 outs in scrimmage). Advances top -> bottom -> top of
+// next inning in one tap so gameMode stays 'our_pitcher'.
+// ----------------------------------------------------------------
+
+export function EndHalfScrimmageButton({ ctl, actions }: CtlActionsProp) {
+    const { game, isScrimmageMode } = ctl;
+    const { handleEndHalfScrimmage } = actions;
+    if (!isScrimmageMode || !game || game.status !== 'in_progress') return null;
+    return (
+        <Button
+            mode="outlined"
+            onPress={handleEndHalfScrimmage}
+            icon="skip-next"
+            compact
+            style={{ alignSelf: 'flex-start', marginTop: 6 }}
+        >
+            End Half Inning
+        </Button>
+    );
+}
+
+// ----------------------------------------------------------------
 // At-bat plumbing — Start At-Bat button or "select pitcher/batter" prompt
 // ----------------------------------------------------------------
 

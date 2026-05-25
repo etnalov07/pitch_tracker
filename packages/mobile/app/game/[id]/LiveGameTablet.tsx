@@ -20,6 +20,7 @@ import LiveGameTopBar from './LiveGameTopBar';
 import {
     ActualEqualsTargetButton,
     AtBatControls,
+    EndHalfScrimmageButton,
     LineupBanner,
     LiveGameHeader,
     PitchBreakdown,
@@ -143,6 +144,7 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                     <LiveGameHeader ctl={ctl} actions={actions} />
                     <LineupBanner ctl={ctl} />
                     <AtBatControls ctl={ctl} actions={actions} />
+                    <EndHalfScrimmageButton ctl={ctl} actions={actions} />
                     {game.status === 'in_progress' && (currentPitcher || currentBatter) && (
                         <View style={styles.tendenciesRow}>
                             {currentPitcher && (

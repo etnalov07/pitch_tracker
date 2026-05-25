@@ -27,7 +27,9 @@ export default function NewGameScreen() {
     const [scoutingHomeTeam, setScoutingHomeTeam] = useState('');
     const [lineupSize, setLineupSize] = useState('9');
     const [totalInnings, setTotalInnings] = useState('7');
-    const [chartingMode, setChartingMode] = useState<'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting'>('our_pitcher');
+    const [chartingMode, setChartingMode] = useState<'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting' | 'scrimmage'>(
+        'our_pitcher'
+    );
     const [scoutingFocus, setScoutingFocus] = useState<'both' | 'home' | 'away'>('both');
     // Game date+time stored as a single Date; rendered via Pressable + native picker (UX-NG-08/09).
     const initialDateTime = (() => {
@@ -42,6 +44,7 @@ export default function NewGameScreen() {
     const [creating, setCreating] = useState(false);
 
     const isScoutingMode = chartingMode === 'scouting';
+    const isScrimmageMode = chartingMode === 'scrimmage';
 
     useEffect(() => {
         dispatch(fetchAllTeams()).finally(() => setLoadingTeams(false));
@@ -93,19 +96,24 @@ export default function NewGameScreen() {
                 toast.show({ message: 'Please enter the home team name', type: 'error' });
                 return;
             }
-        } else if (!opponentName.trim()) {
+        } else if (!isScrimmageMode && !opponentName.trim()) {
+            // Scrimmage allows blank opponent — defaults to "Scrimmage" below.
             toast.show({ message: 'Please enter the opponent name', type: 'error' });
             return;
         }
 
         setCreating(true);
         try {
+            // Scrimmage defaults: opponent_name -> "Scrimmage" if blank,
+            // is_home_game forced true so deriveGameMode -> 'our_pitcher' every inning.
+            const resolvedOpponentName = isScrimmageMode ? opponentName.trim() || 'Scrimmage' : opponentName.trim() || undefined;
+            const resolvedIsHomeGame = isScrimmageMode ? true : isHomeGame;
             const newGame = await dispatch(
                 createGame({
                     home_team_id: selectedTeamId,
-                    opponent_name: opponentName.trim() || undefined,
+                    opponent_name: resolvedOpponentName,
                     scouting_home_team: isScoutingMode ? scoutingHomeTeam.trim() : undefined,
-                    is_home_game: isHomeGame,
+                    is_home_game: resolvedIsHomeGame,
                     lineup_size: parseInt(lineupSize, 10),
                     total_innings: parseInt(totalInnings, 10),
                     charting_mode: chartingMode,
@@ -118,7 +126,9 @@ export default function NewGameScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             if (isScoutingMode && scoutingFocus === 'both') {
                 router.replace(`/game/${newGame.id}/scouting-lineup` as any);
-            } else if (isScoutingMode) {
+            } else if (isScoutingMode || isScrimmageMode) {
+                // Scrimmage skips my-lineup setup — coach picks a pitcher
+                // from the pitcher modal once they're in live.
                 router.replace(`/game/${newGame.id}/live` as any);
             } else {
                 router.replace(`/game/${newGame.id}/my-lineup` as any);
@@ -180,8 +190,8 @@ export default function NewGameScreen() {
                             ))}
                         </View>
 
-                        {/* Home / Away — hidden in scouting mode */}
-                        {!isScoutingMode && (
+                        {/* Home / Away — hidden in scouting + scrimmage modes (both force our team fielding) */}
+                        {!isScoutingMode && !isScrimmageMode && (
                             <>
                                 <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
                                     Your team is playing:
@@ -247,16 +257,22 @@ export default function NewGameScreen() {
                             value={chartingMode}
                             onValueChange={(value) => {
                                 Haptics.selectionAsync();
-                                setChartingMode(value as 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting');
+                                setChartingMode(value as 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting' | 'scrimmage');
                             }}
                             buttons={[
                                 { value: 'our_pitcher', label: 'Our P' },
                                 { value: 'both', label: 'Both' },
                                 { value: 'opp_pitcher', label: 'Opp P' },
                                 { value: 'scouting', label: '🔍 Scout' },
+                                { value: 'scrimmage', label: 'Scrim' },
                             ]}
                             style={styles.segmented}
                         />
+                        {isScrimmageMode && (
+                            <Text variant="bodySmall" style={[styles.helperText, { color: theme.colors.onSurfaceVariant }]}>
+                                Intrasquad / practice: no fixed innings, no score, manual end-half.
+                            </Text>
+                        )}
 
                         {/* Scout Focus — shown only in scouting mode */}
                         {isScoutingMode && (
@@ -304,14 +320,16 @@ export default function NewGameScreen() {
                             <>
                                 <TextInput
                                     testID="new-game-opponent-input"
-                                    label="Opponent Name"
+                                    label={isScrimmageMode ? 'Opponent Name (optional)' : 'Opponent Name'}
                                     value={opponentName}
                                     onChangeText={(text) => {
                                         setOpponentName(text);
                                         setOpponentTeamId('');
                                     }}
                                     mode="outlined"
-                                    placeholder="e.g., Tigers, Eagles"
+                                    placeholder={
+                                        isScrimmageMode ? 'e.g., Red squad (defaults to "Scrimmage")' : 'e.g., Tigers, Eagles'
+                                    }
                                     style={styles.input}
                                 />
                                 {knownOpponents.length > 0 && (
@@ -444,14 +462,17 @@ export default function NewGameScreen() {
                             mode="contained"
                             onPress={handleCreate}
                             disabled={
-                                !selectedTeamId || !opponentName.trim() || (isScoutingMode && !scoutingHomeTeam.trim()) || creating
+                                !selectedTeamId ||
+                                (!isScrimmageMode && !opponentName.trim()) ||
+                                (isScoutingMode && !scoutingHomeTeam.trim()) ||
+                                creating
                             }
                             loading={creating}
                             style={styles.createButton}
                             contentStyle={styles.createButtonContent}
                             icon="baseball"
                         >
-                            {isScoutingMode ? 'Start Scouting' : 'Create Game'}
+                            {isScoutingMode ? 'Start Scouting' : isScrimmageMode ? 'Start Scrimmage' : 'Create Game'}
                         </Button>
                     </>
                 )}
@@ -479,6 +500,12 @@ const styles = StyleSheet.create({
     },
     sectionLabel: {
         marginBottom: 4,
+    },
+    helperText: {
+        marginTop: -8,
+        marginBottom: 4,
+        fontSize: 12,
+        fontStyle: 'italic',
     },
     chipGrid: {
         flexDirection: 'row',

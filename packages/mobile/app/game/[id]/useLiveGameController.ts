@@ -200,6 +200,11 @@ export function useLiveGameController() {
     const game = currentGameState?.game || selectedGame;
     const gameMode: GameMode = game ? deriveGameMode(game.is_home_game ?? true, game.inning_half) : 'our_pitcher';
     const isScoutingMode = game?.charting_mode === 'scouting';
+    // Scrimmage: practice game, no auto-end on 3 outs, score hidden, coach
+    // manually ends each half via the dedicated button. Treated as 'our_pitcher'
+    // for everything else (gameMode derives 'our_pitcher' because the game was
+    // created with is_home_game=true + we always sit in inning_half='top').
+    const isScrimmageMode = game?.charting_mode === 'scrimmage';
     // TOP = away bats (home pitches), BOTTOM = home bats (away pitches)
     const scoutingBattingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'away' : 'home') : null;
     const scoutingPitchingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'home' : 'away') : null;
@@ -544,6 +549,7 @@ export function useLiveGameController() {
         game,
         gameMode,
         isScoutingMode,
+        isScrimmageMode,
         scoutingBattingSide,
         scoutingPitchingSide,
         scoutingFocus,

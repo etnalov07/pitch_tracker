@@ -99,6 +99,8 @@ export function useLiveGameActions(state: LiveGameState) {
 
     const gameMode = deriveGameMode(game?.is_home_game ?? true, game?.inning_half ?? 'top');
     const isScoutingMode = game?.charting_mode === 'scouting';
+    // Scrimmage: practice game; no auto-end on 3 outs, score hidden, coach manually ends each half.
+    const isScrimmageMode = game?.charting_mode === 'scrimmage';
     // TOP = away team batting (away scores); BOTTOM = home team batting (home scores)
     const scoutingBattingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'away' : 'home') : null;
 
@@ -337,7 +339,8 @@ export function useLiveGameActions(state: LiveGameState) {
             };
 
             if (outsFromPlay > 0) {
-                if (newOutCount >= 3) {
+                // Scrimmage: never auto-end the half; coach taps "End Half Inning" manually.
+                if (newOutCount >= 3 && !isScrimmageMode) {
                     setCurrentOuts(0);
                     setTeamRunsScored('0');
                     setInningChangeInfo({
@@ -690,7 +693,8 @@ export function useLiveGameActions(state: LiveGameState) {
 
             const inningEnded = throwouts.length > 0 && lastOutsAfter >= 3;
             if (throwouts.length > 0) {
-                if (inningEnded) {
+                // Scrimmage suppresses the inning-change modal; outs still update.
+                if (inningEnded && !isScrimmageMode) {
                     setCurrentOuts(0);
                     setTeamRunsScored('0');
                     setInningChangeInfo({
@@ -749,7 +753,8 @@ export function useLiveGameActions(state: LiveGameState) {
 
             // Update outs
             const newOuts = currentOuts + 1;
-            if (newOuts >= 3) {
+            // Scrimmage: no auto-end on 3 outs; coach manually flips.
+            if (newOuts >= 3 && !isScrimmageMode) {
                 setCurrentOuts(0);
                 setTeamRunsScored('0');
                 setInningChangeInfo({
@@ -960,6 +965,28 @@ export function useLiveGameActions(state: LiveGameState) {
         await advanceInning(0);
     };
 
+    // Scrimmage manual end-half. Hits the backend advance endpoint twice so we
+    // go top -> bottom -> top of next inning, keeping gameMode='our_pitcher' for
+    // the entire scrimmage. Bypasses advanceInning's score / endGame branches
+    // because scrimmages don't track score and shouldn't auto-end at total_innings.
+    const handleEndHalfScrimmage = async () => {
+        if (!gameId || !game) return;
+        try {
+            await gamesApi.advanceInning(gameId);
+            await gamesApi.advanceInning(gameId);
+            setBaseRunners(clearBases());
+            setCurrentOuts(0);
+            setTeamRunsScored('0');
+            setShowInningChange(false);
+            await dispatch(fetchGameById(gameId)).unwrap();
+            const newInning = await gamesApi.getCurrentInning(gameId);
+            setCurrentInning(newInning);
+        } catch (err) {
+            console.error('Failed to end half-inning:', err);
+            showError('Failed to end half-inning');
+        }
+    };
+
     // Fix Last Pitch — result-only PATCH for the most recent pitch (UX-LG-01).
     // Server rejects AB-boundary-crossing edits with 409/AB_BOUNDARY; we surface a
     // toast steering the user to the existing Undo flow in that case.
@@ -1039,6 +1066,7 @@ export function useLiveGameActions(state: LiveGameState) {
         handleDroppedThird,
         handleDoublePlayConfirm,
         handleSkipHalf,
+        handleEndHalfScrimmage,
         handleSendCall,
     };
 }

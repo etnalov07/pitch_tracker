@@ -19,6 +19,7 @@ import LiveGameTopBar from './LiveGameTopBar';
 import {
     ActualEqualsTargetButton,
     AtBatControls,
+    EndHalfScrimmageButton,
     LineupBanner,
     LiveGameHeader,
     PitchBreakdown,
@@ -132,6 +133,7 @@ export default function LiveGamePhone({ ctl, actions }: LiveGamePhoneProps) {
                 <LiveGameHeader ctl={ctl} actions={actions} />
                 <LineupBanner ctl={ctl} />
                 <AtBatControls ctl={ctl} actions={actions} />
+                <EndHalfScrimmageButton ctl={ctl} actions={actions} />
                 {/* 1. Pitch Type */}
                 {!isReadOnly && (
                     <PitchTypeGrid

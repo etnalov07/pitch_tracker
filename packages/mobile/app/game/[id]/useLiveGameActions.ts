@@ -130,6 +130,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
         setStatsRefreshTrigger,
         gameMode,
         isScoutingMode,
+        isScrimmageMode,
         scoutingBattingSide,
         game,
         activeBatters,
@@ -368,7 +369,10 @@ export function useLiveGameActions(ctl: LiveGameController) {
                     }));
                 }
 
-                if (outsFromPlay > 0 && newOutCount >= 3) {
+                // Scrimmage: no auto-end on 3 outs. Outs just keep accumulating
+                // until the coach taps "End Half Inning" — the inning-change modal
+                // is suppressed entirely.
+                if (outsFromPlay > 0 && newOutCount >= 3 && !isScrimmageMode) {
                     setCurrentOuts(0);
                     setTeamRunsScored('0');
                     setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
@@ -411,6 +415,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
             currentBatter,
             gameMode,
             isScoutingMode,
+            isScrimmageMode,
             currentMyBatter,
             myTeamLineup,
             dispatch,
@@ -434,6 +439,28 @@ export function useLiveGameActions(ctl: LiveGameController) {
     const handleSkipHalf = useCallback(async () => {
         await advanceInningWithRuns(0);
     }, [advanceInningWithRuns]);
+
+    // Scrimmage manual end-half. Reuses the existing "skip a half" pattern
+    // (top -> bottom -> top of next inning) by calling the backend twice
+    // directly, so gameMode stays 'our_pitcher' for the entire scrimmage.
+    // Bypasses advanceInningWithRuns' score / endGame logic on purpose:
+    // scrimmages don't track score and shouldn't auto-end at total_innings.
+    const handleEndHalfScrimmage = useCallback(async () => {
+        if (!id) return;
+        try {
+            await gamesApi.advanceInning(id);
+            await gamesApi.advanceInning(id);
+            dispatch(setBaseRunners(clearBases()));
+            setCurrentOuts(0);
+            setTeamRunsScored('0');
+            setShowInningChange(false);
+            await dispatch(fetchGameById(id)).unwrap();
+            dispatch(fetchCurrentInning(id));
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+            toast.show({ message: 'Failed to end half-inning', type: 'error' });
+        }
+    }, [id, dispatch, setCurrentOuts, setTeamRunsScored, setShowInningChange, toast]);
 
     const handleTeamAtBatConfirm = useCallback(async () => {
         if (!id || !game) return;
@@ -1099,7 +1126,8 @@ export function useLiveGameActions(ctl: LiveGameController) {
                 setShowRunnerAdvancementModal(false);
 
                 if (throwouts.length > 0) {
-                    if (lastOutsAfter >= 3) {
+                    // Scrimmage suppresses the inning-change modal; outs still update.
+                    if (lastOutsAfter >= 3 && !isScrimmageMode) {
                         setCurrentOuts(0);
                         setTeamRunsScored('0');
                         setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
@@ -1130,6 +1158,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
             currentAtBat,
             currentOuts,
             game,
+            isScrimmageMode,
             toast,
             setShowRunnerAdvancementModal,
             setCurrentOuts,
@@ -1160,7 +1189,8 @@ export function useLiveGameActions(ctl: LiveGameController) {
                 dispatch(updateBaseRunners({ gameId: id, baseRunners: newRunners }));
                 const newOuts = currentOuts + 1;
                 setCurrentOuts(newOuts);
-                if (newOuts >= 3) {
+                // Scrimmage: no auto-end; coach decides when to flip.
+                if (newOuts >= 3 && !isScrimmageMode) {
                     setTeamRunsScored('0');
                     setInningChangeInfo({ inning: game?.current_inning || 1, half: game?.inning_half || 'top' });
                     setShowInningChange(true);
@@ -1177,6 +1207,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
             currentAtBat,
             currentOuts,
             game,
+            isScrimmageMode,
             dispatch,
             baseRunners,
             toast,
@@ -1278,6 +1309,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
         handleEndAtBat,
         handleInningChangeConfirm,
         handleSkipHalf,
+        handleEndHalfScrimmage,
         handleTeamAtBatConfirm,
         handleSelectPitcher,
         handleSelectBatter,

@@ -138,6 +138,11 @@ export function useLiveGameState() {
     }, [game]);
 
     const isScoutingMode = game?.charting_mode === 'scouting';
+    // Scrimmage: practice game; no auto-end on 3 outs, score hidden, coach manually
+    // ends each half via a dedicated button. Treated as 'our_pitcher' for everything
+    // else (gameMode derives 'our_pitcher' because the game was created with
+    // is_home_game=true + we always live in inning_half='top').
+    const isScrimmageMode = game?.charting_mode === 'scrimmage';
     // In scouting TOP = away bats (home pitches), BOTTOM = home bats (away pitches)
     const scoutingBattingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'away' : 'home') : null;
     const scoutingPitchingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'home' : 'away') : null;
@@ -375,6 +380,7 @@ export function useLiveGameState() {
         setShowCountBreakdown,
         gameMode,
         isScoutingMode,
+        isScrimmageMode,
         scoutingBattingSide,
         scoutingPitchingSide,
         gameRole,

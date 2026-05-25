@@ -288,7 +288,7 @@ export interface MyPlayerStats {
 
 export type GameStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 export type InningHalf = 'top' | 'bottom';
-export type ChartingMode = 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting';
+export type ChartingMode = 'our_pitcher' | 'opp_pitcher' | 'both' | 'scouting' | 'scrimmage';
 export type GameMode = 'our_pitcher' | 'opp_pitcher';
 export type TeamSide = 'our_team' | 'opponent';
 export type CountBucket = '1st_pitch' | 'ahead' | 'even' | 'behind';
