@@ -1,7 +1,7 @@
 # Pitcher Performance Report · 2026-05-25
 
 **Type:** `feat`
-**Commit:** _(pending)_
+**Commit:** `a5504f3`
 **Versions:** `shared@1.0.0 (unchanged)` · `api@1.17.0 → 1.18.0` · `web@1.24.0 → 1.25.0` · `mobile@2.20.0 → 2.21.0`
 
 ## Context
