@@ -17,6 +17,7 @@ import { colors } from '../../../src/styles/theme';
 
 import LiveGameModals from './LiveGameModals';
 import LiveGameTopBar from './LiveGameTopBar';
+import TendenciesSideRail from './TendenciesSideRail';
 import {
     ActualEqualsTargetButton,
     AtBatControls,
@@ -91,6 +92,8 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
         setShowCountBreakdownModal,
         setShowPitcherTendencies,
         setShowHitterTendencies,
+        showPitcherTendencies,
+        showHitterTendencies,
     } = ctl;
 
     const {
@@ -149,24 +152,26 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                         <View style={styles.tendenciesRow}>
                             {currentPitcher && (
                                 <Button
-                                    mode="outlined"
+                                    mode={showPitcherTendencies ? 'contained' : 'outlined'}
                                     compact
-                                    onPress={() => setShowPitcherTendencies(true)}
+                                    onPress={() => setShowPitcherTendencies(!showPitcherTendencies)}
                                     style={styles.tendencyBtn}
                                     labelStyle={styles.tendencyBtnLabel}
                                     icon="chart-bar"
+                                    accessibilityState={{ selected: showPitcherTendencies }}
                                 >
                                     Pitcher
                                 </Button>
                             )}
                             {currentBatter && (
                                 <Button
-                                    mode="outlined"
+                                    mode={showHitterTendencies ? 'contained' : 'outlined'}
                                     compact
-                                    onPress={() => setShowHitterTendencies(true)}
+                                    onPress={() => setShowHitterTendencies(!showHitterTendencies)}
                                     style={[styles.tendencyBtn, styles.tendencyBtnHitter]}
                                     labelStyle={[styles.tendencyBtnLabel, styles.tendencyBtnLabelHitter]}
                                     icon="account-details"
+                                    accessibilityState={{ selected: showHitterTendencies }}
                                 >
                                     Hitter
                                 </Button>
@@ -383,6 +388,17 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                         </View>
                     )}
                 </ScrollView>
+                <TendenciesSideRail
+                    id={id}
+                    showPitcher={showPitcherTendencies}
+                    showHitter={showHitterTendencies}
+                    onClosePitcher={() => setShowPitcherTendencies(false)}
+                    onCloseHitter={() => setShowHitterTendencies(false)}
+                    currentPitcher={currentPitcher}
+                    currentBatter={currentBatter}
+                    currentMyBatter={currentMyBatter}
+                    gameMode={gameMode}
+                />
             </View>
             <LiveGameModals ctl={ctl} handlers={modalHandlers} />
             <PreviousAtBatsModal

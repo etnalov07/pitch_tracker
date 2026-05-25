@@ -222,7 +222,9 @@ const LiveGameModals: React.FC<LiveGameModalsProps> = ({ ctl, handlers }) => {
                 hitResult={pendingHitResult || 'single'}
                 onConfirm={handlers.handleRunnerAdvancementConfirm}
             />
-            {currentPitcher && (
+            {/* On tablet, the side rail (TendenciesSideRail in LiveGameTablet) renders these inline
+                beside the strike zone — UX-TD-11. Phone keeps the modal stack. */}
+            {!isTablet && currentPitcher && (
                 <PitcherTendenciesModal
                     visible={showPitcherTendencies}
                     onDismiss={() => setShowPitcherTendencies(false)}
@@ -233,7 +235,7 @@ const LiveGameModals: React.FC<LiveGameModalsProps> = ({ ctl, handlers }) => {
                     initialBatterHand={currentBatter?.bats === 'L' ? 'L' : 'R'}
                 />
             )}
-            {currentBatter && (
+            {!isTablet && currentBatter && (
                 <HitterTendenciesModal
                     visible={showHitterTendencies}
                     onDismiss={() => setShowHitterTendencies(false)}
