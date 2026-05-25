@@ -54,6 +54,11 @@ export const bullpenService = {
         return response.data.pitches;
     },
 
+    // Undo last pitch — UX-BP-13.
+    deletePitch: async (pitchId: string): Promise<void> => {
+        await api.delete(`/bullpen/pitches/${pitchId}`);
+    },
+
     endSession: async (sessionId: string, notes?: string): Promise<BullpenSession> => {
         const response = await api.post<{ session: BullpenSession }>(`/bullpen/sessions/${sessionId}/end`, { notes });
         return response.data.session;

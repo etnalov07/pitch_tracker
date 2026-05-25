@@ -16,8 +16,10 @@ import {
 } from '@pitch-tracker/shared';
 import { useAppDispatch, useAppSelector, fetchBullpenSession, fetchSessionPitches, fetchPlan } from '../../../src/state';
 import { logBullpenPitch, endBullpenSession } from '../../../src/state/bullpen/bullpenSlice';
+import { bullpenApi } from '../../../src/state/bullpen/api/bullpenApi';
 import { StrikeZone, PitchTypeGrid } from '../../../src/components/live';
 import { SessionHeader } from '../../../src/components/bullpen';
+import { colors } from '../../../src/styles/theme';
 import { useStalkerRadar } from '../../../src/hooks/useStalkerRadar';
 import RadarStatusPill from '../../../src/components/radar/RadarStatusPill';
 
@@ -173,6 +175,26 @@ export default function BullpenLiveScreen() {
         }
     }, [id, selectedPitchType, pitchLocation, targetZone, velocity, dispatch, toast, hasSequencePlan]);
 
+    // UX-BP-13: Undo last pitch — same fat-finger affordance as live game.
+    const handleUndoLastPitch = useCallback(async () => {
+        if (!id || pitches.length === 0 || isLogging) return;
+        const last = pitches[pitches.length - 1];
+        const ok = await confirm({
+            title: 'Undo last pitch?',
+            message: `Remove pitch #${last.pitch_number} (${PITCH_TYPE_LABELS[last.pitch_type] || last.pitch_type}) from this session?`,
+            confirmLabel: 'Undo',
+        });
+        if (!ok) return;
+        try {
+            await bullpenApi.deletePitch(last.id);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            // Refetch pitches and the session so the strikes/balls/total counts re-derive.
+            await Promise.all([dispatch(fetchSessionPitches(id)).unwrap(), dispatch(fetchBullpenSession(id)).unwrap()]);
+        } catch {
+            toast.show({ message: 'Failed to undo pitch', type: 'error' });
+        }
+    }, [id, pitches, isLogging, confirm, dispatch, toast]);
+
     const handleEndSession = useCallback(async () => {
         if (!id) return;
         try {
@@ -310,6 +332,19 @@ export default function BullpenLiveScreen() {
                 >
                     {pitchLimitReached ? 'Limit Reached' : 'Log Pitch'}
                 </Button>
+
+                {pitches.length > 0 && !isLogging && (
+                    <Button
+                        mode="outlined"
+                        icon="undo"
+                        onPress={handleUndoLastPitch}
+                        textColor={colors.red[700]}
+                        style={styles.undoButton}
+                        compact
+                    >
+                        Undo Last Pitch
+                    </Button>
+                )}
             </ScrollView>
 
             {/* End Session Modal */}
@@ -394,6 +429,7 @@ const styles = StyleSheet.create({
     limitReachedText: { color: '#C62828', fontWeight: '600', textAlign: 'center' },
     logButton: { marginTop: 4 },
     logButtonContent: { paddingVertical: 6 },
+    undoButton: { marginTop: 4, borderColor: colors.red[700] },
     modal: {
         margin: 20,
         padding: 20,

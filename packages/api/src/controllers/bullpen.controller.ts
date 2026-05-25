@@ -96,6 +96,20 @@ export class BullpenController {
         }
     }
 
+    async deletePitch(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const pitch = await bullpenService.deletePitch(id as string);
+            if (!pitch) {
+                res.status(404).json({ error: 'Pitch not found' });
+                return;
+            }
+            res.status(200).json({ message: 'Bullpen pitch deleted', pitch });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     // Analytics endpoints
 
     async getSessionSummary(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {

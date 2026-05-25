@@ -304,6 +304,26 @@ export const LogButton = styled.button({
     },
 });
 
+// Undo last pitch — UX-BP-13. Outlined red to signal a destructive affordance
+// that's recoverable (the pitch is just removed; user can re-log).
+export const UndoButton = styled.button({
+    width: '100%',
+    padding: theme.spacing.sm,
+    backgroundColor: 'transparent',
+    color: theme.colors.red[700],
+    border: `1px solid ${theme.colors.red[700]}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+    marginTop: theme.spacing.sm,
+
+    '&:hover': {
+        backgroundColor: theme.colors.red[50],
+    },
+});
+
 // End Session Modal
 export const ModalOverlay = styled.div({
     position: 'fixed',

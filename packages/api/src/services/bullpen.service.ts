@@ -254,6 +254,15 @@ export class BullpenService {
         return result.rows;
     }
 
+    /**
+     * Delete a single bullpen pitch — used by the "Undo last pitch" affordance on /live (UX-BP-13).
+     * Returns the deleted row or null if it didn't exist.
+     */
+    async deletePitch(pitchId: string): Promise<BullpenPitch | null> {
+        const result = await query('DELETE FROM bullpen_pitches WHERE id = $1 RETURNING *', [pitchId]);
+        return result.rows[0] || null;
+    }
+
     // ============================================================================
     // Analytics
     // ============================================================================

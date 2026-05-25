@@ -19,6 +19,7 @@ router.post('/sessions/:id/end', bullpenController.endSession.bind(bullpenContro
 // Pitch routes
 router.post('/pitches', bullpenController.logPitch.bind(bullpenController));
 router.get('/pitches/session/:sessionId', bullpenController.getSessionPitches.bind(bullpenController));
+router.delete('/pitches/:id', bullpenController.deletePitch.bind(bullpenController));
 
 // Pitcher bullpen logs
 router.get('/pitcher/:pitcherId/logs', bullpenController.getPitcherBullpenLogs.bind(bullpenController));

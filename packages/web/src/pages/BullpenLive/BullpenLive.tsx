@@ -44,6 +44,7 @@ import {
     Label,
     Input,
     LogButton,
+    UndoButton,
     ModalOverlay,
     Modal,
     ModalTitle,
@@ -225,6 +226,20 @@ const BullpenLive: React.FC = () => {
         }
     };
 
+    // UX-BP-13: Undo last pitch — same fat-finger affordance as live game.
+    const handleUndoLastPitch = async () => {
+        if (pitches.length === 0 || logging) return;
+        const last = pitches[pitches.length - 1];
+        const label = ALL_PITCH_TYPES.find((t) => t.value === last.pitch_type)?.label ?? last.pitch_type;
+        if (!window.confirm(`Undo pitch #${last.pitch_number} (${label})?`)) return;
+        try {
+            await bullpenService.deletePitch(last.id);
+            setPitches((prev) => prev.filter((p) => p.id !== last.id));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to undo pitch');
+        }
+    };
+
     const handleEndSession = async () => {
         if (!session_id) return;
         try {
@@ -383,6 +398,12 @@ const BullpenLive: React.FC = () => {
                         <LogButton onClick={handleLogPitch} disabled={!pitchLocation || logging || pitchLimitReached}>
                             {logging ? 'Logging...' : pitchLimitReached ? 'Limit Reached' : 'Log Pitch'}
                         </LogButton>
+
+                        {pitches.length > 0 && !logging && (
+                            <UndoButton type="button" onClick={handleUndoLastPitch}>
+                                ↶ Undo Last Pitch
+                            </UndoButton>
+                        )}
                     </PitchForm>
                 </StrikeZoneRow>
             </Content>
