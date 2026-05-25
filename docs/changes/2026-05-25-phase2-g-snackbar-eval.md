@@ -1,7 +1,7 @@
 # Phase 2 G — Snackbar / Toast library eval · 2026-05-25
 
 **Type:** `docs` + minor `feat` (accessibility QoL)
-**Commit:** _(pending)_
+**Commit:** `7b22239`
 **Versions:** `mobile@2.22.0 → 2.22.1`
 
 ## Context
