@@ -1,7 +1,7 @@
 # Org-scoped read-only team view · 2026-05-25
 
 **Type:** `feat`
-**Commit:** _(pending)_
+**Commit:** `2ef584f`
 **Versions:** `shared@1.0.0 (unchanged)` · `api@1.18.3 → 1.19.0` · `web@1.25.3 → 1.26.0` · `mobile@2.21.2 → 2.22.0`
 
 ## Context
