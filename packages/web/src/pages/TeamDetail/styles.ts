@@ -316,6 +316,21 @@ export const ProfileButton = styled.button({
     },
 });
 
+export const ReportButton = styled.button({
+    background: 'none',
+    border: `1px solid ${theme.colors.primary[400]}`,
+    color: theme.colors.primary[600],
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+    borderRadius: theme.borderRadius.sm,
+    fontSize: theme.fontSize.xs,
+    cursor: 'pointer',
+    fontWeight: theme.fontWeight.medium,
+
+    '&:hover': {
+        background: theme.colors.primary[50],
+    },
+});
+
 export const RemoveButton = styled.button({
     background: 'none',
     border: `1px solid ${theme.colors.red[300]}`,

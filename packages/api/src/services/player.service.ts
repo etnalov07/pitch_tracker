@@ -27,10 +27,17 @@ export class PlayerService {
     }
 
     async getPlayersByTeam(team_id: string): Promise<Player[]> {
+        // has_pitches flags players with at least one logged pitch so the
+        // roster UI can gate the Performance Report button to data-bearing
+        // players (a roster pitcher who's never thrown a pitch in the system
+        // wouldn't have a useful report).
         const result = await query(
-            `SELECT * FROM players 
-       WHERE team_id = $1 AND is_active = true 
-       ORDER BY jersey_number, last_name`,
+            `SELECT p.*, EXISTS (
+                 SELECT 1 FROM pitches pi WHERE pi.pitcher_id = p.id
+             ) AS has_pitches
+             FROM players p
+             WHERE p.team_id = $1 AND p.is_active = true
+             ORDER BY p.jersey_number, p.last_name`,
             [team_id]
         );
         return result.rows;

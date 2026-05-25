@@ -154,6 +154,10 @@ export interface Player {
     is_active?: boolean;
     created_at: string;
     updated_at?: string;
+    // True if this player has at least one pitch logged. Populated by
+    // getPlayersByTeam so the roster UI can gate the Performance Report
+    // button. Optional because not every endpoint returns it.
+    has_pitches?: boolean;
 }
 
 export interface PitcherPitchType {

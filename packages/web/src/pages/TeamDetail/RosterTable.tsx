@@ -14,6 +14,7 @@ import {
     ActionButtons,
     EditButton,
     ProfileButton,
+    ReportButton,
     RemoveButton,
     EmptyState,
     EmptyText,
@@ -81,6 +82,14 @@ const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlaye
                                             <ProfileButton onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}`)}>
                                                 Profile
                                             </ProfileButton>
+                                        )}
+                                        {/* Gated on has_pitches (populated by getPlayersByTeam) so the button only
+                                            appears for players who actually have pitch data — a roster pitcher
+                                            who's never thrown one in the system wouldn't have a useful report. */}
+                                        {player.has_pitches && (
+                                            <ReportButton onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}/report`)}>
+                                                Report
+                                            </ReportButton>
                                         )}
                                         <EditButton onClick={() => onEdit(player)}>Edit</EditButton>
                                         <RemoveButton

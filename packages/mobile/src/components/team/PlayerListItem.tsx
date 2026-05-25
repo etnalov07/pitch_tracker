@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, IconButton, useTheme } from 'react-native-paper';
@@ -26,6 +27,7 @@ function positionLabel(player: PlayerWithPitchTypes): string {
 
 const PlayerListItem: React.FC<PlayerListItemProps> = ({ player, onEdit, onDelete }) => {
     const theme = useTheme();
+    const router = useRouter();
     return (
         <View style={styles.rosterRow}>
             <Text style={[styles.rosterJersey, { color: theme.colors.onSurface }]}>
@@ -37,6 +39,19 @@ const PlayerListItem: React.FC<PlayerListItemProps> = ({ player, onEdit, onDelet
                 </Text>
             </View>
             <Text style={[styles.rosterType, { color: theme.colors.onSurfaceVariant }]}>{positionLabel(player)}</Text>
+            {/* Performance Report icon — only when the player has at least one
+                logged pitch. has_pitches is populated by getPlayersByTeam on
+                the API side. Cast the dynamic route as any per mobile rules. */}
+            {player.has_pitches && (
+                <IconButton
+                    icon="chart-line"
+                    size={18}
+                    iconColor={theme.colors.primary}
+                    onPress={() => router.push(`/pitcher/${player.id}/report` as any)}
+                    style={styles.actionButton}
+                    accessibilityLabel="Performance report"
+                />
+            )}
             <IconButton
                 icon="pencil-outline"
                 size={18}
