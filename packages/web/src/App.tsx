@@ -21,6 +21,7 @@ import { OrgCreate, PlayerWaiting } from './pages/Onboarding';
 import OpponentDetail from './pages/OpponentDetail';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
 import Opponents from './pages/Opponents';
+import OrgDashboard from './pages/OrgDashboard';
 import PitcherProfile from './pages/PitcherProfile';
 import PitcherReport from './pages/PitcherReport/PitcherReport';
 import PublicReport from './pages/PublicReport';
@@ -114,6 +115,17 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <Teams />
+                                </ProtectedRoute>
+                            }
+                        />
+                        {/* Organization view — any org member can hit this to see all teams
+                            in their org. Owners/admins get write affordances inside OrgDashboard
+                            (gated by canManage); coaches get read-only navigation into team detail. */}
+                        <Route
+                            path="/organization"
+                            element={
+                                <ProtectedRoute>
+                                    <OrgDashboard />
                                 </ProtectedRoute>
                             }
                         />

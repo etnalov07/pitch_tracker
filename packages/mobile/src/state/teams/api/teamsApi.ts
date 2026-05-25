@@ -1,5 +1,5 @@
 import api from '../../../services/api';
-import { Team, Player, PlayerWithPitchTypes } from '@pitch-tracker/shared';
+import { Team, TeamAccessLevel, Player, PlayerWithPitchTypes } from '@pitch-tracker/shared';
 
 export const teamsApi = {
     getAllTeams: async (): Promise<Team[]> => {
@@ -7,9 +7,12 @@ export const teamsApi = {
         return response.data.teams;
     },
 
-    getTeamById: async (id: string): Promise<Team> => {
-        const response = await api.get<{ team: Team }>(`/teams/${id}`);
-        return response.data.team;
+    // Returns the team + the caller's access level. UI uses access_level to
+    // gate write affordances when the user has org_view (org member, not on
+    // the team).
+    getTeamById: async (id: string): Promise<{ team: Team; access_level: TeamAccessLevel }> => {
+        const response = await api.get<{ team: Team; access_level: TeamAccessLevel }>(`/teams/${id}`);
+        return { team: response.data.team, access_level: response.data.access_level };
     },
 
     createTeam: async (teamData: Partial<Team>): Promise<Team> => {

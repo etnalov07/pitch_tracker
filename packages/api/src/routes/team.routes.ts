@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import teamController from '../controllers/team.controller';
 import { authenticateToken } from '../middleware/auth';
-import { loadUserRoles, requireTeamRole } from '../middleware/roles';
+import { loadUserRoles, requireTeamReadAccess, requireTeamRole } from '../middleware/roles';
 import { uploadLogo } from '../middleware/upload';
 
 const router = Router();
@@ -13,8 +13,10 @@ router.post('/', teamController.createTeam.bind(teamController));
 router.get('/', teamController.getTeams.bind(teamController));
 router.get('/all', teamController.getAllTeams.bind(teamController));
 router.get('/search', teamController.searchTeams.bind(teamController));
-router.get('/:id', teamController.getTeamById.bind(teamController));
-router.get('/:id/players', teamController.getTeamWithPlayers.bind(teamController));
+// READ endpoints: team members + org members (org_view = read-only). Controllers
+// echo back access_level on the response so clients can gate UI affordances.
+router.get('/:id', requireTeamReadAccess, teamController.getTeamById.bind(teamController));
+router.get('/:id/players', requireTeamReadAccess, teamController.getTeamWithPlayers.bind(teamController));
 router.put('/:id', teamController.updateTeam.bind(teamController));
 router.delete('/:id', teamController.deleteTeam.bind(teamController));
 

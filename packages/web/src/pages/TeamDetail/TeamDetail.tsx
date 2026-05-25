@@ -26,8 +26,19 @@ import { useTeamDetail } from './useTeamDetail';
 
 const TeamDetail: React.FC = () => {
     const state = useTeamDetail();
-    const { navigate, team_id, team, players, loading, showAddPlayer, setShowAddPlayer, handleEdit, handleDelete, loadPlayers } =
-        state;
+    const {
+        navigate,
+        team_id,
+        team,
+        players,
+        loading,
+        readOnly,
+        showAddPlayer,
+        setShowAddPlayer,
+        handleEdit,
+        handleDelete,
+        loadPlayers,
+    } = state;
 
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
@@ -81,20 +92,43 @@ const TeamDetail: React.FC = () => {
                     </TeamInfo>
                 </HeaderLeft>
                 <HeaderRight>
+                    {/* Bullpen/Opponents/Scouting remain read-only entry points
+                        for org_view; settings + write affordances are hidden. */}
                     <SettingsButton onClick={() => navigate(`/teams/${team_id}/bullpen`)}>Bullpen</SettingsButton>
                     <SettingsButton onClick={() => navigate(`/teams/${team_id}/opponents`)}>Opponents</SettingsButton>
                     <SettingsButton onClick={() => navigate(`/teams/${team_id}/scouting`)}>Scouting</SettingsButton>
-                    <SettingsButton onClick={() => navigate(`/teams/${team_id}/settings`)}>Settings</SettingsButton>
-                    <AddButton onClick={() => setShowInviteModal(true)}>Invite</AddButton>
-                    <ImportButton onClick={() => setShowImportModal(true)}>Import Roster</ImportButton>
-                    {!showAddPlayer && <AddButton onClick={() => setShowAddPlayer(true)}>+ Add Player</AddButton>}
+                    {!readOnly && (
+                        <>
+                            <SettingsButton onClick={() => navigate(`/teams/${team_id}/settings`)}>Settings</SettingsButton>
+                            <AddButton onClick={() => setShowInviteModal(true)}>Invite</AddButton>
+                            <ImportButton onClick={() => setShowImportModal(true)}>Import Roster</ImportButton>
+                            {!showAddPlayer && <AddButton onClick={() => setShowAddPlayer(true)}>+ Add Player</AddButton>}
+                        </>
+                    )}
                 </HeaderRight>
             </Header>
 
-            <Content>
-                <JoinRequestsPanel teamId={team_id!} players={players} />
+            {readOnly && (
+                <div
+                    style={{
+                        background: 'var(--surface-card)',
+                        border: '1px solid var(--surface-border)',
+                        color: 'var(--surface-text-muted)',
+                        padding: '0.5rem 1rem',
+                        margin: '0 1rem',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.8rem',
+                        textAlign: 'center',
+                    }}
+                >
+                    View-only — you can browse this team because it's in your organization, but you can't make changes.
+                </div>
+            )}
 
-                {showAddPlayer && <PlayerForm state={state} />}
+            <Content>
+                {!readOnly && <JoinRequestsPanel teamId={team_id!} players={players} />}
+
+                {showAddPlayer && !readOnly && <PlayerForm state={state} />}
 
                 <RosterTable
                     teamId={team_id!}
@@ -103,6 +137,7 @@ const TeamDetail: React.FC = () => {
                     onAddPlayer={() => setShowAddPlayer(true)}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    readOnly={readOnly}
                 />
             </Content>
 

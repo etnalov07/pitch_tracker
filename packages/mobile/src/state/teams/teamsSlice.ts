@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Team, Player, PlayerWithPitchTypes } from '@pitch-tracker/shared';
+import { Team, TeamAccessLevel, Player, PlayerWithPitchTypes } from '@pitch-tracker/shared';
 import { teamsApi } from './api/teamsApi';
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
@@ -10,6 +10,9 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
 interface TeamsSliceState {
     teams: Team[];
     selectedTeam: Team | null;
+    // How the user can access selectedTeam. Set by fetchTeamById. UI uses it
+    // to gate write affordances when access_level === 'org_view'.
+    selectedTeamAccessLevel: TeamAccessLevel | null;
     players: PlayerWithPitchTypes[];
     loading: boolean;
     playersLoading: boolean;
@@ -19,6 +22,7 @@ interface TeamsSliceState {
 const initialState: TeamsSliceState = {
     teams: [],
     selectedTeam: null,
+    selectedTeamAccessLevel: null,
     players: [],
     loading: false,
     playersLoading: false,
@@ -130,6 +134,7 @@ const teamsSlice = createSlice({
         },
         clearSelectedTeam: (state) => {
             state.selectedTeam = null;
+            state.selectedTeamAccessLevel = null;
             state.players = [];
         },
         setSelectedTeam: (state, action: PayloadAction<Team>) => {
@@ -158,7 +163,8 @@ const teamsSlice = createSlice({
             })
             .addCase(fetchTeamById.fulfilled, (state, action) => {
                 state.loading = false;
-                state.selectedTeam = action.payload;
+                state.selectedTeam = action.payload.team;
+                state.selectedTeamAccessLevel = action.payload.access_level;
             })
             .addCase(fetchTeamById.rejected, (state, action) => {
                 state.loading = false;

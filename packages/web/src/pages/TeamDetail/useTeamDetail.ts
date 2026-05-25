@@ -29,7 +29,10 @@ export function useTeamDetail() {
     const { team_id } = useParams<{ team_id: string }>();
     const { setActiveTeam, clearTheme } = useTeamTheme();
 
-    const { selectedTeam: team, roster: players = [], loading } = useAppSelector((state) => state.teams);
+    const { selectedTeam: team, selectedTeamAccessLevel, roster: players = [], loading } = useAppSelector((state) => state.teams);
+    // Org members who aren't on this team (access_level === 'org_view') see
+    // a read-only version of the page. Owners/members see the full UI.
+    const readOnly = selectedTeamAccessLevel === 'org_view';
     const [showAddPlayer, setShowAddPlayer] = useState(false);
     const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -161,6 +164,7 @@ export function useTeamDetail() {
         team,
         players,
         loading,
+        readOnly,
         showAddPlayer,
         setShowAddPlayer,
         editingPlayer,

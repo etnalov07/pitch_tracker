@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { organizationService } from '../../services/organizationService';
 import { useAppDispatch, useAppSelector, fetchAllTeams, createTeam, deleteTeam, clearTeamsError } from '../../state';
 import { TeamType, TeamSeason } from '../../types';
 import {
@@ -57,6 +58,10 @@ const Teams: React.FC = () => {
     const dispatch = useAppDispatch();
 
     const { teamList: teams, loading, error: stateError } = useAppSelector((state) => state.teams);
+    // Show a "View Organization" link in the header when the user belongs to
+    // at least one org. Lets coaches reach the org-scoped team list (read-only
+    // for non-owner/admin roles, handled inside OrgDashboard via canManage).
+    const [hasOrgs, setHasOrgs] = useState(false);
 
     const [filterType, setFilterType] = useState<TeamType | ''>('');
     const [filterYear, setFilterYear] = useState('');
@@ -79,6 +84,21 @@ const Teams: React.FC = () => {
     useEffect(() => {
         dispatch(fetchAllTeams());
     }, [dispatch]);
+
+    useEffect(() => {
+        let cancelled = false;
+        organizationService
+            .listMine()
+            .then((orgs) => {
+                if (!cancelled) setHasOrgs(orgs.length > 0);
+            })
+            .catch(() => {
+                /* non-org users get a 200 with [] today; failures hide the link silently */
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const availableYears = useMemo(() => {
         const years = teams.map((t) => t.year).filter((y): y is number => !!y);
@@ -168,6 +188,14 @@ const Teams: React.FC = () => {
                     <Title>Teams</Title>
                 </HeaderLeft>
                 <HeaderRight>
+                    {hasOrgs && (
+                        <CreateButton
+                            onClick={() => navigate('/organization')}
+                            style={{ background: 'transparent', color: 'inherit', border: '1px solid currentColor' }}
+                        >
+                            View Organization →
+                        </CreateButton>
+                    )}
                     <CreateButton onClick={() => setShowCreateForm(true)}>+ New Team</CreateButton>
                 </HeaderRight>
             </Header>

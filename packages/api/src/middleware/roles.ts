@@ -247,3 +247,68 @@ export const requireOrgMember = (req: RoleAwareRequest, res: Response, next: Nex
 
     res.status(403).json({ error: 'Not a member of this organization' });
 };
+
+import type { TeamAccessLevel } from '@pitch-tracker/shared';
+
+/**
+ * Resolve the user's access level for a team:
+ *   'owner'    — team_members.role='owner' OR legacy teams.owner_id=user
+ *   'member'   — any team_members role (coach/assistant/player)
+ *   'org_view' — not on the team, but a member of the team's organization
+ *                (any org role: owner / admin / coach) → read-only access
+ *   'none'     — no access
+ *
+ * Used by both READ middlewares (requireTeamReadAccess) and controllers that
+ * need to attach the level to the response payload so clients can gate UI.
+ */
+export const getTeamAccessLevel = async (userId: string, teamId: string, req?: RoleAwareRequest): Promise<TeamAccessLevel> => {
+    // Prefer the preloaded roles on the request (loadUserRoles middleware
+    // populates these); fall back to direct lookups when we don't have them.
+    const teamRole = req?.userRoles?.teamRoles.get(teamId);
+    if (teamRole === 'owner') return 'owner';
+    if (teamRole) return 'member';
+
+    try {
+        // Legacy owner_id check + look up the team's organization in one query.
+        const teamResult = await query('SELECT owner_id, organization_id FROM teams WHERE id = $1', [teamId]);
+        if (teamResult.rows.length === 0) return 'none';
+        const { owner_id, organization_id } = teamResult.rows[0] as { owner_id: string; organization_id: string | null };
+        if (owner_id === userId) return 'owner';
+
+        if (organization_id) {
+            const orgRole = req?.userRoles?.orgRoles.get(organization_id);
+            if (orgRole) return 'org_view';
+            // Defensive fallback in case loadUserRoles hasn't populated the request.
+            const orgResult = await query(
+                'SELECT 1 FROM organization_members WHERE organization_id = $1 AND user_id = $2 LIMIT 1',
+                [organization_id, userId]
+            );
+            if (orgResult.rows.length > 0) return 'org_view';
+        }
+    } catch {
+        // Fall through to 'none'
+    }
+    return 'none';
+};
+
+/**
+ * Middleware: require READ access to a team — team member OR org member.
+ * Reads team_id from req.params.id or req.params.team_id. Attaches the
+ * resolved access level to req.teamAccessLevel for downstream use.
+ *
+ * For write operations, continue using requireTeamRole(...specific roles...).
+ */
+export const requireTeamReadAccess = async (req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> => {
+    const teamId = (req.params.id || req.params.team_id) as string;
+    if (!teamId || !req.user) {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+    }
+    const level = await getTeamAccessLevel(req.user.id, teamId, req);
+    if (level === 'none') {
+        res.status(403).json({ error: 'No access to this team' });
+        return;
+    }
+    req.teamAccessLevel = level;
+    next();
+};

@@ -42,7 +42,7 @@ export class TeamController {
         }
     }
 
-    async getTeamById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    async getTeamById(req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;
             const team = await teamService.getTeamById(id as string);
@@ -52,17 +52,19 @@ export class TeamController {
                 return;
             }
 
-            res.status(200).json({ team });
+            // access_level set by requireTeamReadAccess; passed through so the
+            // client knows whether to render read-only UI.
+            res.status(200).json({ team, access_level: req.teamAccessLevel });
         } catch (error) {
             next(error);
         }
     }
 
-    async getTeamWithPlayers(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    async getTeamWithPlayers(req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;
             const team = await teamService.getTeamWithPlayers(id as string);
-            res.status(200).json({ team });
+            res.status(200).json({ team, access_level: req.teamAccessLevel });
         } catch (error) {
             next(error);
         }

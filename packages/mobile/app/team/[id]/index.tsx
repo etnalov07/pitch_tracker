@@ -16,8 +16,16 @@ export default function TeamDetailScreen() {
     const dispatch = useAppDispatch();
     const { isTablet } = useDeviceType();
 
-    const { selectedTeam, players: rawPlayers, loading, playersLoading } = useAppSelector((state) => state.teams);
+    const {
+        selectedTeam,
+        selectedTeamAccessLevel,
+        players: rawPlayers,
+        loading,
+        playersLoading,
+    } = useAppSelector((state) => state.teams);
     const players = rawPlayers || [];
+    // Org member viewing a team they aren't on — read-only mode.
+    const readOnly = selectedTeamAccessLevel === 'org_view';
     const [modalVisible, setModalVisible] = useState(false);
     const [editingPlayer, setEditingPlayer] = useState<PlayerWithPitchTypes | null>(null);
 
@@ -98,7 +106,12 @@ export default function TeamDetailScreen() {
                     <Divider />
                     {playerList.map((player, idx) => (
                         <React.Fragment key={player.id}>
-                            <PlayerListItem player={player} onEdit={handleEditPlayer} onDelete={handleDeletePlayer} />
+                            <PlayerListItem
+                                player={player}
+                                onEdit={handleEditPlayer}
+                                onDelete={handleDeletePlayer}
+                                readOnly={readOnly}
+                            />
                             {idx < playerList.length - 1 && <Divider />}
                         </React.Fragment>
                     ))}
@@ -205,10 +218,19 @@ export default function TeamDetailScreen() {
                         Opponent Teams
                     </Button>
 
+                    {readOnly && (
+                        <Card style={[styles.bullpenButton, { backgroundColor: theme.colors.surfaceVariant, padding: 12 }]}>
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                                View-only — you can browse this team because it&apos;s in your organization, but you can&apos;t make
+                                changes.
+                            </Text>
+                        </Card>
+                    )}
+
                     {renderRosterTable('Pitchers', pitchers)}
                     {renderRosterTable('Position Players', fieldPlayers)}
 
-                    {players.length === 0 && !playersLoading && (
+                    {players.length === 0 && !playersLoading && !readOnly && (
                         <EmptyState
                             icon="account-plus-outline"
                             title="No Players Yet"
@@ -222,17 +244,19 @@ export default function TeamDetailScreen() {
                     )}
                 </ScrollView>
 
-                <FAB
-                    icon="account-plus"
-                    style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-                    color={theme.colors.onPrimary}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                        setEditingPlayer(null);
-                        setModalVisible(true);
-                    }}
-                    label={isTablet ? 'Add Player' : undefined}
-                />
+                {!readOnly && (
+                    <FAB
+                        icon="account-plus"
+                        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+                        color={theme.colors.onPrimary}
+                        onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            setEditingPlayer(null);
+                            setModalVisible(true);
+                        }}
+                        label={isTablet ? 'Add Player' : undefined}
+                    />
+                )}
 
                 <Portal>
                     <AddPlayerModal

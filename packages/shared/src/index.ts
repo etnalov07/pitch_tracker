@@ -2089,3 +2089,22 @@ export interface PitcherReportPayload {
     narrative: string | null;
     narrative_generated_at: string | null;
 }
+
+// ============================================================================
+// Team access model (org-scoped read-only view)
+// ============================================================================
+
+// How the requesting user can access a given team:
+//   'owner'    — team_members.role = 'owner' OR legacy teams.owner_id = user.id
+//   'member'   — team_members role (coach / assistant / player)
+//   'org_view' — not on the team, but a member of the team's organization;
+//                read-only (no writes accepted; UI hides write affordances)
+//   'none'     — no access; endpoint returns 403
+export type TeamAccessLevel = 'owner' | 'member' | 'org_view' | 'none';
+
+// Optional access_level returned on team-scoped GET responses so the client
+// can gate UI without a second round-trip. Server-side authz is the source
+// of truth — never trust this field for write decisions.
+export interface TeamAccessEnvelope {
+    access_level: TeamAccessLevel;
+}

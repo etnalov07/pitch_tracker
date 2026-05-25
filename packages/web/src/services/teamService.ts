@@ -1,4 +1,4 @@
-import { Team, Player, RosterImportRow, RosterImportResult } from '../types';
+import { Team, TeamAccessLevel, Player, RosterImportRow, RosterImportResult } from '../types';
 import api from './api';
 
 export const teamService = {
@@ -8,10 +8,18 @@ export const teamService = {
         return response.data;
     },
 
-    // Get team by ID
+    // Get team by ID. Response also includes access_level for the calling
+    // user ('owner' | 'member' | 'org_view') so the client can gate UI.
+    // Use getTeamWithAccess() below when the level matters.
     getTeamById: async (id: string): Promise<Team> => {
-        const response = await api.get<Team>(`/teams/${id}`);
-        return response.data;
+        const response = await api.get<{ team: Team }>(`/teams/${id}`);
+        return response.data.team;
+    },
+
+    // Get team by ID along with the caller's access level.
+    getTeamWithAccess: async (id: string): Promise<{ team: Team; access_level: TeamAccessLevel }> => {
+        const response = await api.get<{ team: Team; access_level: TeamAccessLevel }>(`/teams/${id}`);
+        return { team: response.data.team, access_level: response.data.access_level };
     },
 
     // Create new team

@@ -1,5 +1,5 @@
 import { Request } from 'express';
-import type { OrgRole, TeamRole } from '@pitch-tracker/shared';
+import type { OrgRole, TeamAccessLevel, TeamRole } from '@pitch-tracker/shared';
 
 // Re-export shared types only (type-only export — no runtime require of @pitch-tracker/shared)
 export type * from '@pitch-tracker/shared';
@@ -43,4 +43,7 @@ export interface UserRoles {
 
 export interface RoleAwareRequest extends AuthRequest {
     userRoles?: UserRoles;
+    // Set by requireTeamReadAccess so controllers can return access_level on
+    // the response payload without re-resolving it.
+    teamAccessLevel?: TeamAccessLevel;
 }

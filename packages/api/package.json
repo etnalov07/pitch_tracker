@@ -1,6 +1,6 @@
 {
     "name": "@pitch-tracker/api",
-    "version": "1.18.3",
+    "version": "1.19.0",
     "description": "Pitch Tracker API",
     "main": "dist/server.js",
     "keywords": [],

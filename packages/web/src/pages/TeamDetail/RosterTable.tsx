@@ -28,9 +28,20 @@ interface RosterTableProps {
     onAddPlayer: () => void;
     onEdit: (player: Player) => void;
     onDelete: (playerId: string, playerName: string) => void;
+    // True when the user has org_view access (not on the team but in its org).
+    // Hides Add/Edit/Remove and the empty-state Add Player CTA.
+    readOnly?: boolean;
 }
 
-const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlayer, onAddPlayer, onEdit, onDelete }) => {
+const RosterTable: React.FC<RosterTableProps> = ({
+    teamId,
+    players,
+    showAddPlayer,
+    onAddPlayer,
+    onEdit,
+    onDelete,
+    readOnly = false,
+}) => {
     const navigate = useNavigate();
 
     return (
@@ -42,7 +53,7 @@ const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlaye
             {players.length === 0 ? (
                 <EmptyState>
                     <EmptyText>No players on the roster yet.</EmptyText>
-                    {!showAddPlayer && <AddButtonSmall onClick={onAddPlayer}>Add Your First Player</AddButtonSmall>}
+                    {!showAddPlayer && !readOnly && <AddButtonSmall onClick={onAddPlayer}>Add Your First Player</AddButtonSmall>}
                 </EmptyState>
             ) : (
                 <RosterTableStyled>
@@ -91,12 +102,16 @@ const RosterTable: React.FC<RosterTableProps> = ({ teamId, players, showAddPlaye
                                                 Report
                                             </ReportButton>
                                         )}
-                                        <EditButton onClick={() => onEdit(player)}>Edit</EditButton>
-                                        <RemoveButton
-                                            onClick={() => onDelete(player.id, `${player.first_name} ${player.last_name}`)}
-                                        >
-                                            Remove
-                                        </RemoveButton>
+                                        {!readOnly && (
+                                            <>
+                                                <EditButton onClick={() => onEdit(player)}>Edit</EditButton>
+                                                <RemoveButton
+                                                    onClick={() => onDelete(player.id, `${player.first_name} ${player.last_name}`)}
+                                                >
+                                                    Remove
+                                                </RemoveButton>
+                                            </>
+                                        )}
                                     </ActionButtons>
                                 </Td>
                             </tr>

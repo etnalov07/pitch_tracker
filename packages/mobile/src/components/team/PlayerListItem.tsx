@@ -8,6 +8,9 @@ interface PlayerListItemProps {
     player: PlayerWithPitchTypes;
     onEdit: (player: PlayerWithPitchTypes) => void;
     onDelete: (player: PlayerWithPitchTypes) => void;
+    // True when the user has org_view access. Hides Edit + Delete; the
+    // Performance Report icon stays visible since it's read-only.
+    readOnly?: boolean;
 }
 
 function positionLabel(player: PlayerWithPitchTypes): string {
@@ -25,7 +28,7 @@ function positionLabel(player: PlayerWithPitchTypes): string {
     return hand;
 }
 
-const PlayerListItem: React.FC<PlayerListItemProps> = ({ player, onEdit, onDelete }) => {
+const PlayerListItem: React.FC<PlayerListItemProps> = ({ player, onEdit, onDelete, readOnly = false }) => {
     const theme = useTheme();
     const router = useRouter();
     return (
@@ -52,20 +55,24 @@ const PlayerListItem: React.FC<PlayerListItemProps> = ({ player, onEdit, onDelet
                     accessibilityLabel="Performance report"
                 />
             )}
-            <IconButton
-                icon="pencil-outline"
-                size={18}
-                iconColor={theme.colors.onSurfaceVariant}
-                onPress={() => onEdit(player)}
-                style={styles.actionButton}
-            />
-            <IconButton
-                icon="trash-can-outline"
-                size={18}
-                iconColor={theme.colors.onSurfaceVariant}
-                onPress={() => onDelete(player)}
-                style={styles.actionButton}
-            />
+            {!readOnly && (
+                <>
+                    <IconButton
+                        icon="pencil-outline"
+                        size={18}
+                        iconColor={theme.colors.onSurfaceVariant}
+                        onPress={() => onEdit(player)}
+                        style={styles.actionButton}
+                    />
+                    <IconButton
+                        icon="trash-can-outline"
+                        size={18}
+                        iconColor={theme.colors.onSurfaceVariant}
+                        onPress={() => onDelete(player)}
+                        style={styles.actionButton}
+                    />
+                </>
+            )}
         </View>
     );
 };
