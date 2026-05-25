@@ -97,6 +97,17 @@ export const colors = {
         600: '#7c3aed',
         700: '#6d28d9',
     },
+    // Scoreboard palette — navy + amber + chalk inherited from the deleted
+    // /pitch-calling screen (UX-PC-02). Used by the active-call badge on /live
+    // so the aesthetic survives the consolidation.
+    scoreboard: {
+        navy: '#0A1628',
+        navyLight: '#132240',
+        amber: '#F5A623',
+        chalk: '#F0EDE6',
+        chalkDim: '#C8C3BA',
+        border: '#2A3A55',
+    },
 };
 
 // Semantic aliases for common UI patterns — tints used together for the same
