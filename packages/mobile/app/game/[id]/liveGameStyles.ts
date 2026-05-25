@@ -34,7 +34,6 @@ export const styles = StyleSheet.create({
     logRow: { flexDirection: 'row', gap: 8, marginTop: 4, alignItems: 'center' },
     undoButton: { borderColor: colors.red[700] },
     logButtonContent: { paddingVertical: 6 },
-    previousAtBatsButton: { marginTop: 8 },
     zoneHint: { fontSize: 12, opacity: 0.75, marginBottom: 4, marginTop: 2 },
     zoneHintBold: { fontWeight: '700' },
     zoneHintReady: { color: colors.green[600] },
@@ -114,23 +113,25 @@ export const styles = StyleSheet.create({
         gap: 8,
         marginTop: 6,
     },
-    shakeRow: {
+    // SHAKE button styled to sit inline inside the pitch-calling row (next to
+    // SEND + Hold-to-Talk, or inside the active-call action bar). Same colors
+    // as the legacy stand-alone shakeBtn, sized to match the talk-hold buttons.
+    shakeBtnInline: {
         flexDirection: 'row' as const,
         alignItems: 'center' as const,
-        paddingVertical: 4,
-        borderTopWidth: 1,
-        borderTopColor: colors.gray[200],
-        marginTop: 4,
+        gap: 5,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: colors.amber[600],
     },
-    // SHAKE + Undo on one row — saves the vertical space of two separate rows
-    // on the phone layout (and gives the tablet sidebar the same treatment).
-    shakeUndoRow: {
+    // Undo + Previous At-Bats — two between-pitches buttons pair naturally on
+    // one row. Each child is independently conditional.
+    undoPrevRow: {
         flexDirection: 'row' as const,
         alignItems: 'center' as const,
         gap: 8,
-        paddingVertical: 4,
-        borderTopWidth: 1,
-        borderTopColor: colors.gray[200],
         marginTop: 4,
         flexWrap: 'wrap' as const,
     },

@@ -197,6 +197,18 @@ export default function LiveGamePhone({ ctl, actions }: LiveGamePhoneProps) {
                                 {walkieTalkieActive ? 'TALKING...' : 'Hold to Talk'}
                             </Text>
                         </Pressable>
+                        <TouchableOpacity
+                            onPress={handleShake}
+                            style={[styles.shakeBtnInline, { backgroundColor: theme.colors.surface }]}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={styles.shakeBtnText}>SHAKE</Text>
+                            {pendingShakeCount > 0 && (
+                                <View style={styles.shakeBadge}>
+                                    <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
                     </View>
                 )}
                 {!isReadOnly && !isScoutingMode && pitchCallingEnabled && activeCall && (
@@ -226,6 +238,18 @@ export default function LiveGamePhone({ ctl, actions }: LiveGamePhoneProps) {
                                     {walkieTalkieActive ? '🎙 TALKING...' : '🎙 Hold to Talk'}
                                 </Text>
                             </Pressable>
+                            <TouchableOpacity
+                                onPress={handleShake}
+                                style={[styles.shakeBtnInline, { backgroundColor: theme.colors.surface }]}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={styles.shakeBtnText}>SHAKE</Text>
+                                {pendingShakeCount > 0 && (
+                                    <View style={styles.shakeBadge}>
+                                        <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
                         </View>
                     </View>
                 )}
@@ -259,26 +283,13 @@ export default function LiveGamePhone({ ctl, actions }: LiveGamePhoneProps) {
                     />
                 )}
                 {/*
-                    Shake (between-pitches, calling only) + Undo (after pitches exist) —
-                    inlined into one row to save vertical space. Each side is
-                    independently conditional.
+                    Undo + Previous At-Bats — both are "between-pitches" affordances and
+                    pair naturally on one row. Each side independently conditional.
+                    SHAKE is no longer here; it's now inline with the pitch-calling row
+                    so it only appears when there's a call UI to be next to.
                 */}
-                {!isReadOnly && (((!isScoutingMode && pitchCallingEnabled) as boolean) || (pitches.length > 0 && !isLogging)) && (
-                    <View style={styles.shakeUndoRow}>
-                        {!isScoutingMode && pitchCallingEnabled && (
-                            <TouchableOpacity
-                                onPress={handleShake}
-                                style={[styles.shakeBtn, { backgroundColor: theme.colors.surface }]}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={styles.shakeBtnText}>SHAKE</Text>
-                                {pendingShakeCount > 0 && (
-                                    <View style={styles.shakeBadge}>
-                                        <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                        )}
+                {!isReadOnly && ((pitches.length > 0 && !isLogging) || hasPreviousAtBats) && (
+                    <View style={styles.undoPrevRow}>
                         {pitches.length > 0 && !isLogging && (
                             <Button
                                 mode="outlined"
@@ -292,18 +303,12 @@ export default function LiveGamePhone({ ctl, actions }: LiveGamePhoneProps) {
                                 Undo
                             </Button>
                         )}
+                        {hasPreviousAtBats && (
+                            <Button mode="outlined" onPress={() => setShowPreviousAtBats(true)} icon="history" compact>
+                                Previous At-Bats ({previousAtBatsForCurrentBatter.length})
+                            </Button>
+                        )}
                     </View>
-                )}
-                {/* 7. Previous At-Bats (hidden on first at-bat) */}
-                {!isReadOnly && hasPreviousAtBats && (
-                    <Button
-                        mode="outlined"
-                        onPress={() => setShowPreviousAtBats(true)}
-                        style={styles.previousAtBatsButton}
-                        icon="history"
-                    >
-                        Previous At-Bats ({previousAtBatsForCurrentBatter.length})
-                    </Button>
                 )}
             </ScrollView>
             <LiveGameModals ctl={ctl} handlers={modalHandlers} />

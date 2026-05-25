@@ -256,6 +256,18 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                                     {walkieTalkieActive ? 'TALKING...' : 'Hold to Talk'}
                                 </Text>
                             </Pressable>
+                            <TouchableOpacity
+                                onPress={handleShake}
+                                style={[styles.shakeBtnInline, { backgroundColor: theme.colors.surface }]}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={styles.shakeBtnText}>SHAKE</Text>
+                                {pendingShakeCount > 0 && (
+                                    <View style={styles.shakeBadge}>
+                                        <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
                         </View>
                     )}
                     {!isReadOnly && !isScoutingMode && pitchCallingEnabled && activeCall && (
@@ -285,6 +297,18 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                                         {walkieTalkieActive ? '🎙 TALKING...' : '🎙 Hold to Talk'}
                                     </Text>
                                 </Pressable>
+                                <TouchableOpacity
+                                    onPress={handleShake}
+                                    style={[styles.shakeBtnInline, { backgroundColor: theme.colors.surface }]}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={styles.shakeBtnText}>SHAKE</Text>
+                                    {pendingShakeCount > 0 && (
+                                        <View style={styles.shakeBadge}>
+                                            <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
                             </View>
                         </View>
                     )}
@@ -329,48 +353,32 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                             </View>
                         </View>
                     )}
-                    {/* SHAKE + Undo inlined into one row to save vertical space. */}
-                    {!isReadOnly &&
-                        (((!isScoutingMode && pitchCallingEnabled) as boolean) || (pitches.length > 0 && !isLogging)) && (
-                            <View style={styles.shakeUndoRow}>
-                                {!isScoutingMode && pitchCallingEnabled && (
-                                    <TouchableOpacity
-                                        onPress={handleShake}
-                                        style={[styles.shakeBtn, { backgroundColor: theme.colors.surface }]}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Text style={styles.shakeBtnText}>SHAKE</Text>
-                                        {pendingShakeCount > 0 && (
-                                            <View style={styles.shakeBadge}>
-                                                <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
-                                            </View>
-                                        )}
-                                    </TouchableOpacity>
-                                )}
-                                {pitches.length > 0 && !isLogging && (
-                                    <Button
-                                        mode="outlined"
-                                        onPress={handleUndoLastPitch}
-                                        style={styles.undoButton}
-                                        contentStyle={styles.logButtonContent}
-                                        textColor={colors.red[700]}
-                                        icon="undo"
-                                        compact
-                                    >
-                                        Undo
-                                    </Button>
-                                )}
-                            </View>
-                        )}
-                    {!isReadOnly && hasPreviousAtBats && (
-                        <Button
-                            mode="outlined"
-                            onPress={() => setShowPreviousAtBats(true)}
-                            style={styles.previousAtBatsButton}
-                            icon="history"
-                        >
-                            Previous At-Bats ({previousAtBatsForCurrentBatter.length})
-                        </Button>
+                    {/*
+                        Undo + Previous At-Bats — both "between-pitches" affordances. SHAKE
+                        moved inline with the pitch-calling row (above), so it's not in this
+                        bottom row anymore.
+                    */}
+                    {!isReadOnly && ((pitches.length > 0 && !isLogging) || hasPreviousAtBats) && (
+                        <View style={styles.undoPrevRow}>
+                            {pitches.length > 0 && !isLogging && (
+                                <Button
+                                    mode="outlined"
+                                    onPress={handleUndoLastPitch}
+                                    style={styles.undoButton}
+                                    contentStyle={styles.logButtonContent}
+                                    textColor={colors.red[700]}
+                                    icon="undo"
+                                    compact
+                                >
+                                    Undo
+                                </Button>
+                            )}
+                            {hasPreviousAtBats && (
+                                <Button mode="outlined" onPress={() => setShowPreviousAtBats(true)} icon="history" compact>
+                                    Previous At-Bats ({previousAtBatsForCurrentBatter.length})
+                                </Button>
+                            )}
+                        </View>
                     )}
                 </ScrollView>
             </View>
