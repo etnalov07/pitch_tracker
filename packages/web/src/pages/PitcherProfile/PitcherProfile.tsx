@@ -183,6 +183,21 @@ const PitcherProfile: React.FC = () => {
                         </PitcherMeta>
                     </ProfileInfo>
                 </HeaderLeft>
+                <button
+                    onClick={() => navigate(`/teams/${team_id}/pitcher/${pitcher_id}/report`)}
+                    style={{
+                        background: 'var(--accent-blue)',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '0.375rem',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                    }}
+                >
+                    View Performance Report →
+                </button>
             </Header>
 
             <Content>

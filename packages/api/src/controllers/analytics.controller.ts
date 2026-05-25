@@ -1,6 +1,17 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../types';
 import analyticsService from '../services/analytics.service';
+import pitcherReportService from '../services/pitcherReport.service';
+import type { PitcherReportWindow } from '../types';
+
+const VALID_WINDOWS: PitcherReportWindow[] = ['last5', 'last10', 'last20', 'season', 'all'];
+
+function resolveWindow(raw: unknown): PitcherReportWindow {
+    if (typeof raw === 'string' && (VALID_WINDOWS as string[]).includes(raw)) {
+        return raw as PitcherReportWindow;
+    }
+    return 'last10';
+}
 
 export class AnalyticsController {
     async getBatterHistory(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
@@ -61,7 +72,7 @@ export class AnalyticsController {
 
     async getPitcherTendencies(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { pitcherId } = req.params;
+            const pitcherId = req.params.pitcherId as string;
             const { gameId } = req.query;
 
             const tendencies = await analyticsService.getPitcherTendencies(pitcherId as string, gameId as string);
@@ -94,7 +105,7 @@ export class AnalyticsController {
 
     async getPitcherGameLogs(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { pitcherId } = req.params;
+            const pitcherId = req.params.pitcherId as string;
             const { limit = '10', offset = '0' } = req.query;
 
             const gameLogs = await analyticsService.getPitcherGameLogs(
@@ -111,7 +122,7 @@ export class AnalyticsController {
 
     async getPitcherProfile(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { pitcherId } = req.params;
+            const pitcherId = req.params.pitcherId as string;
             const profile = await analyticsService.getPitcherProfile(pitcherId as string);
             res.status(200).json({ profile });
         } catch (error) {
@@ -121,7 +132,7 @@ export class AnalyticsController {
 
     async getPitcherHeatZones(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { pitcherId } = req.params;
+            const pitcherId = req.params.pitcherId as string;
             const { gameId, pitchType } = req.query;
             const heatZones = await analyticsService.getPitcherHeatZones(
                 pitcherId as string,
@@ -136,7 +147,7 @@ export class AnalyticsController {
 
     async getPitcherLiveTendencies(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
-            const { pitcherId } = req.params;
+            const pitcherId = req.params.pitcherId as string;
             const { batter_hand } = req.query;
             if (batter_hand !== 'L' && batter_hand !== 'R') {
                 res.status(400).json({ error: 'batter_hand must be L or R' });
@@ -181,6 +192,28 @@ export class AnalyticsController {
             const teamSide = req.query.team_side as string | undefined;
             const chart = await analyticsService.getPitchChart(gameId, pitcherId, teamSide);
             res.status(200).json({ chart });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async getPitcherReport(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const pitcherId = req.params.pitcherId as string;
+            const window = resolveWindow(req.query.window);
+            const report = await pitcherReportService.getReport(pitcherId, window);
+            res.status(200).json(report);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async regeneratePitcherReportNarrative(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const pitcherId = req.params.pitcherId as string;
+            const window = resolveWindow(req.params.window);
+            const report = await pitcherReportService.regenerateNarrative(pitcherId, window);
+            res.status(200).json(report);
         } catch (error) {
             next(error);
         }

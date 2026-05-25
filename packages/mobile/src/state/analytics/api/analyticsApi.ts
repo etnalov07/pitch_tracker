@@ -1,5 +1,12 @@
 import api from '../../../services/api';
-import { HitterTendenciesLive, PitchLocationData, PitcherTendenciesLive, SprayChartData } from '@pitch-tracker/shared';
+import {
+    HitterTendenciesLive,
+    PitchLocationData,
+    PitcherReportPayload,
+    PitcherReportWindow,
+    PitcherTendenciesLive,
+    SprayChartData,
+} from '@pitch-tracker/shared';
 
 export const analyticsApi = {
     getPitcherLiveTendencies: async (pitcherId: string, batterHand: 'L' | 'R'): Promise<PitcherTendenciesLive> => {
@@ -44,5 +51,17 @@ export const analyticsApi = {
         const params = qs.toString() ? `?${qs.toString()}` : '';
         const response = await api.get<{ sprayChart: SprayChartData[] }>(`/analytics/batter/${batterId}/spray-chart${params}`);
         return response.data.sprayChart ?? [];
+    },
+
+    getPitcherReport: async (pitcherId: string, window: PitcherReportWindow): Promise<PitcherReportPayload> => {
+        const response = await api.get<PitcherReportPayload>(`/analytics/pitcher/${pitcherId}/report?window=${window}`);
+        return response.data;
+    },
+
+    regeneratePitcherReportNarrative: async (pitcherId: string, window: PitcherReportWindow): Promise<PitcherReportPayload> => {
+        const response = await api.post<PitcherReportPayload>(
+            `/analytics/pitcher/${pitcherId}/report/${window}/regenerate-narrative`
+        );
+        return response.data;
     },
 };

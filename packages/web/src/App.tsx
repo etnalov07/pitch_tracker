@@ -22,6 +22,7 @@ import OpponentDetail from './pages/OpponentDetail';
 import OpponentLineup from './pages/OpponentLineup/OpponentLineup';
 import Opponents from './pages/Opponents';
 import PitcherProfile from './pages/PitcherProfile';
+import PitcherReport from './pages/PitcherReport/PitcherReport';
 import PublicReport from './pages/PublicReport';
 import Replay from './pages/Replay';
 import ResetPassword from './pages/ResetPassword';
@@ -225,6 +226,14 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <PitcherProfile />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/teams/:team_id/pitcher/:pitcher_id/report"
+                            element={
+                                <ProtectedRoute>
+                                    <PitcherReport />
                                 </ProtectedRoute>
                             }
                         />

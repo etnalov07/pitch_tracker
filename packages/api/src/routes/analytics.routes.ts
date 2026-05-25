@@ -20,6 +20,11 @@ router.get('/pitcher/:pitcherId/tendencies-live', analyticsController.getPitcher
 router.get('/pitcher/:pitcherId/game-logs', analyticsController.getPitcherGameLogs.bind(analyticsController));
 router.get('/pitcher/:pitcherId/profile', analyticsController.getPitcherProfile.bind(analyticsController));
 router.get('/pitcher/:pitcherId/heat-zones', analyticsController.getPitcherHeatZones.bind(analyticsController));
+router.get('/pitcher/:pitcherId/report', analyticsController.getPitcherReport.bind(analyticsController));
+router.post(
+    '/pitcher/:pitcherId/report/:window/regenerate-narrative',
+    analyticsController.regeneratePitcherReportNarrative.bind(analyticsController)
+);
 
 // Hitter live tendencies
 router.get('/hitter/:batterId/tendencies-live', analyticsController.getHitterLiveTendencies.bind(analyticsController));

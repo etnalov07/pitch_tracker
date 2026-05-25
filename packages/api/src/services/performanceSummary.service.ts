@@ -2026,7 +2026,7 @@ function bucketGroupsFromMap(map: Map<OutcomeBucket, Map<string, number>>): Outc
  *
  * Returns the rounded percentage overall and per pitch type.
  */
-function aggregateAccuracy(
+export function aggregateAccuracy(
     rows: Array<{
         pitch_type: string;
         target_zone: PitchCallZone | null;

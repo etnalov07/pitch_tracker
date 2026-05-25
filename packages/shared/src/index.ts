@@ -1990,3 +1990,94 @@ export interface AdminListResponse<T> {
     page: number;
     page_size: number;
 }
+
+// ============================================================================
+// Pitcher Performance Report
+// ============================================================================
+
+export type PitcherReportWindow = 'last5' | 'last10' | 'last20' | 'season' | 'all';
+
+export interface VelocityTrendPoint {
+    game_id: string;
+    game_date: string;
+    opponent_name: string | null;
+    avg_velocity: number;
+    top_velocity: number;
+    pitch_count: number;
+}
+
+export type PitcherTrendKind = 'velocity' | 'strike_pct' | 'command' | 'whiff' | 'first_pitch_strike';
+export type PitcherTrendDirection = 'up' | 'down' | 'flat';
+
+export interface PitcherTrendCallout {
+    kind: PitcherTrendKind;
+    direction: PitcherTrendDirection;
+    magnitude: number;
+    copy: string;
+}
+
+export interface PitcherReportPitchTypeRow {
+    pitch_type: string;
+    count: number;
+    usage_pct: number;
+    strike_pct: number;
+    whiff_pct: number;
+    avg_velocity: number | null;
+    top_velocity: number | null;
+    success: 'works' | 'mixed' | 'struggles';
+}
+
+export interface PitcherReportZoneRow {
+    zone: string;
+    count: number;
+    strike_pct: number;
+    in_play_pct: number;
+    weak_contact_pct: number;
+    hard_contact_pct: number;
+    whiff_pct: number;
+    success: 'works' | 'mixed' | 'struggles';
+}
+
+export interface PitcherReportGameLogRow {
+    game_id: string;
+    game_date: string;
+    opponent_name: string | null;
+    pitches: number;
+    strikes: number;
+    strike_pct: number;
+    batters_faced: number;
+    target_accuracy_pct: number | null;
+    avg_velocity: number | null;
+    runs_allowed: number;
+    hits_allowed: number;
+}
+
+export interface PitcherReportStats {
+    games_included: number;
+    total_pitches: number;
+    strikes: number;
+    balls: number;
+    strike_pct: number;
+    target_accuracy_pct: number | null;
+    first_pitch_strike_pct: number | null;
+    three_ball_rate: number | null;
+    batters_faced: number;
+    innings_pitched: number;
+    runs_allowed: number;
+    hits_allowed: number;
+    pitch_types: PitcherReportPitchTypeRow[];
+    zones: PitcherReportZoneRow[];
+}
+
+export interface PitcherReportPayload {
+    pitcher_id: string;
+    pitcher_name: string;
+    window: PitcherReportWindow;
+    window_label: string;
+    stats: PitcherReportStats;
+    velocity_trend: VelocityTrendPoint[] | null;
+    trends: PitcherTrendCallout[];
+    games: PitcherReportGameLogRow[];
+    narrative: string | null;
+    narrative_generated_at: string | null;
+}

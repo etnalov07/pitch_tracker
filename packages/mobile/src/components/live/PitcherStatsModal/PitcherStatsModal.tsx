@@ -1,5 +1,6 @@
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Modal, Portal, Button, useTheme } from 'react-native-paper';
 import { Pitch, Player } from '@pitch-tracker/shared';
 import { gamesApi } from '../../../state/games/api/gamesApi';
@@ -15,6 +16,7 @@ interface Props {
 
 const PitcherStatsModal: React.FC<Props> = ({ visible, onDismiss, pitcher, pitcherId, gameId }) => {
     const theme = useTheme();
+    const router = useRouter();
     const [pitches, setPitches] = useState<Pitch[]>([]);
 
     // Fetch full-game pitches each time the modal opens so the stats reflect everything
@@ -46,9 +48,24 @@ const PitcherStatsModal: React.FC<Props> = ({ visible, onDismiss, pitcher, pitch
                 <ScrollView>
                     <PitcherStats pitcher={pitcher} pitches={pitches} />
                 </ScrollView>
-                <Button onPress={onDismiss} style={styles.closeButton}>
-                    Close
-                </Button>
+                <View style={styles.actionsRow}>
+                    {pitcherId && (
+                        <Button
+                            mode="contained"
+                            icon="chart-line"
+                            onPress={() => {
+                                onDismiss();
+                                router.push(`/pitcher/${pitcherId}/report` as any);
+                            }}
+                            style={styles.reportButton}
+                        >
+                            Performance Report
+                        </Button>
+                    )}
+                    <Button onPress={onDismiss} style={styles.closeButton}>
+                        Close
+                    </Button>
+                </View>
             </Modal>
         </Portal>
     );
@@ -61,9 +78,12 @@ const styles = StyleSheet.create({
         padding: 16,
         maxHeight: '85%',
     },
-    closeButton: {
+    actionsRow: {
         marginTop: 12,
+        gap: 8,
     },
+    reportButton: {},
+    closeButton: {},
 });
 
 export default PitcherStatsModal;
