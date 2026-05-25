@@ -13,6 +13,7 @@
 | 2026-05-12 | Command Grade six-level scoring (Dial 2)                       | Not adopted | [command-grade-six-level](2026-05-12-command-grade-six-level.md)                      |
 | 2026-05-12 | Standalone opponent roster (add pitchers & batters w/o a game) | Approved    | [standalone-opponent-roster](2026-05-12-standalone-opponent-roster.md)                |
 | 2026-05-12 | Command / pitch accuracy audit (3 paths, 4 proposals tested)   | Review only | [command-grade-audit](2026-05-12-command-grade-audit.md)                              |
+| 2026-05-23 | UX audit — meta-plan (heuristics, scope, process)              | Completed   | [ux-audit-meta](2026-05-23-ux-audit-meta.md)                                          |
 | 2026-05-23 | UX audit — primary in-game surfaces (127 findings)             | Review only | [ux-audit](2026-05-23-ux-audit.md)                                                    |
 | 2026-05-23 | Snackbar foundation — replace Alert.alert / alert()            | Approved    | [snackbar-foundation](2026-05-23-snackbar-foundation.md)                              |
 | 2026-05-23 | Phase 1 quick wins batch 2 (escape modals, pitch count, etc.)  | Approved    | [phase1-quickwins-batch](2026-05-23-phase1-quickwins-batch.md)                        |
@@ -24,3 +25,4 @@
 | 2026-05-23 | Phase 2 — C cont 2 — extract LiveGameModals + LiveGameTopBar   | Approved    | [phase2-c-cont-jsx-split](2026-05-23-phase2-c-cont-jsx-split.md)                      |
 | 2026-05-23 | Phase 2 — C cont 3a — extract useLiveGameActions hook          | Approved    | [phase2-c-cont-3a-actions-hook](2026-05-23-phase2-c-cont-3a-actions-hook.md)          |
 | 2026-05-23 | Phase 2 — C cont 3b — extract LiveGameTablet/Phone + helpers   | Approved    | [phase2-c-cont-3b-layout-components](2026-05-23-phase2-c-cont-3b-layout-components.md) |
+| 2026-05-25 | Scrimmage game mode (no auto-3-out, manual end-half, no score) | Shipped     | [scrimmage-mode](2026-05-25-scrimmage-mode.md)                                        |
