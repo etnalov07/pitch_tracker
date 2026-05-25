@@ -56,10 +56,15 @@ export default function PitchCallAnalyticsScreen() {
                         <View style={styles.section}>
                             <Text style={styles.sectionTitle}>RESULTS</Text>
                             <View style={styles.resultRow}>
-                                <ResultChip label="Strike" count={gameAnalytics.results.strike} color="#EF4444" />
+                                <ResultChip
+                                    label="Strike"
+                                    count={gameAnalytics.results.called_strike + gameAnalytics.results.swinging_strike}
+                                    color="#EF4444"
+                                />
                                 <ResultChip label="Ball" count={gameAnalytics.results.ball} color="#3B82F6" />
                                 <ResultChip label="Foul" count={gameAnalytics.results.foul} color="#F5A623" />
                                 <ResultChip label="In Play" count={gameAnalytics.results.in_play} color="#22C55E" />
+                                <ResultChip label="HBP" count={gameAnalytics.results.hit_by_pitch} color="#9333EA" />
                             </View>
                         </View>
 

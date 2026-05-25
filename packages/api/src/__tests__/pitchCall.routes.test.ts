@@ -132,17 +132,17 @@ describe('PitchCall Routes - /bt-api/pitch-calls', () => {
     });
 
     describe('PUT /:id/result', () => {
-        it('logs a strike result', async () => {
-            const updated = { id: 'pc1', result: 'strike', pitch_id: 'pi1' };
+        it('logs a called_strike result', async () => {
+            const updated = { id: 'pc1', result: 'called_strike', pitch_id: 'pi1' };
             mockQuery.mockResolvedValueOnce({ rows: [updated] } as any);
 
             const res = await getAgent()
                 .put('/bt-api/pitch-calls/pc1/result')
                 .set('Authorization', authHeader())
-                .send({ result: 'strike', pitch_id: 'pi1' });
+                .send({ result: 'called_strike', pitch_id: 'pi1' });
 
             expect(res.status).toBe(200);
-            expect(res.body.call.result).toBe('strike');
+            expect(res.body.call.result).toBe('called_strike');
         });
 
         it('rejects an invalid result value', async () => {
@@ -210,9 +210,9 @@ describe('PitchCall Routes - /bt-api/pitch-calls', () => {
 
         it('returns aggregated summary stats', async () => {
             const calls = [
-                { result: 'strike', pitch_type: 'FB', zone: 'in', is_change: false },
+                { result: 'called_strike', pitch_type: 'FB', zone: 'in', is_change: false },
                 { result: 'ball', pitch_type: 'FB', zone: 'low', is_change: false },
-                { result: 'strike', pitch_type: 'CB', zone: 'in', is_change: true },
+                { result: 'swinging_strike', pitch_type: 'CB', zone: 'in', is_change: true },
             ];
             mockQuery.mockResolvedValueOnce({ rows: calls } as any);
 
@@ -221,7 +221,8 @@ describe('PitchCall Routes - /bt-api/pitch-calls', () => {
             expect(res.status).toBe(200);
             expect(res.body.summary.total_calls).toBe(3);
             expect(res.body.summary.changes).toBe(1);
-            expect(res.body.summary.results.strike).toBe(2);
+            expect(res.body.summary.results.called_strike).toBe(1);
+            expect(res.body.summary.results.swinging_strike).toBe(1);
         });
     });
 });

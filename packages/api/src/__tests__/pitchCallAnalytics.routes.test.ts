@@ -88,7 +88,7 @@ describe('PitchCallAnalytics Routes - /bt-api/pitch-call-analytics', () => {
         it('aggregates results across calls', async () => {
             const rows = [
                 {
-                    result: 'strike',
+                    result: 'called_strike',
                     pitch_type: 'FB',
                     actual_type: 'fastball',
                     zone: 'in',
@@ -115,7 +115,7 @@ describe('PitchCallAnalytics Routes - /bt-api/pitch-call-analytics', () => {
             expect(res.status).toBe(200);
             expect(res.body.analytics.total_calls).toBe(2);
             expect(res.body.analytics.total_linked).toBe(2);
-            expect(res.body.analytics.results.strike).toBe(1);
+            expect(res.body.analytics.results.called_strike).toBe(1);
             expect(res.body.analytics.results.ball).toBe(1);
             expect(res.body.analytics.by_pitcher).toHaveLength(1);
         });
@@ -129,10 +129,12 @@ describe('PitchCallAnalytics Routes - /bt-api/pitch-call-analytics', () => {
                         games_with_calls: '0',
                         total_calls: '0',
                         total_linked: '0',
-                        strikes: '0',
+                        called_strikes: '0',
+                        swinging_strikes: '0',
                         balls: '0',
                         fouls: '0',
                         in_plays: '0',
+                        hit_by_pitches: '0',
                     },
                 ],
             } as any);
@@ -148,10 +150,12 @@ describe('PitchCallAnalytics Routes - /bt-api/pitch-call-analytics', () => {
                     games_with_calls: '5',
                     total_calls: '120',
                     total_linked: '90',
-                    strikes: '60',
+                    called_strikes: '40',
+                    swinging_strikes: '20',
                     balls: '40',
                     fouls: '15',
                     in_plays: '5',
+                    hit_by_pitches: '0',
                 },
             ];
             const linked = [
@@ -165,7 +169,8 @@ describe('PitchCallAnalytics Routes - /bt-api/pitch-call-analytics', () => {
             expect(res.status).toBe(200);
             expect(res.body.analytics.team_id).toBe('t1');
             expect(res.body.analytics.games_with_calls).toBe(5);
-            expect(res.body.analytics.results.strike).toBe(60);
+            expect(res.body.analytics.results.called_strike).toBe(40);
+            expect(res.body.analytics.results.swinging_strike).toBe(20);
             expect(res.body.analytics.type_accuracy).toBe(50); // 1 of 2 matches
         });
     });

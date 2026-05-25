@@ -134,7 +134,8 @@ export class PitchCallAnalyticsService {
         if (callsResult.rows.length === 0) return null;
 
         const rows = callsResult.rows;
-        const results = { strike: 0, ball: 0, foul: 0, in_play: 0 };
+        // 6-bucket result distribution — matches PitchCallResult (UX-PC-04).
+        const results = { called_strike: 0, swinging_strike: 0, ball: 0, foul: 0, in_play: 0, hit_by_pitch: 0 };
         let totalLinked = 0;
         let typeMatches = 0;
         let zoneMatches = 0;
@@ -215,10 +216,12 @@ export class PitchCallAnalyticsService {
                 COUNT(DISTINCT pc.game_id) AS games_with_calls,
                 COUNT(pc.id) AS total_calls,
                 COUNT(pc.pitch_id) AS total_linked,
-                COUNT(CASE WHEN pc.result = 'strike' THEN 1 END) AS strikes,
+                COUNT(CASE WHEN pc.result = 'called_strike' THEN 1 END) AS called_strikes,
+                COUNT(CASE WHEN pc.result = 'swinging_strike' THEN 1 END) AS swinging_strikes,
                 COUNT(CASE WHEN pc.result = 'ball' THEN 1 END) AS balls,
                 COUNT(CASE WHEN pc.result = 'foul' THEN 1 END) AS fouls,
-                COUNT(CASE WHEN pc.result = 'in_play' THEN 1 END) AS in_plays
+                COUNT(CASE WHEN pc.result = 'in_play' THEN 1 END) AS in_plays,
+                COUNT(CASE WHEN pc.result = 'hit_by_pitch' THEN 1 END) AS hit_by_pitches
              FROM pitch_calls pc
              WHERE pc.team_id = $1
                AND pc.result IS NOT NULL`,
@@ -269,10 +272,12 @@ export class PitchCallAnalyticsService {
             type_accuracy: totalLinked > 0 ? Math.round((typeMatches / totalLinked) * 1000) / 10 : 0,
             zone_accuracy: totalLinked > 0 ? Math.round((zoneMatches / totalLinked) * 1000) / 10 : 0,
             results: {
-                strike: parseInt(row.strikes),
+                called_strike: parseInt(row.called_strikes),
+                swinging_strike: parseInt(row.swinging_strikes),
                 ball: parseInt(row.balls),
                 foul: parseInt(row.fouls),
                 in_play: parseInt(row.in_plays),
+                hit_by_pitch: parseInt(row.hit_by_pitches),
             },
         };
     }

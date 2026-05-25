@@ -104,13 +104,9 @@ export function useLiveGameActions(state: LiveGameState) {
     // TOP = away team batting (away scores); BOTTOM = home team batting (home scores)
     const scoutingBattingSide = isScoutingMode ? (game?.inning_half === 'top' ? 'away' : 'home') : null;
 
-    /** Map a PitchResult to the coarser PitchCallResult used in pitch_calls */
-    const toPitchCallResult = (result: string): PitchCallResult => {
-        if (result === 'called_strike' || result === 'swinging_strike') return 'strike';
-        if (result === 'foul') return 'foul';
-        if (result === 'in_play') return 'in_play';
-        return 'ball';
-    };
+    // PitchCallResult is now 1:1 with PitchResult after Phase 2 B2 (UX-PC-04) —
+    // identity cast. Kept as a thin wrapper so the call site at linkPitch reads clearly.
+    const toPitchCallResult = (result: string): PitchCallResult => result as PitchCallResult;
 
     /** Send a pitch call to the catcher / linked devices via the API (which broadcasts via WebSocket). */
     const handleSendCall = async () => {

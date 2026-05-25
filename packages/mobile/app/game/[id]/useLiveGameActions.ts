@@ -887,14 +887,10 @@ export function useLiveGameActions(ctl: LiveGameController) {
                       ? 1
                       : 0);
             if (activeCall) {
-                const callResult =
-                    effectiveResult === 'called_strike' || effectiveResult === 'swinging_strike'
-                        ? 'strike'
-                        : effectiveResult === 'hit_by_pitch'
-                          ? 'ball'
-                          : (effectiveResult as 'ball' | 'foul' | 'in_play');
+                // 1:1 result mapping (UX-PC-04) + explicit pitch_id link (UX-PC-05).
+                // PitchCallResult now matches PitchResult exactly, so no bucket collapse.
                 try {
-                    await pitchCallingApi.logResult(activeCall.id, callResult);
+                    await pitchCallingApi.logResult(activeCall.id, effectiveResult, logResult.pitch?.id);
                 } catch {
                     // Non-critical
                 }

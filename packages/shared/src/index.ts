@@ -874,7 +874,11 @@ export interface BullpenSessionSummary {
 // Pitch Calling Types
 // ============================================================================
 
-export type PitchCallResult = 'strike' | 'ball' | 'foul' | 'in_play';
+// 1:1 with PitchResult — every pitch result is also a valid call result. Phase 2 B2
+// (UX-PC-04) expanded this from a 4-bucket strike/ball/foul/in_play to match
+// PitchResult exactly, so call-execution analytics no longer collapse
+// called_strike + swinging_strike into 'strike' or hit_by_pitch into 'ball'.
+export type PitchCallResult = 'ball' | 'called_strike' | 'swinging_strike' | 'foul' | 'in_play' | 'hit_by_pitch';
 
 export type PitchCallCategory = 'pitch' | 'situational';
 
@@ -1046,11 +1050,14 @@ export interface PitchCallGameSummary {
     game_id: string;
     total_calls: number;
     changes: number;
+    // 6-bucket result distribution — matches PitchCallResult / PitchResult (UX-PC-04).
     results: {
-        strike: number;
+        called_strike: number;
+        swinging_strike: number;
         ball: number;
         foul: number;
         in_play: number;
+        hit_by_pitch: number;
     };
     pitch_type_breakdown: {
         pitch_type: PitchCallAbbrev;
@@ -1103,11 +1110,14 @@ export interface GameCallAnalytics {
     total_linked: number;
     type_accuracy: number;
     zone_accuracy: number;
+    // 6-bucket result distribution — matches PitchCallResult / PitchResult (UX-PC-04).
     results: {
-        strike: number;
+        called_strike: number;
+        swinging_strike: number;
         ball: number;
         foul: number;
         in_play: number;
+        hit_by_pitch: number;
     };
     /** Per-pitcher breakdown */
     by_pitcher: {
@@ -1126,11 +1136,14 @@ export interface SeasonCallAnalytics {
     total_linked: number;
     type_accuracy: number;
     zone_accuracy: number;
+    // 6-bucket result distribution — matches PitchCallResult / PitchResult (UX-PC-04).
     results: {
-        strike: number;
+        called_strike: number;
+        swinging_strike: number;
         ball: number;
         foul: number;
         in_play: number;
+        hit_by_pitch: number;
     };
 }
 

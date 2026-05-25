@@ -208,7 +208,8 @@ export class PitchCallService {
             throw new Error('result is required');
         }
 
-        const validResults = ['strike', 'ball', 'foul', 'in_play'];
+        // 6-bucket enum matching PitchResult — see migration 047 + shared/PitchCallResult.
+        const validResults = ['called_strike', 'swinging_strike', 'ball', 'foul', 'in_play', 'hit_by_pitch'];
         if (!validResults.includes(callResult)) {
             throw new Error(`result must be one of: ${validResults.join(', ')}`);
         }
@@ -347,11 +348,14 @@ export class PitchCallService {
         const calls = callsResult.rows;
         if (calls.length === 0) return null;
 
-        const results = { strike: 0, ball: 0, foul: 0, in_play: 0 };
+        const results = { called_strike: 0, swinging_strike: 0, ball: 0, foul: 0, in_play: 0, hit_by_pitch: 0 };
         const changes = calls.filter((c: any) => c.is_change).length;
 
         const pitchTypeMap = new Map<string, { count: number; strikes: number; balls: number }>();
         const zoneMap = new Map<string, { count: number; strikes: number; balls: number }>();
+
+        // Both called and swinging strikes count toward the strike total for breakdowns.
+        const isStrike = (r: string) => r === 'called_strike' || r === 'swinging_strike';
 
         for (const call of calls) {
             // Count results
@@ -362,14 +366,14 @@ export class PitchCallService {
             // Pitch type breakdown
             const ptEntry = pitchTypeMap.get(call.pitch_type) || { count: 0, strikes: 0, balls: 0 };
             ptEntry.count++;
-            if (call.result === 'strike') ptEntry.strikes++;
+            if (isStrike(call.result)) ptEntry.strikes++;
             if (call.result === 'ball') ptEntry.balls++;
             pitchTypeMap.set(call.pitch_type, ptEntry);
 
             // Zone breakdown
             const zEntry = zoneMap.get(call.zone) || { count: 0, strikes: 0, balls: 0 };
             zEntry.count++;
-            if (call.result === 'strike') zEntry.strikes++;
+            if (isStrike(call.result)) zEntry.strikes++;
             if (call.result === 'ball') zEntry.balls++;
             zoneMap.set(call.zone, zEntry);
         }
