@@ -1,7 +1,7 @@
 # Scrimmage Game Mode · 2026-05-25
 
 **Type:** `feat`
-**Commit:** _(pending)_
+**Commit:** `f67c45c`
 **Versions:** `shared@1.0.0 (unchanged)` · `api@1.16.0 → 1.17.0` · `web@1.23.0 → 1.24.0` · `mobile@2.19.1 → 2.20.0`
 
 ## Context
