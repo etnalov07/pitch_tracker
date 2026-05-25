@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, IconButton, useTheme } from 'react-native-paper';
-import Svg, { Path, Circle, G, Line, Rect, Text as SvgText } from 'react-native-svg';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Button, IconButton, Modal, Portal, Text, useTheme } from 'react-native-paper';
+import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
 import * as Haptics from '../../../utils/haptics';
 import { colors } from '../../../styles/theme';
 
@@ -87,8 +87,6 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
     const [hitLocation, setHitLocation] = useState<HitLocation | null>(null);
     const [selectedFielder, setSelectedFielder] = useState<string | null>(null);
 
-    if (!visible) return null;
-
     const handleSvgPress = (event: any) => {
         const { locationX, locationY } = event.nativeEvent;
         const x = (locationX / FIELD_SIZE) * 100;
@@ -139,26 +137,45 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
     const thirdPos = { x: CENTER - FIELD_SIZE * 0.25, y: FIELD_SIZE * 0.55 };
 
     return (
-        <View style={styles.overlay}>
-            <View style={[styles.modal, { backgroundColor: theme.colors.surface }]}>
+        <Portal>
+            <Modal
+                visible={visible}
+                onDismiss={handleClose}
+                contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
+            >
                 <View style={styles.header}>
                     <Text variant="titleLarge" style={styles.title}>
                         Record Play Result
                     </Text>
-                    <IconButton icon="close" onPress={handleClose} size={24} />
+                    <IconButton icon="close" onPress={handleClose} size={24} accessibilityLabel="Close" />
                 </View>
 
                 <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                    {/* Hit Type Selector */}
+                    {/* Hit Type Selector — Pressable for proper press feedback + a11y. */}
                     <View style={styles.hitTypeRow}>
                         {(['fly_ball', 'line_drive', 'ground_ball', 'bunt'] as HitType[]).map((type) => (
-                            <View
+                            <Pressable
                                 key={type}
-                                style={[styles.hitTypeButton, hitType === type && styles.hitTypeButtonActive]}
-                                onTouchEnd={() => {
+                                style={({ pressed }) => [
+                                    styles.hitTypeButton,
+                                    hitType === type && styles.hitTypeButtonActive,
+                                    pressed && styles.hitTypeButtonPressed,
+                                ]}
+                                onPress={() => {
                                     setHitType(type);
                                     Haptics.selectionAsync();
                                 }}
+                                accessibilityRole="button"
+                                accessibilityState={{ selected: hitType === type }}
+                                accessibilityLabel={
+                                    type === 'fly_ball'
+                                        ? 'Fly ball'
+                                        : type === 'line_drive'
+                                          ? 'Line drive'
+                                          : type === 'ground_ball'
+                                            ? 'Ground ball'
+                                            : 'Bunt'
+                                }
                             >
                                 <Text style={[styles.hitTypeText, hitType === type && styles.hitTypeTextActive]}>
                                     {type === 'fly_ball'
@@ -169,7 +186,7 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                                             ? 'Ground Ball'
                                             : 'Bunt'}
                                 </Text>
-                            </View>
+                            </Pressable>
                         ))}
                     </View>
 
@@ -316,89 +333,66 @@ const InPlayModal: React.FC<InPlayModalProps> = ({ visible, onDismiss, onResult 
                     {/* Result Selection */}
                     <Text style={styles.resultTitle}>Select Result {!hitLocation ? '(tap field first)' : ''}</Text>
 
-                    <View style={styles.resultRow}>
-                        {HIT_RESULTS.map(({ result, label }) => (
-                            <View
-                                key={result}
-                                style={[styles.resultButton, styles.hitButton, !hitLocation && styles.resultButtonDisabled]}
-                                onTouchEnd={() => hitLocation && handleResultSelect(result)}
-                            >
-                                <Text
-                                    style={[
-                                        styles.resultButtonText,
-                                        styles.hitButtonText,
-                                        !hitLocation && styles.resultButtonTextDisabled,
-                                    ]}
-                                >
-                                    {label}
-                                </Text>
+                    {[HIT_RESULTS, OUT_RESULTS, OTHER_RESULTS].map((row, rowIdx) => {
+                        const rowStyle = rowIdx === 0 ? styles.hitButton : rowIdx === 1 ? styles.outButton : styles.otherButton;
+                        const rowTextStyle =
+                            rowIdx === 0 ? styles.hitButtonText : rowIdx === 1 ? styles.outButtonText : styles.otherButtonText;
+                        return (
+                            <View key={rowIdx} style={styles.resultRow}>
+                                {row.map(({ result, label }) => {
+                                    const disabled = !hitLocation;
+                                    return (
+                                        <Pressable
+                                            key={result}
+                                            style={({ pressed }) => [
+                                                styles.resultButton,
+                                                rowStyle,
+                                                disabled && styles.resultButtonDisabled,
+                                                pressed && !disabled && styles.resultButtonPressed,
+                                            ]}
+                                            onPress={() => !disabled && handleResultSelect(result)}
+                                            disabled={disabled}
+                                            accessibilityRole="button"
+                                            accessibilityState={{ disabled }}
+                                            accessibilityLabel={label}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.resultButtonText,
+                                                    rowTextStyle,
+                                                    disabled && styles.resultButtonTextDisabled,
+                                                ]}
+                                            >
+                                                {label}
+                                            </Text>
+                                        </Pressable>
+                                    );
+                                })}
                             </View>
-                        ))}
-                    </View>
+                        );
+                    })}
 
-                    <View style={styles.resultRow}>
-                        {OUT_RESULTS.map(({ result, label }) => (
-                            <View
-                                key={result}
-                                style={[styles.resultButton, styles.outButton, !hitLocation && styles.resultButtonDisabled]}
-                                onTouchEnd={() => hitLocation && handleResultSelect(result)}
-                            >
-                                <Text
-                                    style={[
-                                        styles.resultButtonText,
-                                        styles.outButtonText,
-                                        !hitLocation && styles.resultButtonTextDisabled,
-                                    ]}
-                                >
-                                    {label}
-                                </Text>
-                            </View>
-                        ))}
-                    </View>
-
-                    <View style={styles.resultRow}>
-                        {OTHER_RESULTS.map(({ result, label }) => (
-                            <View
-                                key={result}
-                                style={[styles.resultButton, styles.otherButton, !hitLocation && styles.resultButtonDisabled]}
-                                onTouchEnd={() => hitLocation && handleResultSelect(result)}
-                            >
-                                <Text
-                                    style={[
-                                        styles.resultButtonText,
-                                        styles.otherButtonText,
-                                        !hitLocation && styles.resultButtonTextDisabled,
-                                    ]}
-                                >
-                                    {label}
-                                </Text>
-                            </View>
-                        ))}
-                    </View>
+                    {/* Cancel button in the bottom action area (UX-IP-15). The header X is still
+                        the discoverable dismiss; this gives a coach with their thumb on the bottom
+                        of the screen a closer target. */}
+                    <Button mode="text" onPress={handleClose} style={styles.cancelButton} accessibilityLabel="Cancel">
+                        Cancel
+                    </Button>
                 </ScrollView>
-            </View>
-        </View>
+            </Modal>
+        </Portal>
     );
 };
 
 const styles = StyleSheet.create({
-    overlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
-    },
     modal: {
+        margin: 20,
         borderRadius: 16,
-        width: '92%',
-        maxWidth: 400,
         maxHeight: '90%',
         overflow: 'hidden',
+        alignSelf: 'center',
+        width: '92%',
+        maxWidth: 400,
     },
     header: {
         flexDirection: 'row',
@@ -433,6 +427,9 @@ const styles = StyleSheet.create({
     hitTypeButtonActive: {
         backgroundColor: colors.primary[50],
         borderColor: colors.primary[500],
+    },
+    hitTypeButtonPressed: {
+        opacity: 0.7,
     },
     hitTypeText: {
         fontSize: 12,
@@ -486,6 +483,9 @@ const styles = StyleSheet.create({
     resultButtonDisabled: {
         opacity: 0.4,
     },
+    resultButtonPressed: {
+        opacity: 0.75,
+    },
     hitButton: {
         backgroundColor: colors.green[500],
     },
@@ -510,6 +510,9 @@ const styles = StyleSheet.create({
     },
     resultButtonTextDisabled: {
         color: 'rgba(255,255,255,0.6)',
+    },
+    cancelButton: {
+        marginTop: 4,
     },
 });
 
