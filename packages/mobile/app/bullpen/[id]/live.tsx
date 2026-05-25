@@ -111,24 +111,30 @@ export default function BullpenLiveScreen() {
         }
     }, [currentPlanPitch?.sequence]);
 
-    // Map bullpen pitches to Pitch-like objects for StrikeZone
-    const previousPitchesForZone: Pitch[] = pitches.map((bp) => ({
-        id: bp.id,
-        at_bat_id: '',
-        game_id: '',
-        pitcher_id: '',
-        pitch_number: bp.pitch_number,
-        pitch_type: bp.pitch_type,
-        velocity: bp.velocity,
-        location_x: bp.actual_x,
-        location_y: bp.actual_y,
-        target_location_x: bp.target_x,
-        target_location_y: bp.target_y,
-        balls_before: 0,
-        strikes_before: 0,
-        pitch_result: (bp.result as any) || 'called_strike',
-        created_at: bp.created_at,
-    }));
+    // Map bullpen pitches to Pitch-like objects for StrikeZone. UX-BP-14: drop
+    // unscored pitches (bp.result == null) instead of coercing them to
+    // 'called_strike' — the old fallback inflated the strike-rate preview.
+    // The server auto-scores from location at log time, so this filter only
+    // affects legacy rows that lacked a recorded result.
+    const previousPitchesForZone: Pitch[] = pitches
+        .filter((bp) => bp.result != null)
+        .map((bp) => ({
+            id: bp.id,
+            at_bat_id: '',
+            game_id: '',
+            pitcher_id: '',
+            pitch_number: bp.pitch_number,
+            pitch_type: bp.pitch_type,
+            velocity: bp.velocity,
+            location_x: bp.actual_x,
+            location_y: bp.actual_y,
+            target_location_x: bp.target_x,
+            target_location_y: bp.target_y,
+            balls_before: 0,
+            strikes_before: 0,
+            pitch_result: bp.result as Pitch['pitch_result'],
+            created_at: bp.created_at,
+        }));
 
     const displayName = currentSession
         ? `${currentSession.pitcher_first_name} ${currentSession.pitcher_last_name}`

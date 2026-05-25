@@ -162,26 +162,32 @@ const BullpenLive: React.FC = () => {
         }
     }, [currentPlanPitch]);
 
-    // Map BullpenPitch[] → Pitch[] for StrikeZone component
+    // Map BullpenPitch[] → Pitch[] for StrikeZone component. UX-BP-14: drop
+    // unscored pitches (bp.result == null) instead of coercing them to
+    // 'called_strike' — the old fallback inflated the strike-rate preview.
+    // Server auto-scores from location at log time, so this only affects
+    // legacy rows that lacked a recorded result.
     const mappedPitches: Pitch[] = useMemo(
         () =>
-            pitches.map((bp) => ({
-                id: bp.id,
-                at_bat_id: '',
-                game_id: '',
-                pitcher_id: '',
-                pitch_number: bp.pitch_number,
-                pitch_type: bp.pitch_type,
-                velocity: bp.velocity,
-                location_x: bp.actual_x,
-                location_y: bp.actual_y,
-                target_location_x: bp.target_x,
-                target_location_y: bp.target_y,
-                balls_before: 0,
-                strikes_before: 0,
-                pitch_result: (bp.result as PitchResult) || ('called_strike' as PitchResult),
-                created_at: bp.created_at,
-            })),
+            pitches
+                .filter((bp) => bp.result != null)
+                .map((bp) => ({
+                    id: bp.id,
+                    at_bat_id: '',
+                    game_id: '',
+                    pitcher_id: '',
+                    pitch_number: bp.pitch_number,
+                    pitch_type: bp.pitch_type,
+                    velocity: bp.velocity,
+                    location_x: bp.actual_x,
+                    location_y: bp.actual_y,
+                    target_location_x: bp.target_x,
+                    target_location_y: bp.target_y,
+                    balls_before: 0,
+                    strikes_before: 0,
+                    pitch_result: bp.result as PitchResult,
+                    created_at: bp.created_at,
+                })),
         [pitches]
     );
 
