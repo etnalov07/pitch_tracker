@@ -8,15 +8,18 @@
         "packages/web",
         "packages/mobile",
         "packages/agents",
-        "packages/pitch-analyzer"
+        "packages/pitch-analyzer",
+        "packages/marketing"
     ],
     "scripts": {
         "dev:web": "npm run start --workspace=@pitch-tracker/web",
         "dev:api": "npm run dev --workspace=@pitch-tracker/api",
+        "dev:marketing": "npm run dev --workspace=@pitch-tracker/marketing",
         "build:web": "npm run build --workspace=@pitch-tracker/web",
         "build:api": "npm run build --workspace=@pitch-tracker/api",
         "build:shared": "npm run build --workspace=@pitch-tracker/shared",
         "build:agents": "npm run build --workspace=@pitch-tracker/agents",
+        "build:marketing": "npm run build --workspace=@pitch-tracker/marketing",
         "build": "npm run build:shared && npm run build:api && npm run build:web",
         "agents": "npm run start --workspace=@pitch-tracker/agents --",
         "build:pitch-analyzer": "npm run build --workspace=@pitch-tracker/pitch-analyzer",

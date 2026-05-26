@@ -1,0 +1,118 @@
+:root {
+    /* Brand palette — mirrors packages/web/src/index.css */
+    --color-primary-50: #f0f4f8;
+    --color-primary-100: #d9e2ec;
+    --color-primary-200: #bcccdc;
+    --color-primary-300: #9fb3c8;
+    --color-primary-400: #829ab1;
+    --color-primary-500: #627d98;
+    --color-primary-600: #486581;
+    --color-primary-700: #334e68;
+    --color-primary-800: #243b53;
+    --color-primary-900: #0b1f3a;
+
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1f2937;
+    --color-gray-900: #111827;
+
+    --color-green-50: #f0fdf4;
+    --color-green-100: #dcfce7;
+    --color-green-200: #bbf7d0;
+    --color-green-300: #86efac;
+    --color-green-400: #4ade80;
+    --color-green-500: #22c55e;
+    --color-green-600: #16a34a;
+    --color-green-700: #15803d;
+    --color-green-800: #166534;
+
+    --color-red-500: #ef4444;
+    --color-red-600: #dc2626;
+    --color-red-700: #b91c1c;
+    --color-yellow-500: #eab308;
+    --color-yellow-600: #ca8a04;
+    --color-orange-500: #f97316;
+    --color-orange-600: #ea580c;
+
+    --surface-body: #ffffff;
+    --surface-card: #ffffff;
+    --surface-elevated: #f9fafb;
+    --surface-text: #111827;
+    --surface-text-muted: #4b5563;
+    --surface-text-subtle: #6b7280;
+    --surface-border: #e5e7eb;
+    --surface-border-strong: #d1d5db;
+
+    --header-bg-start: #243b53;
+    --header-bg-end: #0b1f3a;
+
+    --accent-blue: #2563eb;
+    --accent-blue-hover: #1d4ed8;
+    --accent-green: #16a34a;
+    --accent-green-hover: #15803d;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background-color: var(--surface-body);
+    color: var(--surface-text);
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+        'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0;
+    line-height: 1.15;
+    color: var(--surface-text);
+}
+
+p {
+    margin: 0;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    color: inherit;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+::selection {
+    background-color: var(--color-primary-300);
+    color: var(--color-gray-900);
+}
