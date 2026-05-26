@@ -1,7 +1,7 @@
 # 2026-05-25 — Marketing website (new `packages/marketing`)
 
 - **Type:** `feat`
-- **Commit:** _pending_
+- **Commit:** `2ab345f`
 - **Versions:** `@pitch-tracker/marketing` **1.0.0** (new package). No other package versions bumped.
 
 ## Context
