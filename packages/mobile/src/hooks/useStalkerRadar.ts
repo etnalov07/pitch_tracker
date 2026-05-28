@@ -11,6 +11,8 @@ export interface UseStalkerRadar {
     /** Devices discovered by the most recent scan. */
     devices: RadarDevice[];
     scan: () => Promise<void>;
+    /** Diagnostic: unfiltered scan that lists every nearby BLE peripheral with its advertised services. */
+    scanAll: () => Promise<void>;
     connect: (deviceId: string) => Promise<void>;
     disconnect: () => Promise<void>;
 }
@@ -57,8 +59,15 @@ export function useStalkerRadar(): UseStalkerRadar {
         });
     }, []);
 
+    const scanAll = useCallback(async () => {
+        setDevices([]);
+        await stalkerRadarService.scanAll((device) => {
+            setDevices((prev) => (prev.some((d) => d.id === device.id) ? prev : [...prev, device]));
+        });
+    }, []);
+
     const connect = useCallback((deviceId: string) => stalkerRadarService.connect(deviceId), []);
     const disconnect = useCallback(() => stalkerRadarService.disconnect(), []);
 
-    return { status, lastVelocity, lastReadingAt, devices, scan, connect, disconnect };
+    return { status, lastVelocity, lastReadingAt, devices, scan, scanAll, connect, disconnect };
 }

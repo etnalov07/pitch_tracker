@@ -56,6 +56,14 @@ export default function SettingsScreen() {
         }
     }, [radar]);
 
+    const handleDiagnoseRadar = useCallback(async () => {
+        try {
+            await radar.scanAll();
+        } catch {
+            Alert.alert('Bluetooth', 'Could not scan — check that Bluetooth and permissions are enabled.');
+        }
+    }, [radar]);
+
     const handlePairRadar = useCallback(
         async (device: RadarDevice) => {
             dispatch(setRadarDevice({ id: device.id, name: device.name }));
@@ -349,11 +357,33 @@ export default function SettingsScreen() {
                                 }
                                 onPress={radar.status === 'scanning' ? undefined : handleScanForRadar}
                             />
+                            {!radarDeviceId && (
+                                <List.Item
+                                    title="Diagnose (show all Bluetooth devices)"
+                                    description="Lists every nearby BLE peripheral and the service UUIDs it advertises"
+                                    left={(props) => <List.Icon {...props} icon="bug-outline" />}
+                                    right={() =>
+                                        radar.status === 'scanning' ? (
+                                            <ActivityIndicator size={20} />
+                                        ) : (
+                                            <Button compact mode="text" onPress={handleDiagnoseRadar}>
+                                                Diagnose
+                                            </Button>
+                                        )
+                                    }
+                                    onPress={radar.status === 'scanning' ? undefined : handleDiagnoseRadar}
+                                />
+                            )}
                             {radar.devices.map((device) => (
                                 <List.Item
                                     key={device.id}
-                                    title={device.name || 'Unknown device'}
-                                    description={device.id}
+                                    title={device.name || device.localName || 'Unknown device'}
+                                    description={
+                                        device.serviceUUIDs && device.serviceUUIDs.length > 0
+                                            ? `${device.id}\n${device.serviceUUIDs.join(', ')}`
+                                            : device.id
+                                    }
+                                    descriptionNumberOfLines={3}
                                     left={(props) => <List.Icon {...props} icon="radar" />}
                                     right={(props) => <List.Icon {...props} icon="chevron-right" />}
                                     onPress={() => handlePairRadar(device)}

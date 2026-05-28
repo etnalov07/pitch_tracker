@@ -11,6 +11,11 @@ export type RadarStatus = 'idle' | 'scanning' | 'connecting' | 'connected' | 'di
 export interface RadarDevice {
     id: string;
     name: string | null;
+    // Only populated by scanAll() — used by the Settings "Diagnose" affordance to
+    // surface what nearby BLE peripherals are actually advertising, so we can
+    // confirm whether a given Pro3S unit matches STALKER_SERVICE_UUID.
+    localName?: string | null;
+    serviceUUIDs?: string[] | null;
 }
 
 type StatusListener = (status: RadarStatus) => void;
@@ -121,6 +126,44 @@ class StalkerRadarService {
     stopScan(): void {
         this.manager?.stopDeviceScan();
         if (this.status === 'scanning') this.setStatus(this.device ? 'connected' : 'idle');
+    }
+
+    /**
+     * Diagnostic: scan with NO service-UUID filter and surface every nearby BLE
+     * peripheral, including its advertised serviceUUIDs and localName. Lets us
+     * tell whether a Pro3S unit is broadcasting at all (and under what UUID)
+     * when the production-path scan() — which filters by STALKER_SERVICE_UUID —
+     * comes back empty.
+     */
+    async scanAll(onFound: (device: RadarDevice) => void): Promise<void> {
+        const granted = await this.requestPermissions();
+        if (!granted) {
+            this.setStatus('error');
+            throw new Error('Bluetooth permission denied');
+        }
+        const manager = this.getManager();
+        this.setStatus('scanning');
+        const seen = new Set<string>();
+        manager.startDeviceScan(null, null, (error, device) => {
+            if (error) {
+                this.setStatus('error');
+                return;
+            }
+            if (device && !seen.has(device.id)) {
+                seen.add(device.id);
+                const radarDevice: RadarDevice = {
+                    id: device.id,
+                    name: device.name ?? null,
+                    localName: device.localName ?? null,
+                    serviceUUIDs: device.serviceUUIDs ?? null,
+                };
+                // Log so a developer attached via Xcode/Metro can grep the full
+                // record — the UI only renders a short subset.
+                console.log('[stalker-diagnose]', JSON.stringify(radarDevice));
+                onFound(radarDevice);
+            }
+        });
+        setTimeout(() => this.stopScan(), SCAN_DURATION_MS);
     }
 
     async connect(deviceId: string): Promise<void> {
