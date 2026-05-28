@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-27
 - **Type:** feat
-- **Commit:** _pending_
+- **Commit:** `e990f69`
 - **Versions:** mobile `2.36.0` → `2.37.0`
 
 ## Context
