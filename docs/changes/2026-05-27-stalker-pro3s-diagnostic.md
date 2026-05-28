@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-27
 - **Type:** feat
-- **Commit:** `e990f69` (diagnose scan), `<pending>` (raw-packet capture)
+- **Commit:** `e990f69` (diagnose scan), `25e3b0d` (raw-packet capture)
 - **Versions:** mobile `2.36.0` → `2.37.0` → `2.38.0`
 
 ## Context
