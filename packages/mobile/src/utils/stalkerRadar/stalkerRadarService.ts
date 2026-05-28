@@ -6,6 +6,12 @@ import { parseVelocityFromPacket } from './stalkerPacket';
 export const STALKER_SERVICE_UUID = '4880C12C-FDCB-4077-8920-A450D7F9B907';
 export const STALKER_CHARACTERISTIC_UUID = 'FEC26EC4-6D71-4442-9F81-55BC21D658D6';
 
+// Master switch for the Stalker radar integration. Disabled while we wait on an
+// official Stalker SDK / API key — the reverse-engineered Pro3S BLE stream only
+// ever yielded an idle status frame, never a live reading. All the BLE/capture
+// code stays put; flip this to true (or swap in the SDK) to re-enable.
+export const RADAR_FEATURE_ENABLED: boolean = false;
+
 export type RadarStatus = 'idle' | 'scanning' | 'connecting' | 'connected' | 'disconnected' | 'error';
 
 export interface RadarDevice {
@@ -18,7 +24,7 @@ export interface RadarDevice {
     serviceUUIDs?: string[] | null;
 }
 
-/** A single raw BLE notification, captured for protocol reverse-engineering. */
+/** A single raw BLE payload, captured for protocol reverse-engineering. */
 export interface RawPacket {
     serviceUuid: string;
     charUuid: string;
@@ -27,12 +33,25 @@ export interface RawPacket {
     hex: string;
     /** Printable ASCII rendering; non-printable bytes shown as ".". */
     ascii: string;
+    /** How the payload arrived: a push notification, or a one-shot read. */
+    source: 'notify' | 'read';
     at: number;
+}
+
+/** One characteristic discovered on the connected device, with its properties. */
+export interface GattEntry {
+    serviceUuid: string;
+    charUuid: string;
+    notifiable: boolean;
+    indicatable: boolean;
+    readable: boolean;
+    writable: boolean;
 }
 
 type StatusListener = (status: RadarStatus) => void;
 type VelocityListener = (velocity: number) => void;
 type RawListener = (packet: RawPacket) => void;
+type GattListener = (entries: GattEntry[]) => void;
 
 const SCAN_DURATION_MS = 12000;
 const MAX_RECONNECT_ATTEMPTS = 3;
@@ -77,7 +96,11 @@ class StalkerRadarService {
     private statusListeners = new Set<StatusListener>();
     private velocityListeners = new Set<VelocityListener>();
     private rawListeners = new Set<RawListener>();
+    private gattListeners = new Set<GattListener>();
     private rawSubs: Subscription[] = [];
+    // Readable (non-notify) characteristics found on the last capture — re-read
+    // by refreshReads() so a poll-only data field can be sampled after a pitch.
+    private readableChars: { serviceUuid: string; charUuid: string }[] = [];
     private intentionalDisconnect = false;
     private reconnectAttempts = 0;
 
@@ -107,6 +130,11 @@ class StalkerRadarService {
         return () => this.rawListeners.delete(listener);
     }
 
+    onGatt(listener: GattListener): () => void {
+        this.gattListeners.add(listener);
+        return () => this.gattListeners.delete(listener);
+    }
+
     private setStatus(status: RadarStatus): void {
         this.status = status;
         this.statusListeners.forEach((l) => l(status));
@@ -118,6 +146,10 @@ class StalkerRadarService {
 
     private emitRaw(packet: RawPacket): void {
         this.rawListeners.forEach((l) => l(packet));
+    }
+
+    private emitGatt(entries: GattEntry[]): void {
+        this.gattListeners.forEach((l) => l(entries));
     }
 
     /** Android runtime permissions. iOS prompts automatically on first scan. */
@@ -199,51 +231,90 @@ class StalkerRadarService {
     }
 
     /**
-     * Diagnostic: on the currently-connected device, dump the full GATT table to
-     * the console and subscribe to EVERY notifiable/indicatable characteristic,
-     * emitting each notification as a RawPacket (hex + ASCII). This is how we
-     * locate the mph and spin-rate fields for a Pro3S whose packet layout we
-     * don't yet know — throw pitches, read the bytes, then write the parser.
+     * Diagnostic: on the currently-connected device, discover the full GATT
+     * table (emitted for on-screen display), subscribe to EVERY
+     * notifiable/indicatable characteristic, and do a one-shot read of every
+     * readable characteristic. This is how we locate the mph/spin fields for a
+     * Pro3S whose packet layout we don't yet know — the live reading may arrive
+     * as a notification, or it may only be exposed via a read (poll) we sample
+     * with refreshReads() after a pitch.
      */
     async startRawCapture(): Promise<void> {
         const device = this.device;
         if (!device) throw new Error('Connect to the radar before capturing packets');
 
-        // Drop any prior raw subscriptions so repeated taps don't stack duplicates.
+        // Drop any prior subscriptions so repeated taps don't stack duplicates.
         this.stopRawCapture();
+        this.readableChars = [];
+        const gatt: GattEntry[] = [];
 
         const services = await device.services();
         for (const service of services) {
             const chars = await service.characteristics();
             for (const char of chars) {
+                gatt.push({
+                    serviceUuid: service.uuid,
+                    charUuid: char.uuid,
+                    notifiable: char.isNotifiable,
+                    indicatable: char.isIndicatable,
+                    readable: char.isReadable,
+                    writable: char.isWritableWithResponse || char.isWritableWithoutResponse,
+                });
                 console.log(
                     `[stalker-gatt] svc=${service.uuid} char=${char.uuid} ` +
-                        `notify=${char.isNotifiable} indicate=${char.isIndicatable} read=${char.isReadable}`
+                        `notify=${char.isNotifiable} indicate=${char.isIndicatable} ` +
+                        `read=${char.isReadable} write=${char.isWritableWithResponse || char.isWritableWithoutResponse}`
                 );
-                if (!char.isNotifiable && !char.isIndicatable) continue;
-                try {
-                    const sub = device.monitorCharacteristicForService(service.uuid, char.uuid, (error, characteristic) => {
-                        if (error || !characteristic?.value) return;
-                        const bytes = Array.from(base64ToBytes(characteristic.value));
-                        const packet: RawPacket = {
-                            serviceUuid: service.uuid,
-                            charUuid: char.uuid,
-                            bytes,
-                            hex: bytesToHex(bytes),
-                            ascii: bytesToAscii(bytes),
-                            at: Date.now(),
-                        };
-                        console.log(
-                            `[stalker-raw] char=${char.uuid} len=${bytes.length} hex=[${packet.hex}] ascii="${packet.ascii}"`
-                        );
-                        this.emitRaw(packet);
-                    });
-                    this.rawSubs.push(sub);
-                } catch {
-                    /* characteristic refused a subscription — skip it */
+
+                if (char.isReadable) {
+                    this.readableChars.push({ serviceUuid: service.uuid, charUuid: char.uuid });
+                }
+                if (char.isNotifiable || char.isIndicatable) {
+                    try {
+                        const sub = device.monitorCharacteristicForService(service.uuid, char.uuid, (error, characteristic) => {
+                            if (error || !characteristic?.value) return;
+                            this.handleRawValue(service.uuid, char.uuid, characteristic.value, 'notify');
+                        });
+                        this.rawSubs.push(sub);
+                    } catch {
+                        /* characteristic refused a subscription — skip it */
+                    }
                 }
             }
         }
+
+        this.emitGatt(gatt);
+        // Sample every readable characteristic once up front.
+        await this.refreshReads();
+    }
+
+    /** Re-read every readable characteristic found by the last capture. */
+    async refreshReads(): Promise<void> {
+        const device = this.device;
+        if (!device) return;
+        for (const { serviceUuid, charUuid } of this.readableChars) {
+            try {
+                const c = await device.readCharacteristicForService(serviceUuid, charUuid);
+                if (c?.value) this.handleRawValue(serviceUuid, charUuid, c.value, 'read');
+            } catch {
+                /* not readable right now — skip */
+            }
+        }
+    }
+
+    private handleRawValue(serviceUuid: string, charUuid: string, base64Value: string, source: 'notify' | 'read'): void {
+        const bytes = Array.from(base64ToBytes(base64Value));
+        const packet: RawPacket = {
+            serviceUuid,
+            charUuid,
+            bytes,
+            hex: bytesToHex(bytes),
+            ascii: bytesToAscii(bytes),
+            source,
+            at: Date.now(),
+        };
+        console.log(`[stalker-raw:${source}] char=${charUuid} len=${bytes.length} hex=[${packet.hex}] ascii="${packet.ascii}"`);
+        this.emitRaw(packet);
     }
 
     stopRawCapture(): void {

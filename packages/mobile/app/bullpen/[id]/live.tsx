@@ -21,6 +21,7 @@ import { StrikeZone, PitchTypeGrid } from '../../../src/components/live';
 import { SessionHeader } from '../../../src/components/bullpen';
 import { colors } from '../../../src/styles/theme';
 import { useStalkerRadar } from '../../../src/hooks/useStalkerRadar';
+import { RADAR_FEATURE_ENABLED } from '../../../src/utils/stalkerRadar/stalkerRadarService';
 import RadarStatusPill from '../../../src/components/radar/RadarStatusPill';
 
 const PITCH_TYPE_LABELS: Record<string, string> = {
@@ -325,7 +326,9 @@ export default function BullpenLiveScreen() {
                         placeholderTextColor="#9ca3af"
                         maxLength={3}
                     />
-                    {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
+                    {RADAR_FEATURE_ENABLED && radarEnabled && (
+                        <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />
+                    )}
                 </View>
 
                 <Button

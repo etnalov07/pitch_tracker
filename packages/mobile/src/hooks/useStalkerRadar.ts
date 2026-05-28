@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAppSelector } from '../state';
-import { RadarDevice, RadarStatus, RawPacket, stalkerRadarService } from '../utils/stalkerRadar/stalkerRadarService';
+import {
+    GattEntry,
+    RADAR_FEATURE_ENABLED,
+    RadarDevice,
+    RadarStatus,
+    RawPacket,
+    stalkerRadarService,
+} from '../utils/stalkerRadar/stalkerRadarService';
 
 const MAX_RAW_PACKETS = 25;
 
@@ -15,10 +22,14 @@ export interface UseStalkerRadar {
     scan: () => Promise<void>;
     /** Diagnostic: unfiltered scan that lists every nearby BLE peripheral with its advertised services. */
     scanAll: () => Promise<void>;
-    /** Most recent raw notifications captured by startRawCapture (newest first, capped). */
+    /** Distinct raw payloads captured by startRawCapture (newest first, consecutive duplicates collapsed). */
     rawPackets: RawPacket[];
-    /** Diagnostic: subscribe to every characteristic on the connected radar and capture raw bytes. */
+    /** GATT table from the last capture: every characteristic and its properties. */
+    gatt: GattEntry[];
+    /** Diagnostic: discover the GATT table, subscribe to notify chars, and read readable chars. */
     startRawCapture: () => Promise<void>;
+    /** Re-read every readable characteristic — call after a pitch to sample poll-only data. */
+    refreshReads: () => Promise<void>;
     connect: (deviceId: string) => Promise<void>;
     disconnect: () => Promise<void>;
 }
@@ -37,6 +48,7 @@ export function useStalkerRadar(): UseStalkerRadar {
     const [lastReadingAt, setLastReadingAt] = useState<number | null>(null);
     const [devices, setDevices] = useState<RadarDevice[]>([]);
     const [rawPackets, setRawPackets] = useState<RawPacket[]>([]);
+    const [gatt, setGatt] = useState<GattEntry[]>([]);
 
     useEffect(() => {
         const offStatus = stalkerRadarService.onStatus(setStatus);
@@ -45,17 +57,25 @@ export function useStalkerRadar(): UseStalkerRadar {
             setLastReadingAt(Date.now());
         });
         const offRaw = stalkerRadarService.onRaw((packet) => {
-            setRawPackets((prev) => [packet, ...prev].slice(0, MAX_RAW_PACKETS));
+            setRawPackets((prev) => {
+                // Collapse consecutive identical frames so a steady idle-frame
+                // stream can't flush a transient pitch frame out of the buffer.
+                if (prev[0] && prev[0].hex === packet.hex && prev[0].charUuid === packet.charUuid) return prev;
+                return [packet, ...prev].slice(0, MAX_RAW_PACKETS);
+            });
         });
+        const offGatt = stalkerRadarService.onGatt(setGatt);
         return () => {
             offStatus();
             offVelocity();
             offRaw();
+            offGatt();
         };
     }, []);
 
     // Auto-connect to the remembered radar when enabled and currently idle.
     useEffect(() => {
+        if (!RADAR_FEATURE_ENABLED) return;
         if (radarEnabled && radarDeviceId && stalkerRadarService.getStatus() === 'idle') {
             stalkerRadarService.connect(radarDeviceId).catch(() => {
                 /* status surfaces the failure */
@@ -82,8 +102,23 @@ export function useStalkerRadar(): UseStalkerRadar {
         await stalkerRadarService.startRawCapture();
     }, []);
 
+    const refreshReads = useCallback(() => stalkerRadarService.refreshReads(), []);
+
     const connect = useCallback((deviceId: string) => stalkerRadarService.connect(deviceId), []);
     const disconnect = useCallback(() => stalkerRadarService.disconnect(), []);
 
-    return { status, lastVelocity, lastReadingAt, devices, scan, scanAll, rawPackets, startRawCapture, connect, disconnect };
+    return {
+        status,
+        lastVelocity,
+        lastReadingAt,
+        devices,
+        scan,
+        scanAll,
+        rawPackets,
+        gatt,
+        startRawCapture,
+        refreshReads,
+        connect,
+        disconnect,
+    };
 }

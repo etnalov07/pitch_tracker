@@ -2,8 +2,8 @@
 
 - **Date:** 2026-05-27
 - **Type:** feat
-- **Commit:** `e990f69` (diagnose scan), `25e3b0d` (raw-packet capture)
-- **Versions:** mobile `2.36.0` → `2.37.0` → `2.38.0`
+- **Commit:** `e990f69` (diagnose scan), `25e3b0d` (raw-packet capture), `<pending>` (feature disabled)
+- **Versions:** mobile `2.36.0` → `2.37.0` → `2.38.0` → `2.39.0`
 
 ## Context
 
@@ -139,6 +139,43 @@ bytes, paired with the gun's own mph/spin readout.
 If nothing streams on **Capture**, the `[stalker-gatt]` console lines still tell
 us which characteristics exist (data may be read-only / poll-only, or spin needs
 an output-format change on the gun itself).
+
+## Follow-up — capture upgrades, then feature disabled (mobile `2.38.0` → `2.39.0`)
+
+On-device, the connected Pro3S streamed a **single, unchanging idle/status frame**
+(`\x88 "BD" … 34A … 5A … 146 … 6A` + CR) and never a live reading — even across
+pitches. Two capture upgrades were added to chase it, then the whole integration
+was disabled pending Stalker's official SDK.
+
+### Capture upgrades
+
+- `stalkerRadarService.ts` — `RawPacket` gained a `source: 'notify' | 'read'`
+  tag; new `GattEntry` type + `onGatt`/`emitGatt`. `startRawCapture()` now also
+  emits the full GATT table for on-screen display and does a one-shot read of
+  every readable characteristic; new `refreshReads()` re-reads them on demand
+  (to sample poll-only data after a pitch).
+- `useStalkerRadar.ts` — exposes `gatt` + `refreshReads`; **collapses
+  consecutive identical frames** so a steady idle-frame stream can't flush a
+  transient pitch frame out of the capped buffer.
+- `settings.tsx` — "Refresh reads" button, an on-screen GATT table (per-char
+  `N/I/R/W` flags), and a `[notify]`/`[read]` prefix on each raw row.
+
+### Feature disabled
+
+- `stalkerRadarService.ts` — added master flag `RADAR_FEATURE_ENABLED: boolean
+= false`. Reverse-engineered Pro3S BLE never yielded a live reading; parking
+  it until Stalker grants an SDK / API key (request submitted 2026-05-27).
+- Every entry point now gates on the flag (all BLE/diagnostic code left intact): - `useStalkerRadar.ts` — auto-connect effect early-returns, so no
+  `BleManager` is ever constructed and no connection is attempted. - `settings.tsx` — the entire "Radar Gun" section (and its leading divider)
+  is hidden. - `useLiveGameController.ts` — returns `radarEnabled: RADAR_FEATURE_ENABLED
+&& radarEnabled`, hiding the `RadarStatusPill` on both live-game layouts. - `app/bullpen/[id]/live.tsx` — pill gated on the flag too.
+  The velocity auto-fill effects are self-gating (they fire only on a real
+  reading, which can't arrive while disconnected), so they needed no change.
+
+### Re-enabling
+
+Flip `RADAR_FEATURE_ENABLED` to `true` to restore the BLE path as-is, or replace
+the `stalkerRadar/` internals with the official SDK behind the same flag/UI.
 
 ## Out of scope (deferred)
 

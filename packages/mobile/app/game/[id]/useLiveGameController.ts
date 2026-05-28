@@ -24,6 +24,7 @@ import { useDeviceType } from '../../../src/hooks/useDeviceType';
 import { useOfflineActions } from '../../../src/hooks/useOfflineActions';
 import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
 import { useStalkerRadar } from '../../../src/hooks/useStalkerRadar';
+import { RADAR_FEATURE_ENABLED } from '../../../src/utils/stalkerRadar/stalkerRadarService';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { activateBTAudio, forceDeactivateBTAudio } from '../../../src/utils/pitchCallAudio';
 import { isPassthroughActive, stopPassthrough } from '../../../src/utils/walkieTalkie';
@@ -437,7 +438,7 @@ export function useLiveGameController() {
         teamPlayers,
         pitchCallingEnabled,
         velocityEnabled,
-        radarEnabled,
+        radarEnabled: RADAR_FEATURE_ENABLED && radarEnabled,
 
         // Local state + setters
         allGamePitches,

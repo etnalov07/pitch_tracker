@@ -19,7 +19,7 @@ import { useDeviceType } from '../../src/hooks/useDeviceType';
 import { useBluetoothAudio } from '../../src/utils/bluetoothAudio';
 import { activateBTAudio } from '../../src/utils/pitchCallAudio';
 import { useStalkerRadar } from '../../src/hooks/useStalkerRadar';
-import { RadarDevice, RadarStatus } from '../../src/utils/stalkerRadar/stalkerRadarService';
+import { RADAR_FEATURE_ENABLED, RadarDevice, RadarStatus } from '../../src/utils/stalkerRadar/stalkerRadarService';
 // Offline service disabled for iOS 26.2 beta testing
 // import { triggerSync } from '../../src/services/offlineService';
 // import { clearAllActions } from '../../src/db/offlineQueue';
@@ -69,6 +69,14 @@ export default function SettingsScreen() {
             await radar.startRawCapture();
         } catch {
             Alert.alert('Bluetooth', 'Connect to the radar first, then capture packets.');
+        }
+    }, [radar]);
+
+    const handleRefreshReads = useCallback(async () => {
+        try {
+            await radar.refreshReads();
+        } catch {
+            Alert.alert('Bluetooth', 'Could not read — make sure the radar is still connected.');
         }
     }, [radar]);
 
@@ -303,130 +311,161 @@ export default function SettingsScreen() {
                     />
                 </List.Section>
 
-                <Divider style={styles.divider} />
+                {RADAR_FEATURE_ENABLED && (
+                    <>
+                        <Divider style={styles.divider} />
 
-                <List.Section>
-                    <List.Subheader>Radar Gun</List.Subheader>
-                    <List.Item
-                        title="Stalker Radar"
-                        description="Auto-fill pitch velocity from a Bluetooth radar gun"
-                        left={(props) => <List.Icon {...props} icon="radar" />}
-                        right={() => (
-                            <Switch
-                                value={radarEnabled}
-                                onValueChange={(v) => {
-                                    dispatch(setRadarEnabled(v));
-                                    // Radar feeds the velocity field — turn that on too.
-                                    if (v && !velocityEnabled) dispatch(setVelocityEnabled(true));
-                                }}
-                            />
-                        )}
-                    />
-                    {radarEnabled && (
-                        <>
+                        <List.Section>
+                            <List.Subheader>Radar Gun</List.Subheader>
                             <List.Item
-                                title="Connection Status"
-                                description={RADAR_STATUS_LABEL[radar.status]}
-                                left={(props) => (
-                                    <List.Icon
-                                        {...props}
-                                        icon={radar.status === 'connected' ? 'bluetooth-connect' : 'bluetooth'}
-                                        color={
-                                            radar.status === 'connected'
-                                                ? '#10b981'
-                                                : radar.status === 'error'
-                                                  ? '#ef4444'
-                                                  : undefined
-                                        }
+                                title="Stalker Radar"
+                                description="Auto-fill pitch velocity from a Bluetooth radar gun"
+                                left={(props) => <List.Icon {...props} icon="radar" />}
+                                right={() => (
+                                    <Switch
+                                        value={radarEnabled}
+                                        onValueChange={(v) => {
+                                            dispatch(setRadarEnabled(v));
+                                            // Radar feeds the velocity field — turn that on too.
+                                            if (v && !velocityEnabled) dispatch(setVelocityEnabled(true));
+                                        }}
                                     />
                                 )}
                             />
-                            {radarDeviceId && (
-                                <List.Item
-                                    title={radarDeviceName || 'Paired radar'}
-                                    description="Tap to forget this radar"
-                                    left={(props) => <List.Icon {...props} icon="radar" />}
-                                    right={(props) => <List.Icon {...props} icon="close" />}
-                                    onPress={handleForgetRadar}
-                                />
-                            )}
-                            <List.Item
-                                title={radar.status === 'scanning' ? 'Scanning…' : 'Scan for Radar'}
-                                description="Power on the radar, then scan to pair"
-                                left={(props) => <List.Icon {...props} icon="bluetooth-settings" />}
-                                right={() =>
-                                    radar.status === 'scanning' ? (
-                                        <ActivityIndicator size={20} />
-                                    ) : (
-                                        <Button compact mode="text" onPress={handleScanForRadar}>
-                                            Scan
-                                        </Button>
-                                    )
-                                }
-                                onPress={radar.status === 'scanning' ? undefined : handleScanForRadar}
-                            />
-                            {!radarDeviceId && (
-                                <List.Item
-                                    title="Diagnose (show all Bluetooth devices)"
-                                    description="Lists every nearby BLE peripheral and the service UUIDs it advertises"
-                                    left={(props) => <List.Icon {...props} icon="bug-outline" />}
-                                    right={() =>
-                                        radar.status === 'scanning' ? (
-                                            <ActivityIndicator size={20} />
-                                        ) : (
-                                            <Button compact mode="text" onPress={handleDiagnoseRadar}>
-                                                Diagnose
-                                            </Button>
-                                        )
-                                    }
-                                    onPress={radar.status === 'scanning' ? undefined : handleDiagnoseRadar}
-                                />
-                            )}
-                            {radar.devices.map((device) => (
-                                <List.Item
-                                    key={device.id}
-                                    title={device.name || device.localName || 'Unknown device'}
-                                    description={
-                                        device.serviceUUIDs && device.serviceUUIDs.length > 0
-                                            ? `${device.id}\n${device.serviceUUIDs.join(', ')}`
-                                            : device.id
-                                    }
-                                    descriptionNumberOfLines={3}
-                                    left={(props) => <List.Icon {...props} icon="radar" />}
-                                    right={(props) => <List.Icon {...props} icon="chevron-right" />}
-                                    onPress={() => handlePairRadar(device)}
-                                />
-                            ))}
-                            {radar.status === 'connected' && (
+                            {radarEnabled && (
                                 <>
                                     <List.Item
-                                        title="Capture raw packets"
-                                        description="Subscribe to every characteristic and log raw bytes. Tap, then throw pitches."
-                                        left={(props) => <List.Icon {...props} icon="text-box-search-outline" />}
-                                        right={() => (
-                                            <Button compact mode="text" onPress={handleCaptureRaw}>
-                                                Capture
-                                            </Button>
+                                        title="Connection Status"
+                                        description={RADAR_STATUS_LABEL[radar.status]}
+                                        left={(props) => (
+                                            <List.Icon
+                                                {...props}
+                                                icon={radar.status === 'connected' ? 'bluetooth-connect' : 'bluetooth'}
+                                                color={
+                                                    radar.status === 'connected'
+                                                        ? '#10b981'
+                                                        : radar.status === 'error'
+                                                          ? '#ef4444'
+                                                          : undefined
+                                                }
+                                            />
                                         )}
-                                        onPress={handleCaptureRaw}
-                                        descriptionNumberOfLines={2}
                                     />
-                                    {radar.rawPackets.map((packet, idx) => (
+                                    {radarDeviceId && (
                                         <List.Item
-                                            key={`${packet.at}-${idx}`}
-                                            title={`"${packet.ascii}"`}
-                                            titleStyle={styles.rawMono}
-                                            description={`${packet.bytes.length}B  ${packet.hex}\nchar ${packet.charUuid}`}
-                                            descriptionStyle={styles.rawMono}
-                                            descriptionNumberOfLines={4}
-                                            left={(props) => <List.Icon {...props} icon="chevron-right" />}
+                                            title={radarDeviceName || 'Paired radar'}
+                                            description="Tap to forget this radar"
+                                            left={(props) => <List.Icon {...props} icon="radar" />}
+                                            right={(props) => <List.Icon {...props} icon="close" />}
+                                            onPress={handleForgetRadar}
+                                        />
+                                    )}
+                                    <List.Item
+                                        title={radar.status === 'scanning' ? 'Scanning…' : 'Scan for Radar'}
+                                        description="Power on the radar, then scan to pair"
+                                        left={(props) => <List.Icon {...props} icon="bluetooth-settings" />}
+                                        right={() =>
+                                            radar.status === 'scanning' ? (
+                                                <ActivityIndicator size={20} />
+                                            ) : (
+                                                <Button compact mode="text" onPress={handleScanForRadar}>
+                                                    Scan
+                                                </Button>
+                                            )
+                                        }
+                                        onPress={radar.status === 'scanning' ? undefined : handleScanForRadar}
+                                    />
+                                    {!radarDeviceId && (
+                                        <List.Item
+                                            title="Diagnose (show all Bluetooth devices)"
+                                            description="Lists every nearby BLE peripheral and the service UUIDs it advertises"
+                                            left={(props) => <List.Icon {...props} icon="bug-outline" />}
+                                            right={() =>
+                                                radar.status === 'scanning' ? (
+                                                    <ActivityIndicator size={20} />
+                                                ) : (
+                                                    <Button compact mode="text" onPress={handleDiagnoseRadar}>
+                                                        Diagnose
+                                                    </Button>
+                                                )
+                                            }
+                                            onPress={radar.status === 'scanning' ? undefined : handleDiagnoseRadar}
+                                        />
+                                    )}
+                                    {radar.devices.map((device) => (
+                                        <List.Item
+                                            key={device.id}
+                                            title={device.name || device.localName || 'Unknown device'}
+                                            description={
+                                                device.serviceUUIDs && device.serviceUUIDs.length > 0
+                                                    ? `${device.id}\n${device.serviceUUIDs.join(', ')}`
+                                                    : device.id
+                                            }
+                                            descriptionNumberOfLines={3}
+                                            left={(props) => <List.Icon {...props} icon="radar" />}
+                                            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+                                            onPress={() => handlePairRadar(device)}
                                         />
                                     ))}
+                                    {radar.status === 'connected' && (
+                                        <>
+                                            <List.Item
+                                                title="Capture raw packets"
+                                                description="Discover GATT, subscribe to notify chars, read readable chars. Tap, then throw pitches."
+                                                left={(props) => <List.Icon {...props} icon="text-box-search-outline" />}
+                                                right={() => (
+                                                    <Button compact mode="text" onPress={handleCaptureRaw}>
+                                                        Capture
+                                                    </Button>
+                                                )}
+                                                onPress={handleCaptureRaw}
+                                                descriptionNumberOfLines={2}
+                                            />
+                                            <List.Item
+                                                title="Refresh reads"
+                                                description="Re-read readable characteristics — tap right after a pitch to catch poll-only data."
+                                                left={(props) => <List.Icon {...props} icon="refresh" />}
+                                                right={() => (
+                                                    <Button compact mode="text" onPress={handleRefreshReads}>
+                                                        Refresh
+                                                    </Button>
+                                                )}
+                                                onPress={handleRefreshReads}
+                                                descriptionNumberOfLines={2}
+                                            />
+                                            {radar.gatt.length > 0 && (
+                                                <List.Item
+                                                    title={`GATT — ${radar.gatt.length} characteristics`}
+                                                    titleStyle={styles.rawMono}
+                                                    description={radar.gatt
+                                                        .map(
+                                                            (g) =>
+                                                                `${g.charUuid.slice(0, 8)} ${g.notifiable ? 'N' : '-'}${g.indicatable ? 'I' : '-'}${g.readable ? 'R' : '-'}${g.writable ? 'W' : '-'}`
+                                                        )
+                                                        .join('\n')}
+                                                    descriptionStyle={styles.rawMono}
+                                                    descriptionNumberOfLines={20}
+                                                    left={(props) => <List.Icon {...props} icon="sitemap-outline" />}
+                                                />
+                                            )}
+                                            {radar.rawPackets.map((packet, idx) => (
+                                                <List.Item
+                                                    key={`${packet.at}-${idx}`}
+                                                    title={`[${packet.source}] "${packet.ascii}"`}
+                                                    titleStyle={styles.rawMono}
+                                                    description={`${packet.bytes.length}B  ${packet.hex}\nchar ${packet.charUuid}`}
+                                                    descriptionStyle={styles.rawMono}
+                                                    descriptionNumberOfLines={4}
+                                                    left={(props) => <List.Icon {...props} icon="chevron-right" />}
+                                                />
+                                            ))}
+                                        </>
+                                    )}
                                 </>
                             )}
-                        </>
-                    )}
-                </List.Section>
+                        </List.Section>
+                    </>
+                )}
 
                 <Divider style={styles.divider} />
 
