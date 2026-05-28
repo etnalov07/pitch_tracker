@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-27
 - **Type:** feat
-- **Commit:** `e990f69` (diagnose scan), `25e3b0d` (raw-packet capture), `<pending>` (feature disabled)
+- **Commit:** `e990f69` (diagnose scan), `25e3b0d` (raw-packet capture), `81e0c1a` (feature disabled)
 - **Versions:** mobile `2.36.0` → `2.37.0` → `2.38.0` → `2.39.0`
 
 ## Context
