@@ -96,6 +96,7 @@ export function useLiveGameController() {
     } = useAppSelector((state) => state.games);
     const teamPlayers = useAppSelector((state) => state.teams.players) || [];
     const { pitchCallingEnabled, velocityEnabled, radarEnabled } = useAppSelector((state) => state.settings);
+    const pendingCount = useAppSelector((state) => state.offline.pendingCount);
 
     // -------------------------------------------------------------------------
     // Local state — keep in same order/groups as the original live.tsx so the
@@ -416,6 +417,7 @@ export function useLiveGameController() {
         isTablet,
         isLandscape,
         isOnline,
+        pendingCount,
         logPitchOffline,
 
         // Redux selectors

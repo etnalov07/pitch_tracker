@@ -1,6 +1,6 @@
-// Network check using fetch instead of expo-network (crashes on iOS 26.2 beta)
 import { AppState, AppStateStatus } from 'react-native';
 import { store } from '../state/store';
+import { checkIsOnline } from './networkCheck';
 import {
     setOnlineStatus,
     setSyncing,
@@ -18,22 +18,6 @@ const SYNC_INTERVAL = 30000; // 30 seconds
 
 let syncInterval: ReturnType<typeof setInterval> | null = null;
 let appStateSubscription: { remove: () => void } | null = null;
-
-// Simple network check via fetch (replaces expo-network)
-const checkIsOnline = async (): Promise<boolean> => {
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        await fetch('https://clients3.google.com/generate_204', {
-            method: 'HEAD',
-            signal: controller.signal,
-        });
-        clearTimeout(timeout);
-        return true;
-    } catch {
-        return false;
-    }
-};
 
 // Execute a single queued action
 const executeAction = async (action: OfflineAction): Promise<void> => {

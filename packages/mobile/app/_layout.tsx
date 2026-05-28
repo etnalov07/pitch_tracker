@@ -8,6 +8,7 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { PaperProvider, Portal } from 'react-native-paper';
 
 import { store, useAppDispatch, useAppSelector, initializeAuth, initializeSettings } from '../src/state';
+import { startOfflineService, stopOfflineService } from '../src/services/offlineService';
 import { KeyboardDismissBar } from '../src/components/common';
 import { ToastProvider } from '../src/hooks/useToast';
 import { ConfirmProvider } from '../src/hooks/useConfirm';
@@ -66,6 +67,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
                 try {
                     await dispatch(initializeAuth());
                     dispatch(initializeSettings());
+                    // Offline buffering: detect connectivity + drain the pitch queue on
+                    // reconnect/foreground. Safe on iOS 26.2 (AsyncStorage + fetch + AppState).
+                    startOfflineService();
                 } catch (err) {
                     console.warn('Failed to initialize auth:', err);
                 }
@@ -76,6 +80,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
         return () => {
             task.cancel();
+            stopOfflineService();
         };
     }, [dispatch]);
 

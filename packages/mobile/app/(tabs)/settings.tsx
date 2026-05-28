@@ -13,16 +13,16 @@ import {
     setThemeMode,
     setRadarEnabled,
     setRadarDevice,
+    setPendingCount,
     type ThemeMode,
 } from '../../src/state';
+import { triggerSync } from '../../src/services/offlineService';
+import { clearAllActions } from '../../src/db/offlineQueue';
 import { useDeviceType } from '../../src/hooks/useDeviceType';
 import { useBluetoothAudio } from '../../src/utils/bluetoothAudio';
 import { activateBTAudio } from '../../src/utils/pitchCallAudio';
 import { useStalkerRadar } from '../../src/hooks/useStalkerRadar';
 import { RADAR_FEATURE_ENABLED, RadarDevice, RadarStatus } from '../../src/utils/stalkerRadar/stalkerRadarService';
-// Offline service disabled for iOS 26.2 beta testing
-// import { triggerSync } from '../../src/services/offlineService';
-// import { clearAllActions } from '../../src/db/offlineQueue';
 
 const RADAR_STATUS_LABEL: Record<RadarStatus, string> = {
     idle: 'Not connected',
@@ -136,14 +136,38 @@ export default function SettingsScreen() {
     };
 
     const handleManualSync = async () => {
-        // Offline sync disabled for iOS 26.2 beta testing
+        if (!isOnline) {
+            Alert.alert('Offline', 'You are offline — buffered pitches sync automatically when reception returns.');
+            return;
+        }
+        if (pendingCount === 0) {
+            Alert.alert('All synced', 'There are no buffered pitches to sync.');
+            return;
+        }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert('Info', 'Offline sync is temporarily disabled');
+        const result = await triggerSync();
+        Alert.alert(
+            'Sync complete',
+            `Synced ${result.synced}${result.remaining > 0 ? `, ${result.remaining} still pending` : ''}.`
+        );
     };
 
     const handleClearPending = () => {
-        // Offline sync disabled for iOS 26.2 beta testing
-        Alert.alert('Info', 'Offline sync is temporarily disabled');
+        Alert.alert(
+            'Clear buffered pitches?',
+            'This permanently discards pitches that haven’t synced yet. This cannot be undone.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Clear',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await clearAllActions();
+                        dispatch(setPendingCount(0));
+                    },
+                },
+            ]
+        );
     };
 
     const formatLastSync = () => {

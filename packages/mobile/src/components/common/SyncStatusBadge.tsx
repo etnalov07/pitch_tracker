@@ -2,8 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { useAppSelector } from '../../state';
-// Offline service disabled for iOS 26.2 beta testing
-// import { triggerSync } from '../../services/offlineService';
+import { triggerSync } from '../../services/offlineService';
 import { colors } from '../../styles/theme';
 
 interface SyncStatusBadgeProps {
@@ -14,10 +13,10 @@ const SyncStatusBadge: React.FC<SyncStatusBadgeProps> = ({ compact = false }) =>
     const { isOnline, isSyncing, pendingCount, lastSyncTime } = useAppSelector((state) => state.offline);
 
     const handlePress = async () => {
-        // Offline sync disabled for iOS 26.2 beta testing
-        // if (isOnline && pendingCount > 0 && !isSyncing) {
-        //     await triggerSync();
-        // }
+        // Tap to force a sync of buffered pitches when back online.
+        if (isOnline && pendingCount > 0 && !isSyncing) {
+            await triggerSync();
+        }
     };
 
     const getStatusColor = () => {

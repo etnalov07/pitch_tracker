@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import {
     BaseRunners,
     BaserunnerEventType,
@@ -66,6 +66,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
         dispatch,
         toast,
         confirm,
+        isOnline,
         logPitchOffline,
         currentAtBat,
         currentInning,
@@ -140,6 +141,20 @@ export function useLiveGameActions(ctl: LiveGameController) {
         strikes,
     } = ctl;
 
+    // Offline gate: at-bat/inning/game transitions need the server (no temp→real
+    // ID remap in buffer mode). Read connectivity from a ref so this stays stable
+    // and never goes stale inside the memoized handlers below.
+    const isOnlineRef = useRef(isOnline);
+    isOnlineRef.current = isOnline;
+    const requireOnline = useCallback(
+        (label: string): boolean => {
+            if (isOnlineRef.current) return true;
+            toast.show({ message: `You're offline — reconnect to ${label}.`, type: 'info', duration: 4000 });
+            return false;
+        },
+        [toast]
+    );
+
     // ------------------------------------------------------------------
     // Score / inning / at-bat plumbing
     // ------------------------------------------------------------------
@@ -168,6 +183,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
         async (batter: OpponentLineupPlayer, outs: number, inning: Inning | null): Promise<boolean> => {
             if (!id || !inning) return false;
             if (!isScoutingMode && !currentPitcher) return false;
+            if (!requireOnline('start the at-bat')) return false;
             try {
                 await dispatch(
                     createAtBat({
@@ -215,6 +231,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
     const advanceInningWithRuns = useCallback(
         async (runs: number) => {
             if (!id || !game) return;
+            if (!requireOnline('advance the inning')) return;
             try {
                 const freshGame = await dispatch(fetchGameById(id)).unwrap();
                 const homeScore = freshGame.home_score || 0;
@@ -340,6 +357,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
             extra?: { rbi?: number; runs_scored?: number; outs_before_override?: number }
         ) => {
             if (!currentAtBat) return;
+            if (!requireOnline('record the at-bat result')) return;
             try {
                 const endedAtBat = currentAtBat;
                 const endedPitches = finalPitch ? [...pitches, finalPitch as Pitch] : [...pitches];
@@ -448,6 +466,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
     // scrimmages don't track score and shouldn't auto-end at total_innings.
     const handleEndHalfScrimmage = useCallback(async () => {
         if (!id) return;
+        if (!requireOnline('end the half-inning')) return;
         try {
             await gamesApi.advanceInning(id);
             await gamesApi.advanceInning(id);
@@ -465,6 +484,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
 
     const handleTeamAtBatConfirm = useCallback(async () => {
         if (!id || !game) return;
+        if (!requireOnline('record the team at-bat')) return;
         try {
             const runsToAdd = parseInt(teamAtBatRuns, 10) || 0;
             const newHomeScore = (game.home_score || 0) + runsToAdd;
@@ -530,6 +550,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
 
     const handleSelectPitcher = async (player: Player) => {
         if (!id || !currentInning) return;
+        if (!requireOnline('change the pitcher')) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         const activePitcher = gamePitchers.find((p) => !p.inning_exited);
         if (activePitcher && activePitcher.player_id === player.id) {
@@ -572,6 +593,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
 
     const handleEndGame = useCallback(async () => {
         if (!id || !game) return;
+        if (!requireOnline('end the game')) return;
         const ok = await confirm({
             title: 'End Game',
             message: 'Are you sure you want to end this game? This will mark it as completed.',
@@ -590,6 +612,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
 
     const handleToggleHomeAway = useCallback(async () => {
         if (!id || !game) return;
+        if (!requireOnline('swap home/away')) return;
         if ((game.total_pitches ?? 0) > 0) {
             const newSide = game.is_home_game === false ? 'home' : 'away';
             const ok = await confirm({
@@ -605,6 +628,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
 
     const handleStartAtBat = useCallback(async () => {
         if (!id || !currentInning) return;
+        if (!requireOnline('start the at-bat')) return;
         try {
             if (isScoutingMode) {
                 if (!currentOpposingPitcher || !currentBatter) return;
@@ -767,6 +791,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
     const handleEditLastPitchResult = useCallback(
         async (newResult: PitchResult) => {
             if (!editResultPitch) return;
+            if (!requireOnline('edit the pitch')) return;
             if (newResult === editResultPitch.result) {
                 setEditResultModalVisible(false);
                 return;
@@ -805,6 +830,11 @@ export function useLiveGameActions(ctl: LiveGameController) {
     const handleUndoLastPitch = useCallback(async () => {
         if (pitches.length === 0) return;
         const last = pitches[pitches.length - 1];
+        if (last.id.startsWith('local-')) {
+            toast.show({ message: 'This pitch is still syncing — try again once reconnected.', type: 'info' });
+            return;
+        }
+        if (!requireOnline('undo the pitch')) return;
         const formatPitchType = (t: string) => t.replace(/_/g, ' ');
         const formatResult = (r: string) => r.replace(/_/g, ' ');
         const ok = await confirm({
@@ -868,7 +898,15 @@ export function useLiveGameActions(ctl: LiveGameController) {
                 return;
             }
             // Surface the EDIT affordance for the just-logged pitch (UX-LG-01 Fix Last Pitch).
-            if (logResult.pitch?.id) {
+            // Offline-buffered pitches have no server id yet, so EDIT can't apply — show a
+            // plain "saved offline" confirmation instead.
+            if (logResult.queued) {
+                toast.show({
+                    message: `Saved offline: ${effectiveResult.replace(/_/g, ' ')}`,
+                    type: 'info',
+                    duration: 3000,
+                });
+            } else if (logResult.pitch?.id) {
                 const justLogged = { id: logResult.pitch.id, result: logResult.pitch.pitch_result };
                 setEditResultPitch(justLogged);
                 toast.show({
@@ -923,7 +961,20 @@ export function useLiveGameActions(ctl: LiveGameController) {
             setVelocity('');
             setChangingCallId(null);
             setPendingShakeCount(0);
-            if (logResult.queued) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            if (logResult.queued) {
+                // Offline: the pitch is buffered, but resolving the at-bat (end at-bat,
+                // next batter, runner advances, score) needs the server — it has no
+                // temp→real ID remap. Defer resolution to reconnect; the pitch is safe.
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                if (effectiveResult === 'hit_by_pitch' || newBalls >= 4 || newStrikes >= 3 || effectiveResult === 'in_play') {
+                    toast.show({
+                        message: 'Pitch saved offline — reconnect to record the at-bat result',
+                        type: 'info',
+                        duration: 5000,
+                    });
+                }
+                return;
+            }
             if (effectiveResult === 'hit_by_pitch' || newBalls >= 4) {
                 const endResult = effectiveResult === 'hit_by_pitch' ? 'hit_by_pitch' : 'walk';
                 const hasRunnersOnBase = baseRunners.first || baseRunners.second || baseRunners.third;
@@ -991,6 +1042,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
 
     const handleInPlayResult = useCallback(
         async (result: string, hitLocation?: HitLocation, fieldedBy?: string) => {
+            if (!requireOnline('record the in-play result')) return;
             const capturedAtBat = currentAtBat;
             const capturedPitches = pitches;
 
@@ -1297,6 +1349,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
             // Advance/Out dialog. The dialog itself routes to the existing
             // RunnerEventModal with the chosen tab.
             if (baseRunners[base]) {
+                if (!requireOnline('record a baserunner event')) return;
                 setRunnerActionBase(base);
             }
         },

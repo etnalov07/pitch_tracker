@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-
-// Offline support disabled for iOS 26.2 beta testing (TurboModule crash)
-// This slice now maintains static "always online" state
+import { checkIsOnline } from '../../services/networkCheck';
+import { getPendingActionCount, getPendingActions } from '../../db/offlineQueue';
 
 interface OfflineState {
     isOnline: boolean;
@@ -13,29 +12,30 @@ interface OfflineState {
 }
 
 const initialState: OfflineState = {
+    // Optimistically online until startOfflineService runs its first check.
     isOnline: true,
     isSyncing: false,
     pendingCount: 0,
     lastSyncTime: null,
     syncError: null,
-    networkType: 'wifi',
+    networkType: null,
 };
 
-// No-op thunks - always return online state
 export const checkNetworkStatus = createAsyncThunk('offline/checkNetworkStatus', async () => {
+    const online = await checkIsOnline();
     return {
-        isConnected: true,
-        isInternetReachable: true,
-        type: 'wifi',
+        isConnected: online,
+        isInternetReachable: online,
+        type: online ? 'unknown' : 'none',
     };
 });
 
 export const loadPendingCount = createAsyncThunk('offline/loadPendingCount', async () => {
-    return 0;
+    return getPendingActionCount();
 });
 
 export const loadPendingActions = createAsyncThunk('offline/loadPendingActions', async () => {
-    return [];
+    return getPendingActions();
 });
 
 const offlineSlice = createSlice({
