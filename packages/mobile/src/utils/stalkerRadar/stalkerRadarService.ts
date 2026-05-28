@@ -18,8 +18,21 @@ export interface RadarDevice {
     serviceUUIDs?: string[] | null;
 }
 
+/** A single raw BLE notification, captured for protocol reverse-engineering. */
+export interface RawPacket {
+    serviceUuid: string;
+    charUuid: string;
+    bytes: number[];
+    /** Space-separated 2-digit hex, e.g. "37 32 0d". */
+    hex: string;
+    /** Printable ASCII rendering; non-printable bytes shown as ".". */
+    ascii: string;
+    at: number;
+}
+
 type StatusListener = (status: RadarStatus) => void;
 type VelocityListener = (velocity: number) => void;
+type RawListener = (packet: RawPacket) => void;
 
 const SCAN_DURATION_MS = 12000;
 const MAX_RECONNECT_ATTEMPTS = 3;
@@ -47,6 +60,14 @@ function base64ToBytes(b64: string): Uint8Array {
     return Uint8Array.from(out);
 }
 
+function bytesToHex(bytes: number[]): string {
+    return bytes.map((b) => b.toString(16).padStart(2, '0')).join(' ');
+}
+
+function bytesToAscii(bytes: number[]): string {
+    return bytes.map((b) => (b >= 0x20 && b <= 0x7e ? String.fromCharCode(b) : '.')).join('');
+}
+
 class StalkerRadarService {
     private manager: BleManager | null = null;
     private device: Device | null = null;
@@ -55,6 +76,8 @@ class StalkerRadarService {
     private status: RadarStatus = 'idle';
     private statusListeners = new Set<StatusListener>();
     private velocityListeners = new Set<VelocityListener>();
+    private rawListeners = new Set<RawListener>();
+    private rawSubs: Subscription[] = [];
     private intentionalDisconnect = false;
     private reconnectAttempts = 0;
 
@@ -79,6 +102,11 @@ class StalkerRadarService {
         return () => this.velocityListeners.delete(listener);
     }
 
+    onRaw(listener: RawListener): () => void {
+        this.rawListeners.add(listener);
+        return () => this.rawListeners.delete(listener);
+    }
+
     private setStatus(status: RadarStatus): void {
         this.status = status;
         this.statusListeners.forEach((l) => l(status));
@@ -86,6 +114,10 @@ class StalkerRadarService {
 
     private emitVelocity(velocity: number): void {
         this.velocityListeners.forEach((l) => l(velocity));
+    }
+
+    private emitRaw(packet: RawPacket): void {
+        this.rawListeners.forEach((l) => l(packet));
     }
 
     /** Android runtime permissions. iOS prompts automatically on first scan. */
@@ -166,6 +198,59 @@ class StalkerRadarService {
         setTimeout(() => this.stopScan(), SCAN_DURATION_MS);
     }
 
+    /**
+     * Diagnostic: on the currently-connected device, dump the full GATT table to
+     * the console and subscribe to EVERY notifiable/indicatable characteristic,
+     * emitting each notification as a RawPacket (hex + ASCII). This is how we
+     * locate the mph and spin-rate fields for a Pro3S whose packet layout we
+     * don't yet know — throw pitches, read the bytes, then write the parser.
+     */
+    async startRawCapture(): Promise<void> {
+        const device = this.device;
+        if (!device) throw new Error('Connect to the radar before capturing packets');
+
+        // Drop any prior raw subscriptions so repeated taps don't stack duplicates.
+        this.stopRawCapture();
+
+        const services = await device.services();
+        for (const service of services) {
+            const chars = await service.characteristics();
+            for (const char of chars) {
+                console.log(
+                    `[stalker-gatt] svc=${service.uuid} char=${char.uuid} ` +
+                        `notify=${char.isNotifiable} indicate=${char.isIndicatable} read=${char.isReadable}`
+                );
+                if (!char.isNotifiable && !char.isIndicatable) continue;
+                try {
+                    const sub = device.monitorCharacteristicForService(service.uuid, char.uuid, (error, characteristic) => {
+                        if (error || !characteristic?.value) return;
+                        const bytes = Array.from(base64ToBytes(characteristic.value));
+                        const packet: RawPacket = {
+                            serviceUuid: service.uuid,
+                            charUuid: char.uuid,
+                            bytes,
+                            hex: bytesToHex(bytes),
+                            ascii: bytesToAscii(bytes),
+                            at: Date.now(),
+                        };
+                        console.log(
+                            `[stalker-raw] char=${char.uuid} len=${bytes.length} hex=[${packet.hex}] ascii="${packet.ascii}"`
+                        );
+                        this.emitRaw(packet);
+                    });
+                    this.rawSubs.push(sub);
+                } catch {
+                    /* characteristic refused a subscription — skip it */
+                }
+            }
+        }
+    }
+
+    stopRawCapture(): void {
+        this.rawSubs.forEach((s) => s.remove());
+        this.rawSubs = [];
+    }
+
     async connect(deviceId: string): Promise<void> {
         const granted = await this.requestPermissions();
         if (!granted) {
@@ -195,6 +280,7 @@ class StalkerRadarService {
             this.disconnectSub = manager.onDeviceDisconnected(deviceId, () => {
                 this.monitorSub?.remove();
                 this.monitorSub = null;
+                this.stopRawCapture();
                 this.device = null;
                 if (this.intentionalDisconnect) {
                     this.setStatus('disconnected');
@@ -225,6 +311,7 @@ class StalkerRadarService {
     async disconnect(): Promise<void> {
         this.intentionalDisconnect = true;
         this.reconnectAttempts = 0;
+        this.stopRawCapture();
         this.monitorSub?.remove();
         this.monitorSub = null;
         this.disconnectSub?.remove();

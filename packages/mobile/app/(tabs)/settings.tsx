@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Linking, Platform } from 'react-native';
 import { Text, List, Divider, Button, useTheme, Avatar, Switch, ActivityIndicator, SegmentedButtons } from 'react-native-paper';
 import Constants from 'expo-constants';
 import * as Speech from 'expo-speech';
@@ -61,6 +61,14 @@ export default function SettingsScreen() {
             await radar.scanAll();
         } catch {
             Alert.alert('Bluetooth', 'Could not scan — check that Bluetooth and permissions are enabled.');
+        }
+    }, [radar]);
+
+    const handleCaptureRaw = useCallback(async () => {
+        try {
+            await radar.startRawCapture();
+        } catch {
+            Alert.alert('Bluetooth', 'Connect to the radar first, then capture packets.');
         }
     }, [radar]);
 
@@ -389,6 +397,33 @@ export default function SettingsScreen() {
                                     onPress={() => handlePairRadar(device)}
                                 />
                             ))}
+                            {radar.status === 'connected' && (
+                                <>
+                                    <List.Item
+                                        title="Capture raw packets"
+                                        description="Subscribe to every characteristic and log raw bytes. Tap, then throw pitches."
+                                        left={(props) => <List.Icon {...props} icon="text-box-search-outline" />}
+                                        right={() => (
+                                            <Button compact mode="text" onPress={handleCaptureRaw}>
+                                                Capture
+                                            </Button>
+                                        )}
+                                        onPress={handleCaptureRaw}
+                                        descriptionNumberOfLines={2}
+                                    />
+                                    {radar.rawPackets.map((packet, idx) => (
+                                        <List.Item
+                                            key={`${packet.at}-${idx}`}
+                                            title={`"${packet.ascii}"`}
+                                            titleStyle={styles.rawMono}
+                                            description={`${packet.bytes.length}B  ${packet.hex}\nchar ${packet.charUuid}`}
+                                            descriptionStyle={styles.rawMono}
+                                            descriptionNumberOfLines={4}
+                                            left={(props) => <List.Icon {...props} icon="chevron-right" />}
+                                        />
+                                    ))}
+                                </>
+                            )}
                         </>
                     )}
                 </List.Section>
@@ -501,6 +536,10 @@ const styles = StyleSheet.create({
     },
     divider: {
         marginVertical: 8,
+    },
+    rawMono: {
+        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+        fontSize: 12,
     },
     appearanceContainer: {
         paddingHorizontal: 16,

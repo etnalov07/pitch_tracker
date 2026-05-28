@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAppSelector } from '../state';
-import { RadarDevice, RadarStatus, stalkerRadarService } from '../utils/stalkerRadar/stalkerRadarService';
+import { RadarDevice, RadarStatus, RawPacket, stalkerRadarService } from '../utils/stalkerRadar/stalkerRadarService';
+
+const MAX_RAW_PACKETS = 25;
 
 export interface UseStalkerRadar {
     status: RadarStatus;
@@ -13,6 +15,10 @@ export interface UseStalkerRadar {
     scan: () => Promise<void>;
     /** Diagnostic: unfiltered scan that lists every nearby BLE peripheral with its advertised services. */
     scanAll: () => Promise<void>;
+    /** Most recent raw notifications captured by startRawCapture (newest first, capped). */
+    rawPackets: RawPacket[];
+    /** Diagnostic: subscribe to every characteristic on the connected radar and capture raw bytes. */
+    startRawCapture: () => Promise<void>;
     connect: (deviceId: string) => Promise<void>;
     disconnect: () => Promise<void>;
 }
@@ -30,6 +36,7 @@ export function useStalkerRadar(): UseStalkerRadar {
     const [lastVelocity, setLastVelocity] = useState<number | null>(null);
     const [lastReadingAt, setLastReadingAt] = useState<number | null>(null);
     const [devices, setDevices] = useState<RadarDevice[]>([]);
+    const [rawPackets, setRawPackets] = useState<RawPacket[]>([]);
 
     useEffect(() => {
         const offStatus = stalkerRadarService.onStatus(setStatus);
@@ -37,9 +44,13 @@ export function useStalkerRadar(): UseStalkerRadar {
             setLastVelocity(velocity);
             setLastReadingAt(Date.now());
         });
+        const offRaw = stalkerRadarService.onRaw((packet) => {
+            setRawPackets((prev) => [packet, ...prev].slice(0, MAX_RAW_PACKETS));
+        });
         return () => {
             offStatus();
             offVelocity();
+            offRaw();
         };
     }, []);
 
@@ -66,8 +77,13 @@ export function useStalkerRadar(): UseStalkerRadar {
         });
     }, []);
 
+    const startRawCapture = useCallback(async () => {
+        setRawPackets([]);
+        await stalkerRadarService.startRawCapture();
+    }, []);
+
     const connect = useCallback((deviceId: string) => stalkerRadarService.connect(deviceId), []);
     const disconnect = useCallback(() => stalkerRadarService.disconnect(), []);
 
-    return { status, lastVelocity, lastReadingAt, devices, scan, scanAll, connect, disconnect };
+    return { status, lastVelocity, lastReadingAt, devices, scan, scanAll, rawPackets, startRawCapture, connect, disconnect };
 }

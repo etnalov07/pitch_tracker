@@ -2,8 +2,8 @@
 
 - **Date:** 2026-05-27
 - **Type:** feat
-- **Commit:** `e990f69`
-- **Versions:** mobile `2.36.0` → `2.37.0`
+- **Commit:** `e990f69` (diagnose scan), `<pending>` (raw-packet capture)
+- **Versions:** mobile `2.36.0` → `2.37.0` → `2.38.0`
 
 ## Context
 
@@ -100,8 +100,50 @@ development` and reinstall before testing — no BLE code runs otherwise.
       issue; new design doc (Stalker partner SDK vs. `react-native-bluetooth-classic`
       Android-only pivot).
 
+## Follow-up — raw-packet capture (mobile `2.37.0` → `2.38.0`)
+
+The diagnose scan confirmed the radar connects, but the next blocker is decoding
+the packet layout for _this_ unit: the existing parser only reads mph at a
+hardcoded offset (25) tuned to the original unit, and **spin rate has never been
+decoded** (the legacy Stalker stream is velocity-only — spin likely needs an
+extended output format on the gun). To map both fields we need to see the raw
+bytes, paired with the gun's own mph/spin readout.
+
+### What shipped
+
+- `src/utils/stalkerRadar/stalkerRadarService.ts`
+    - New `RawPacket` interface (`serviceUuid`, `charUuid`, `bytes`, `hex`,
+      `ascii`, `at`) + `bytesToHex` / `bytesToAscii` helpers.
+    - `onRaw` / `emitRaw` listener plumbing + `rawListeners` / `rawSubs` fields.
+    - `startRawCapture()` — on the connected device, logs the full GATT table
+      (`[stalker-gatt] svc=… char=… notify/indicate/read`) and subscribes to
+      **every** notifiable/indicatable characteristic (not just the hardcoded
+      one), emitting each notification as a `RawPacket` and logging
+      `[stalker-raw] char=… len=… hex=[…] ascii="…"`. `stopRawCapture()` tears
+      the subscriptions down; both `disconnect()` and the device-disconnect
+      handler call it.
+- `src/hooks/useStalkerRadar.ts` — exposes `rawPackets` (newest-first, capped at 25) and `startRawCapture()`; clears the buffer on each capture start.
+- `app/(tabs)/settings.tsx` — when status is `connected`, a "Capture raw
+  packets" button + a monospace list of recent packets (ASCII title, `<len>B`
+    - hex + source characteristic). Imported `Platform`; added `rawMono` style.
+
+### How to capture (drives the next parser commit)
+
+1. Settings → Radar Gun → confirm **Connected** → tap **Capture**.
+2. Throw 3–4 shots at clearly different speeds; note the gun's own mph (and spin
+   if shown) for each.
+3. Pair each on-screen `hex`/`ascii` row with its true mph/spin and report back.
+   Those become the parser fixtures, exactly like the original `72`/`85` packets
+   pinned the mph offset.
+
+If nothing streams on **Capture**, the `[stalker-gatt]` console lines still tell
+us which characteristics exist (data may be read-only / poll-only, or spin needs
+an output-format change on the gun itself).
+
 ## Out of scope (deferred)
 
+- Decoding mph/spin offsets + writing the parser, the `spin_rate` shared type,
+  API migration, and UI field — the _next_ commit, once we have raw fixtures.
 - Changing the BLE service/characteristic constants — pending diagnose readout.
 - Bluetooth Classic SPP / `react-native-bluetooth-classic` — only on the table
   if the Pro3S has no BLE at all; would be an Android-only pivot since iOS
