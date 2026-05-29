@@ -25,6 +25,7 @@ import { useOfflineActions } from '../../../src/hooks/useOfflineActions';
 import { useGameWebSocket } from '../../../src/hooks/useGameWebSocket';
 import { useStalkerRadar } from '../../../src/hooks/useStalkerRadar';
 import { RADAR_FEATURE_ENABLED } from '../../../src/utils/stalkerRadar/stalkerRadarService';
+import { getZoneCoords, getEffectiveSide } from '../../../src/components/live/StrikeZone/strikeZoneCoords';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { activateBTAudio, forceDeactivateBTAudio } from '../../../src/utils/pitchCallAudio';
 import { isPassthroughActive, stopPassthrough } from '../../../src/utils/walkieTalkie';
@@ -376,6 +377,17 @@ export function useLiveGameController() {
         }
     }, [currentGameRole, id, router]);
 
+    // Effective batter side for strike-zone mirroring (same inputs the StrikeZone
+    // uses) — needed so the pitch_call location pre-fill below mirrors for RHH.
+    const prefillBatterSide =
+        !isScoutingMode && gameMode === 'opp_pitcher'
+            ? (currentMyBatter?.player?.bats as 'R' | 'L' | 'S' | undefined)
+            : (currentBatter?.bats as 'R' | 'L' | 'S' | undefined);
+    const prefillPitcherThrows =
+        isScoutingMode || gameMode === 'opp_pitcher'
+            ? (currentOpposingPitcher?.throws as 'R' | 'L' | undefined)
+            : (currentPitcher?.player?.throws as 'R' | 'L' | undefined);
+
     // WebSocket subscription — keeps the screen in sync with the catcher tablet
     // (pitch_call pre-fills selection) and refreshes stats when other devices log.
     useGameWebSocket(id ?? null, {
@@ -391,8 +403,11 @@ export function useLiveGameController() {
             }
             if (zone && PITCH_CALL_ZONE_COORDS[zone]) {
                 setTargetZone(zone);
-                // Pre-fill location to zone center so receiver only needs to pick result → Log Pitch
-                const zc = PITCH_CALL_ZONE_COORDS[zone];
+                // Pre-fill location to the zone center so the receiver only needs to pick a
+                // result → Log Pitch. Must mirror for handedness exactly like the StrikeZone
+                // render — using raw canonical coords lands RHH dots on the wrong side of the
+                // plate (same class as 4db186c). See strikeZoneCoords.getZoneCoords.
+                const zc = getZoneCoords(zone, getEffectiveSide(prefillBatterSide, prefillPitcherThrows));
                 setPitchLocation({ x: zc.x, y: zc.y });
             }
         },

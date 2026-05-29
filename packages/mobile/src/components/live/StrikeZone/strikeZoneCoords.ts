@@ -10,3 +10,14 @@ export function getZoneCoords(zone: PitchCallZone, effectiveSide: 'R' | 'L'): { 
     }
     return coords;
 }
+
+// The effective batter side that drives strike-zone mirroring. Switch hitters
+// take the platoon side vs. the pitcher's throwing hand. Single source of truth
+// so renders and the pitch-call location pre-fill stay consistent.
+export function getEffectiveSide(
+    batterSide: 'R' | 'L' | 'S' | null | undefined,
+    pitcherThrows: 'R' | 'L' | null | undefined
+): 'R' | 'L' {
+    if (batterSide === 'S') return pitcherThrows === 'L' ? 'R' : 'L';
+    return batterSide === 'L' ? 'L' : 'R';
+}

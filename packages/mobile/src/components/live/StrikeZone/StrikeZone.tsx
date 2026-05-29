@@ -6,7 +6,7 @@ import * as Haptics from '../../../utils/haptics';
 import { Pitch, PitchCallZone } from '@pitch-tracker/shared';
 import { colors } from '../../../styles/theme';
 import BatterSilhouette from './BatterSilhouette';
-import { getZoneCoords } from './strikeZoneCoords';
+import { getZoneCoords, getEffectiveSide } from './strikeZoneCoords';
 
 export const PITCH_TYPE_COLORS: Record<string, string> = {
     fastball: '#ef4444',
@@ -174,7 +174,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         return { zoneX, zoneY, svgX, svgY };
     };
 
-    const effectiveSide: 'R' | 'L' = batterSide === 'S' ? (pitcherThrows === 'L' ? 'R' : 'L') : batterSide === 'L' ? 'L' : 'R';
+    const effectiveSide: 'R' | 'L' = getEffectiveSide(batterSide, pitcherThrows);
     const batterX = effectiveSide === 'R' ? 253 : 47;
     const batterScaleX = effectiveSide === 'R' ? 1 : -1;
     const strikeZoneGrid = getStrikeZoneGrid(effectiveSide);

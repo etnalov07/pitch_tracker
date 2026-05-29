@@ -1,5 +1,5 @@
 import { PITCH_CALL_ZONE_COORDS, PitchCallZone } from '@pitch-tracker/shared';
-import { getZoneCoords } from '../strikeZoneCoords';
+import { getZoneCoords, getEffectiveSide } from '../strikeZoneCoords';
 
 describe('getZoneCoords', () => {
     // Guards 4db186c (inverted horizontal tap coordinates).
@@ -50,5 +50,26 @@ describe('getZoneCoords', () => {
             const rhh = getZoneCoords(zone, 'R');
             expect(rhh.x).not.toBeCloseTo(lhh.x, 2);
         }
+    });
+});
+
+describe('getEffectiveSide', () => {
+    // Drives the pitch-call location pre-fill mirroring (the WS pitch_call handler
+    // used raw coords, flipping RHH dots after a call was sent/re-sent).
+    it('returns the batter side directly for non-switch hitters', () => {
+        expect(getEffectiveSide('R', 'R')).toBe('R');
+        expect(getEffectiveSide('R', 'L')).toBe('R');
+        expect(getEffectiveSide('L', 'R')).toBe('L');
+        expect(getEffectiveSide('L', 'L')).toBe('L');
+    });
+
+    it('defaults undefined batter side to R (matches StrikeZone)', () => {
+        expect(getEffectiveSide(undefined, undefined)).toBe('R');
+        expect(getEffectiveSide(undefined, 'L')).toBe('R');
+    });
+
+    it('switch hitter takes the platoon side opposite the pitcher hand', () => {
+        expect(getEffectiveSide('S', 'R')).toBe('L'); // RHP → bat lefty
+        expect(getEffectiveSide('S', 'L')).toBe('R'); // LHP → bat righty
     });
 });
