@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-28
 - **Type:** fix
-- **Commit:** `<pending>`
+- **Commit:** `d4f4594`
 - **Versions:** mobile `2.40.0` → `2.41.0`
 
 ## Context
