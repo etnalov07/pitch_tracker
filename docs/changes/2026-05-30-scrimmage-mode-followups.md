@@ -1,7 +1,7 @@
 # Scrimmage Mode Follow-ups · 2026-05-30
 
 **Type:** `feat`
-**Commit:** _pending_
+**Commit:** `ee2d196`
 **Versions:** `shared@1.0.0 (unchanged)` · `api@unchanged` · `web@1.30.0 → 1.31.0` · `mobile@2.41.0 → 2.42.0`
 
 ## Context
