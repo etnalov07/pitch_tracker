@@ -83,9 +83,13 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                         </View>
                         <View style={styles.countItem}>
                             <Text style={styles.countLabel}>O</Text>
-                            {[0, 1, 2].map((i) => (
-                                <View key={`out-${i}`} style={[styles.countDot, i < outs ? styles.outDot : styles.emptyDot]} />
-                            ))}
+                            {outs > 3 ? (
+                                <Text style={styles.outNumber}>{outs}</Text>
+                            ) : (
+                                [0, 1, 2].map((i) => (
+                                    <View key={`out-${i}`} style={[styles.countDot, i < outs ? styles.outDot : styles.emptyDot]} />
+                                ))
+                            )}
                         </View>
                     </View>
                 </View>
@@ -246,6 +250,12 @@ const styles = StyleSheet.create({
     },
     outDot: {
         backgroundColor: colors.yellow[400],
+    },
+    outNumber: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: colors.yellow[400],
+        marginLeft: 2,
     },
     matchupSection: {
         flexDirection: 'row',

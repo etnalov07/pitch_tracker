@@ -635,6 +635,13 @@ export const OutIndicator = styled.div<{ active: boolean }>((props) => ({
     transition: 'all 0.2s',
 }));
 
+export const OutsNumber = styled.span({
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.yellow[400],
+    marginLeft: theme.spacing.xs,
+});
+
 // At-bat result buttons for in-play scenarios
 export const InPlayResultsContainer = styled.div({
     marginTop: theme.spacing.md,

@@ -473,22 +473,24 @@ const GameSetup: React.FC = () => {
                                 </ChipRow>
                             </FormGroup>
 
-                            {/* Total Innings — segmented chips (UX-NG-03, new on web) */}
-                            <FormGroup>
-                                <Label>Innings</Label>
-                                <ChipRow>
-                                    {INNINGS_OPTIONS.map((n) => (
-                                        <Chip
-                                            key={n}
-                                            type="button"
-                                            active={formData.total_innings === n}
-                                            onClick={() => setFormData((prev) => ({ ...prev, total_innings: n }))}
-                                        >
-                                            {n}
-                                        </Chip>
-                                    ))}
-                                </ChipRow>
-                            </FormGroup>
+                            {/* Total Innings — hidden in scrimmage (no inning cap, ends via End Game button) */}
+                            {!isScrimmageMode && (
+                                <FormGroup>
+                                    <Label>Innings</Label>
+                                    <ChipRow>
+                                        {INNINGS_OPTIONS.map((n) => (
+                                            <Chip
+                                                key={n}
+                                                type="button"
+                                                active={formData.total_innings === n}
+                                                onClick={() => setFormData((prev) => ({ ...prev, total_innings: n }))}
+                                            >
+                                                {n}
+                                            </Chip>
+                                        ))}
+                                    </ChipRow>
+                                </FormGroup>
+                            )}
 
                             {/* Date + Time */}
                             <FormGroup>

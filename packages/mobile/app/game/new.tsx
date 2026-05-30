@@ -267,24 +267,28 @@ export default function NewGameScreen() {
                             style={styles.segmented}
                         />
 
-                        {/* Total Innings */}
-                        <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
-                            Innings
-                        </Text>
-                        <SegmentedButtons
-                            value={totalInnings}
-                            onValueChange={(value) => {
-                                Haptics.selectionAsync();
-                                setTotalInnings(value);
-                            }}
-                            buttons={[
-                                { value: '5', label: '5' },
-                                { value: '6', label: '6' },
-                                { value: '7', label: '7' },
-                                { value: '9', label: '9' },
-                            ]}
-                            style={styles.segmented}
-                        />
+                        {/* Total Innings — hidden in scrimmage (no inning cap, ends via End Game button) */}
+                        {!isScrimmageMode && (
+                            <>
+                                <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
+                                    Innings
+                                </Text>
+                                <SegmentedButtons
+                                    value={totalInnings}
+                                    onValueChange={(value) => {
+                                        Haptics.selectionAsync();
+                                        setTotalInnings(value);
+                                    }}
+                                    buttons={[
+                                        { value: '5', label: '5' },
+                                        { value: '6', label: '6' },
+                                        { value: '7', label: '7' },
+                                        { value: '9', label: '9' },
+                                    ]}
+                                    style={styles.segmented}
+                                />
+                            </>
+                        )}
 
                         {/* Charting Mode */}
                         <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>

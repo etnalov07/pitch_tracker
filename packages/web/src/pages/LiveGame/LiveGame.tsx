@@ -73,6 +73,7 @@ import {
     OutsContainer,
     OutsLabel,
     OutIndicator,
+    OutsNumber,
     OpenDiamondButton,
     PitchTypeSelector,
     PitchTypeSelectorTitle,
@@ -479,8 +480,14 @@ const LiveGame: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px' }}>
                             <OutsContainer>
                                 <OutsLabel>Outs</OutsLabel>
-                                <OutIndicator active={currentOuts >= 1} />
-                                <OutIndicator active={currentOuts >= 2} />
+                                {currentOuts > 3 ? (
+                                    <OutsNumber>{currentOuts}</OutsNumber>
+                                ) : (
+                                    <>
+                                        <OutIndicator active={currentOuts >= 1} />
+                                        <OutIndicator active={currentOuts >= 2} />
+                                    </>
+                                )}
                             </OutsContainer>
                             <BaseRunnerDisplay runners={baseRunners} size={50} />
                         </div>
