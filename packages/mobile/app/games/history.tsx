@@ -11,6 +11,17 @@ function formatDate(dateString: string): string {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function formatTime(timeString?: string | null): string | null {
+    if (!timeString) return null;
+    const [h, m] = timeString.split(':');
+    const hour = parseInt(h, 10);
+    const minute = parseInt(m, 10);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+}
+
 const GameRow: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress }) => {
     const theme = useTheme();
     const homeScore = game.home_score ?? 0;
@@ -31,7 +42,10 @@ const GameRow: React.FC<{ game: Game; onPress: () => void }> = ({ game, onPress 
                                 ? `${game.opponent_name || 'Away'} @ ${game.scouting_home_team || 'Home'}`
                                 : `${isHome ? 'vs' : '@'} ${game.opponent_name || 'TBD'}`}
                         </Text>
-                        <Text style={[styles.date, { color: theme.colors.onSurfaceVariant }]}>{formatDate(game.game_date)}</Text>
+                        <Text style={[styles.date, { color: theme.colors.onSurfaceVariant }]}>
+                            {formatDate(game.game_date)}
+                            {formatTime(game.game_time) ? ` · ${formatTime(game.game_time)}` : ''}
+                        </Text>
                     </View>
                     <View style={styles.rowRight}>
                         <Text style={[styles.score, { color: won ? '#10b981' : tied ? '#6b7280' : '#ef4444' }]}>

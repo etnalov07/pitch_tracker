@@ -130,15 +130,20 @@ export const GameRow = styled.tr({
     },
 });
 
-export const DateCell = styled.div({});
+export const DateCell = styled.div({
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: theme.spacing.sm,
+    flexWrap: 'wrap',
+});
 
-export const DateText = styled.div({
+export const DateText = styled.span({
     fontSize: theme.fontSize.sm,
     fontWeight: theme.fontWeight.medium,
     color: theme.colors.gray[800],
 });
 
-export const TimeText = styled.div({
+export const TimeText = styled.span({
     fontSize: theme.fontSize.xs,
     color: theme.colors.gray[500],
 });

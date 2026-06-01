@@ -115,12 +115,15 @@ const GameHistory: React.FC = () => {
         });
     };
 
-    const formatTime = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-        });
+    const formatTime = (timeString?: string | null) => {
+        if (!timeString) return null;
+        const [h, m] = timeString.split(':');
+        const hour = parseInt(h, 10);
+        const minute = parseInt(m, 10);
+        if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
     };
 
     const filteredGames = games
@@ -201,7 +204,7 @@ const GameHistory: React.FC = () => {
                                     <Td>
                                         <DateCell>
                                             <DateText>{formatDate(game.game_date)}</DateText>
-                                            <TimeText>{formatTime(game.game_date)}</TimeText>
+                                            {formatTime(game.game_time) && <TimeText>{formatTime(game.game_time)}</TimeText>}
                                         </DateCell>
                                     </Td>
                                     <Td>
