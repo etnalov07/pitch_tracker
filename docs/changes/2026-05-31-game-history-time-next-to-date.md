@@ -2,7 +2,7 @@
 
 - **Date:** 2026-05-31
 - **Type:** `style`
-- **Commit:** _pending_
+- **Commit:** `72b3ee4`
 - **Versions:** `packages/web` 1.31.0 → 1.32.0, `packages/mobile` 2.42.0 → 2.43.0
 
 ## Context
