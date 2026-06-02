@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-02
 - **Type:** `feat`
-- **Commit:** _pending_
+- **Commits:** `010dd96` (backend) · `3781983` (web selector) · `56c9581` (web forms + counter) · `f699f25` (mobile + change doc)
 - **Versions:** `packages/api` 1.24.0 → 1.25.0, `packages/web` 1.33.0 → 1.34.0, `packages/mobile` 2.44.0 → 2.45.0
 
 ## Context
