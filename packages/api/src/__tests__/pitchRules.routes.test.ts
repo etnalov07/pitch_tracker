@@ -77,8 +77,27 @@ describe('PitchRules Routes - /bt-api/pitch-rules', () => {
             expect(res.body.eligibility.daily_max).toBe(110);
         });
 
-        it('PBR game → unknown_rules (no block, caveat chip)', async () => {
+        it('PBR game with no age → unknown_division (no block, caveat chip)', async () => {
             mockGameContext({ sanction: 'PBR', age_division: null });
+            mockHistoryEmpty();
+            const res = await getAgent()
+                .get(`/bt-api/pitch-rules/eligibility/${gameId}/${pitcherA}`)
+                .set('Authorization', authHeader());
+            expect(res.body.eligibility.eligibility).toBe('unknown_division');
+        });
+
+        it('PBR 14U game with fresh history → eligible', async () => {
+            mockGameContext({ sanction: 'PBR', age_division: '14U' });
+            mockHistoryEmpty();
+            const res = await getAgent()
+                .get(`/bt-api/pitch-rules/eligibility/${gameId}/${pitcherA}`)
+                .set('Authorization', authHeader());
+            expect(res.body.eligibility.eligibility).toBe('eligible');
+            expect(res.body.eligibility.daily_max).toBe(95);
+        });
+
+        it('PBR 12U → unknown_rules (PBR table only covers 14U+)', async () => {
+            mockGameContext({ sanction: 'PBR', age_division: '12U' });
             mockHistoryEmpty();
             const res = await getAgent()
                 .get(`/bt-api/pitch-rules/eligibility/${gameId}/${pitcherA}`)

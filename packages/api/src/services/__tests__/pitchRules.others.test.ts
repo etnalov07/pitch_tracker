@@ -36,12 +36,26 @@ describe('hs.evaluate', () => {
     });
 });
 
-describe('pbr.evaluate — stub', () => {
-    it('returns unknown_rules and never blocks', () => {
+describe('pbr.evaluate — high-level behaviors', () => {
+    // Detailed table-driven coverage lives in pitchRules.pbr.test.ts; these
+    // smoke tests just pin the three dispatcher states the UI cares about.
+
+    it('returns unknown_division when no age set (caveat chip, no block)', () => {
         const r = evalPbr({ ...baseInput, sanction: 'PBR' });
-        expect(r.eligibility).toBe('unknown_rules');
-        expect(r.reasons.join(' ')).toMatch(/PBR rules not yet configured/);
+        expect(r.eligibility).toBe('unknown_division');
         expect(r.daily_max).toBeNull();
+    });
+
+    it('returns unknown_rules for 12U (outside PBR coverage)', () => {
+        const r = evalPbr({ ...baseInput, sanction: 'PBR', age_division: '12U' });
+        expect(r.eligibility).toBe('unknown_rules');
+        expect(r.reasons.join(' ')).toMatch(/only cover 14U\/16U\/18U/);
+    });
+
+    it('eligible at 14U with empty history', () => {
+        const r = evalPbr({ ...baseInput, sanction: 'PBR', age_division: '14U' });
+        expect(r.eligibility).toBe('eligible');
+        expect(r.daily_max).toBe(95);
     });
 });
 
