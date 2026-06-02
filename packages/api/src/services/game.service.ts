@@ -1,7 +1,24 @@
 import { query, transaction } from '../config/database';
-import { Game, Inning, BaseRunners, OpponentPitcherProfile, BatterScoutingProfile, OpponentRosterPlayer } from '../types';
+import {
+    Game,
+    Inning,
+    BaseRunners,
+    OpponentPitcherProfile,
+    BatterScoutingProfile,
+    OpponentRosterPlayer,
+    Sanction,
+    AgeDivision,
+} from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import opponentTeamService from './opponentTeam.service';
+
+// Infer the default sanction for a new game from the home team's team_type.
+// HS team → HS rules; college team → no rules; everything else (travel/club) → caller picks, default NONE.
+function defaultSanctionForTeamType(teamType: string | null | undefined): Sanction {
+    if (teamType === 'high_school') return 'HS';
+    if (teamType === 'college') return 'NONE';
+    return 'NONE';
+}
 
 export class GameService {
     async createGame(userId: string, gameData: Partial<Game>): Promise<Game> {
@@ -19,6 +36,8 @@ export class GameService {
             scouting_home_team,
             scouting_focus,
             opponent_team_id,
+            age_division,
+            sanction,
         } = gameData;
 
         if (!home_team_id) {
@@ -47,10 +66,24 @@ export class GameService {
             resolvedOpponentTeamId = opponentTeam.id;
         }
 
+        // Inherit sanction + age_division from the home team when the caller didn't supply them.
+        let resolvedSanction: Sanction | null = sanction ?? null;
+        let resolvedAgeDivision: AgeDivision | null = age_division ?? null;
+        if (resolvedSanction === null || resolvedAgeDivision === null) {
+            const teamRow = await query(`SELECT team_type, age_division FROM teams WHERE id = $1`, [home_team_id]);
+            const team = teamRow.rows[0];
+            if (team) {
+                if (resolvedSanction === null) resolvedSanction = defaultSanctionForTeamType(team.team_type);
+                if (resolvedAgeDivision === null) resolvedAgeDivision = (team.age_division as AgeDivision | null) ?? null;
+            } else {
+                if (resolvedSanction === null) resolvedSanction = 'NONE';
+            }
+        }
+
         const gameId = uuidv4();
         const result = await query(
-            `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size, total_innings, charting_mode, scouting_home_team, scouting_focus, opponent_team_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            `INSERT INTO games (id, home_team_id, away_team_id, opponent_name, game_date, game_time, location, created_by, is_home_game, lineup_size, total_innings, charting_mode, scouting_home_team, scouting_focus, opponent_team_id, age_division, sanction)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
        RETURNING *`,
             [
                 gameId,
@@ -68,6 +101,8 @@ export class GameService {
                 scouting_home_team ?? null,
                 scouting_focus ?? 'both',
                 resolvedOpponentTeamId,
+                resolvedAgeDivision,
+                resolvedSanction,
             ]
         );
 

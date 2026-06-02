@@ -152,5 +152,44 @@ describe('GamePitcher Routes - /bt-api/game-pitchers', () => {
             expect(res.body.message).toBe('Pitcher changed');
             expect(res.body.pitcher).toBeDefined();
         });
+
+        // Behavior-lock: the gamePitcher endpoint must NOT block a pitcher who
+        // pitched on a prior calendar day. Pitch-rules eligibility is enforced
+        // upstream at the UI (PitcherSelector); the API is intentionally permissive.
+        // This test pins the policy in case a future refactor adds a server-side
+        // gate by accident — the user explicitly does not want one.
+        it('accepts a pitcher who pitched yesterday in a different game (no cross-day server gate)', async () => {
+            const currentPitcher = { id: 'gp_curr', player_id: 'p_other', pitching_order: 1 };
+            const newPitcherRow = {
+                id: 'test-gp-id',
+                game_id: 'g_today',
+                player_id: 'p_pitched_yesterday',
+                pitching_order: 2,
+                inning_entered: 1,
+                inning_exited: null,
+                created_at: new Date().toISOString(),
+                first_name: 'Ace',
+                last_name: 'Reliever',
+                jersey_number: 99,
+                throws: 'R',
+            };
+
+            mockQuery
+                .mockResolvedValueOnce({ rows: [currentPitcher] } as any)
+                .mockResolvedValueOnce({ rows: [] } as any)
+                .mockResolvedValueOnce({ rows: [{ id: 'test-gp-id' }] } as any)
+                .mockResolvedValueOnce({ rows: [newPitcherRow] } as any);
+
+            const res = await getAgent()
+                .post('/bt-api/game-pitchers/game/g_today/change')
+                .set('Authorization', authHeader())
+                .send({ player_id: 'p_pitched_yesterday', inning_entered: 1 });
+
+            expect(res.status).toBe(201);
+            expect(res.body.pitcher).toBeDefined();
+            // Crucially: there was no rest-check SQL query in the call sequence.
+            // If a future change adds one, this assertion will fail (the
+            // pre-arranged mock sequence would be exhausted earlier).
+        });
     });
 });

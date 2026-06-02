@@ -12,7 +12,7 @@ export interface TeamBrandingUpdate {
 
 export class TeamService {
     async createTeam(userId: string, teamData: Partial<Team>): Promise<Team> {
-        const { name, organization, age_group, season, organization_id, team_type, year } = teamData;
+        const { name, organization, age_group, age_division, season, organization_id, team_type, year } = teamData;
 
         if (!name) {
             throw new Error('Team name is required');
@@ -21,10 +21,21 @@ export class TeamService {
         return await transaction(async (client) => {
             const team_id = uuidv4();
             const result = await client.query(
-                `INSERT INTO teams (id, name, owner_id, organization, age_group, season, organization_id, team_type, year)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `INSERT INTO teams (id, name, owner_id, organization, age_group, age_division, season, organization_id, team_type, year)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          RETURNING *`,
-                [team_id, name, userId, organization, age_group, season, organization_id || null, team_type || null, year || null]
+                [
+                    team_id,
+                    name,
+                    userId,
+                    organization,
+                    age_group,
+                    age_division ?? null,
+                    season,
+                    organization_id || null,
+                    team_type || null,
+                    year || null,
+                ]
             );
 
             // Also create team_members entry for owner
@@ -94,19 +105,20 @@ export class TeamService {
     async updateTeam(team_id: string, userId: string, updates: Partial<Team>): Promise<Team> {
         await this.verifyTeamAccess(team_id, userId);
 
-        const { name, organization, age_group, season, team_type, year } = updates;
+        const { name, organization, age_group, age_division, season, team_type, year } = updates;
 
         const result = await query(
             `UPDATE teams
        SET name = COALESCE($1, name),
            organization = COALESCE($2, organization),
            age_group = COALESCE($3, age_group),
-           season = COALESCE($4, season),
-           team_type = COALESCE($5, team_type),
-           year = COALESCE($6, year)
-       WHERE id = $7
+           age_division = COALESCE($4, age_division),
+           season = COALESCE($5, season),
+           team_type = COALESCE($6, team_type),
+           year = COALESCE($7, year)
+       WHERE id = $8
        RETURNING *`,
-            [name, organization, age_group, season, team_type, year, team_id]
+            [name, organization, age_group, age_division ?? null, season, team_type, year, team_id]
         );
 
         return result.rows[0];

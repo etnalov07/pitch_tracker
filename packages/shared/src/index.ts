@@ -79,6 +79,12 @@ export interface JWTPayload {
 export type TeamType = 'high_school' | 'travel' | 'club' | 'college';
 export type TeamSeason = 'Spring' | 'Summer' | 'Fall' | 'Winter';
 
+// PG / PBR age brackets. Used by the pitch-rules engine when sanction is age-bracketed.
+export type AgeDivision = '8U' | '10U' | '12U' | '14U' | '16U' | '18U';
+
+// Which sanctioning body's rules apply for a game. NULL/NONE = no rules.
+export type Sanction = 'PG' | 'PBR' | 'HS' | 'NONE';
+
 export interface Team {
     id: string;
     name: string;
@@ -88,6 +94,7 @@ export interface Team {
     city?: string;
     organization?: string;
     age_group?: string;
+    age_division?: AgeDivision | null;
     season?: string;
     team_type?: TeamType;
     year?: number;
@@ -367,6 +374,10 @@ export interface Game {
     scouting_home_team?: string | null;
     scouting_focus?: 'both' | 'home' | 'away';
     opponent_team_id?: string | null;
+    // PG / PBR age bracket for this specific game; inherited from home team on create.
+    age_division?: AgeDivision | null;
+    // Which sanction's pitch-rule engine applies; defaults from home team's team_type.
+    sanction?: Sanction | null;
     created_by: string;
     created_at: string;
     updated_at?: string;
