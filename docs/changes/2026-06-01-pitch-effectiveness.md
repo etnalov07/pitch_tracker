@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-01
 - **Type:** `feat`
-- **Commit:** _pending_
+- **Commit:** `c2655ba`
 - **Versions:** `packages/api` 1.22.0 → 1.23.0, `packages/web` 1.32.0 → 1.33.0, `packages/mobile` 2.43.0 → 2.44.0
 
 ## Context
