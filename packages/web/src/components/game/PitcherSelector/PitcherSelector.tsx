@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../../../hooks/useToast';
+import api from '../../../services/api';
 import { gamesApi } from '../../../state/games/api/gamesApi';
 import { Player, GamePitcherWithPlayer } from '../../../types';
 import {
@@ -17,7 +18,20 @@ import {
     ActiveBadge,
     SectionTitle,
     EmptyMessage,
+    IneligibleReason,
+    CaveatChip,
 } from './styles';
+
+type EligibilityState = 'eligible' | 'ineligible' | 'unknown_division' | 'unknown_rules';
+
+interface EligibilityResult {
+    eligibility: EligibilityState;
+    reasons: string[];
+    daily_max: number | null;
+    pitches_today: number;
+}
+
+type EligibilityMap = Record<string, EligibilityResult>;
 
 interface PitcherSelectorProps {
     gameId: string;
@@ -31,6 +45,7 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
     const toast = useToast();
     const [roster, setRoster] = useState<Player[]>([]);
     const [gamePitchers, setGamePitchers] = useState<GamePitcherWithPlayer[]>([]);
+    const [eligibility, setEligibility] = useState<EligibilityMap>({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -44,6 +59,21 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
                 // Fetch game pitchers (who has pitched in this game)
                 const gamePitchersList = await gamesApi.getGamePitchers(gameId);
                 setGamePitchers(gamePitchersList || []);
+
+                // Bulk eligibility for every roster player. Server resolves the sanction
+                // from the game and applies the corresponding rules engine. Best-effort:
+                // if it fails, the selector falls back to permissive (no chips).
+                if (players && players.length > 0) {
+                    try {
+                        const ids = players.map((p) => p.id).join(',');
+                        const res = await api.get<{ eligibility: EligibilityMap }>(
+                            `/pitch-rules/eligibility/${gameId}/bulk?pitcher_ids=${ids}`
+                        );
+                        setEligibility(res.data.eligibility ?? {});
+                    } catch (e) {
+                        console.warn('Eligibility fetch failed; defaulting to permissive', e);
+                    }
+                }
             } catch (error) {
                 console.error('Failed to fetch pitchers:', error);
             } finally {
@@ -54,6 +84,9 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
     }, [gameId, teamId]);
 
     const handleSelectPitcher = async (player: Player) => {
+        // Hard-block: if the engine says ineligible, the card's onClick should
+        // have already been disabled. This is a belt-and-suspenders guard.
+        if (eligibility[player.id]?.eligibility === 'ineligible') return;
         try {
             // Check if this pitcher is already the current pitcher
             const currentPitcher = gamePitchers.find((p) => !p.inning_exited);
@@ -76,7 +109,7 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
 
     const currentPitcher = gamePitchers.find((p) => !p.inning_exited);
 
-    // Players who have already pitched today
+    // Players who have pitched in this game so far (per-game, not per-day).
     const usedPitcherIds = new Set(gamePitchers.map((p) => p.player_id));
     const usedPitchers = roster.filter((p) => usedPitcherIds.has(p.id));
     // Sort pitchers (primary_position === 'P') to the top, then alphabetical by last name.
@@ -141,21 +174,37 @@ const PitcherSelector: React.FC<PitcherSelectorProps> = ({ gameId, teamId, curre
                             <>
                                 <SectionTitle>Available</SectionTitle>
                                 <PitcherList>
-                                    {availablePitchers.map((player) => (
-                                        <PitcherCard key={player.id} onClick={() => handleSelectPitcher(player)}>
-                                            <PitcherInfo>
-                                                <JerseyNumber>{player.jersey_number || '#'}</JerseyNumber>
-                                                <div>
-                                                    <PitcherName>
-                                                        {player.first_name} {player.last_name}
-                                                    </PitcherName>
-                                                    <PitcherStats>
-                                                        {player.primary_position} • Throws: {player.throws}
-                                                    </PitcherStats>
-                                                </div>
-                                            </PitcherInfo>
-                                        </PitcherCard>
-                                    ))}
+                                    {availablePitchers.map((player) => {
+                                        const elig = eligibility[player.id];
+                                        const ineligible = elig?.eligibility === 'ineligible';
+                                        const caveat =
+                                            elig?.eligibility === 'unknown_division' || elig?.eligibility === 'unknown_rules'
+                                                ? elig.reasons[0]
+                                                : null;
+                                        return (
+                                            <PitcherCard
+                                                key={player.id}
+                                                disabled={ineligible}
+                                                onClick={ineligible ? undefined : () => handleSelectPitcher(player)}
+                                            >
+                                                <PitcherInfo>
+                                                    <JerseyNumber>{player.jersey_number || '#'}</JerseyNumber>
+                                                    <div>
+                                                        <PitcherName>
+                                                            {player.first_name} {player.last_name}
+                                                        </PitcherName>
+                                                        <PitcherStats>
+                                                            {player.primary_position} • Throws: {player.throws}
+                                                        </PitcherStats>
+                                                        {ineligible && elig?.reasons[0] && (
+                                                            <IneligibleReason>{elig.reasons[0]}</IneligibleReason>
+                                                        )}
+                                                        {caveat && <CaveatChip>{caveat}</CaveatChip>}
+                                                    </div>
+                                                </PitcherInfo>
+                                            </PitcherCard>
+                                        );
+                                    })}
                                 </PitcherList>
                             </>
                         )}

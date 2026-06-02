@@ -57,7 +57,7 @@ export const PitcherList = styled.div({
     gap: theme.spacing.sm,
 });
 
-export const PitcherCard = styled.button<{ isActive?: boolean }>((props) => ({
+export const PitcherCard = styled.button<{ isActive?: boolean; disabled?: boolean }>((props) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -65,13 +65,14 @@ export const PitcherCard = styled.button<{ isActive?: boolean }>((props) => ({
     border: `2px solid ${props.isActive ? theme.colors.primary[500] : theme.colors.gray[200]}`,
     borderRadius: theme.borderRadius.md,
     background: props.isActive ? theme.colors.primary[50] : 'white',
-    cursor: 'pointer',
+    cursor: props.disabled ? 'not-allowed' : 'pointer',
+    opacity: props.disabled ? 0.45 : 1,
     textAlign: 'left',
     width: '100%',
 
     '&:hover': {
-        borderColor: theme.colors.primary[400],
-        background: theme.colors.primary[50],
+        borderColor: props.disabled ? theme.colors.gray[200] : theme.colors.primary[400],
+        background: props.disabled ? 'white' : theme.colors.primary[50],
     },
 }));
 
@@ -126,4 +127,22 @@ export const EmptyMessage = styled.p({
     textAlign: 'center',
     color: theme.colors.gray[500],
     padding: theme.spacing.lg,
+});
+
+// Rule violation text shown under the player name on ineligible cards.
+export const IneligibleReason = styled.div({
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.red[700],
+    marginTop: theme.spacing.xs,
+});
+
+// 'Unknown division/rules' is not a hard block — render a caveat chip instead.
+export const CaveatChip = styled.div({
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.yellow[800],
+    backgroundColor: theme.colors.yellow[100],
+    padding: `2px ${theme.spacing.xs}`,
+    borderRadius: theme.borderRadius.full,
+    display: 'inline-block',
+    marginTop: theme.spacing.xs,
 });
