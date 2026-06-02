@@ -160,6 +160,35 @@ export class AnalyticsController {
         }
     }
 
+    async getPitcherEffectiveness(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const pitcherId = req.params.pitcherId as string;
+            const { batter_hand, window, game_id } = req.query;
+            if (batter_hand !== 'L' && batter_hand !== 'R') {
+                res.status(400).json({ error: 'batter_hand must be L or R' });
+                return;
+            }
+            const allowedWindows = ['career', 'last_5', 'current_game'] as const;
+            const win = (window as string) ?? 'career';
+            if (!allowedWindows.includes(win as any)) {
+                res.status(400).json({ error: 'window must be career, last_5, or current_game' });
+                return;
+            }
+            if (win === 'current_game' && !game_id) {
+                res.status(400).json({ error: 'game_id is required when window=current_game' });
+                return;
+            }
+            const effectiveness = await analyticsService.getPitcherEffectiveness(pitcherId, {
+                batter_hand: batter_hand as 'L' | 'R',
+                window: win as 'career' | 'last_5' | 'current_game',
+                game_id: game_id as string | undefined,
+            });
+            res.status(200).json({ effectiveness });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async getHitterLiveTendencies(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { batterId } = req.params;

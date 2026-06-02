@@ -11,6 +11,7 @@ jest.mock('../services/analytics.service', () => ({
         getBatterSprayChart: jest.fn(),
         getPitcherTendencies: jest.fn(),
         getPitcherLiveTendencies: jest.fn(),
+        getPitcherEffectiveness: jest.fn(),
         getPitcherGameLogs: jest.fn(),
         getPitcherProfile: jest.fn(),
         getPitcherHeatZones: jest.fn(),
@@ -221,6 +222,78 @@ describe('Analytics Routes - /bt-api/analytics', () => {
 
             expect(res.status).toBe(200);
             expect(svc.getPitcherLiveTendencies).toHaveBeenCalledWith('pitcher-1', 'L');
+        });
+    });
+
+    // =========================================================================
+    // GET /pitcher/:pitcherId/effectiveness
+    // =========================================================================
+
+    describe('GET /pitcher/:pitcherId/effectiveness', () => {
+        const emptyEffectiveness = {
+            pitcher_id: 'pitcher-1',
+            pitcher_name: 'John Doe',
+            batter_hand: 'R' as const,
+            window: 'career' as const,
+            total_pitches: 0,
+            has_data: false,
+            pitch_types: [],
+        };
+
+        it('returns 401 without auth token', async () => {
+            const res = await getAgent().get('/bt-api/analytics/pitcher/pitcher-1/effectiveness?batter_hand=R');
+            expect(res.status).toBe(401);
+        });
+
+        it('returns 400 when batter_hand is missing', async () => {
+            const res = await getAgent()
+                .get('/bt-api/analytics/pitcher/pitcher-1/effectiveness')
+                .set('Authorization', authHeader());
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/batter_hand/i);
+        });
+
+        it('returns 400 when window is invalid', async () => {
+            const res = await getAgent()
+                .get('/bt-api/analytics/pitcher/pitcher-1/effectiveness?batter_hand=R&window=ever')
+                .set('Authorization', authHeader());
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/window/i);
+        });
+
+        it('returns 400 when window=current_game without game_id', async () => {
+            const res = await getAgent()
+                .get('/bt-api/analytics/pitcher/pitcher-1/effectiveness?batter_hand=R&window=current_game')
+                .set('Authorization', authHeader());
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/game_id/i);
+        });
+
+        it('defaults window to career when omitted', async () => {
+            svc.getPitcherEffectiveness.mockResolvedValueOnce(emptyEffectiveness);
+            const res = await getAgent()
+                .get('/bt-api/analytics/pitcher/pitcher-1/effectiveness?batter_hand=L')
+                .set('Authorization', authHeader());
+            expect(res.status).toBe(200);
+            expect(svc.getPitcherEffectiveness).toHaveBeenCalledWith('pitcher-1', {
+                batter_hand: 'L',
+                window: 'career',
+                game_id: undefined,
+            });
+        });
+
+        it('forwards game_id when window=current_game', async () => {
+            svc.getPitcherEffectiveness.mockResolvedValueOnce({ ...emptyEffectiveness, window: 'current_game' });
+            const res = await getAgent()
+                .get('/bt-api/analytics/pitcher/pitcher-1/effectiveness?batter_hand=R&window=current_game&game_id=game-42')
+                .set('Authorization', authHeader());
+            expect(res.status).toBe(200);
+            expect(res.body.effectiveness).toBeDefined();
+            expect(svc.getPitcherEffectiveness).toHaveBeenCalledWith('pitcher-1', {
+                batter_hand: 'R',
+                window: 'current_game',
+                game_id: 'game-42',
+            });
         });
     });
 

@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import Svg, { Rect, Circle, G, Text as SvgText, Line, Path, Ellipse } from 'react-native-svg';
 import * as Haptics from '../../../utils/haptics';
-import { Pitch, PitchCallZone } from '@pitch-tracker/shared';
+import { HeatZoneData, Pitch, PitchCallZone } from '@pitch-tracker/shared';
 import { colors } from '../../../styles/theme';
 import BatterSilhouette from './BatterSilhouette';
 import { getZoneCoords, getEffectiveSide } from './strikeZoneCoords';
@@ -62,6 +62,32 @@ interface StrikeZoneProps {
     batterSide?: 'R' | 'L' | 'S' | null;
     pitcherThrows?: 'R' | 'L' | null;
     colorBy?: 'result' | 'pitchType';
+    // Strike% by HEAT_ZONES id (batter-relative) for the currently selected pitch type.
+    // When present + showHeatZones is true, the 3×3 cells render a red→green tint
+    // by strike%. Outer waste zones are not painted (no PitchCallZone equivalent in scope).
+    heatZones?: HeatZoneData[];
+    showHeatZones?: boolean;
+}
+
+// HEAT_ZONES (batter-relative, right = inside) → PitchCallZone (col 0 = inside).
+const HEAT_TO_CALL_ZONE: Record<string, PitchCallZone> = {
+    TR: '0-0',
+    TM: '0-1',
+    TL: '0-2',
+    MR: '1-0',
+    MM: '1-1',
+    ML: '1-2',
+    BR: '2-0',
+    BM: '2-1',
+    BL: '2-2',
+};
+
+function strikePctToHeatColor(pct: number): string {
+    // Same scale as the pitch-type tint, slightly more opaque for inside-zone fill.
+    if (pct >= 70) return 'rgba(34, 197, 94, 0.40)';
+    if (pct >= 60) return 'rgba(245, 158, 11, 0.40)';
+    if (pct < 50) return 'rgba(239, 68, 68, 0.35)';
+    return 'rgba(148, 163, 184, 0.30)';
 }
 
 // Zone labels — always semantic (I=inside, A=away) since positions already flip
@@ -134,6 +160,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
     batterSide,
     pitcherThrows,
     colorBy = 'result',
+    heatZones,
+    showHeatZones = false,
 }) => {
     const theme = useTheme();
     const [selectedLocation, setSelectedLocation] = useState<{ x: number; y: number } | null>(null);
@@ -274,6 +302,17 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
         y: ZONE_Y + y * ZONE_HEIGHT,
     });
 
+    // Per-cell fill from heatZones. Empty when no heatZones / suppressed.
+    const heatFillByCallZone: Partial<Record<PitchCallZone, string>> = {};
+    if (showHeatZones && heatZones?.length) {
+        for (const z of heatZones) {
+            const callZone = HEAT_TO_CALL_ZONE[z.zone_id];
+            if (!callZone) continue; // outer waste zones not painted
+            if (z.total_pitches < 5) continue; // per-zone sample gate
+            heatFillByCallZone[callZone] = strikePctToHeatColor(z.strike_percentage);
+        }
+    }
+
     const PITCH_RADIUS = 13;
 
     return (
@@ -344,6 +383,8 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                             {/* Grid cells */}
                             {strikeZoneGrid.map(({ zone, row, col }) => {
                                 const isSelected = targetZone === zone;
+                                const heatFill = heatFillByCallZone[zone];
+                                const cellFill = isSelected ? AMBER + '35' : (heatFill ?? zoneCellFill);
                                 return (
                                     <G key={zone}>
                                         <Rect
@@ -351,7 +392,7 @@ const StrikeZone: React.FC<StrikeZoneProps> = ({
                                             y={row * cellH}
                                             width={cellW}
                                             height={cellH}
-                                            fill={isSelected ? AMBER + '35' : zoneCellFill}
+                                            fill={cellFill}
                                             stroke={isSelected ? AMBER : zoneCellStroke}
                                             strokeWidth={isSelected ? 2 : 1}
                                         />

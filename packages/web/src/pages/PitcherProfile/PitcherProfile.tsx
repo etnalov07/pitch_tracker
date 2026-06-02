@@ -13,6 +13,7 @@ import useHeatZones from '../../hooks/useHeatZones';
 import api from '../../services/api';
 import { bullpenService } from '../../services/bullpenService';
 import { performanceSummaryService } from '../../services/performanceSummaryService';
+import PitchEffectivenessCard from './PitchEffectivenessCard';
 import {
     Container,
     Header,
@@ -304,6 +305,8 @@ const PitcherProfile: React.FC = () => {
                         </LegendItem>
                     </HeatZoneLegend>
                 </HeatZoneCard>
+
+                {pitcher_id && <PitchEffectivenessCard pitcherId={pitcher_id} />}
 
                 <GameLogsSection>
                     <SectionHeader>

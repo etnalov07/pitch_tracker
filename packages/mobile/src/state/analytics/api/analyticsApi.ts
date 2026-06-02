@@ -2,6 +2,8 @@ import api from '../../../services/api';
 import {
     HitterTendenciesLive,
     PitchLocationData,
+    PitcherEffectiveness,
+    PitcherEffectivenessWindow,
     PitcherReportPayload,
     PitcherReportWindow,
     PitcherTendenciesLive,
@@ -14,6 +16,20 @@ export const analyticsApi = {
             `/analytics/pitcher/${pitcherId}/tendencies-live?batter_hand=${batterHand}`
         );
         return response.data.tendencies;
+    },
+
+    getPitcherEffectiveness: async (
+        pitcherId: string,
+        batterHand: 'L' | 'R',
+        window: PitcherEffectivenessWindow = 'career',
+        gameId?: string
+    ): Promise<PitcherEffectiveness> => {
+        const qs = new URLSearchParams({ batter_hand: batterHand, window });
+        if (gameId) qs.append('game_id', gameId);
+        const response = await api.get<{ effectiveness: PitcherEffectiveness }>(
+            `/analytics/pitcher/${pitcherId}/effectiveness?${qs}`
+        );
+        return response.data.effectiveness;
     },
 
     getHitterLiveTendencies: async (batterId: string, batterType: 'team' | 'opponent'): Promise<HitterTendenciesLive> => {

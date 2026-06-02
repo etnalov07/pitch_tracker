@@ -1,4 +1,4 @@
-import { ABBREV_TO_PITCH_TYPE, PitchCallZone, PitchType } from '@pitch-tracker/shared';
+import { ABBREV_TO_PITCH_TYPE, HeatZoneData, PitchCallZone, PitchType } from '@pitch-tracker/shared';
 import React from 'react';
 import BatterSelector from '../../components/game/BatterSelector';
 import PitcherSelector from '../../components/game/PitcherSelector';
@@ -13,9 +13,11 @@ import PitcherTendenciesPanel from '../../components/live/PitcherTendenciesPanel
 import StrikeZone from '../../components/live/StrikeZone';
 import BatterBreakdownModal from '../../components/liveGame/BatterBreakdownModal';
 import { useGameWebSocket } from '../../hooks/useGameWebSocket';
+import { analyticsService } from '../../services/analyticsService';
 import { myTeamLineupService } from '../../services/myTeamLineupService';
 import { opposingPitcherService } from '../../services/opposingPitcherService';
 import { theme } from '../../styles/theme';
+import type { PitcherEffectiveness } from '../../types';
 import DiamondModal from './DiamondModal';
 import DoublePlayModal from './DoublePlayModal';
 import InningChangeModal from './InningChangeModal';
@@ -219,6 +221,32 @@ const LiveGame: React.FC = () => {
         },
     });
 
+    // Effectiveness: drives the pitch-type button tint + the strike-zone heat overlay.
+    // Scoped to (current pitcher × current batter handedness × career window). Refetches
+    // when either changes. The `useEffect` only acts when both ids resolve.
+    const effPitcherId = isScoutingMode || gameMode === 'opp_pitcher' ? currentOpposingPitcher?.id : currentPitcher?.player_id;
+    const effBatterHand: 'L' | 'R' | null =
+        currentBatter?.bats === 'L' || currentBatter?.bats === 'R' ? (currentBatter.bats as 'L' | 'R') : null;
+    const [effectiveness, setEffectiveness] = React.useState<PitcherEffectiveness | null>(null);
+    React.useEffect(() => {
+        if (!effPitcherId || !effBatterHand) {
+            setEffectiveness(null);
+            return;
+        }
+        let cancelled = false;
+        analyticsService
+            .getPitcherEffectiveness(effPitcherId, effBatterHand, 'career')
+            .then((res) => {
+                if (!cancelled) setEffectiveness(res);
+            })
+            .catch(() => {
+                if (!cancelled) setEffectiveness(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [effPitcherId, effBatterHand]);
+
     if (loading) {
         return <LoadingContainer>Loading game...</LoadingContainer>;
     }
@@ -271,6 +299,38 @@ const LiveGame: React.FC = () => {
     const pitcherName = currentPitcher?.player
         ? `${currentPitcher.player.first_name} ${currentPitcher.player.last_name}`
         : undefined;
+
+    // Build per-pitch-type tint map. Sample-size gate: n ≥ 15 (per the live-tint contract).
+    // Color encodes strike%: green ≥70, amber ≥60, red <50, light gray 50–60.
+    const tintByPitchType = new Map<string, string>();
+    if (effectiveness?.has_data) {
+        for (const pt of effectiveness.pitch_types) {
+            if (pt.n < 15) continue;
+            let tint: string;
+            if (pt.strike_pct >= 70)
+                tint = 'rgba(34, 197, 94, 0.22)'; // green
+            else if (pt.strike_pct >= 60)
+                tint = 'rgba(245, 158, 11, 0.22)'; // amber
+            else if (pt.strike_pct < 50)
+                tint = 'rgba(239, 68, 68, 0.20)'; // red
+            else tint = 'rgba(148, 163, 184, 0.18)'; // slate (50–60)
+            tintByPitchType.set(pt.pitch_type, tint);
+        }
+    }
+
+    // Strike-zone heat overlay for the *selected* pitch type: per-zone strike%.
+    let selectedHeatZones: HeatZoneData[] | undefined;
+    if (effectiveness?.has_data && pitchType) {
+        const row = effectiveness.pitch_types.find((p) => p.pitch_type === pitchType);
+        if (row && row.n >= 15) {
+            selectedHeatZones = row.by_zone.map((z) => ({
+                zone_id: z.zone,
+                total_pitches: z.n,
+                strikes: Math.round((z.strike_pct * z.n) / 100),
+                strike_percentage: z.strike_pct,
+            }));
+        }
+    }
 
     return (
         <Container>
@@ -694,7 +754,12 @@ const LiveGame: React.FC = () => {
                             <PitchTypeSelectorTitle>Step 1: Select Pitch Type</PitchTypeSelectorTitle>
                             <PitchTypeGrid>
                                 {availablePitchTypes.map(({ value, label }) => (
-                                    <PitchTypeButton key={value} active={pitchType === value} onClick={() => setPitchType(value)}>
+                                    <PitchTypeButton
+                                        key={value}
+                                        active={pitchType === value}
+                                        tint={tintByPitchType.get(value)}
+                                        onClick={() => setPitchType(value)}
+                                    >
                                         {label}
                                     </PitchTypeButton>
                                 ))}
@@ -743,6 +808,8 @@ const LiveGame: React.FC = () => {
                                             ? currentOpposingPitcher?.throws
                                             : currentPitcher?.player?.throws) as 'R' | 'L' | undefined
                                     }
+                                    heatZones={selectedHeatZones}
+                                    showHeatZones={!!selectedHeatZones}
                                 />
                             </StrikeZoneContainer>
 

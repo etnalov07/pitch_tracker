@@ -1016,11 +1016,12 @@ export const PitchTypeGrid = styled.div({
     },
 });
 
-export const PitchTypeButton = styled.button<{ active?: boolean }>((props) => ({
+// `tint` encodes strike% vs current batter hand. Null/undefined → neutral (sample too small, n<15).
+export const PitchTypeButton = styled.button<{ active?: boolean; tint?: string | null }>((props) => ({
     padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-    backgroundColor: props.active ? theme.accents.blue : theme.colors.gray[50],
+    backgroundColor: props.active ? theme.accents.blue : props.tint || theme.colors.gray[50],
     color: props.active ? 'white' : theme.colors.gray[700],
-    border: `1px solid ${props.active ? theme.accents.blue : theme.colors.gray[200]}`,
+    border: `1px solid ${props.active ? theme.accents.blue : props.tint ? 'transparent' : theme.colors.gray[200]}`,
     borderRadius: theme.borderRadius.sm,
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.medium,
@@ -1028,8 +1029,8 @@ export const PitchTypeButton = styled.button<{ active?: boolean }>((props) => ({
     transition: 'all 0.15s',
 
     '&:hover': {
-        backgroundColor: props.active ? theme.accents.blueHover : theme.colors.gray[100],
-        borderColor: props.active ? theme.accents.blueHover : theme.colors.gray[300],
+        backgroundColor: props.active ? theme.accents.blueHover : props.tint || theme.colors.gray[100],
+        borderColor: props.active ? theme.accents.blueHover : props.tint ? 'transparent' : theme.colors.gray[300],
     },
 }));
 

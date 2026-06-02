@@ -8,12 +8,16 @@ import type {
     PitchCallZone,
     PitchLocationData,
     PitchLocationHeatMap,
+    PitcherEffectiveness,
+    PitcherEffectivenessPitchType,
+    PitcherEffectivenessWindow,
     PitcherPitchTypeStat,
     PitcherTendenciesLive,
     PitcherZoneStat,
+    PitcherZoneStrikeRate,
     SuggestedPitch,
 } from '../types';
-import { HEAT_ZONES } from '../utils/heatZones';
+import { HEAT_ZONES, getZoneForPitch } from '../utils/heatZones';
 
 // Defined locally to avoid a runtime dependency on @pitch-tracker/shared
 const PITCH_CALL_ZONE_LABELS: Record<string, string> = {
@@ -856,6 +860,169 @@ export class AnalyticsService {
             result.push(toSuggested(putAwayPitch, `Put-away: ${putAwayPitch.whiff_pct}% whiff on 2-strike counts`));
         }
         return result;
+    }
+
+    // Per-pitcher pitch-type × zone × handedness effectiveness (strike% / whiff%).
+    // Backs the live pitch-button tint and the pitcher-profile effectiveness card.
+    // Zone keys come from the 17-zone HEAT_ZONES model and are batter-relative
+    // (LHH mirrored), matching `resolveBatterRelativeZone` in performanceSummary.
+    async getPitcherEffectiveness(
+        pitcherId: string,
+        opts: {
+            batter_hand: 'L' | 'R';
+            window?: PitcherEffectivenessWindow;
+            game_id?: string;
+        }
+    ): Promise<PitcherEffectiveness> {
+        const window: PitcherEffectivenessWindow = opts.window ?? 'career';
+        const batterHand = opts.batter_hand;
+        if (window === 'current_game' && !opts.game_id) {
+            throw new Error('game_id is required when window=current_game');
+        }
+
+        const playerResult = await query(`SELECT first_name, last_name FROM players WHERE id = $1`, [pitcherId]);
+        const pitcher = playerResult.rows[0];
+        const pitcherName = pitcher ? `${pitcher.first_name} ${pitcher.last_name}` : 'Unknown';
+
+        const params: any[] = [pitcherId, batterHand];
+        let pitchQuery = `
+            SELECT
+                p.pitch_type,
+                p.pitch_result,
+                p.location_x,
+                p.location_y,
+                p.zone,
+                p.game_id
+            FROM pitches p
+            LEFT JOIN opponent_lineup ol ON p.opponent_batter_id = ol.id
+            LEFT JOIN players b ON p.batter_id = b.id
+            WHERE p.pitcher_id = $1
+              AND (
+                (p.opponent_batter_id IS NOT NULL AND ol.bats = $2)
+                OR
+                (p.batter_id IS NOT NULL AND b.bats = $2)
+              )`;
+
+        if (window === 'current_game' && opts.game_id) {
+            params.push(opts.game_id);
+            pitchQuery += ` AND p.game_id = $${params.length}`;
+        } else if (window === 'last_5') {
+            pitchQuery += ` AND p.game_id IN (
+                SELECT game_id FROM pitches
+                WHERE pitcher_id = $1 AND game_id IS NOT NULL
+                GROUP BY game_id
+                ORDER BY MAX(created_at) DESC
+                LIMIT 5
+            )`;
+        }
+
+        const pitchResult = await query(pitchQuery, params);
+        const pitches = pitchResult.rows;
+        const total = pitches.length;
+
+        if (total < 15) {
+            return {
+                pitcher_id: pitcherId,
+                pitcher_name: pitcherName,
+                batter_hand: batterHand,
+                window,
+                total_pitches: total,
+                has_data: false,
+                pitch_types: [],
+            };
+        }
+
+        // Group pitches by pitch_type → zone bucket (batter-relative).
+        type ZoneBucket = { n: number; strikes: number; swings: number; whiffs: number };
+        type TypeBucket = {
+            n: number;
+            strikes: number;
+            swings: number;
+            whiffs: number;
+            in_zone: number;
+            by_zone: Map<string, ZoneBucket>;
+        };
+        const types = new Map<string, TypeBucket>();
+        const insideZoneIds = new Set(HEAT_ZONES.filter((z) => z.isInside).map((z) => z.id));
+
+        for (const p of pitches) {
+            const pt = p.pitch_type || 'other';
+            if (!types.has(pt)) {
+                types.set(pt, { n: 0, strikes: 0, swings: 0, whiffs: 0, in_zone: 0, by_zone: new Map() });
+            }
+            const t = types.get(pt)!;
+            t.n++;
+
+            const isStrike = p.pitch_result !== 'ball' && p.pitch_result !== 'hit_by_pitch';
+            const isSwing = p.pitch_result === 'swinging_strike' || p.pitch_result === 'foul' || p.pitch_result === 'in_play';
+            const isWhiff = p.pitch_result === 'swinging_strike';
+            if (isStrike) t.strikes++;
+            if (isSwing) t.swings++;
+            if (isWhiff) t.whiffs++;
+
+            // Batter-relative zone: mirror LHH x so right column reads as "inside".
+            let zoneId: string | null = null;
+            if (p.location_x != null && p.location_y != null) {
+                let lx = parseFloat(p.location_x);
+                const ly = parseFloat(p.location_y);
+                if (batterHand === 'L') lx = 1 - lx;
+                zoneId = getZoneForPitch(lx, ly);
+            }
+            if (!zoneId) continue;
+            if (insideZoneIds.has(zoneId)) t.in_zone++;
+
+            if (!t.by_zone.has(zoneId)) {
+                t.by_zone.set(zoneId, { n: 0, strikes: 0, swings: 0, whiffs: 0 });
+            }
+            const z = t.by_zone.get(zoneId)!;
+            z.n++;
+            if (isStrike) z.strikes++;
+            if (isSwing) z.swings++;
+            if (isWhiff) z.whiffs++;
+        }
+
+        const pitch_types: PitcherEffectivenessPitchType[] = Array.from(types.entries())
+            .map(([pitch_type, t]) => {
+                const by_zone: PitcherZoneStrikeRate[] = Array.from(t.by_zone.entries()).map(([zone, z]) => ({
+                    zone,
+                    n: z.n,
+                    strike_pct: z.n > 0 ? Math.round((z.strikes / z.n) * 100) : 0,
+                    whiff_pct: z.swings > 0 ? Math.round((z.whiffs / z.swings) * 100) : 0,
+                }));
+
+                // best_zone: highest strike_pct among inside zones with n ≥ 5
+                let best_zone_id: string | null = null;
+                let bestPct = -1;
+                for (const z of by_zone) {
+                    if (z.n < 5) continue;
+                    if (!insideZoneIds.has(z.zone)) continue;
+                    if (z.strike_pct > bestPct) {
+                        bestPct = z.strike_pct;
+                        best_zone_id = z.zone;
+                    }
+                }
+
+                return {
+                    pitch_type,
+                    n: t.n,
+                    strike_pct: t.n > 0 ? Math.round((t.strikes / t.n) * 100) : 0,
+                    whiff_pct: t.swings > 0 ? Math.round((t.whiffs / t.swings) * 100) : 0,
+                    in_zone_pct: t.n > 0 ? Math.round((t.in_zone / t.n) * 100) : 0,
+                    best_zone_id,
+                    by_zone: by_zone.sort((a, b) => b.n - a.n),
+                };
+            })
+            .sort((a, b) => b.n - a.n);
+
+        return {
+            pitcher_id: pitcherId,
+            pitcher_name: pitcherName,
+            batter_hand: batterHand,
+            window,
+            total_pitches: total,
+            has_data: true,
+            pitch_types,
+        };
     }
 
     // Live hitter tendencies — zone weakness map, pitch vulnerability, and suggested attack sequence

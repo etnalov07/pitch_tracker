@@ -5,18 +5,21 @@ import {
     ABBREV_TO_PITCH_TYPE,
     GameMode,
     GamePitcherWithPlayer,
+    HeatZoneData,
     OpponentLineupPlayer,
     PITCH_CALL_ZONE_COORDS,
     Pitch,
     PitchCall,
     PitchCallAbbrev,
     PitchCallZone,
+    PitcherEffectiveness,
     PitchResult,
     PitchType,
     Player,
     RunnerBase,
     deriveGameMode,
 } from '@pitch-tracker/shared';
+import { analyticsApi } from '../../../src/state/analytics/api/analyticsApi';
 
 import { useToast } from '../../../src/hooks/useToast';
 import { useConfirm } from '../../../src/hooks/useConfirm';
@@ -421,6 +424,66 @@ export function useLiveGameController() {
         },
     });
 
+    // Effectiveness — feeds the pitch-type chip tint + strike-zone heat overlay.
+    // Scoped to (current pitcher × current batter handedness × career window).
+    const effPitcherId = isScoutingMode || gameMode === 'opp_pitcher' ? currentOpposingPitcher?.id : currentPitcher?.player_id;
+    const effBatterHand: 'L' | 'R' | null =
+        gameMode === 'opp_pitcher'
+            ? currentMyBatter?.player?.bats === 'L' || currentMyBatter?.player?.bats === 'R'
+                ? (currentMyBatter.player.bats as 'L' | 'R')
+                : null
+            : currentBatter?.bats === 'L' || currentBatter?.bats === 'R'
+              ? (currentBatter.bats as 'L' | 'R')
+              : null;
+    const [effectiveness, setEffectiveness] = useState<PitcherEffectiveness | null>(null);
+    useEffect(() => {
+        if (!effPitcherId || !effBatterHand) {
+            setEffectiveness(null);
+            return;
+        }
+        let cancelled = false;
+        analyticsApi
+            .getPitcherEffectiveness(effPitcherId, effBatterHand, 'career')
+            .then((res) => {
+                if (!cancelled) setEffectiveness(res);
+            })
+            .catch(() => {
+                if (!cancelled) setEffectiveness(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [effPitcherId, effBatterHand]);
+
+    // Sample-size gate (n ≥ 15). Color scale matches web:
+    //   ≥70% green · ≥60% amber · 50–60% slate · <50% red.
+    const effectivenessTints: Partial<Record<PitchType, string>> = {};
+    if (effectiveness?.has_data) {
+        for (const pt of effectiveness.pitch_types) {
+            if (pt.n < 15) continue;
+            let tint: string;
+            if (pt.strike_pct >= 70) tint = 'rgba(34, 197, 94, 0.22)';
+            else if (pt.strike_pct >= 60) tint = 'rgba(245, 158, 11, 0.22)';
+            else if (pt.strike_pct < 50) tint = 'rgba(239, 68, 68, 0.20)';
+            else tint = 'rgba(148, 163, 184, 0.18)';
+            effectivenessTints[pt.pitch_type as PitchType] = tint;
+        }
+    }
+
+    // Heat-zone overlay for the *selected* pitch type: per-zone strike%.
+    let effectivenessHeatZones: HeatZoneData[] | undefined;
+    if (effectiveness?.has_data && selectedPitchType) {
+        const row = effectiveness.pitch_types.find((p) => p.pitch_type === selectedPitchType);
+        if (row && row.n >= 15) {
+            effectivenessHeatZones = row.by_zone.map((z) => ({
+                zone_id: z.zone,
+                total_pitches: z.n,
+                strikes: Math.round((z.strike_pct * z.n) / 100),
+                strike_percentage: z.strike_pct,
+            }));
+        }
+    }
+
     return {
         // Framework
         id,
@@ -487,6 +550,10 @@ export function useLiveGameController() {
         setBatterModalVisible,
         pitcherPitchTypes,
         setPitcherPitchTypes,
+
+        // Pitch effectiveness (career, current pitcher × batter handedness)
+        effectivenessTints,
+        effectivenessHeatZones,
 
         currentOuts,
         setCurrentOuts,

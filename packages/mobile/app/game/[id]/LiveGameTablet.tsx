@@ -58,6 +58,8 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
         currentOpposingPitcher,
         currentMyBatter,
         pitcherPitchTypes,
+        effectivenessTints,
+        effectivenessHeatZones,
         pitchCallingEnabled,
         velocityEnabled,
         radarEnabled,
@@ -236,6 +238,8 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                                 ? (currentOpposingPitcher?.throws as 'R' | 'L' | undefined)
                                 : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
                         }
+                        heatZones={effectivenessHeatZones}
+                        showHeatZones={!!effectivenessHeatZones}
                     />
                     {!isReadOnly && <ActualEqualsTargetButton ctl={ctl} />}
                     <PitchBreakdown ctl={ctl} />
@@ -347,6 +351,7 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                                     availablePitchTypes={
                                         gameMode !== 'opp_pitcher' && pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined
                                     }
+                                    tintByPitchType={effectivenessTints}
                                     disabled={isLogging}
                                 />
                             </View>

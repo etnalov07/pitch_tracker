@@ -1665,6 +1665,41 @@ export interface PitcherTendenciesLive {
     suggested_sequence: SuggestedPitch[];
 }
 
+// ===
+// Pitcher Effectiveness — per pitch type × zone × batter handedness
+// 17-zone model (HEAT_ZONES: TL/TM/TR/ML/MM/MR/BL/BM/BR + 8 outer ring)
+// Backs the live pitch-type button tint and the pitcher-profile effectiveness card.
+// Window controls the time slice; sample-size gate (n ≥ 15) is enforced by the UI.
+
+export type PitcherEffectivenessWindow = 'career' | 'last_5' | 'current_game';
+
+export interface PitcherZoneStrikeRate {
+    zone: string; // HEAT_ZONES id, batter-relative (LHH mirrored to read RHH-style)
+    n: number;
+    strike_pct: number;
+    whiff_pct: number;
+}
+
+export interface PitcherEffectivenessPitchType {
+    pitch_type: string;
+    n: number;
+    strike_pct: number;
+    whiff_pct: number;
+    in_zone_pct: number; // % landing in one of the 9 inside zones
+    best_zone_id: string | null; // zone with highest strike_pct, n ≥ 5
+    by_zone: PitcherZoneStrikeRate[];
+}
+
+export interface PitcherEffectiveness {
+    pitcher_id: string;
+    pitcher_name: string;
+    batter_hand: 'L' | 'R';
+    window: PitcherEffectivenessWindow;
+    total_pitches: number;
+    has_data: boolean; // total_pitches ≥ 15
+    pitch_types: PitcherEffectivenessPitchType[];
+}
+
 export interface HitterZoneStat {
     zone: string;
     swing_rate: number;

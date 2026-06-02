@@ -5,6 +5,7 @@ import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 import { Button, Chip, Text, useTheme } from 'react-native-paper';
 
 import type {
+    PitcherEffectiveness,
     PitcherReportPayload,
     PitcherReportPitchTypeRow,
     PitcherReportVerdict,
@@ -198,6 +199,15 @@ export default function PitcherReportScreen() {
                                     Zone Effectiveness
                                 </Text>
                                 <ZoneTable rows={payload.stats.zones} />
+                            </View>
+                        )}
+
+                        {id && (
+                            <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+                                <Text variant="titleMedium" style={styles.sectionTitle}>
+                                    Pitch Effectiveness vs Handedness
+                                </Text>
+                                <PitchEffectivenessSection pitcherId={id} theme={theme} />
                             </View>
                         )}
 
@@ -410,6 +420,126 @@ function SuccessTag({ success, hitLabel = false }: { success: PitcherReportVerdi
         </View>
     );
 }
+
+function formatPitchType(t: string): string {
+    return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+function pctColor(pct: number, n: number): string {
+    if (n < 15) return '#9ca3af';
+    if (pct >= 70) return '#16a34a';
+    if (pct >= 60) return '#d97706';
+    if (pct < 50) return '#dc2626';
+    return '#6b7280';
+}
+
+function PitchEffectivenessSection({ pitcherId, theme }: { pitcherId: string; theme: { colors: { surface: string } } }) {
+    const [dataL, setDataL] = useState<PitcherEffectiveness | null>(null);
+    const [dataR, setDataR] = useState<PitcherEffectiveness | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!pitcherId) return;
+        let cancelled = false;
+        setLoading(true);
+        Promise.all([
+            analyticsApi.getPitcherEffectiveness(pitcherId, 'L', 'career'),
+            analyticsApi.getPitcherEffectiveness(pitcherId, 'R', 'career'),
+        ])
+            .then(([l, r]) => {
+                if (cancelled) return;
+                setDataL(l);
+                setDataR(r);
+                setError(null);
+            })
+            .catch(() => {
+                if (!cancelled) setError('Failed to load effectiveness');
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [pitcherId]);
+
+    if (loading) return <Text style={styles.muted}>Loading…</Text>;
+    if (error) return <Text style={styles.muted}>{error}</Text>;
+
+    const types = new Map<string, number>();
+    for (const p of dataL?.pitch_types ?? []) types.set(p.pitch_type, (types.get(p.pitch_type) ?? 0) + p.n);
+    for (const p of dataR?.pitch_types ?? []) types.set(p.pitch_type, (types.get(p.pitch_type) ?? 0) + p.n);
+    const pitchTypes = Array.from(types.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([pt]) => pt);
+
+    if (pitchTypes.length === 0) {
+        return <Text style={styles.muted}>Not enough pitches yet to compute effectiveness.</Text>;
+    }
+
+    return (
+        <View style={effStyles.table}>
+            <View style={effStyles.headerRow}>
+                <Text style={[effStyles.cellHead, effStyles.colPitch]}>Pitch</Text>
+                <Text style={[effStyles.cellHead, effStyles.colPct]}>vs LHH</Text>
+                <Text style={[effStyles.cellHead, effStyles.colPct]}>vs RHH</Text>
+                <Text style={[effStyles.cellHead, effStyles.colZone]}>Best zone</Text>
+            </View>
+            {pitchTypes.map((pt) => {
+                const l = dataL?.pitch_types.find((x) => x.pitch_type === pt);
+                const r = dataR?.pitch_types.find((x) => x.pitch_type === pt);
+                const best =
+                    (l?.best_zone_id && (l.n ?? 0) >= (r?.n ?? 0) ? l.best_zone_id : r?.best_zone_id) ??
+                    l?.best_zone_id ??
+                    r?.best_zone_id ??
+                    '—';
+                return (
+                    <View key={pt} style={[effStyles.row, { backgroundColor: theme.colors.surface }]}>
+                        <Text style={[effStyles.cell, effStyles.colPitch]}>{formatPitchType(pt)}</Text>
+                        <View style={[effStyles.colPct, effStyles.pctCell]}>
+                            <Text style={{ color: pctColor(l?.strike_pct ?? 0, l?.n ?? 0), fontWeight: '600' }}>
+                                {l && l.n >= 5 ? `${l.strike_pct}%` : '—'}
+                            </Text>
+                            <Text style={effStyles.sampleText}>{l?.n ? `n=${l.n}` : ''}</Text>
+                        </View>
+                        <View style={[effStyles.colPct, effStyles.pctCell]}>
+                            <Text style={{ color: pctColor(r?.strike_pct ?? 0, r?.n ?? 0), fontWeight: '600' }}>
+                                {r && r.n >= 5 ? `${r.strike_pct}%` : '—'}
+                            </Text>
+                            <Text style={effStyles.sampleText}>{r?.n ? `n=${r.n}` : ''}</Text>
+                        </View>
+                        <Text style={[effStyles.cell, effStyles.colZone]}>{best}</Text>
+                    </View>
+                );
+            })}
+        </View>
+    );
+}
+
+const effStyles = StyleSheet.create({
+    table: { width: '100%' },
+    headerRow: {
+        flexDirection: 'row',
+        paddingVertical: 6,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(128,128,128,0.2)',
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(128,128,128,0.1)',
+    },
+    cellHead: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', opacity: 0.6 },
+    cell: { fontSize: 13 },
+    colPitch: { flex: 2 },
+    colPct: { flex: 1.5, alignItems: 'center' },
+    colZone: { flex: 1, textAlign: 'right', fontSize: 12 },
+    pctCell: { alignItems: 'center', justifyContent: 'center' },
+    sampleText: { fontSize: 10, opacity: 0.5 },
+});
 
 const styles = StyleSheet.create({
     container: { flex: 1 },

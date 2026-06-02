@@ -270,6 +270,166 @@ describe('AnalyticsService', () => {
     });
 
     // ========================================================================
+    // getPitcherEffectiveness
+    // ========================================================================
+
+    describe('getPitcherEffectiveness', () => {
+        const player = { first_name: 'Sandy', last_name: 'Koufax' };
+
+        it('returns has_data=false when fewer than 15 pitches exist', async () => {
+            mockQuery.mockResolvedValueOnce({ rows: [player] } as any).mockResolvedValueOnce({
+                rows: Array(10).fill({
+                    pitch_type: 'fastball',
+                    pitch_result: 'called_strike',
+                    location_x: 0.5,
+                    location_y: 0.5,
+                    zone: 'MM',
+                    game_id: 'g1',
+                }),
+            } as any);
+
+            const result = await service.getPitcherEffectiveness('pitcher-1', { batter_hand: 'R' });
+
+            expect(result.has_data).toBe(false);
+            expect(result.total_pitches).toBe(10);
+            expect(result.pitch_types).toEqual([]);
+            expect(result.window).toBe('career');
+        });
+
+        it('aggregates strike% and whiff% per pitch type when ≥15 pitches exist', async () => {
+            // 15 fastballs vs RHH: 12 strikes (8 called, 2 swinging, 2 in_play), 3 balls
+            const fastballs = [
+                ...Array(8).fill({
+                    pitch_type: 'fastball',
+                    pitch_result: 'called_strike',
+                    location_x: 0.5,
+                    location_y: 0.5,
+                    zone: null,
+                    game_id: 'g1',
+                }),
+                ...Array(2).fill({
+                    pitch_type: 'fastball',
+                    pitch_result: 'swinging_strike',
+                    location_x: 0.5,
+                    location_y: 0.5,
+                    zone: null,
+                    game_id: 'g1',
+                }),
+                ...Array(2).fill({
+                    pitch_type: 'fastball',
+                    pitch_result: 'in_play',
+                    location_x: 0.5,
+                    location_y: 0.5,
+                    zone: null,
+                    game_id: 'g1',
+                }),
+                ...Array(3).fill({
+                    pitch_type: 'fastball',
+                    pitch_result: 'ball',
+                    location_x: 0.5,
+                    location_y: 0.5,
+                    zone: null,
+                    game_id: 'g1',
+                }),
+            ];
+            mockQuery.mockResolvedValueOnce({ rows: [player] } as any).mockResolvedValueOnce({ rows: fastballs } as any);
+
+            const result = await service.getPitcherEffectiveness('pitcher-1', { batter_hand: 'R' });
+
+            expect(result.has_data).toBe(true);
+            expect(result.total_pitches).toBe(15);
+            expect(result.pitch_types).toHaveLength(1);
+            const fb = result.pitch_types[0];
+            expect(fb.pitch_type).toBe('fastball');
+            expect(fb.n).toBe(15);
+            expect(fb.strike_pct).toBe(80); // 12/15
+            // 4 swings (2 swinging_strike + 2 in_play), 2 whiffs → 50%
+            expect(fb.whiff_pct).toBe(50);
+            // all pitches at (0.5, 0.5) → MM zone (inside)
+            expect(fb.in_zone_pct).toBe(100);
+            expect(fb.best_zone_id).toBe('MM');
+            expect(fb.by_zone.find((z) => z.zone === 'MM')?.n).toBe(15);
+        });
+
+        it('mirrors LHH x so the right column reads as inside', async () => {
+            // 15 pitches at x=0.1 (left of plate). For LHH, mirror → x=0.9 → TR/MR/BR column.
+            const pitches = Array(15).fill({
+                pitch_type: 'slider',
+                pitch_result: 'called_strike',
+                location_x: 0.1,
+                location_y: 0.5, // middle vertical → MR after mirror
+                zone: null,
+                game_id: 'g1',
+            });
+            mockQuery.mockResolvedValueOnce({ rows: [player] } as any).mockResolvedValueOnce({ rows: pitches } as any);
+
+            const result = await service.getPitcherEffectiveness('pitcher-1', { batter_hand: 'L' });
+
+            const slider = result.pitch_types[0];
+            // After LHH mirror (x = 1 - 0.1 = 0.9), y = 0.5 → MR (Middle Right)
+            expect(slider.by_zone.find((z) => z.zone === 'MR')?.n).toBe(15);
+            expect(slider.best_zone_id).toBe('MR');
+        });
+
+        it('requires game_id when window=current_game', async () => {
+            await expect(
+                service.getPitcherEffectiveness('pitcher-1', { batter_hand: 'R', window: 'current_game' })
+            ).rejects.toThrow(/game_id is required/);
+        });
+
+        it('scopes the query to game_id when window=current_game', async () => {
+            mockQuery.mockResolvedValueOnce({ rows: [player] } as any).mockResolvedValueOnce({ rows: [] } as any);
+
+            await service.getPitcherEffectiveness('pitcher-1', {
+                batter_hand: 'R',
+                window: 'current_game',
+                game_id: 'game-42',
+            });
+
+            const [, paramsArg] = mockQuery.mock.calls[1];
+            expect(paramsArg).toEqual(['pitcher-1', 'R', 'game-42']);
+        });
+
+        it('best_zone_id is null when no inside zone has n ≥ 5', async () => {
+            // 15 pitches scattered: 4 in MM, 4 in TM, 4 in BM, 3 in ML — none reach 5
+            const pts = [
+                ...Array(4).fill({
+                    pitch_type: 'curveball',
+                    pitch_result: 'ball',
+                    location_x: 0.5,
+                    location_y: 0.5,
+                    game_id: 'g1',
+                }),
+                ...Array(4).fill({
+                    pitch_type: 'curveball',
+                    pitch_result: 'ball',
+                    location_x: 0.5,
+                    location_y: 0.1,
+                    game_id: 'g1',
+                }),
+                ...Array(4).fill({
+                    pitch_type: 'curveball',
+                    pitch_result: 'ball',
+                    location_x: 0.5,
+                    location_y: 0.9,
+                    game_id: 'g1',
+                }),
+                ...Array(3).fill({
+                    pitch_type: 'curveball',
+                    pitch_result: 'ball',
+                    location_x: 0.1,
+                    location_y: 0.5,
+                    game_id: 'g1',
+                }),
+            ];
+            mockQuery.mockResolvedValueOnce({ rows: [player] } as any).mockResolvedValueOnce({ rows: pts } as any);
+
+            const result = await service.getPitcherEffectiveness('pitcher-1', { batter_hand: 'R' });
+            expect(result.pitch_types[0].best_zone_id).toBeNull();
+        });
+    });
+
+    // ========================================================================
     // getHitterLiveTendencies
     // ========================================================================
 

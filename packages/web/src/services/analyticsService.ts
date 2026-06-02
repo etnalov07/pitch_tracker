@@ -5,6 +5,8 @@ import {
     CountBucketBreakdown,
     HitterTendenciesLive,
     PitchChart,
+    PitcherEffectiveness,
+    PitcherEffectivenessWindow,
     PitcherTendenciesLive,
     PitchLocationData,
     SprayChartData,
@@ -81,6 +83,22 @@ export const analyticsService = {
             `/analytics/pitcher/${pitcherId}/tendencies-live?batter_hand=${batterHand}`
         );
         return response.data.tendencies;
+    },
+
+    // Per-pitcher pitch-type × zone × handedness effectiveness (strike% / whiff%).
+    // Drives the live pitch-button tint and the pitcher-profile effectiveness card.
+    getPitcherEffectiveness: async (
+        pitcherId: string,
+        batterHand: 'L' | 'R',
+        window: PitcherEffectivenessWindow = 'career',
+        gameId?: string
+    ): Promise<PitcherEffectiveness> => {
+        const qs = new URLSearchParams({ batter_hand: batterHand, window });
+        if (gameId) qs.append('game_id', gameId);
+        const response = await api.get<{ effectiveness: PitcherEffectiveness }>(
+            `/analytics/pitcher/${pitcherId}/effectiveness?${qs}`
+        );
+        return response.data.effectiveness;
     },
 
     // Get live hitter tendencies for the current at-bat

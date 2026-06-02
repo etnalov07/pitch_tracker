@@ -11,6 +11,9 @@ interface PitchTypeGridProps {
     availablePitchTypes?: PitchType[];
     disabled?: boolean;
     compact?: boolean;
+    // Per-pitch-type tint color encoding strike% vs current batter hand.
+    // Missing entry = sample too small (n<15) → neutral.
+    tintByPitchType?: Partial<Record<PitchType, string>>;
 }
 
 const ALL_PITCH_TYPES: { type: PitchType; label: string; abbrev: string }[] = [
@@ -34,6 +37,7 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
     availablePitchTypes,
     disabled = false,
     compact = false,
+    tintByPitchType,
 }) => {
     const theme = useTheme();
     // Filter to only available pitch types if provided, otherwise show all.
@@ -54,12 +58,13 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
                 <View style={compactStyles.grid}>
                     {pitchTypes.map(({ type, abbrev }) => {
                         const isSelected = selectedType === type;
+                        const tint = tintByPitchType?.[type];
                         return (
                             <Pressable
                                 key={type}
                                 style={[
                                     compactStyles.button,
-                                    !isSelected && { backgroundColor: theme.colors.surfaceVariant },
+                                    !isSelected && { backgroundColor: tint ?? theme.colors.surfaceVariant },
                                     isSelected && compactStyles.buttonSelected,
                                     disabled && compactStyles.buttonDisabled,
                                 ]}
@@ -89,12 +94,13 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
             <View style={styles.grid}>
                 {pitchTypes.map(({ type, label, abbrev }) => {
                     const isSelected = selectedType === type;
+                    const tint = tintByPitchType?.[type];
                     return (
                         <Pressable
                             key={type}
                             style={[
                                 styles.button,
-                                !isSelected && { backgroundColor: theme.colors.surfaceVariant },
+                                !isSelected && { backgroundColor: tint ?? theme.colors.surfaceVariant },
                                 isSelected && styles.buttonSelected,
                                 disabled && styles.buttonDisabled,
                             ]}
