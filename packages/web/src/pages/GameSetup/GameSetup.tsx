@@ -110,10 +110,27 @@ const GameSetup: React.FC = () => {
         game_date: new Date().toISOString().split('T')[0],
         game_time: '18:00',
         location: '',
+        // Pitch-rules. For travel teams the coach picks 'PG' / 'PBR' / 'NONE'.
+        // HS teams get 'HS' automatically by the API; college gets 'NONE'.
+        sanction: '' as '' | 'PG' | 'PBR' | 'HS' | 'NONE',
+        // Inherited from team on submit if blank; the form shows the team default as a hint.
+        age_division: '' as '' | '8U' | '10U' | '12U' | '14U' | '16U' | '18U',
     });
 
     const isScoutingMode = formData.charting_mode === 'scouting';
     const isScrimmageMode = formData.charting_mode === 'scrimmage';
+
+    // Pitch-rules UI is driven by the home team's team_type:
+    //   high_school  → game gets sanction=HS automatically (no dropdown, inline note)
+    //   travel/club  → show sanction dropdown (PG / PBR / Other); inherit age_division
+    //   college      → no rules UI (sanction stays NONE)
+    const homeTeam = userTeams.find((t) => t.id === formData.home_team_id);
+    const teamType = homeTeam?.team_type;
+    const teamAgeDivision = homeTeam?.age_division ?? null;
+    const showSanctionDropdown = teamType === 'travel' || teamType === 'club';
+    const showHsNote = teamType === 'high_school';
+    const effectiveSanction = formData.sanction || (teamType === 'high_school' ? 'HS' : 'NONE');
+    const sanctionUsesAge = effectiveSanction === 'PG' || effectiveSanction === 'PBR';
 
     useEffect(() => {
         dispatch(fetchAllTeams());
@@ -214,6 +231,8 @@ const GameSetup: React.FC = () => {
                     game_date: game_dateTime.toISOString(),
                     location: formData.location.trim() || undefined,
                     opponent_team_id: opponentTeamId || undefined,
+                    sanction: formData.sanction || undefined,
+                    age_division: formData.age_division || undefined,
                 } as Parameters<typeof createGame>[0])
             ).unwrap();
 
@@ -489,6 +508,47 @@ const GameSetup: React.FC = () => {
                                             </Chip>
                                         ))}
                                     </ChipRow>
+                                </FormGroup>
+                            )}
+
+                            {/* Pitch-rules sanction — drives the in-game eligibility engine. */}
+                            {showHsNote && (
+                                <FormGroup>
+                                    <Label>Pitch Rules</Label>
+                                    <div style={{ fontSize: 14, color: '#555' }}>
+                                        High School game — NFHS 110-pitch limit per pitcher (with batter-finish grace).
+                                    </div>
+                                </FormGroup>
+                            )}
+                            {showSanctionDropdown && (
+                                <FormGroup>
+                                    <Label htmlFor="sanction">Pitch Rules (sanction)</Label>
+                                    <TeamSelect id="sanction" name="sanction" value={formData.sanction} onChange={handleChange}>
+                                        <option value="">Other / no tournament rules</option>
+                                        <option value="PG">Perfect Game (PG)</option>
+                                        <option value="PBR">PBR (Prep Baseball Report)</option>
+                                    </TeamSelect>
+                                </FormGroup>
+                            )}
+                            {showSanctionDropdown && sanctionUsesAge && (
+                                <FormGroup>
+                                    <Label htmlFor="age_division">Age Division</Label>
+                                    <TeamSelect
+                                        id="age_division"
+                                        name="age_division"
+                                        value={formData.age_division}
+                                        onChange={handleChange}
+                                    >
+                                        <option value="">
+                                            {teamAgeDivision ? `Inherit from team (${teamAgeDivision})` : 'Not specified'}
+                                        </option>
+                                        <option value="8U">8U</option>
+                                        <option value="10U">10U</option>
+                                        <option value="12U">12U</option>
+                                        <option value="14U">14U</option>
+                                        <option value="16U">16U</option>
+                                        <option value="18U">18U</option>
+                                    </TeamSelect>
                                 </FormGroup>
                             )}
 

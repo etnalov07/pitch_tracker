@@ -27,9 +27,32 @@ interface PitcherStatsProps {
     refreshTrigger?: number; // Increment this to refresh stats
 }
 
+interface EligibilityResult {
+    eligibility: 'eligible' | 'ineligible' | 'unknown_division' | 'unknown_rules';
+    sanction: 'PG' | 'PBR' | 'HS' | 'NONE' | null;
+    age_division: string | null;
+    daily_max: number | null;
+}
+
+// Color the count badge by % of daily_max.
+function counterColorForPct(pct: number): string {
+    if (pct >= 1.0) return '#dc2626'; // red
+    if (pct >= 0.9) return '#dc2626';
+    if (pct >= 0.7) return '#d97706'; // amber
+    return '#16a34a'; // green
+}
+
+function sanctionLabel(sanction: EligibilityResult['sanction'], ageDivision: string | null): string {
+    if (sanction === 'PG') return `PG ${ageDivision ?? ''} daily max`.trim();
+    if (sanction === 'PBR') return 'PBR rules pending';
+    if (sanction === 'HS') return 'NFHS HS limit';
+    return '';
+}
+
 const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcherId, gameId, pitcherName, refreshTrigger }) => {
     const [stats, setStats] = useState<PitcherGameStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [elig, setElig] = useState<EligibilityResult | null>(null);
 
     const loadStats = useCallback(async () => {
         if (!pitcherId || !gameId) {
@@ -53,6 +76,27 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcherId, gameId, pitcherN
     useEffect(() => {
         loadStats();
     }, [loadStats, refreshTrigger]);
+
+    // Pitch-rules eligibility — drives the daily-max counter color + label.
+    // Game-level sanction + age don't change mid-game so this is fetched once
+    // per (gameId, pitcherId). The live count comes from `stats.total_pitches`.
+    useEffect(() => {
+        if (!pitcherId || !gameId) {
+            setElig(null);
+            return;
+        }
+        let cancelled = false;
+        api.get<{ eligibility: EligibilityResult }>(`/pitch-rules/eligibility/${gameId}/${pitcherId}`)
+            .then((res) => {
+                if (!cancelled) setElig(res.data.eligibility);
+            })
+            .catch(() => {
+                if (!cancelled) setElig(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [pitcherId, gameId]);
 
     if (!pitcherId || !gameId) {
         return (
@@ -92,11 +136,21 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcherId, gameId, pitcherN
     // Sort pitch types by total pitches (descending)
     const sortedPitchTypes = Object.entries(stats.pitch_type_breakdown).sort(([, a], [, b]) => b.total - a.total);
 
+    // Counter source + color depends on sanction.
+    const dailyMax = elig?.daily_max ?? null;
+    const pct = dailyMax ? stats.total_pitches / dailyMax : 0;
+    const counterColor = dailyMax ? counterColorForPct(pct) : undefined;
+    const sanctionTag = sanctionLabel(elig?.sanction ?? null, elig?.age_division ?? null);
+
     return (
         <Container>
             <Header>
                 <Title>{pitcherName ? `${pitcherName}'s Stats` : 'Pitcher Stats'}</Title>
-                <TotalPitches>{stats.total_pitches} pitches</TotalPitches>
+                <TotalPitches style={counterColor ? { color: counterColor, fontWeight: 700 } : undefined}>
+                    {dailyMax != null
+                        ? `${stats.total_pitches} / ${dailyMax}${sanctionTag ? ` (${sanctionTag})` : ''}`
+                        : `${stats.total_pitches} pitches${sanctionTag ? ` (${sanctionTag})` : ''}`}
+                </TotalPitches>
             </Header>
 
             <SummaryRow>

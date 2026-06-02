@@ -73,6 +73,7 @@ const Teams: React.FC = () => {
         abbreviation: '',
         city: '',
         team_type: '' as TeamType | '',
+        age_division: '' as '' | '8U' | '10U' | '12U' | '14U' | '16U' | '18U',
         season: '' as TeamSeason | '',
         year: '',
     });
@@ -155,11 +156,12 @@ const Teams: React.FC = () => {
                     abbreviation: formData.abbreviation.trim() || undefined,
                     city: formData.city.trim() || undefined,
                     team_type: formData.team_type || undefined,
+                    age_division: formData.age_division || null,
                     season: formData.season || undefined,
                     year: formData.year ? parseInt(formData.year, 10) : undefined,
                 })
             ).unwrap();
-            setFormData({ name: '', abbreviation: '', city: '', team_type: '', season: '', year: '' });
+            setFormData({ name: '', abbreviation: '', city: '', team_type: '', age_division: '', season: '', year: '' });
             setShowCreateForm(false);
         } catch (err: unknown) {
             setLocalError(err instanceof Error ? err.message : 'Failed to create team');
@@ -257,6 +259,28 @@ const Teams: React.FC = () => {
                                 </Select>
                             </FormGroup>
 
+                            {/* Age division feeds the PG/PBR pitch-rules engine. Hide for college
+                                (no age bracket) and when no team_type is picked yet. */}
+                            {formData.team_type && formData.team_type !== 'college' && (
+                                <FormGroup>
+                                    <Label htmlFor="age_division">Age Division (for pitch rules)</Label>
+                                    <Select
+                                        id="age_division"
+                                        name="age_division"
+                                        value={formData.age_division}
+                                        onChange={handleChange}
+                                    >
+                                        <option value="">Not specified</option>
+                                        <option value="8U">8U</option>
+                                        <option value="10U">10U</option>
+                                        <option value="12U">12U</option>
+                                        <option value="14U">14U</option>
+                                        <option value="16U">16U</option>
+                                        <option value="18U">18U</option>
+                                    </Select>
+                                </FormGroup>
+                            )}
+
                             <FormRow>
                                 <FormGroup>
                                     <Label htmlFor="season">Season</Label>
@@ -289,7 +313,15 @@ const Teams: React.FC = () => {
                                     type="button"
                                     onClick={() => {
                                         setShowCreateForm(false);
-                                        setFormData({ name: '', abbreviation: '', city: '', team_type: '', season: '', year: '' });
+                                        setFormData({
+                                            name: '',
+                                            abbreviation: '',
+                                            city: '',
+                                            team_type: '',
+                                            age_division: '',
+                                            season: '',
+                                            year: '',
+                                        });
                                         setLocalError('');
                                     }}
                                 >
