@@ -54,6 +54,8 @@ export default function NewGameScreen() {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [location, setLocation] = useState('');
+    const [sanction, setSanction] = useState<'' | 'PG' | 'PBR' | 'NONE'>('');
+    const [ageDivisionOverride, setAgeDivisionOverride] = useState<'' | '8U' | '10U' | '12U' | '14U' | '16U' | '18U'>('');
     const [creating, setCreating] = useState(false);
 
     const isScoutingMode = chartingMode === 'scouting';
@@ -158,6 +160,8 @@ export default function NewGameScreen() {
                     game_date: gameDateTime.toISOString(),
                     location: location.trim() || undefined,
                     opponent_team_id: opponentTeamId || undefined,
+                    sanction: sanction || undefined,
+                    age_division: ageDivisionOverride || undefined,
                 } as Parameters<typeof createGame>[0])
             ).unwrap();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -289,6 +293,81 @@ export default function NewGameScreen() {
                                 />
                             </>
                         )}
+
+                        {/* Pitch Rules — sanction selector keyed on home team's team_type.
+                            HS team → automatic (inline note); travel/club → dropdown;
+                            college → nothing. PG and PBR pull age_division from the team unless
+                            overridden. */}
+                        {(() => {
+                            const homeTeam = userTeams.find((t) => t.id === selectedTeamId);
+                            const teamType = homeTeam?.team_type;
+                            const teamAge = (homeTeam as Team | undefined)?.age_division ?? null;
+                            if (teamType === 'high_school') {
+                                return (
+                                    <>
+                                        <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
+                                            Pitch Rules
+                                        </Text>
+                                        <Text
+                                            variant="bodySmall"
+                                            style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}
+                                        >
+                                            High School game — NFHS 110-pitch limit per pitcher (with batter-finish grace).
+                                        </Text>
+                                    </>
+                                );
+                            }
+                            if (teamType === 'travel' || teamType === 'club') {
+                                const effectiveSanction = sanction || 'NONE';
+                                const usesAge = effectiveSanction === 'PG' || effectiveSanction === 'PBR';
+                                return (
+                                    <>
+                                        <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>
+                                            Pitch Rules (sanction)
+                                        </Text>
+                                        <SegmentedButtons
+                                            value={sanction || 'NONE'}
+                                            onValueChange={(value) => {
+                                                Haptics.selectionAsync();
+                                                setSanction(value === 'NONE' ? '' : (value as 'PG' | 'PBR'));
+                                            }}
+                                            buttons={[
+                                                { value: 'NONE', label: 'Other' },
+                                                { value: 'PG', label: 'PG' },
+                                                { value: 'PBR', label: 'PBR' },
+                                            ]}
+                                            style={styles.segmented}
+                                        />
+                                        {usesAge && (
+                                            <>
+                                                <Text
+                                                    variant="labelLarge"
+                                                    style={[styles.sectionLabel, { color: theme.colors.onSurface }]}
+                                                >
+                                                    Age Division{teamAge ? ` (team default: ${teamAge})` : ''}
+                                                </Text>
+                                                <SegmentedButtons
+                                                    value={ageDivisionOverride}
+                                                    onValueChange={(value) => {
+                                                        Haptics.selectionAsync();
+                                                        setAgeDivisionOverride(value as typeof ageDivisionOverride);
+                                                    }}
+                                                    buttons={[
+                                                        { value: '', label: teamAge ?? '—' },
+                                                        { value: '12U', label: '12U' },
+                                                        { value: '14U', label: '14U' },
+                                                        { value: '16U', label: '16U' },
+                                                        { value: '18U', label: '18U' },
+                                                    ]}
+                                                    style={styles.segmented}
+                                                />
+                                            </>
+                                        )}
+                                    </>
+                                );
+                            }
+                            return null;
+                        })()}
 
                         {/* Charting Mode */}
                         <Text variant="labelLarge" style={[styles.sectionLabel, { color: theme.colors.onSurface }]}>

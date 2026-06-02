@@ -46,7 +46,7 @@ const PitcherStatsModal: React.FC<Props> = ({ visible, onDismiss, pitcher, pitch
                 contentContainerStyle={[styles.container, { backgroundColor: theme.colors.surface }]}
             >
                 <ScrollView>
-                    <PitcherStats pitcher={pitcher} pitches={pitches} />
+                    <PitcherStats pitcher={pitcher} pitches={pitches} gameId={gameId ?? undefined} pitcherId={pitcherId} />
                 </ScrollView>
                 <View style={styles.actionsRow}>
                     {pitcherId && (

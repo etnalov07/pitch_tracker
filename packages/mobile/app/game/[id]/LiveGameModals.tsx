@@ -128,6 +128,7 @@ const LiveGameModals: React.FC<LiveGameModalsProps> = ({ ctl, handlers }) => {
             <PitcherSelectorModal
                 visible={pitcherModalVisible}
                 onDismiss={() => setPitcherModalVisible(false)}
+                gameId={id}
                 gamePitchers={gamePitchers}
                 currentPitcher={currentPitcher}
                 teamPlayers={teamPlayers}

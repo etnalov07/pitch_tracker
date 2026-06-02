@@ -1,12 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Card, ProgressBar, useTheme } from 'react-native-paper';
 import { Pitch, PitchType, Player } from '@pitch-tracker/shared';
+import api from '../../../services/api';
 
 interface PitcherStatsProps {
     pitcher?: Player | null;
     pitches: Pitch[];
     compact?: boolean;
+    // Optional — when both are present, the live counter shows X/cap with sanction label.
+    gameId?: string;
+    pitcherId?: string;
+}
+
+interface EligibilityResult {
+    sanction: 'PG' | 'PBR' | 'HS' | 'NONE' | null;
+    age_division: string | null;
+    daily_max: number | null;
+}
+
+function counterColor(pct: number, theme: { colors: { primary: string } }): string {
+    if (pct >= 0.9) return '#dc2626';
+    if (pct >= 0.7) return '#d97706';
+    return theme.colors.primary;
+}
+
+function sanctionLabel(s: EligibilityResult['sanction'], age: string | null): string {
+    if (s === 'PG') return `PG ${age ?? ''}`.trim();
+    if (s === 'PBR') return 'PBR pending';
+    if (s === 'HS') return 'NFHS HS';
+    return '';
 }
 
 const PITCH_TYPE_LABELS: Record<PitchType, string> = {
@@ -33,8 +56,29 @@ interface PitchTypeAggregate {
     velocities: number[];
 }
 
-const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact = false }) => {
+const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact = false, gameId, pitcherId }) => {
     const theme = useTheme();
+    const [elig, setElig] = useState<EligibilityResult | null>(null);
+
+    // Fetch eligibility once per (gameId, pitcherId). The live count comes from
+    // `pitches.length`; daily_max comes from the rules engine.
+    useEffect(() => {
+        if (!gameId || !pitcherId) {
+            setElig(null);
+            return;
+        }
+        let cancelled = false;
+        api.get<{ eligibility: EligibilityResult }>(`/pitch-rules/eligibility/${gameId}/${pitcherId}`)
+            .then((res) => {
+                if (!cancelled) setElig(res.data.eligibility);
+            })
+            .catch(() => {
+                if (!cancelled) setElig(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [gameId, pitcherId]);
 
     const totalPitches = pitches.length;
 
@@ -59,15 +103,20 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact =
         .sort((a, b) => b[1].total - a[1].total)
         .slice(0, compact ? 3 : undefined);
 
+    const dailyMax = elig?.daily_max ?? null;
+    const pct = dailyMax ? totalPitches / dailyMax : 0;
+    const countColor = dailyMax ? counterColor(pct, theme) : theme.colors.primary;
+    const sanctionTag = sanctionLabel(elig?.sanction ?? null, elig?.age_division ?? null);
+
     if (compact) {
         return (
             <View style={styles.compactContainer}>
                 <View style={styles.compactRow}>
                     <View style={styles.compactStat}>
-                        <Text variant="titleLarge" style={{ color: theme.colors.primary }}>
-                            {totalPitches}
+                        <Text variant="titleLarge" style={{ color: countColor }}>
+                            {dailyMax != null ? `${totalPitches}/${dailyMax}` : totalPitches}
                         </Text>
-                        <Text variant="labelSmall">Pitches</Text>
+                        <Text variant="labelSmall">{sanctionTag || 'Pitches'}</Text>
                     </View>
                     <View style={styles.compactStat}>
                         <Text variant="titleLarge" style={{ color: theme.colors.primary }}>
@@ -89,10 +138,10 @@ const PitcherStats: React.FC<PitcherStatsProps> = ({ pitcher, pitches, compact =
 
                 <View style={styles.statsRow}>
                     <View style={styles.statItem}>
-                        <Text variant="headlineMedium" style={{ color: theme.colors.primary }}>
-                            {totalPitches}
+                        <Text variant="headlineMedium" style={{ color: countColor }}>
+                            {dailyMax != null ? `${totalPitches}/${dailyMax}` : totalPitches}
                         </Text>
-                        <Text variant="labelMedium">Total</Text>
+                        <Text variant="labelMedium">{sanctionTag || 'Total'}</Text>
                     </View>
                     <View style={styles.statItem}>
                         <Text variant="headlineMedium" style={{ color: '#10b981' }}>

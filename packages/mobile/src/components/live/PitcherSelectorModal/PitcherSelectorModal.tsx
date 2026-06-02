@@ -1,11 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Text, Button, Modal, Divider, useTheme } from 'react-native-paper';
 import { Player, GamePitcherWithPlayer } from '@pitch-tracker/shared';
+import api from '../../../services/api';
+
+type EligibilityState = 'eligible' | 'ineligible' | 'unknown_division' | 'unknown_rules';
+
+interface EligibilityResult {
+    eligibility: EligibilityState;
+    reasons: string[];
+}
+
+type EligibilityMap = Record<string, EligibilityResult>;
 
 interface PitcherSelectorModalProps {
     visible: boolean;
     onDismiss: () => void;
+    gameId: string;
     gamePitchers: GamePitcherWithPlayer[];
     currentPitcher: GamePitcherWithPlayer | null;
     teamPlayers: Player[];
@@ -17,6 +28,7 @@ interface PitcherSelectorModalProps {
 const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
     visible,
     onDismiss,
+    gameId,
     gamePitchers,
     currentPitcher,
     teamPlayers,
@@ -25,6 +37,27 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
     isTablet,
 }) => {
     const theme = useTheme();
+    const [eligibility, setEligibility] = useState<EligibilityMap>({});
+
+    // Fetch bulk eligibility when the modal opens. Best-effort: a failure
+    // falls back to permissive (no chips). The server resolves the sanction
+    // from the game and applies the matching rules engine.
+    useEffect(() => {
+        if (!visible || !gameId || teamPlayers.length === 0) return;
+        let cancelled = false;
+        const ids = teamPlayers.map((p) => p.id).join(',');
+        api.get<{ eligibility: EligibilityMap }>(`/pitch-rules/eligibility/${gameId}/bulk?pitcher_ids=${ids}`)
+            .then((res) => {
+                if (!cancelled) setEligibility(res.data.eligibility ?? {});
+            })
+            .catch(() => {
+                if (!cancelled) setEligibility({});
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [visible, gameId, teamPlayers]);
+
     return (
         <Modal
             visible={visible}
@@ -82,18 +115,25 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
                         })
                         .map((player) => {
                             const alreadyInGame = gamePitchers.some((gp) => gp.player_id === player.id && !gp.inning_exited);
+                            const elig = eligibility[player.id];
+                            const ineligible = elig?.eligibility === 'ineligible';
+                            const caveat =
+                                elig?.eligibility === 'unknown_division' || elig?.eligibility === 'unknown_rules'
+                                    ? elig.reasons[0]
+                                    : null;
+                            const blocked = alreadyInGame || ineligible;
                             return (
                                 <Pressable
                                     key={player.id}
-                                    style={[styles.playerOption, alreadyInGame && styles.playerOptionDisabled]}
-                                    onPress={() => !alreadyInGame && onSelectNewPitcher(player)}
-                                    disabled={alreadyInGame}
+                                    style={[styles.playerOption, blocked && styles.playerOptionDisabled]}
+                                    onPress={() => !blocked && onSelectNewPitcher(player)}
+                                    disabled={blocked}
                                 >
                                     <View style={styles.playerOptionInfo}>
                                         <Text
                                             style={[
                                                 styles.playerOptionName,
-                                                { color: alreadyInGame ? theme.colors.onSurfaceVariant : theme.colors.onSurface },
+                                                { color: blocked ? theme.colors.onSurfaceVariant : theme.colors.onSurface },
                                             ]}
                                         >
                                             {player.first_name} {player.last_name}
@@ -103,6 +143,10 @@ const PitcherSelectorModal: React.FC<PitcherSelectorModalProps> = ({
                                             {player.throws ? ` · ${player.throws === 'R' ? 'RHP' : 'LHP'}` : ''}
                                             {alreadyInGame ? ' · Already Active' : ''}
                                         </Text>
+                                        {ineligible && elig?.reasons[0] && (
+                                            <Text style={styles.ineligibleReason}>{elig.reasons[0]}</Text>
+                                        )}
+                                        {caveat && <Text style={styles.caveatChip}>{caveat}</Text>}
                                     </View>
                                 </Pressable>
                             );
@@ -138,6 +182,17 @@ const styles = StyleSheet.create({
     playerOptionDetail: { fontSize: 13 },
     disabledText: {},
     emptyText: { textAlign: 'center', padding: 24 },
+    ineligibleReason: { fontSize: 12, color: '#b91c1c', marginTop: 4 },
+    caveatChip: {
+        fontSize: 12,
+        color: '#92400e',
+        backgroundColor: '#fef3c7',
+        paddingVertical: 2,
+        paddingHorizontal: 6,
+        borderRadius: 999,
+        alignSelf: 'flex-start',
+        marginTop: 4,
+    },
 });
 
 export default PitcherSelectorModal;
