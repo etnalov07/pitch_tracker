@@ -1376,7 +1376,8 @@ export type WsMessageType =
     | 'inning_changed'
     | 'runners_updated'
     | 'pitch_call'
-    | 'pitch_call_transmitted'; // catcher device POST'd /pitch-calls/:id/transmitted (UX-PC-09)
+    | 'pitch_call_transmitted' // catcher device POST'd /pitch-calls/:id/transmitted (UX-PC-09)
+    | 'velocity_call'; // secondary sender broadcasts a velocity number to the primary charter's form
 
 export interface WsMessage {
     type: WsMessageType;
