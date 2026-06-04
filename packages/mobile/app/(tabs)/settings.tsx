@@ -3,6 +3,8 @@ import { View, StyleSheet, ScrollView, Alert, Linking, Platform } from 'react-na
 import { Text, List, Divider, Button, useTheme, Avatar, Switch, ActivityIndicator, SegmentedButtons } from 'react-native-paper';
 import Constants from 'expo-constants';
 import * as Speech from 'expo-speech';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import * as Haptics from '../../src/utils/haptics';
 import {
     useAppSelector,
@@ -77,6 +79,26 @@ export default function SettingsScreen() {
             await radar.refreshReads();
         } catch {
             Alert.alert('Bluetooth', 'Could not read — make sure the radar is still connected.');
+        }
+    }, [radar]);
+
+    const handleShareCapture = useCallback(async () => {
+        try {
+            const text = radar.getCaptureText();
+            // cacheDirectory is fine — this is a share-and-forget diagnostic file.
+            const fileUri = `${FileSystem.cacheDirectory}stalker-capture-${Date.now()}.log`;
+            await FileSystem.writeAsStringAsync(fileUri, text);
+            if (await Sharing.isAvailableAsync()) {
+                await Sharing.shareAsync(fileUri, {
+                    mimeType: 'text/plain',
+                    dialogTitle: 'Share Stalker capture log',
+                    UTI: 'public.plain-text',
+                });
+            } else {
+                Alert.alert('Sharing unavailable', 'Could not open the share sheet on this device.');
+            }
+        } catch (e) {
+            Alert.alert('Share failed', e instanceof Error ? e.message : 'Could not write the capture log.');
         }
     }, [radar]);
 
@@ -457,6 +479,20 @@ export default function SettingsScreen() {
                                                 onPress={handleRefreshReads}
                                                 descriptionNumberOfLines={2}
                                             />
+                                            {radar.gatt.length > 0 && (
+                                                <List.Item
+                                                    title="Share capture log"
+                                                    description="Write the GATT table + all captured frames to a file and share it (for spin reverse-engineering)."
+                                                    left={(props) => <List.Icon {...props} icon="share-variant" />}
+                                                    right={() => (
+                                                        <Button compact mode="text" onPress={handleShareCapture}>
+                                                            Share
+                                                        </Button>
+                                                    )}
+                                                    onPress={handleShareCapture}
+                                                    descriptionNumberOfLines={2}
+                                                />
+                                            )}
                                             {radar.gatt.length > 0 && (
                                                 <List.Item
                                                     title={`GATT — ${radar.gatt.length} characteristics`}

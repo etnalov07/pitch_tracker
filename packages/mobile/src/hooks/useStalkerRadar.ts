@@ -30,6 +30,8 @@ export interface UseStalkerRadar {
     startRawCapture: () => Promise<void>;
     /** Re-read every readable characteristic — call after a pitch to sample poll-only data. */
     refreshReads: () => Promise<void>;
+    /** Serialize the last raw-capture session (GATT + all frames) as shareable text. */
+    getCaptureText: () => string;
     connect: (deviceId: string) => Promise<void>;
     disconnect: () => Promise<void>;
 }
@@ -104,6 +106,8 @@ export function useStalkerRadar(): UseStalkerRadar {
 
     const refreshReads = useCallback(() => stalkerRadarService.refreshReads(), []);
 
+    const getCaptureText = useCallback(() => stalkerRadarService.buildCaptureText(), []);
+
     const connect = useCallback((deviceId: string) => stalkerRadarService.connect(deviceId), []);
     const disconnect = useCallback(() => stalkerRadarService.disconnect(), []);
 
@@ -118,6 +122,7 @@ export function useStalkerRadar(): UseStalkerRadar {
         gatt,
         startRawCapture,
         refreshReads,
+        getCaptureText,
         connect,
         disconnect,
     };

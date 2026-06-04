@@ -1,6 +1,7 @@
 import { Platform, PermissionsAndroid } from 'react-native';
 import { BleManager, Device, Subscription } from 'react-native-ble-plx';
 import { PitchDetector, StalkerSpeedStream } from './stalkerPacket';
+import { formatCaptureLog } from './captureLog';
 
 // Reverse-engineered Stalker radar BLE identifiers.
 export const STALKER_SERVICE_UUID = '4880C12C-FDCB-4077-8920-A450D7F9B907';
@@ -58,6 +59,10 @@ type GattListener = (entries: GattEntry[]) => void;
 const SCAN_DURATION_MS = 12000;
 const MAX_RECONNECT_ATTEMPTS = 3;
 const RECONNECT_DELAY_MS = 1500;
+// Full (non-deduped) capture buffer used for the shareable log — far larger than
+// the hook's 25-frame display buffer so a whole capture session is preserved for
+// reverse-engineering. Bounded so a long idle stream can't grow unbounded.
+const MAX_CAPTURE_FRAMES = 5000;
 
 const B64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
@@ -103,6 +108,10 @@ class StalkerRadarService {
     // Readable (non-notify) characteristics found on the last capture — re-read
     // by refreshReads() so a poll-only data field can be sampled after a pitch.
     private readableChars: { serviceUuid: string; charUuid: string }[] = [];
+    // Full capture state for the shareable log: every frame (no dedupe/cap beyond
+    // MAX_CAPTURE_FRAMES) plus the GATT table from the last startRawCapture().
+    private captureLog: RawPacket[] = [];
+    private lastGatt: GattEntry[] = [];
     private intentionalDisconnect = false;
     private reconnectAttempts = 0;
     // Velocity decode pipeline: raw notifications -> CR-delimited frame reassembly
@@ -252,6 +261,7 @@ class StalkerRadarService {
         // Drop any prior subscriptions so repeated taps don't stack duplicates.
         this.stopRawCapture();
         this.readableChars = [];
+        this.captureLog = [];
         const gatt: GattEntry[] = [];
 
         const services = await device.services();
@@ -289,6 +299,7 @@ class StalkerRadarService {
             }
         }
 
+        this.lastGatt = gatt;
         this.emitGatt(gatt);
         // Sample every readable characteristic once up front.
         await this.refreshReads();
@@ -320,7 +331,24 @@ class StalkerRadarService {
             at: Date.now(),
         };
         console.log(`[stalker-raw:${source}] char=${charUuid} len=${bytes.length} hex=[${packet.hex}] ascii="${packet.ascii}"`);
+        // Full (non-deduped) log for the shareable export; the hook keeps its own
+        // small deduped buffer for on-screen display.
+        this.captureLog.push(packet);
+        if (this.captureLog.length > MAX_CAPTURE_FRAMES) this.captureLog.shift();
         this.emitRaw(packet);
+    }
+
+    /** Serialize the last capture session (GATT + all frames) as shareable text. */
+    buildCaptureText(): string {
+        return formatCaptureLog({
+            deviceName: this.device?.name ?? null,
+            deviceId: this.device?.id ?? null,
+            serviceUuid: STALKER_SERVICE_UUID,
+            velocityCharUuid: STALKER_CHARACTERISTIC_UUID,
+            capturedAtIso: new Date().toISOString(),
+            gatt: this.lastGatt,
+            frames: this.captureLog,
+        });
     }
 
     stopRawCapture(): void {
