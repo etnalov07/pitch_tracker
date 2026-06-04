@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-04
 - **Type:** `feat`
-- **Commit:** _(backfill on commit)_
+- **Commit:** `8cf91e8`
 - **Versions:** `mobile` 2.45.0 → 2.46.0
 - **Plan:** ad-hoc handoff (`files.zip`: `stalker-integration-plan.md` + `stalkerRadar.ts`), reconciled against the repo. Supersedes the parser half of [`2026-05-16-stalker-radar-ble.md`](2026-05-16-stalker-radar-ble.md) and complements the diagnostic work in [`2026-05-27-stalker-pro3s-diagnostic.md`](2026-05-27-stalker-pro3s-diagnostic.md).
 
