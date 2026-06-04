@@ -1,16 +1,18 @@
 import { Platform, PermissionsAndroid } from 'react-native';
 import { BleManager, Device, Subscription } from 'react-native-ble-plx';
-import { parseVelocityFromPacket } from './stalkerPacket';
+import { PitchDetector, StalkerSpeedStream } from './stalkerPacket';
 
 // Reverse-engineered Stalker radar BLE identifiers.
 export const STALKER_SERVICE_UUID = '4880C12C-FDCB-4077-8920-A450D7F9B907';
 export const STALKER_CHARACTERISTIC_UUID = 'FEC26EC4-6D71-4442-9F81-55BC21D658D6';
 
-// Master switch for the Stalker radar integration. Disabled while we wait on an
-// official Stalker SDK / API key — the reverse-engineered Pro3S BLE stream only
-// ever yielded an idle status frame, never a live reading. All the BLE/capture
-// code stays put; flip this to true (or swap in the SDK) to re-enable.
-export const RADAR_FEATURE_ENABLED: boolean = false;
+// Master switch for the Stalker radar integration. Re-enabled now that the BLE
+// notify path decodes the documented bE multi-block frame (live/peak/hit at
+// tenths resolution) with notification reassembly and per-pitch debounce, with
+// a fixed-offset fallback for off-grid frames — see stalkerPacket.ts. Still
+// gated per-user behind settings.radarEnabled + a paired radarDeviceId, both of
+// which default off. Flip to false to hard-disable the feature.
+export const RADAR_FEATURE_ENABLED: boolean = true;
 
 export type RadarStatus = 'idle' | 'scanning' | 'connecting' | 'connected' | 'disconnected' | 'error';
 
@@ -103,6 +105,10 @@ class StalkerRadarService {
     private readableChars: { serviceUuid: string; charUuid: string }[] = [];
     private intentionalDisconnect = false;
     private reconnectAttempts = 0;
+    // Velocity decode pipeline: raw notifications -> CR-delimited frame reassembly
+    // -> one debounced peak per pitch. Created on connect, torn down on disconnect.
+    private speedStream: StalkerSpeedStream | null = null;
+    private pitchDetector: PitchDetector | null = null;
 
     // Lazy so merely importing this module doesn't construct the native manager
     // (it would throw before the dev client is rebuilt with the BLE module).
@@ -338,19 +344,29 @@ class StalkerRadarService {
             this.device = device;
             this.reconnectAttempts = 0;
 
+            // (Re)build the decode pipeline. Dispose any stale detector first so a
+            // pending quiet-gap timer from a prior session can't fire late.
+            this.pitchDetector?.dispose();
+            const stream = new StalkerSpeedStream();
+            const detector = new PitchDetector();
+            detector.onPitch = (mph) => this.emitVelocity(mph);
+            stream.onReading = (reading) => detector.feed(reading);
+            this.speedStream = stream;
+            this.pitchDetector = detector;
+
             this.monitorSub = device.monitorCharacteristicForService(
                 STALKER_SERVICE_UUID,
                 STALKER_CHARACTERISTIC_UUID,
                 (error, characteristic) => {
                     if (error || !characteristic?.value) return;
-                    const velocity = parseVelocityFromPacket(base64ToBytes(characteristic.value));
-                    if (velocity != null) this.emitVelocity(velocity);
+                    this.speedStream?.push(base64ToBytes(characteristic.value));
                 }
             );
 
             this.disconnectSub = manager.onDeviceDisconnected(deviceId, () => {
                 this.monitorSub?.remove();
                 this.monitorSub = null;
+                this.teardownPipeline();
                 this.stopRawCapture();
                 this.device = null;
                 if (this.intentionalDisconnect) {
@@ -379,10 +395,19 @@ class StalkerRadarService {
         }, RECONNECT_DELAY_MS);
     }
 
+    /** Tear down the velocity decode pipeline (dispose detector timer, drop buffer). */
+    private teardownPipeline(): void {
+        this.pitchDetector?.dispose();
+        this.pitchDetector = null;
+        this.speedStream?.reset();
+        this.speedStream = null;
+    }
+
     async disconnect(): Promise<void> {
         this.intentionalDisconnect = true;
         this.reconnectAttempts = 0;
         this.stopRawCapture();
+        this.teardownPipeline();
         this.monitorSub?.remove();
         this.monitorSub = null;
         this.disconnectSub?.remove();
