@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-04
 - **Type:** `feat`
-- **Commit:** _(backfill on commit)_
+- **Commit:** `e61a48c`
 - **Versions:** `api` 1.26.0 → 1.27.0 · `web` 1.34.0 → 1.35.0
 - **Plan:** `~/.claude/plans/greedy-launching-wolf.md` (approved this session).
 
