@@ -89,11 +89,12 @@ const RosterTable: React.FC<RosterTableProps> = ({
                                 <Td>{player.bats || '—'}</Td>
                                 <Td>
                                     <ActionButtons>
-                                        {(player.primary_position === 'P' || player.secondary_position === 'P') && (
-                                            <ProfileButton onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}`)}>
-                                                Profile
-                                            </ProfileButton>
-                                        )}
+                                        {/* Available for every player, not just those listed at P: coaches put
+                                            position players on the mound, and the pitcher profile is where you
+                                            set up their pitch types before they've ever thrown one in the app. */}
+                                        <ProfileButton onClick={() => navigate(`/teams/${teamId}/pitcher/${player.id}`)}>
+                                            Profile
+                                        </ProfileButton>
                                         {/* Gated on has_pitches (populated by getPlayersByTeam) so the button only
                                             appears for players who actually have pitch data — a roster pitcher
                                             who's never thrown one in the system wouldn't have a useful report. */}
