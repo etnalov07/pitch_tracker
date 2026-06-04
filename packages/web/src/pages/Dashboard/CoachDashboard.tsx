@@ -428,21 +428,23 @@ const CoachDashboard: React.FC = () => {
                                                                 </RosterName>
                                                             </RosterPlayerInfo>
                                                             <RosterRight>
-                                                                {player.primary_position === 'P' && (
-                                                                    <>
-                                                                        <HandednessBadge>
-                                                                            {player.throws === 'L' ? 'LHP' : 'RHP'}
-                                                                        </HandednessBadge>
-                                                                        <ProfileButton
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                navigate(`/teams/${team.id}/pitcher/${player.id}`);
-                                                                            }}
-                                                                        >
-                                                                            Profile
-                                                                        </ProfileButton>
-                                                                    </>
+                                                                {(player.primary_position === 'P' ||
+                                                                    player.secondary_position === 'P') && (
+                                                                    <HandednessBadge>
+                                                                        {player.throws === 'L' ? 'LHP' : 'RHP'}
+                                                                    </HandednessBadge>
                                                                 )}
+                                                                {/* Available for every player, not just those listed at P:
+                                                                    position players pitch too, and the pitcher profile is
+                                                                    where their pitch types get set up before they've thrown. */}
+                                                                <ProfileButton
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        navigate(`/teams/${team.id}/pitcher/${player.id}`);
+                                                                    }}
+                                                                >
+                                                                    Profile
+                                                                </ProfileButton>
                                                             </RosterRight>
                                                         </RosterItem>
                                                     ))
