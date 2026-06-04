@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-04
 - **Type:** `fix`
-- **Commit:** _(backfill on commit)_
+- **Commit:** `6cdc7ac`
 - **Versions:** `web` 1.35.0 → 1.36.0
 
 ## Context
