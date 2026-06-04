@@ -34,6 +34,7 @@ import Settings from './pages/Settings';
 import TeamDetail from './pages/TeamDetail/TeamDetail';
 import Teams from './pages/Teams/Teams';
 import TeamSettings from './pages/TeamSettings';
+import VelocityEntry from './pages/VelocityEntry';
 import VerifyEmail from './pages/VerifyEmail';
 import { useAppSelector } from './state';
 
@@ -83,6 +84,14 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <Replay />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/game/:gameId/velocities"
+                            element={
+                                <ProtectedRoute>
+                                    <VelocityEntry />
                                 </ProtectedRoute>
                             }
                         />

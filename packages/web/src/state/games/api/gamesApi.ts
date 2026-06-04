@@ -187,6 +187,16 @@ export const gamesApi = {
         return response.data.pitches;
     },
 
+    // Bulk backfill of per-pitch velocities for a completed game (manual entry).
+    // velocity null clears a value. Returns the number of rows updated.
+    updatePitchVelocities: async (
+        gameId: string,
+        updates: { pitch_id: string; velocity: number | null }[]
+    ): Promise<{ updated: number }> => {
+        const response = await api.patch<{ updated: number }>(`/pitches/velocities`, { game_id: gameId, updates });
+        return response.data;
+    },
+
     // Game Pitcher operations
     getGamePitchers: async (gameId: string): Promise<GamePitcherWithPlayer[]> => {
         const response = await api.get<{ pitchers: GamePitcherWithPlayer[] }>(`/game-pitchers/game/${gameId}`);

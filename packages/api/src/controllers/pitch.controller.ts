@@ -57,6 +57,48 @@ export class PitchController {
         }
     }
 
+    async updatePitchVelocities(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { game_id, updates } = req.body as {
+                game_id?: string;
+                updates?: { pitch_id?: string; velocity?: number | null }[];
+            };
+            if (!game_id) {
+                res.status(400).json({ error: 'game_id is required' });
+                return;
+            }
+            if (!Array.isArray(updates) || updates.length === 0) {
+                res.status(400).json({ error: 'updates must be a non-empty array' });
+                return;
+            }
+            for (const u of updates) {
+                if (!u || typeof u.pitch_id !== 'string') {
+                    res.status(400).json({ error: 'each update requires a pitch_id' });
+                    return;
+                }
+                const v = u.velocity;
+                // null clears a velocity; otherwise a sane mph range (matches velocityCall).
+                if (v !== null && (typeof v !== 'number' || Number.isNaN(v) || v < 20 || v > 130)) {
+                    res.status(400).json({ error: 'velocity must be null or a number between 20 and 130' });
+                    return;
+                }
+            }
+            const result = await pitchService.updatePitchVelocities(
+                game_id,
+                updates as { pitch_id: string; velocity: number | null }[]
+            );
+            res.status(200).json({ message: 'Velocities updated', updated: result.updated });
+        } catch (error) {
+            const status = (error as { status?: number })?.status;
+            const code = (error as { code?: string })?.code;
+            if (status) {
+                res.status(status).json({ error: (error as Error).message, code });
+                return;
+            }
+            next(error);
+        }
+    }
+
     async getPitchById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;

@@ -8,6 +8,8 @@ const router = Router();
 router.use(authenticateToken);
 
 router.post('/', pitchController.logPitch.bind(pitchController));
+// Specific route before the parameterized PATCH so '/velocities' isn't captured by '/:id'.
+router.patch('/velocities', pitchController.updatePitchVelocities.bind(pitchController));
 router.patch('/:id', pitchController.updatePitchResult.bind(pitchController));
 router.delete('/:id', pitchController.undoPitch.bind(pitchController));
 router.get('/:id', pitchController.getPitchById.bind(pitchController));

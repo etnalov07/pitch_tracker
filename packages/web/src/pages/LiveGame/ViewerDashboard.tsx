@@ -157,6 +157,7 @@ const ViewerDashboard: React.FC<Props> = ({ game, refreshTrigger, onExit }) => {
                 <InningBadge>{inningLabel}</InningBadge>
                 <ViewerBadge>VIEWER</ViewerBadge>
                 {game.status === 'completed' && <ReplayLink href={`/game/${game.id}/replay`}>▶ Replay</ReplayLink>}
+                {game.status === 'completed' && <ReplayLink href={`/game/${game.id}/velocities`}>✎ Enter Velocities</ReplayLink>}
                 {onExit && <ExitButton onClick={onExit}>← Dashboard</ExitButton>}
             </Header>
 

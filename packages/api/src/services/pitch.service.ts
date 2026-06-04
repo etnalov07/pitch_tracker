@@ -348,6 +348,43 @@ export class PitchService {
         });
     }
 
+    /**
+     * Bulk-backfill per-pitch velocities for a completed game (manual entry from
+     * the web). Edits any pitch in the game (unlike updatePitchResult, which is
+     * latest-pitch-only) and never touches the count — velocity is independent of
+     * balls/strikes. Each UPDATE is scoped by game_id so a stray pitch_id from
+     * another game can't be written. Invalidates the cached game performance
+     * summaries so top/avg velocity recompute on next read.
+     */
+    async updatePitchVelocities(
+        gameId: string,
+        updates: { pitch_id: string; velocity: number | null }[]
+    ): Promise<{ updated: number }> {
+        return await transaction(async (client) => {
+            let updated = 0;
+            for (const { pitch_id, velocity } of updates) {
+                const res = await client.query(`UPDATE pitches SET velocity = $1 WHERE id = $2 AND game_id = $3`, [
+                    velocity,
+                    pitch_id,
+                    gameId,
+                ]);
+                if (res.rowCount === 0) {
+                    const err: Error & { status?: number; code?: string } = new Error(
+                        `Pitch ${pitch_id} not found in game ${gameId}`
+                    );
+                    err.status = 404;
+                    err.code = 'PITCH_NOT_IN_GAME';
+                    throw err;
+                }
+                updated += res.rowCount ?? 0;
+            }
+            // Cache-aside invalidation, mirroring game.service.deleteGame: the cached
+            // top/avg velocity for this game must recompute from the new values.
+            await client.query(`DELETE FROM performance_summaries WHERE source_type = 'game' AND source_id = $1`, [gameId]);
+            return { updated };
+        });
+    }
+
     async getPitchById(pitchId: string): Promise<Pitch | null> {
         const result = await query('SELECT * FROM pitches WHERE id = $1', [pitchId]);
         return result.rows[0] || null;
