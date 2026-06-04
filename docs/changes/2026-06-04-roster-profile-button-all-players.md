@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-04
 - **Type:** `fix`
-- **Commit:** `6cdc7ac` → _(follow-up: dashboard surface)_
+- **Commit:** `6cdc7ac` → `e3d2d54` (follow-up: dashboard surface)
 - **Versions:** `web` 1.35.0 → 1.37.0
 
 ## Context
