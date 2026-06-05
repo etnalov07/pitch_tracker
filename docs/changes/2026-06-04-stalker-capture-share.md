@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-04
 - **Type:** `feat`
-- **Commit:** `f82fd8e` → _(follow-up: UI removed after it did its job)_
+- **Commit:** `f82fd8e` → `315026f` (follow-up: UI removed after it did its job)
 - **Versions:** `mobile` 2.46.0 → 2.47.0 → 2.48.0
 
 ## Context
