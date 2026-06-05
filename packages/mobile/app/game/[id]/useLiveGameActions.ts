@@ -22,6 +22,7 @@ import {
 } from '@pitch-tracker/shared';
 
 import * as Haptics from '../../../src/utils/haptics';
+import { vibrateTap } from '../../../src/utils/vibrate';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import { pitchCallingApi } from '../../../src/state/pitchCalling/api/pitchCallingApi';
 import { speakPitchCall } from '../../../src/utils/pitchCallAudio';
@@ -705,6 +706,8 @@ export function useLiveGameActions(ctl: LiveGameController) {
     const handleSendCall = async () => {
         if (!selectedPitchType || !targetZone || !id || !game) return;
         setSendingCall(true);
+        // Real buzz so a hard/accidental press is felt — over-pressing was firing rapid calls.
+        vibrateTap();
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         try {
             const abbrev = toPitchCallAbbrev(selectedPitchType);
@@ -764,6 +767,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
 
     const handleShake = () => {
         setPendingShakeCount((prev) => prev + 1);
+        vibrateTap();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     };
 
@@ -771,6 +775,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
         try {
             await startPassthrough();
             setWalkieTalkieActive(true);
+            vibrateTap();
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         } catch (err: any) {
             toast.show({ message: err?.message || 'Failed to start walkie-talkie', type: 'error' });
