@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-04
 - **Type:** `fix`
-- **Commit:** _(backfill on commit)_
+- **Commit:** `81f83fe`
 - **Versions:** `mobile` 2.49.0 → 2.50.0
 - **Related:** follow-up to [pitch-call-haptics](2026-06-04-pitch-call-haptics.md) (`d6f8529`), which
   added tactile feedback but explicitly deferred the rate-limit.
