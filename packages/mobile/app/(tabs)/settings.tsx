@@ -1,10 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Linking, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
 import { Text, List, Divider, Button, useTheme, Avatar, Switch, ActivityIndicator, SegmentedButtons } from 'react-native-paper';
 import Constants from 'expo-constants';
 import * as Speech from 'expo-speech';
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
 import * as Haptics from '../../src/utils/haptics';
 import {
     useAppSelector,
@@ -63,42 +61,6 @@ export default function SettingsScreen() {
             await radar.scanAll();
         } catch {
             Alert.alert('Bluetooth', 'Could not scan — check that Bluetooth and permissions are enabled.');
-        }
-    }, [radar]);
-
-    const handleCaptureRaw = useCallback(async () => {
-        try {
-            await radar.startRawCapture();
-        } catch {
-            Alert.alert('Bluetooth', 'Connect to the radar first, then capture packets.');
-        }
-    }, [radar]);
-
-    const handleRefreshReads = useCallback(async () => {
-        try {
-            await radar.refreshReads();
-        } catch {
-            Alert.alert('Bluetooth', 'Could not read — make sure the radar is still connected.');
-        }
-    }, [radar]);
-
-    const handleShareCapture = useCallback(async () => {
-        try {
-            const text = radar.getCaptureText();
-            // cacheDirectory is fine — this is a share-and-forget diagnostic file.
-            const fileUri = `${FileSystem.cacheDirectory}stalker-capture-${Date.now()}.log`;
-            await FileSystem.writeAsStringAsync(fileUri, text);
-            if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(fileUri, {
-                    mimeType: 'text/plain',
-                    dialogTitle: 'Share Stalker capture log',
-                    UTI: 'public.plain-text',
-                });
-            } else {
-                Alert.alert('Sharing unavailable', 'Could not open the share sheet on this device.');
-            }
-        } catch (e) {
-            Alert.alert('Share failed', e instanceof Error ? e.message : 'Could not write the capture log.');
         }
     }, [radar]);
 
@@ -453,74 +415,6 @@ export default function SettingsScreen() {
                                             onPress={() => handlePairRadar(device)}
                                         />
                                     ))}
-                                    {radar.status === 'connected' && (
-                                        <>
-                                            <List.Item
-                                                title="Capture raw packets"
-                                                description="Discover GATT, subscribe to notify chars, read readable chars. Tap, then throw pitches."
-                                                left={(props) => <List.Icon {...props} icon="text-box-search-outline" />}
-                                                right={() => (
-                                                    <Button compact mode="text" onPress={handleCaptureRaw}>
-                                                        Capture
-                                                    </Button>
-                                                )}
-                                                onPress={handleCaptureRaw}
-                                                descriptionNumberOfLines={2}
-                                            />
-                                            <List.Item
-                                                title="Refresh reads"
-                                                description="Re-read readable characteristics — tap right after a pitch to catch poll-only data."
-                                                left={(props) => <List.Icon {...props} icon="refresh" />}
-                                                right={() => (
-                                                    <Button compact mode="text" onPress={handleRefreshReads}>
-                                                        Refresh
-                                                    </Button>
-                                                )}
-                                                onPress={handleRefreshReads}
-                                                descriptionNumberOfLines={2}
-                                            />
-                                            {radar.gatt.length > 0 && (
-                                                <List.Item
-                                                    title="Share capture log"
-                                                    description="Write the GATT table + all captured frames to a file and share it (for spin reverse-engineering)."
-                                                    left={(props) => <List.Icon {...props} icon="share-variant" />}
-                                                    right={() => (
-                                                        <Button compact mode="text" onPress={handleShareCapture}>
-                                                            Share
-                                                        </Button>
-                                                    )}
-                                                    onPress={handleShareCapture}
-                                                    descriptionNumberOfLines={2}
-                                                />
-                                            )}
-                                            {radar.gatt.length > 0 && (
-                                                <List.Item
-                                                    title={`GATT — ${radar.gatt.length} characteristics`}
-                                                    titleStyle={styles.rawMono}
-                                                    description={radar.gatt
-                                                        .map(
-                                                            (g) =>
-                                                                `${g.charUuid.slice(0, 8)} ${g.notifiable ? 'N' : '-'}${g.indicatable ? 'I' : '-'}${g.readable ? 'R' : '-'}${g.writable ? 'W' : '-'}`
-                                                        )
-                                                        .join('\n')}
-                                                    descriptionStyle={styles.rawMono}
-                                                    descriptionNumberOfLines={20}
-                                                    left={(props) => <List.Icon {...props} icon="sitemap-outline" />}
-                                                />
-                                            )}
-                                            {radar.rawPackets.map((packet, idx) => (
-                                                <List.Item
-                                                    key={`${packet.at}-${idx}`}
-                                                    title={`[${packet.source}] "${packet.ascii}"`}
-                                                    titleStyle={styles.rawMono}
-                                                    description={`${packet.bytes.length}B  ${packet.hex}\nchar ${packet.charUuid}`}
-                                                    descriptionStyle={styles.rawMono}
-                                                    descriptionNumberOfLines={4}
-                                                    left={(props) => <List.Icon {...props} icon="chevron-right" />}
-                                                />
-                                            ))}
-                                        </>
-                                    )}
                                 </>
                             )}
                         </List.Section>
@@ -635,10 +529,6 @@ const styles = StyleSheet.create({
     },
     divider: {
         marginVertical: 8,
-    },
-    rawMono: {
-        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-        fontSize: 12,
     },
     appearanceContainer: {
         paddingHorizontal: 16,

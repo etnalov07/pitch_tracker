@@ -32,3 +32,4 @@
 | 2026-05-25 | Phase 2 J — Mobile role routing (player-role users see player dashboard) | Shipped | [phase2-j-mobile-role-routing](2026-05-25-phase2-j-mobile-role-routing.md)            |
 | 2026-05-25 | Phase 2 E — In-play modal cleanup (InPlayModal, RunnerEvent split, RunnerAdvancement trim) | Shipped | [phase2-e-inplay-modal-cleanup](2026-05-25-phase2-e-inplay-modal-cleanup.md)          |
 | 2026-06-01 | Velocity Sender — second-device velocity broadcast (no Stalker SDK required) | On hold (backend shipped `9a3023c`; mobile + sender pending) | [velocity-sender](2026-06-01-velocity-sender.md)                                       |
+| 2026-06-04 | Stalker Pro 3s — spin (RPM) detection (`'9'` block decoded from real capture) | Planned (format reverse-engineered; build deferred) | [stalker-spin-detection](2026-06-04-stalker-spin-detection.md)                         |

@@ -2,8 +2,8 @@
 
 - **Date:** 2026-06-04
 - **Type:** `feat`
-- **Commit:** `f82fd8e`
-- **Versions:** `mobile` 2.46.0 → 2.47.0
+- **Commit:** `f82fd8e` → _(follow-up: UI removed after it did its job)_
+- **Versions:** `mobile` 2.46.0 → 2.47.0 → 2.48.0
 
 ## Context
 
@@ -63,9 +63,22 @@ the build.
   non-velocity characteristic (anything other than `FEC26EC4…`) emits frames that track the
   displayed spin, that's the spin stream to decode next.
 
+## Follow-up — capture did its job; settings UI removed (mobile 2.47.0 → 2.48.0)
+
+The capture tool worked: a real capture (`capture.log`, 2599 frames) revealed that **spin rides
+the same `bE` velocity frame** — when the gun reports spin, the 3rd block's ID byte is `'9'`
+(instead of `'6'` hit) and carries RPM (e.g. `17130` → 1713.0 RPM). Full decode + the build plan
+are recorded in `docs/plans/2026-06-04-stalker-spin-detection.md`.
+
+With the data in hand, the diagnostic UI was removed from **Settings → Radar Gun** (the
+"Capture raw packets", "Refresh reads", "Share capture log" rows + the GATT/raw-frame displays,
+their handlers, and the `expo-file-system`/`expo-sharing` imports). The **service-level capture
+tooling is kept** (`startRawCapture`, `buildCaptureText`, `captureLog`, `formatCaptureLog`,
+`useStalkerRadar.getCaptureText`) — parked for the spin work, which will re-expose a button to
+gather more spin samples. Scan / Diagnose / pair / connection-status UI is unchanged.
+
 ## Out of scope (deferred)
 
-- The actual spin parser / `spin` column / display — gated on the capture revealing a
-  spin-bearing characteristic and its byte layout. Nothing to parse until real frames are in hand.
-- If the only thing on the wire is the `bE` velocity frame, spin is not BLE-accessible on this
-  unit and the effort stops here.
+- The actual spin parser / `spin` column / display — planned in
+  `docs/plans/2026-06-04-stalker-spin-detection.md`; build deferred.
+- Confirming the ÷10 spin decimal placement — inferred from a single sample; needs more captures.
