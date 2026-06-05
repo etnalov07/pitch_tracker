@@ -762,6 +762,7 @@ export function useLiveGameActions(ctl: LiveGameController) {
         const now = Date.now();
         if (now - lastCallSentAtRef.current < CALL_COOLDOWN_MS) return;
         lastCallSentAtRef.current = now;
+        vibrateTap();
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         try {
             // Local TTS only. Ack stays driven by the catcher's POST → WS event.

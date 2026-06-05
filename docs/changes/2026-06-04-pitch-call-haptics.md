@@ -2,8 +2,8 @@
 
 - **Date:** 2026-06-04
 - **Type:** `feat`
-- **Commit:** `d6f8529`
-- **Versions:** `mobile` 2.48.0 → 2.49.0
+- **Commit:** `d6f8529` → _(follow-up: re-send button)_
+- **Versions:** `mobile` 2.48.0 → 2.49.0 → 2.51.0
 
 ## Context
 
@@ -41,6 +41,12 @@ app-wide. So nothing fired.
   remain as the future-Taptic markers).
 - `package.json`: 2.48.0 → 2.49.0.
 
+### Follow-up — re-send button (mobile 2.50.0 → 2.51.0)
+
+- `app/game/[id]/useLiveGameActions.ts`: added `vibrateTap()` to `handleResendCall` too, so
+  re-announcing the active call buzzes like the other controls. (The version skipped 2.50.0,
+  which was the [debounce fix](2026-06-04-pitch-call-debounce.md).)
+
 No `shared`/`api`/`web` change. No `app.json`/native change (Vibration is RN core; React Native's
 own manifest declares the Android `VIBRATE` permission).
 
@@ -55,7 +61,7 @@ own manifest declares the Android `VIBRATE` permission).
 
 - **Debounce / rate-limit** on Send Call (the actual *prevention* of rapid calls) — haptics give
   confirmation but don't block double-fires. Flagged as a likely follow-up if mashing persists.
-- `handleResendCall` and other live-game buttons — only the three named controls were wired.
+- Other live-game buttons beyond the named controls + re-send — left on the global no-op.
 - Restoring real haptics app-wide — blocked on the expo-haptics/TurboModule fix (see the TODO in
   `src/utils/haptics.ts`); when that lands, remove the `vibrateTap()` calls in favor of the
   existing `Haptics.*` calls.
