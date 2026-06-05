@@ -60,6 +60,11 @@ import type { LiveGameController } from './useLiveGameController';
  * handleInPlayResult -> handleEndAtBat, etc.). Putting them in a single hook
  * preserves those closure references with no setter-passing ceremony.
  */
+// Minimum gap between pitch-call announcements (Send / Resend). A coach won't
+// legitimately send two distinct calls inside this window; rapid taps within it
+// are dropped so the catcher doesn't get spammed.
+const CALL_COOLDOWN_MS = 1000;
+
 export function useLiveGameActions(ctl: LiveGameController) {
     const {
         id,
@@ -147,6 +152,12 @@ export function useLiveGameActions(ctl: LiveGameController) {
     // and never goes stale inside the memoized handlers below.
     const isOnlineRef = useRef(isOnline);
     isOnlineRef.current = isOnline;
+
+    // Debounce pitch-call announcements: over-pressing Send/Resend fired rapid
+    // calls at the catcher. Shared cooldown so no announce action repeats within
+    // CALL_COOLDOWN_MS (the first press still buzzes + sends; rapid follow-ups are
+    // silently ignored). A ref keeps it stable across renders.
+    const lastCallSentAtRef = useRef(0);
     const requireOnline = useCallback(
         (label: string): boolean => {
             if (isOnlineRef.current) return true;
@@ -705,6 +716,10 @@ export function useLiveGameActions(ctl: LiveGameController) {
 
     const handleSendCall = async () => {
         if (!selectedPitchType || !targetZone || !id || !game) return;
+        // Debounce: drop rapid re-taps so the catcher isn't spammed with calls.
+        const now = Date.now();
+        if (now - lastCallSentAtRef.current < CALL_COOLDOWN_MS) return;
+        lastCallSentAtRef.current = now;
         setSendingCall(true);
         // Real buzz so a hard/accidental press is felt — over-pressing was firing rapid calls.
         vibrateTap();
@@ -743,6 +758,10 @@ export function useLiveGameActions(ctl: LiveGameController) {
 
     const handleResendCall = async () => {
         if (!activeCall) return;
+        // Share the Send cooldown so mashing Resend can't spam the catcher either.
+        const now = Date.now();
+        if (now - lastCallSentAtRef.current < CALL_COOLDOWN_MS) return;
+        lastCallSentAtRef.current = now;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         try {
             // Local TTS only. Ack stays driven by the catcher's POST → WS event.
