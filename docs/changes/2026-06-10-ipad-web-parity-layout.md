@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-10
 - **Type:** feat
-- **Commit SHA:** `b604ec1`; follow-up _pending_ (50/50 charting split)
+- **Commit SHA:** `b604ec1`; follow-up `e0bcf8a` (50/50 charting split)
 - **Version bumps:** `packages/mobile` 2.51.0 → 2.53.0; `app.json` 1.99.0 → 1.101.0
 
 ## Context
