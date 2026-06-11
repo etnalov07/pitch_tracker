@@ -3,7 +3,7 @@
 - **Date:** 2026-06-10
 - **Type:** feat
 - **Commit SHA:** `b604ec1`; follow-ups `e0bcf8a` (50/50 charting split), `f63df9d` (stacked collapse),
-  _pending_ (card-style pitch type + result)
+  `853c18e` (card-style pitch type + result)
 - **Version bumps:** `packages/mobile` 2.51.0 → 2.55.0; `app.json` 1.99.0 → 1.103.0
 
 ## Context
