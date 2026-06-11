@@ -5,14 +5,19 @@ import { Button, Text } from 'react-native-paper';
 import { PITCH_CALL_ZONE_LABELS } from '@pitch-tracker/shared';
 import { BatterBreakdownSheet } from '../../../src/components/batterBreakdown';
 import {
+    BatterHistory,
+    CountBreakdownPanel,
     EditResultModal,
     InPlayModal,
+    OpposingPitcherPanel,
+    PitcherStats,
     PitchTypeGrid,
     PreviousAtBatsModal,
     ResultButtons,
     StrikeZone,
 } from '../../../src/components/live';
 import RadarStatusPill from '../../../src/components/radar/RadarStatusPill';
+import { createOpposingPitcher, deleteOpposingPitcher, setCurrentOpposingPitcher } from '../../../src/state';
 import { colors } from '../../../src/styles/theme';
 
 import LiveGameModals from './LiveGameModals';
@@ -45,6 +50,7 @@ interface LiveGameTabletProps {
 export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
     const {
         id,
+        dispatch,
         theme,
         game,
         gameMode,
@@ -55,8 +61,10 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
         baseRunners: _baseRunners,
         currentPitcher,
         currentBatter,
+        opposingPitchers,
         currentOpposingPitcher,
         currentMyBatter,
+        statsRefreshTrigger,
         pitcherPitchTypes,
         effectivenessTints,
         effectivenessHeatZones,
@@ -91,8 +99,6 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
         editResultPitch,
         editResultModalVisible,
         setEditResultModalVisible,
-        setShowOpposingPitcherModal,
-        setShowCountBreakdownModal,
         setShowPitcherTendencies,
         setShowHitterTendencies,
         showPitcherTendencies,
@@ -146,7 +152,7 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                 onBatterBreakdown={id ? () => setShowBreakdown(true) : undefined}
             />
             <View style={styles.tabletContent}>
-                <View style={styles.statsPanel}>
+                <ScrollView style={styles.statsPanel} contentContainerStyle={styles.statsPanelContent}>
                     <LiveGameHeader ctl={ctl} actions={actions} />
                     <LineupBanner ctl={ctl} />
                     <AtBatControls ctl={ctl} actions={actions} />
@@ -181,39 +187,47 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                             )}
                         </View>
                     )}
-                    {game.status === 'in_progress' && game.charting_mode !== 'our_pitcher' && (
-                        <View style={styles.tendenciesRow}>
-                            <Button
-                                mode="outlined"
-                                compact
-                                onPress={() => setShowOpposingPitcherModal(true)}
-                                style={styles.tendencyBtn}
-                                labelStyle={styles.tendencyBtnLabel}
-                                icon="baseball"
-                            >
-                                {currentOpposingPitcher ? currentOpposingPitcher.pitcher_name.split(' ').pop() : 'Opp. Pitcher'}
-                            </Button>
-                            <Button
-                                mode="outlined"
-                                compact
-                                onPress={() => setShowCountBreakdownModal(true)}
-                                style={styles.tendencyBtn}
-                                labelStyle={styles.tendencyBtnLabel}
-                                icon="counter"
-                            >
-                                Counts
-                            </Button>
-                        </View>
-                    )}
-                    <View style={styles.statsPlaceholder}>
-                        <Text variant="titleSmall" style={{ marginTop: 16 }}>
-                            Pitcher Stats
-                        </Text>
-                        <Text variant="bodySmall" style={styles.placeholder}>
-                            Total Pitches: {pitches.length}
-                        </Text>
+                    {/*
+                        Web-parity inline sidebar panels — replaces the old "Total Pitches: X"
+                        placeholder and the Opp. Pitcher / Counts toggle buttons (those data
+                        sets are now always-visible, like the web LiveGame LeftPanel).
+                        Order mirrors web: PitcherStats -> BatterHistory -> OpposingPitcher ->
+                        CountBreakdown. Tendencies stay behind the toggles above (web gates
+                        those too).
+                    */}
+                    <View style={styles.sidebarPanels}>
+                        <PitcherStats
+                            pitcher={currentPitcher?.player}
+                            pitches={pitches}
+                            gameId={id}
+                            pitcherId={currentPitcher?.player_id}
+                        />
+                        {currentBatter && <BatterHistory batterId={currentBatter.id} pitcherId={currentPitcher?.player_id} />}
+                        {game.charting_mode !== 'our_pitcher' && id && (
+                            <OpposingPitcherPanel
+                                gameId={id}
+                                opposingPitchers={opposingPitchers}
+                                currentOpposingPitcher={currentOpposingPitcher}
+                                onSelect={(p) => dispatch(setCurrentOpposingPitcher(p))}
+                                onCreate={async (params) => {
+                                    await dispatch(createOpposingPitcher(params)).unwrap();
+                                }}
+                                onDelete={async (pid) => {
+                                    await dispatch(deleteOpposingPitcher(pid)).unwrap();
+                                }}
+                                opponentName={game.opponent_name}
+                            />
+                        )}
+                        {id && (
+                            <CountBreakdownPanel
+                                gameId={id}
+                                pitcherId={gameMode === 'our_pitcher' ? currentPitcher?.player_id : undefined}
+                                teamSide={gameMode === 'our_pitcher' ? 'our_team' : 'opponent'}
+                                refreshTrigger={statsRefreshTrigger}
+                            />
+                        )}
                     </View>
-                </View>
+                </ScrollView>
                 <ScrollView style={styles.mainPanel} contentContainerStyle={styles.mainPanelContent}>
                     <PitchTypeFilterBar ctl={ctl} />
                     {!isReadOnly && <ZoneTapHint ctl={ctl} />}

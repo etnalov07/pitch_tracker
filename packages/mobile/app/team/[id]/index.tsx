@@ -5,7 +5,7 @@ import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import * as Haptics from '../../../src/utils/haptics';
 import { useAppSelector, useAppDispatch, fetchTeamById, fetchTeamPlayers, deletePlayer } from '../../../src/state';
 import { useDeviceType } from '../../../src/hooks/useDeviceType';
-import { LoadingScreen, EmptyState } from '../../../src/components/common';
+import { LoadingScreen, EmptyState, TwoColumnLayout } from '../../../src/components/common';
 import { AddPlayerModal, PlayerListItem } from '../../../src/components/team';
 import { PlayerWithPitchTypes } from '@pitch-tracker/shared';
 
@@ -120,6 +120,128 @@ export default function TeamDetailScreen() {
         );
     };
 
+    const teamInfoCardEl = (
+        <Card style={styles.teamInfoCard}>
+            <Card.Content>
+                <Text variant="headlineSmall">{selectedTeam?.name}</Text>
+                {(selectedTeam?.team_type || selectedTeam?.season || selectedTeam?.year) && (
+                    <Text variant="bodyMedium" style={[styles.teamSeason, { color: theme.colors.onSurfaceVariant }]}>
+                        {[
+                            selectedTeam?.team_type === 'high_school'
+                                ? 'High School'
+                                : selectedTeam?.team_type === 'travel'
+                                  ? 'Travel'
+                                  : selectedTeam?.team_type === 'club'
+                                    ? 'Club'
+                                    : selectedTeam?.team_type === 'college'
+                                      ? 'College'
+                                      : '',
+                            selectedTeam?.season && selectedTeam?.year
+                                ? `${selectedTeam.season} ${selectedTeam.year}`
+                                : selectedTeam?.season || (selectedTeam?.year ? `${selectedTeam.year}` : ''),
+                        ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                    </Text>
+                )}
+                <View style={styles.teamStats}>
+                    <View style={styles.stat}>
+                        <Text variant="titleLarge" style={{ color: theme.colors.primary }}>
+                            {players.length}
+                        </Text>
+                        <Text variant="bodySmall">Players</Text>
+                    </View>
+                    <View style={styles.stat}>
+                        <Text variant="titleLarge" style={{ color: theme.colors.primary }}>
+                            {pitchers.length}
+                        </Text>
+                        <Text variant="bodySmall">Pitchers</Text>
+                    </View>
+                    <View style={styles.stat}>
+                        <Text variant="titleLarge" style={{ color: theme.colors.primary }}>
+                            {fieldPlayers.length}
+                        </Text>
+                        <Text variant="bodySmall">Position</Text>
+                    </View>
+                </View>
+            </Card.Content>
+        </Card>
+    );
+
+    const actionButtonsEl = (
+        <>
+            <Button
+                mode="contained"
+                icon="baseball-bat"
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    router.push(`/bullpen/new?teamId=${id}` as any);
+                }}
+                style={styles.bullpenButton}
+                contentStyle={styles.bullpenButtonContent}
+            >
+                Start Bullpen Session
+            </Button>
+
+            <Button
+                mode="outlined"
+                icon="clipboard-text"
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push(`/team/${id}/scouting` as any);
+                }}
+                style={styles.bullpenButton}
+                contentStyle={styles.bullpenButtonContent}
+            >
+                Scouting Reports
+            </Button>
+
+            <Button
+                mode="outlined"
+                icon="account-group"
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    router.push(`/team/${id}/opponents` as any);
+                }}
+                style={styles.bullpenButton}
+                contentStyle={styles.bullpenButtonContent}
+            >
+                Opponent Teams
+            </Button>
+
+            {readOnly && (
+                <Card style={[styles.bullpenButton, { backgroundColor: theme.colors.surfaceVariant, padding: 12 }]}>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                        View-only — you can browse this team because it&apos;s in your organization, but you can&apos;t make
+                        changes.
+                    </Text>
+                </Card>
+            )}
+        </>
+    );
+
+    const rosterTablesEl = (
+        <>
+            {renderRosterTable('Pitchers', pitchers)}
+            {renderRosterTable('Position Players', fieldPlayers)}
+
+            {players.length === 0 && !playersLoading && !readOnly && (
+                <EmptyState
+                    icon="account-plus-outline"
+                    title="No Players Yet"
+                    message="Add players to your roster"
+                    actionLabel="Add Player"
+                    onAction={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        setModalVisible(true);
+                    }}
+                />
+            )}
+        </>
+    );
+
+    const refreshControl = <RefreshControl refreshing={loading || playersLoading} onRefresh={loadData} />;
+
     return (
         <>
             <Stack.Screen
@@ -129,120 +251,28 @@ export default function TeamDetailScreen() {
                 }}
             />
             <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    refreshControl={<RefreshControl refreshing={loading || playersLoading} onRefresh={loadData} />}
-                >
-                    <Card style={styles.teamInfoCard}>
-                        <Card.Content>
-                            <Text variant="headlineSmall">{selectedTeam?.name}</Text>
-                            {(selectedTeam?.team_type || selectedTeam?.season || selectedTeam?.year) && (
-                                <Text variant="bodyMedium" style={[styles.teamSeason, { color: theme.colors.onSurfaceVariant }]}>
-                                    {[
-                                        selectedTeam?.team_type === 'high_school'
-                                            ? 'High School'
-                                            : selectedTeam?.team_type === 'travel'
-                                              ? 'Travel'
-                                              : selectedTeam?.team_type === 'club'
-                                                ? 'Club'
-                                                : selectedTeam?.team_type === 'college'
-                                                  ? 'College'
-                                                  : '',
-                                        selectedTeam?.season && selectedTeam?.year
-                                            ? `${selectedTeam.season} ${selectedTeam.year}`
-                                            : selectedTeam?.season || (selectedTeam?.year ? `${selectedTeam.year}` : ''),
-                                    ]
-                                        .filter(Boolean)
-                                        .join(' · ')}
-                                </Text>
-                            )}
-                            <View style={styles.teamStats}>
-                                <View style={styles.stat}>
-                                    <Text variant="titleLarge" style={{ color: theme.colors.primary }}>
-                                        {players.length}
-                                    </Text>
-                                    <Text variant="bodySmall">Players</Text>
-                                </View>
-                                <View style={styles.stat}>
-                                    <Text variant="titleLarge" style={{ color: theme.colors.primary }}>
-                                        {pitchers.length}
-                                    </Text>
-                                    <Text variant="bodySmall">Pitchers</Text>
-                                </View>
-                                <View style={styles.stat}>
-                                    <Text variant="titleLarge" style={{ color: theme.colors.primary }}>
-                                        {fieldPlayers.length}
-                                    </Text>
-                                    <Text variant="bodySmall">Position</Text>
-                                </View>
-                            </View>
-                        </Card.Content>
-                    </Card>
-
-                    <Button
-                        mode="contained"
-                        icon="baseball-bat"
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            router.push(`/bullpen/new?teamId=${id}` as any);
-                        }}
-                        style={styles.bullpenButton}
-                        contentStyle={styles.bullpenButtonContent}
+                {/* iPad (landscape-locked): team info + actions in a left rail, roster
+                    on the right (web-parity). Phone keeps the single stacked scroll. */}
+                {isTablet ? (
+                    <TwoColumnLayout
+                        sidebar={
+                            <ScrollView contentContainerStyle={styles.scrollContent}>
+                                {teamInfoCardEl}
+                                {actionButtonsEl}
+                            </ScrollView>
+                        }
                     >
-                        Start Bullpen Session
-                    </Button>
-
-                    <Button
-                        mode="outlined"
-                        icon="clipboard-text"
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            router.push(`/team/${id}/scouting` as any);
-                        }}
-                        style={styles.bullpenButton}
-                        contentStyle={styles.bullpenButtonContent}
-                    >
-                        Scouting Reports
-                    </Button>
-
-                    <Button
-                        mode="outlined"
-                        icon="account-group"
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            router.push(`/team/${id}/opponents` as any);
-                        }}
-                        style={styles.bullpenButton}
-                        contentStyle={styles.bullpenButtonContent}
-                    >
-                        Opponent Teams
-                    </Button>
-
-                    {readOnly && (
-                        <Card style={[styles.bullpenButton, { backgroundColor: theme.colors.surfaceVariant, padding: 12 }]}>
-                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-                                View-only — you can browse this team because it&apos;s in your organization, but you can&apos;t make
-                                changes.
-                            </Text>
-                        </Card>
-                    )}
-
-                    {renderRosterTable('Pitchers', pitchers)}
-                    {renderRosterTable('Position Players', fieldPlayers)}
-
-                    {players.length === 0 && !playersLoading && !readOnly && (
-                        <EmptyState
-                            icon="account-plus-outline"
-                            title="No Players Yet"
-                            message="Add players to your roster"
-                            actionLabel="Add Player"
-                            onAction={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                                setModalVisible(true);
-                            }}
-                        />
-                    )}
-                </ScrollView>
+                        <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={refreshControl}>
+                            {rosterTablesEl}
+                        </ScrollView>
+                    </TwoColumnLayout>
+                ) : (
+                    <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={refreshControl}>
+                        {teamInfoCardEl}
+                        {actionButtonsEl}
+                        {rosterTablesEl}
+                    </ScrollView>
+                )}
 
                 {!readOnly && (
                     <FAB

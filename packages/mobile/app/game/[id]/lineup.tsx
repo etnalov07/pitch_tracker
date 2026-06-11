@@ -6,6 +6,7 @@ import * as Haptics from '../../../src/utils/haptics';
 import { BatterScoutingProfile, Game, OpponentPitcherProfile } from '@pitch-tracker/shared';
 import { useAppDispatch, fetchGameById, createOpponentLineup, createOpposingPitcher } from '../../../src/state';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
+import { useDeviceType } from '../../../src/hooks/useDeviceType';
 
 const POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH'];
 
@@ -21,6 +22,7 @@ export default function LineupScreen() {
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    const { isTablet } = useDeviceType();
 
     const [game, setGame] = useState<Game | null>(null);
     const [loading, setLoading] = useState(true);
@@ -162,7 +164,7 @@ export default function LineupScreen() {
             {loading ? (
                 <ActivityIndicator style={{ marginVertical: 40 }} />
             ) : (
-                <ScrollView contentContainerStyle={styles.content}>
+                <ScrollView contentContainerStyle={[styles.content, isTablet && styles.contentTablet]}>
                     <Text variant="bodyMedium" style={[styles.helpText, { color: theme.colors.onSurfaceVariant }]}>
                         Enter the opposing team's batting order. You can add or change players during the game.
                     </Text>
@@ -431,6 +433,13 @@ const styles = StyleSheet.create({
     content: {
         padding: 16,
         paddingBottom: 40,
+    },
+    // Landscape iPad: center the form at a comfortable width instead of stretching
+    // full-bleed across the screen (web-parity).
+    contentTablet: {
+        maxWidth: 760,
+        width: '100%',
+        alignSelf: 'center',
     },
     helpText: {
         marginBottom: 16,

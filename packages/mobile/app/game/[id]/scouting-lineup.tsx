@@ -12,6 +12,7 @@ import {
 } from '@pitch-tracker/shared';
 import { useAppDispatch, fetchGameById, createOpponentLineup, createOpposingPitcher } from '../../../src/state';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
+import { useDeviceType } from '../../../src/hooks/useDeviceType';
 
 const POSITIONS = SCOUTING_POSITIONS;
 type LineupEntry = ScoutingLineupEntry;
@@ -23,6 +24,7 @@ export default function ScoutingLineupScreen() {
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    const { isTablet } = useDeviceType();
 
     const [game, setGame] = useState<Game | null>(null);
     const [loading, setLoading] = useState(true);
@@ -363,7 +365,7 @@ export default function ScoutingLineupScreen() {
             {loading ? (
                 <ActivityIndicator style={{ marginVertical: 40 }} />
             ) : (
-                <ScrollView contentContainerStyle={styles.content}>
+                <ScrollView contentContainerStyle={[styles.content, isTablet && styles.contentTablet]}>
                     {/* Away / Home tab toggle */}
                     <SegmentedButtons
                         value={activeSide}
@@ -425,6 +427,7 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingBottom: 40,
     },
+    contentTablet: { maxWidth: 760, width: '100%', alignSelf: 'center' },
     tabToggle: {
         marginBottom: 20,
     },

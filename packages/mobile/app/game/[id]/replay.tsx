@@ -16,6 +16,7 @@ import { gamesApi } from '../../../src/state/games/api/gamesApi';
 import StrikeZone, { PITCH_TYPE_LABELS } from '../../../src/components/live/StrikeZone/StrikeZone';
 import BatterStrip from '../../../src/components/replay/BatterStrip';
 import PitchScrubber from '../../../src/components/replay/PitchScrubber';
+import { useDeviceType } from '../../../src/hooks/useDeviceType';
 
 const RESULT_LABELS: Record<string, string> = {
     ball: 'Ball',
@@ -30,6 +31,7 @@ export default function ReplayScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
     const theme = useTheme();
+    const { isTablet } = useDeviceType();
 
     const [game, setGame] = useState<Game | null>(null);
     const [pitches, setPitches] = useState<Pitch[]>([]);
@@ -198,56 +200,89 @@ export default function ReplayScreen() {
         ? throwsByPitcherId.get(currentPitch.pitcher_id)
         : undefined;
 
+    const batterHeaderEl = currentEntry ? (
+        <View style={styles.batterHeader}>
+            <Text variant="titleMedium">
+                {currentEntry.atBat.batting_order ? `#${currentEntry.atBat.batting_order} ` : ''}
+                {currentEntry.batterDisplayName}
+                {batterSide ? ` (${batterSide}HH)` : ''}
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                P: {currentEntry.pitcherDisplayName}
+                {pitcherThrows ? ` (${pitcherThrows}HP)` : ''} · AB result: {abResult}
+            </Text>
+        </View>
+    ) : null;
+
+    const zoneEl = (
+        <>
+            <View style={styles.zoneWrap}>
+                <StrikeZone
+                    onLocationSelect={() => undefined}
+                    targetZone={currentPitch?.target_zone ?? null}
+                    previousPitches={currentPitch ? [currentPitch] : []}
+                    disabled
+                    colorBy="pitchType"
+                    batterSide={batterSide}
+                    pitcherThrows={pitcherThrows}
+                />
+            </View>
+            {currentPitch && (currentPitch.location_x == null || currentPitch.location_y == null) && (
+                <Text variant="bodySmall" style={{ textAlign: 'center', color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                    (pitch location not recorded)
+                </Text>
+            )}
+        </>
+    );
+
+    const scrubberEl =
+        currentEntry && currentEntry.pitches.length > 0 ? (
+            <PitchScrubber pitchCount={currentEntry.pitches.length} pitchIdx={pitchIdx} onChange={setPitchIdx} />
+        ) : null;
+
+    const infoCardEl = (
+        <View style={[styles.infoCard, { backgroundColor: theme.colors.surface }]}>
+            <Text variant="titleSmall">
+                {typeLabel}
+                {veloLabel ? ` · ${veloLabel}` : ''} · {resultLabel}
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                Count before pitch: {ballsBefore}-{strikesBefore} · Outs: {outs}
+            </Text>
+        </View>
+    );
+
+    // iPad (landscape-locked): strike zone on the left, pitch details + scrubber
+    // on the right, mirroring the web Replay side-by-side layout. BatterStrip
+    // stays across the top. Phone keeps the single stacked ScrollView below.
+    if (isTablet) {
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+                {renderHeader()}
+                <BatterStrip atBats={sequence} selectedIdx={selectedAtBatIdx} onSelect={setSelectedAtBatIdx} />
+                <View style={styles.tabletBody}>
+                    <ScrollView style={styles.tabletCol} contentContainerStyle={styles.tabletColContent}>
+                        {batterHeaderEl}
+                        {zoneEl}
+                    </ScrollView>
+                    <ScrollView style={[styles.tabletCol, styles.tabletColRight]} contentContainerStyle={styles.tabletColContent}>
+                        {scrubberEl}
+                        {infoCardEl}
+                    </ScrollView>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
             {renderHeader()}
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <BatterStrip atBats={sequence} selectedIdx={selectedAtBatIdx} onSelect={setSelectedAtBatIdx} />
-
-                {currentEntry && (
-                    <View style={styles.batterHeader}>
-                        <Text variant="titleMedium">
-                            {currentEntry.atBat.batting_order ? `#${currentEntry.atBat.batting_order} ` : ''}
-                            {currentEntry.batterDisplayName}
-                            {batterSide ? ` (${batterSide}HH)` : ''}
-                        </Text>
-                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                            P: {currentEntry.pitcherDisplayName}
-                            {pitcherThrows ? ` (${pitcherThrows}HP)` : ''} · AB result: {abResult}
-                        </Text>
-                    </View>
-                )}
-
-                <View style={styles.zoneWrap}>
-                    <StrikeZone
-                        onLocationSelect={() => undefined}
-                        targetZone={currentPitch?.target_zone ?? null}
-                        previousPitches={currentPitch ? [currentPitch] : []}
-                        disabled
-                        colorBy="pitchType"
-                        batterSide={batterSide}
-                        pitcherThrows={pitcherThrows}
-                    />
-                </View>
-                {currentPitch && (currentPitch.location_x == null || currentPitch.location_y == null) && (
-                    <Text variant="bodySmall" style={{ textAlign: 'center', color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                        (pitch location not recorded)
-                    </Text>
-                )}
-
-                {currentEntry && currentEntry.pitches.length > 0 && (
-                    <PitchScrubber pitchCount={currentEntry.pitches.length} pitchIdx={pitchIdx} onChange={setPitchIdx} />
-                )}
-
-                <View style={[styles.infoCard, { backgroundColor: theme.colors.surface }]}>
-                    <Text variant="titleSmall">
-                        {typeLabel}
-                        {veloLabel ? ` · ${veloLabel}` : ''} · {resultLabel}
-                    </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                        Count before pitch: {ballsBefore}-{strikesBefore} · Outs: {outs}
-                    </Text>
-                </View>
+                {batterHeaderEl}
+                {zoneEl}
+                {scrubberEl}
+                {infoCardEl}
             </ScrollView>
         </SafeAreaView>
     );
@@ -264,6 +299,10 @@ const styles = StyleSheet.create({
     title: { fontWeight: '600' },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     scrollContent: { paddingBottom: 32 },
+    tabletBody: { flex: 1, flexDirection: 'row' },
+    tabletCol: { flex: 1 },
+    tabletColRight: { borderLeftWidth: 1, borderLeftColor: 'rgba(128,128,128,0.25)' },
+    tabletColContent: { paddingBottom: 32 },
     batterHeader: { paddingHorizontal: 16, paddingVertical: 8 },
     zoneWrap: { paddingHorizontal: 8 },
     infoCard: {

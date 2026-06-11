@@ -1,6 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme, InteractionManager, Alert, Platform } from 'react-native';
@@ -10,6 +11,7 @@ import { PaperProvider, Portal } from 'react-native-paper';
 import { store, useAppDispatch, useAppSelector, initializeAuth, initializeSettings } from '../src/state';
 import { startOfflineService, stopOfflineService } from '../src/services/offlineService';
 import { KeyboardDismissBar } from '../src/components/common';
+import { useDeviceType } from '../src/hooks/useDeviceType';
 import { ToastProvider } from '../src/hooks/useToast';
 import { ConfirmProvider } from '../src/hooks/useConfirm';
 import { lightTheme, darkTheme } from '../src/styles/theme';
@@ -110,6 +112,22 @@ function RootLayoutContent() {
     const themeMode = useAppSelector((state) => state.settings.themeMode);
     const effectiveScheme = themeMode === 'system' ? colorScheme : themeMode;
     const theme = effectiveScheme === 'dark' ? darkTheme : lightTheme;
+
+    // Per-device orientation lock: iPad is landscape-only (it gets the web-parity
+    // two-column layout), phones stay portrait. isTablet keys off min(w,h) so it's
+    // orientation-stable. Wrapped defensively for iOS 26.2 beta native-module quirks.
+    const { isTablet } = useDeviceType();
+    useEffect(() => {
+        (async () => {
+            try {
+                await ScreenOrientation.lockAsync(
+                    isTablet ? ScreenOrientation.OrientationLock.LANDSCAPE : ScreenOrientation.OrientationLock.PORTRAIT_UP
+                );
+            } catch (e) {
+                console.warn('Orientation lock failed:', e);
+            }
+        })();
+    }, [isTablet]);
 
     return (
         <PaperProvider theme={theme}>

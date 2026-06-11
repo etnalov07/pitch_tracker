@@ -185,12 +185,13 @@ export default function DashboardScreen() {
                         </Text>
                         <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
                             {activeGames.map((game) => (
-                                <GameCard
-                                    key={game.id}
-                                    game={game}
-                                    onPress={() => handleGamePress(game)}
-                                    onLongPress={() => handleDeleteGame(game)}
-                                />
+                                <View key={game.id} style={isTablet ? styles.gameGridItem : undefined}>
+                                    <GameCard
+                                        game={game}
+                                        onPress={() => handleGamePress(game)}
+                                        onLongPress={() => handleDeleteGame(game)}
+                                    />
+                                </View>
                             ))}
                         </View>
                     </View>
@@ -206,6 +207,7 @@ export default function DashboardScreen() {
                             {scheduledGames.map((game) => (
                                 <Pressable
                                     key={game.id}
+                                    style={isTablet ? styles.gameGridItem : undefined}
                                     onPress={() => handleGamePress(game)}
                                     onLongPress={() => handleDeleteGame(game)}
                                     delayLongPress={400}
@@ -314,12 +316,13 @@ export default function DashboardScreen() {
                         </View>
                         <View style={[styles.gameList, isTablet && styles.gameListTablet]}>
                             {recentGames.map((game) => (
-                                <GameCard
-                                    key={game.id}
-                                    game={game}
-                                    onPress={() => handleGamePress(game)}
-                                    onLongPress={() => handleDeleteGame(game)}
-                                />
+                                <View key={game.id} style={isTablet ? styles.gameGridItem : undefined}>
+                                    <GameCard
+                                        game={game}
+                                        onPress={() => handleGamePress(game)}
+                                        onLongPress={() => handleDeleteGame(game)}
+                                    />
+                                </View>
                             ))}
                         </View>
                         {completedGames.length > 5 && (
@@ -410,6 +413,13 @@ const styles = StyleSheet.create({
     gameListTablet: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+    },
+    // Landscape iPad: size each game card to a column so the wrap-grid reads as
+    // an intentional multi-column layout (web-parity) instead of ragged cards.
+    gameGridItem: {
+        flexGrow: 1,
+        flexBasis: 320,
+        minWidth: 320,
     },
     gameHeader: {
         flexDirection: 'row',

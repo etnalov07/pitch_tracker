@@ -3,3 +3,4 @@ export { default as ErrorScreen } from './ErrorScreen';
 export { default as KeyboardDismissBar } from './KeyboardDismissBar';
 export { default as LoadingScreen } from './LoadingScreen';
 export { default as SyncStatusBadge } from './SyncStatusBadge';
+export { default as TwoColumnLayout } from './TwoColumnLayout';

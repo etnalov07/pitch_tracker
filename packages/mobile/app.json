@@ -2,7 +2,7 @@
     "expo": {
         "name": "PitchChart",
         "slug": "pitch-tracker",
-        "version": "1.99.0",
+        "version": "1.100.0",
         "orientation": "default",
         "icon": "./assets/images/icon.png",
         "scheme": "pitchtracker",
@@ -16,7 +16,7 @@
         "ios": {
             "supportsTablet": true,
             "bundleIdentifier": "com.bvolante.pitch-tracker",
-            "requireFullScreen": false,
+            "requireFullScreen": true,
             "infoPlist": {
                 "ITSAppUsesNonExemptEncryption": false,
                 "NSMicrophoneUsageDescription": "PitchChart uses the microphone for walkie-talkie communication with the catcher's earpiece."

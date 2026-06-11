@@ -6,6 +6,7 @@ import * as Haptics from '../../../src/utils/haptics';
 import { Game, Player } from '@pitch-tracker/shared';
 import { useAppDispatch, fetchGameById, createMyTeamLineup } from '../../../src/state';
 import { gamesApi } from '../../../src/state/games/api/gamesApi';
+import { useDeviceType } from '../../../src/hooks/useDeviceType';
 
 const POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH', 'UTIL'];
 
@@ -21,6 +22,7 @@ export default function MyTeamLineupScreen() {
     const router = useRouter();
     const theme = useTheme();
     const dispatch = useAppDispatch();
+    const { isTablet } = useDeviceType();
 
     const [game, setGame] = useState<Game | null>(null);
     const [roster, setRoster] = useState<Player[]>([]);
@@ -149,7 +151,7 @@ export default function MyTeamLineupScreen() {
             {loading ? (
                 <ActivityIndicator style={{ marginVertical: 40 }} />
             ) : (
-                <ScrollView contentContainerStyle={styles.content}>
+                <ScrollView contentContainerStyle={[styles.content, isTablet && styles.contentTablet]}>
                     <Text variant="titleMedium" style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                         Starting Pitcher
                     </Text>
@@ -321,6 +323,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#e5e7eb',
     },
     content: { padding: 16, paddingBottom: 40 },
+    contentTablet: { maxWidth: 760, width: '100%', alignSelf: 'center' },
     sectionTitle: { fontWeight: '600', marginBottom: 4 },
     helpText: { marginBottom: 12 },
     pitcherButton: { width: '100%', marginBottom: 4 },
