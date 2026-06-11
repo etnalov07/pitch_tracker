@@ -2,8 +2,8 @@
 
 - **Date:** 2026-06-10
 - **Type:** feat
-- **Commit SHA:** `b604ec1`
-- **Version bumps:** `packages/mobile` 2.51.0 → 2.52.0; `app.json` 1.99.0 → 1.100.0
+- **Commit SHA:** `b604ec1`; follow-up _pending_ (50/50 charting split)
+- **Version bumps:** `packages/mobile` 2.51.0 → 2.53.0; `app.json` 1.99.0 → 1.101.0
 
 ## Context
 
@@ -67,6 +67,16 @@ two-column layout.
   `StrikeZone` `batterSide`/`pitcherThrows` props untouched (LHH/RHH mirroring preserved).
 - `app/game/[id]/liveGameStyles.ts`: `statsPanel` padding moved to new `statsPanelContent` (sidebar
   is now a ScrollView); added `sidebarPanels` gap style.
+
+#### Follow-up — 50/50 charting split (main panel)
+- `app/game/[id]/LiveGameTablet.tsx`: restructured the main charting panel into a 50/50 row —
+  **left** column is the strike zone (target) with its zone-tap hint and actual=target button;
+  **right** column stacks **pitch type above result** (PitchTypeGrid → send-call/active-call →
+  velocity → ResultButtons). Previously the zone was full-width with pitch type and result
+  side-by-side below it; the split lets the coach see the full target and the results at once.
+  `PitchBreakdown` moved to full-width below the row.
+- `app/game/[id]/liveGameStyles.ts`: replaced the now-unused `controlsRow`/`controlsHalf` (tablet-only)
+  with `chartingRow` (50/50, top-aligned) + `chartingCol` (flex 1).
 
 ### packages/mobile — shared primitive
 - **New** `src/components/common/TwoColumnLayout.tsx` (sidebar + main row, ~340px sidebar, divider
