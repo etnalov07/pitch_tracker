@@ -2,7 +2,7 @@
 
 - **Date:** 2026-06-10
 - **Type:** feat
-- **Commit SHA:** _pending_
+- **Commit SHA:** `b604ec1`
 - **Version bumps:** `packages/mobile` 2.51.0 → 2.52.0; `app.json` 1.99.0 → 1.100.0
 
 ## Context
