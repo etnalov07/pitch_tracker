@@ -131,6 +131,11 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
 
     if (!game) return null;
 
+    // When the tendencies side rail is showing, the main panel narrows — collapse
+    // the 50/50 charting split to a single stacked column so the zone + controls
+    // stay comfortably sized. Matches TendenciesSideRail's own render condition.
+    const tendenciesRailOpen = (showPitcherTendencies && !!currentPitcher) || (showHitterTendencies && !!currentBatter);
+
     const modalHandlers = {
         handleSelectPitcher,
         handleSelectBatter,
@@ -232,8 +237,8 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                     <PitchTypeFilterBar ctl={ctl} />
                     {/* 50/50 charting split — strike zone (target) on the left, pitch-type-above-result
                         controls on the right, so the coach sees the full target and results at once. */}
-                    <View style={styles.chartingRow}>
-                        <View style={styles.chartingCol}>
+                    <View style={[styles.chartingRow, tendenciesRailOpen && styles.chartingRowStacked]}>
+                        <View style={[styles.chartingCol, tendenciesRailOpen && styles.chartingColStacked]}>
                             {!isReadOnly && <ZoneTapHint ctl={ctl} />}
                             <StrikeZone
                                 onLocationSelect={(x, y) => setPitchLocation({ x, y })}
@@ -261,7 +266,7 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                             />
                             {!isReadOnly && <ActualEqualsTargetButton ctl={ctl} />}
                         </View>
-                        <View style={styles.chartingCol}>
+                        <View style={[styles.chartingCol, tendenciesRailOpen && styles.chartingColStacked]}>
                             {!isReadOnly && (
                                 <PitchTypeGrid
                                     selectedType={selectedPitchType}

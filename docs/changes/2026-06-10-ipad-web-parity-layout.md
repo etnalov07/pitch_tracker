@@ -2,8 +2,8 @@
 
 - **Date:** 2026-06-10
 - **Type:** feat
-- **Commit SHA:** `b604ec1`; follow-up `e0bcf8a` (50/50 charting split)
-- **Version bumps:** `packages/mobile` 2.51.0 → 2.53.0; `app.json` 1.99.0 → 1.101.0
+- **Commit SHA:** `b604ec1`; follow-ups `e0bcf8a` (50/50 charting split), _pending_ (stacked collapse)
+- **Version bumps:** `packages/mobile` 2.51.0 → 2.54.0; `app.json` 1.99.0 → 1.102.0
 
 ## Context
 
@@ -77,6 +77,10 @@ two-column layout.
   `PitchBreakdown` moved to full-width below the row.
 - `app/game/[id]/liveGameStyles.ts`: replaced the now-unused `controlsRow`/`controlsHalf` (tablet-only)
   with `chartingRow` (50/50, top-aligned) + `chartingCol` (flex 1).
+- **Stacked collapse:** when the tendencies side rail is open (`showPitcherTendencies && currentPitcher`
+  or `showHitterTendencies && currentBatter` — matching `TendenciesSideRail`'s render condition), the
+  narrowed main panel collapses the 50/50 row to a single stacked column (`chartingRowStacked` +
+  `chartingColStacked`, full-width each) so the zone and controls stay comfortably sized.
 
 ### packages/mobile — shared primitive
 - **New** `src/components/common/TwoColumnLayout.tsx` (sidebar + main row, ~340px sidebar, divider
