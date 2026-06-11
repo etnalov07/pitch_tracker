@@ -245,30 +245,32 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                         />
                     )}
                     {!isReadOnly && <ZoneTapHint ctl={ctl} />}
-                    <StrikeZone
-                        onLocationSelect={(x, y) => setPitchLocation({ x, y })}
-                        onTargetZoneSelect={setTargetZone}
-                        onTargetClear={() => {
-                            setTargetZone(null);
-                            setPitchLocation(null);
-                        }}
-                        targetZone={targetZone}
-                        previousPitches={isReadOnly ? filteredGamePitches : pitches}
-                        disabled={isReadOnly || isLogging}
-                        colorBy={isReadOnly ? 'pitchType' : 'result'}
-                        batterSide={
-                            !isScoutingMode && gameMode === 'opp_pitcher'
-                                ? (currentMyBatter?.player?.bats as 'R' | 'L' | 'S' | undefined)
-                                : (currentBatter?.bats as 'R' | 'L' | 'S' | undefined)
-                        }
-                        pitcherThrows={
-                            isScoutingMode || gameMode === 'opp_pitcher'
-                                ? (currentOpposingPitcher?.throws as 'R' | 'L' | undefined)
-                                : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
-                        }
-                        heatZones={effectivenessHeatZones}
-                        showHeatZones={!!effectivenessHeatZones}
-                    />
+                    <View style={styles.tabletZoneWrap}>
+                        <StrikeZone
+                            onLocationSelect={(x, y) => setPitchLocation({ x, y })}
+                            onTargetZoneSelect={setTargetZone}
+                            onTargetClear={() => {
+                                setTargetZone(null);
+                                setPitchLocation(null);
+                            }}
+                            targetZone={targetZone}
+                            previousPitches={isReadOnly ? filteredGamePitches : pitches}
+                            disabled={isReadOnly || isLogging}
+                            colorBy={isReadOnly ? 'pitchType' : 'result'}
+                            batterSide={
+                                !isScoutingMode && gameMode === 'opp_pitcher'
+                                    ? (currentMyBatter?.player?.bats as 'R' | 'L' | 'S' | undefined)
+                                    : (currentBatter?.bats as 'R' | 'L' | 'S' | undefined)
+                            }
+                            pitcherThrows={
+                                isScoutingMode || gameMode === 'opp_pitcher'
+                                    ? (currentOpposingPitcher?.throws as 'R' | 'L' | undefined)
+                                    : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
+                            }
+                            heatZones={effectivenessHeatZones}
+                            showHeatZones={!!effectivenessHeatZones}
+                        />
+                    </View>
                     {!isReadOnly && <ActualEqualsTargetButton ctl={ctl} />}
                     {/* Send Call (optional, setting-gated) */}
                     {!isReadOnly && !isScoutingMode && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (

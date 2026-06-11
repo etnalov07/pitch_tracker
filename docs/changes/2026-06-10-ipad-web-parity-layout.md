@@ -3,8 +3,9 @@
 - **Date:** 2026-06-10
 - **Type:** feat
 - **Commit SHA:** `b604ec1`; follow-ups `e0bcf8a` (50/50 charting split), `f63df9d` (stacked collapse),
-  `853c18e` (card-style pitch type + result), `1dbf624` (iPhone-style single column)
-- **Version bumps:** `packages/mobile` 2.51.0 → 2.56.0; `app.json` 1.99.0 → 1.104.0
+  `853c18e` (card-style pitch type + result), `1dbf624` (iPhone-style single column),
+  _pending_ (size trim to remove scrolling)
+- **Version bumps:** `packages/mobile` 2.51.0 → 2.57.0; `app.json` 1.99.0 → 1.105.0
 
 ## Context
 
@@ -105,6 +106,16 @@ two-column layout.
 - `src/components/live/PitchTypeGrid/PitchTypeGrid.tsx`: shrank the `card` button ~25% (abbrev
   24→18, label 12→9, padding/basis/radius down proportionally) so more pitch types fit per row now
   that the selector spans full width above the zone.
+
+#### Follow-up — size trim to remove scrolling
+- `app/game/[id]/LiveGameTablet.tsx`: wrapped the strike zone in a sized, centered container so it
+  no longer spans the full main-panel width (the main scroll driver).
+- `app/game/[id]/liveGameStyles.ts`: added `tabletZoneWrap` (`width: '85%'`, `maxWidth: 440`,
+  centered) — ~15% smaller and capped; tightened `mainPanelContent` padding 16→12 and added an
+  8px gap between stacked sections.
+- `src/components/live/ResultButtons/ResultButtons.tsx`: trimmed the `card` buttons ~15%
+  (minHeight 58→49, padding 14→12, label 15→13, radius/gap down) so the pitch-type → zone → result
+  column fits without scrolling on landscape iPad.
 
 ### packages/mobile — shared primitive
 - **New** `src/components/common/TwoColumnLayout.tsx` (sidebar + main row, ~340px sidebar, divider
