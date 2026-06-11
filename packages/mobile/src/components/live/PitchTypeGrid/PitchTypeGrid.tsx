@@ -11,6 +11,9 @@ interface PitchTypeGridProps {
     availablePitchTypes?: PitchType[];
     disabled?: boolean;
     compact?: boolean;
+    // 'card' = iPad web-parity look (white card, uppercase label, large light
+    // buttons with abbrev over full name). Phone uses the default/compact looks.
+    variant?: 'card';
     // Per-pitch-type tint color encoding strike% vs current batter hand.
     // Missing entry = sample too small (n<15) → neutral.
     tintByPitchType?: Partial<Record<PitchType, string>>;
@@ -37,6 +40,7 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
     availablePitchTypes,
     disabled = false,
     compact = false,
+    variant,
     tintByPitchType,
 }) => {
     const theme = useTheme();
@@ -79,6 +83,42 @@ const PitchTypeGrid: React.FC<PitchTypeGridProps> = ({
                                     ]}
                                 >
                                     {abbrev}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
+                </View>
+            </View>
+        );
+    }
+
+    if (variant === 'card') {
+        return (
+            <View style={[cardStyles.container, { backgroundColor: theme.colors.surface }]}>
+                <Text style={[cardStyles.title, { color: theme.colors.onSurfaceVariant }]}>PITCH TYPE</Text>
+                <View style={cardStyles.grid}>
+                    {pitchTypes.map(({ type, label, abbrev }) => {
+                        const isSelected = selectedType === type;
+                        const tint = tintByPitchType?.[type];
+                        return (
+                            <Pressable
+                                key={type}
+                                style={[
+                                    cardStyles.button,
+                                    {
+                                        backgroundColor: isSelected ? colors.primary[600] : (tint ?? theme.colors.surfaceVariant),
+                                        borderColor: isSelected ? colors.primary[700] : colors.gray[200],
+                                    },
+                                    disabled && cardStyles.buttonDisabled,
+                                ]}
+                                onPress={() => handleSelect(type)}
+                                disabled={disabled}
+                            >
+                                <Text style={[cardStyles.abbrev, { color: isSelected ? '#ffffff' : theme.colors.onSurface }]}>
+                                    {abbrev}
+                                </Text>
+                                <Text style={[cardStyles.label, { color: isSelected ? '#ffffff' : theme.colors.onSurfaceVariant }]}>
+                                    {label}
                                 </Text>
                             </Pressable>
                         );
@@ -157,6 +197,54 @@ const compactStyles = StyleSheet.create({
     },
     textSelected: {
         color: '#ffffff',
+    },
+});
+
+// iPad web-parity "card" look — large light buttons with a big abbrev over the
+// full pitch name, inside a white card with an uppercase section label.
+const cardStyles = StyleSheet.create({
+    container: {
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    title: {
+        fontSize: 13,
+        fontWeight: '700',
+        letterSpacing: 0.8,
+        textTransform: 'uppercase',
+        marginBottom: 12,
+    },
+    grid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
+    button: {
+        flexGrow: 1,
+        flexBasis: 90,
+        minWidth: 90,
+        paddingVertical: 16,
+        paddingHorizontal: 12,
+        borderRadius: 14,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonDisabled: {
+        opacity: 0.5,
+    },
+    abbrev: {
+        fontSize: 24,
+        fontWeight: '800',
+    },
+    label: {
+        fontSize: 12,
+        marginTop: 2,
     },
 });
 

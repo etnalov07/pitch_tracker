@@ -10,6 +10,9 @@ interface ResultButtonsProps {
     onSelect: (result: PitchResult) => void;
     disabled?: boolean;
     compact?: boolean;
+    // 'card' = iPad web-parity look (white card, uppercase label, solid
+    // color-coded buttons with white labels in a 3-column grid). Phone unchanged.
+    variant?: 'card';
 }
 
 const RESULTS: { type: PitchResult; label: string; compactLabel: string; color: string; textColor: string }[] = [
@@ -21,7 +24,7 @@ const RESULTS: { type: PitchResult; label: string; compactLabel: string; color: 
     { type: 'in_play', label: 'In Play', compactLabel: 'In Play', color: colors.primary[600], textColor: '#ffffff' },
 ];
 
-const ResultButtons: React.FC<ResultButtonsProps> = ({ selectedResult, onSelect, disabled = false, compact = false }) => {
+const ResultButtons: React.FC<ResultButtonsProps> = ({ selectedResult, onSelect, disabled = false, compact = false, variant }) => {
     const theme = useTheme();
     const handleSelect = (result: PitchResult) => {
         if (disabled) return;
@@ -48,6 +51,37 @@ const ResultButtons: React.FC<ResultButtonsProps> = ({ selectedResult, onSelect,
                                 disabled={disabled}
                             >
                                 <Text style={[compactStyles.label, { color: textColor }]}>{compactLabel}</Text>
+                            </Pressable>
+                        );
+                    })}
+                </View>
+            </View>
+        );
+    }
+
+    if (variant === 'card') {
+        return (
+            <View style={[cardStyles.container, { backgroundColor: theme.colors.surface }]}>
+                <Text style={[cardStyles.title, { color: theme.colors.onSurfaceVariant }]}>RESULT</Text>
+                <View style={cardStyles.grid}>
+                    {RESULTS.map(({ type, label, color }) => {
+                        const isSelected = selectedResult === type;
+                        // Ball's shared shade (gray[300]) is too light for white card labels;
+                        // bump to the artifact's medium gray so the white text reads.
+                        const bg = type === 'ball' ? colors.gray[400] : color;
+                        return (
+                            <Pressable
+                                key={type}
+                                style={[
+                                    cardStyles.button,
+                                    { backgroundColor: bg },
+                                    isSelected && cardStyles.buttonSelected,
+                                    disabled && cardStyles.buttonDisabled,
+                                ]}
+                                onPress={() => handleSelect(type)}
+                                disabled={disabled}
+                            >
+                                <Text style={cardStyles.label}>{label.replace('\n', ' ')}</Text>
                             </Pressable>
                         );
                     })}
@@ -113,6 +147,57 @@ const compactStyles = StyleSheet.create({
         fontSize: 11,
         fontWeight: '700',
         textAlign: 'center',
+    },
+});
+
+// iPad web-parity "card" look — solid color-coded buttons with white labels in a
+// 3-column grid, inside a white card with an uppercase section label.
+const cardStyles = StyleSheet.create({
+    container: {
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    title: {
+        fontSize: 13,
+        fontWeight: '700',
+        letterSpacing: 0.8,
+        textTransform: 'uppercase',
+        marginBottom: 12,
+    },
+    grid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
+    button: {
+        flexGrow: 1,
+        flexBasis: '30%',
+        minWidth: 90,
+        minHeight: 58,
+        paddingVertical: 14,
+        paddingHorizontal: 8,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: 'transparent',
+    },
+    buttonSelected: {
+        borderColor: '#ffffff',
+    },
+    buttonDisabled: {
+        opacity: 0.5,
+    },
+    label: {
+        fontSize: 15,
+        fontWeight: '700',
+        textAlign: 'center',
+        color: '#ffffff',
     },
 });
 

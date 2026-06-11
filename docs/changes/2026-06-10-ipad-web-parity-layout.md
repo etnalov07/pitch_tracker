@@ -2,8 +2,9 @@
 
 - **Date:** 2026-06-10
 - **Type:** feat
-- **Commit SHA:** `b604ec1`; follow-ups `e0bcf8a` (50/50 charting split), `f63df9d` (stacked collapse)
-- **Version bumps:** `packages/mobile` 2.51.0 → 2.54.0; `app.json` 1.99.0 → 1.102.0
+- **Commit SHA:** `b604ec1`; follow-ups `e0bcf8a` (50/50 charting split), `f63df9d` (stacked collapse),
+  _pending_ (card-style pitch type + result)
+- **Version bumps:** `packages/mobile` 2.51.0 → 2.55.0; `app.json` 1.99.0 → 1.103.0
 
 ## Context
 
@@ -81,6 +82,18 @@ two-column layout.
   or `showHitterTendencies && currentBatter` — matching `TendenciesSideRail`'s render condition), the
   narrowed main panel collapses the 50/50 row to a single stacked column (`chartingRowStacked` +
   `chartingColStacked`, full-width each) so the zone and controls stay comfortably sized.
+
+#### Follow-up — card-style pitch type + result (from a design mockup)
+- Added an opt-in `variant="card"` to the **shared** `PitchTypeGrid` and `ResultButtons` components
+  (phone keeps its default/compact looks; only the iPad passes `variant="card"`).
+- `PitchTypeGrid` card look: white rounded card + uppercase "PITCH TYPE" label; large light buttons
+  with a big bold abbreviation (`4S`/`CB`/…) over the full pitch name; effectiveness `tint` preserved;
+  selected = primary fill, white text. Wraps to multiple rows for pitchers with many pitch types.
+- `ResultButtons` card look: white card + uppercase "RESULT" label; solid color-coded buttons (green
+  Strike, red Swing, gray Ball, gold Foul, orange HBP, slate In Play) with white labels in a 3-column
+  grid; selected = white ring. Ball bumped from the shared `gray[300]` to `gray[400]` (the mockup's
+  medium gray) so the white label reads.
+- `app/game/[id]/LiveGameTablet.tsx`: pass `variant="card"` to both right-column components.
 
 ### packages/mobile — shared primitive
 - **New** `src/components/common/TwoColumnLayout.tsx` (sidebar + main row, ~340px sidebar, divider

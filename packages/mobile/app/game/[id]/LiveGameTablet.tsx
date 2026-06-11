@@ -276,6 +276,7 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                                     }
                                     tintByPitchType={effectivenessTints}
                                     disabled={isLogging}
+                                    variant="card"
                                 />
                             )}
                             {/* Send Call (optional, setting-gated) */}
@@ -397,6 +398,7 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                                         handleLogPitch(r);
                                     }}
                                     disabled={isLogging}
+                                    variant="card"
                                 />
                             )}
                         </View>
