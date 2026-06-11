@@ -27,12 +27,6 @@ export const styles = StyleSheet.create({
     statsPlaceholder: { marginTop: 16 },
     mainPanel: { flex: 1 },
     mainPanelContent: { padding: 16 },
-    chartingRow: { flexDirection: 'row', gap: 16, marginTop: 8, alignItems: 'flex-start' },
-    chartingCol: { flex: 1, gap: 8 },
-    // Tendencies rail open → main panel is narrow, so stack the two charting
-    // columns vertically (full width each) instead of the 50/50 row.
-    chartingRowStacked: { flexDirection: 'column', alignItems: 'stretch' },
-    chartingColStacked: { flexGrow: 0, flexBasis: 'auto', width: '100%' },
     phoneContent: { flex: 1 },
     phoneContentInner: { padding: 10, gap: 8 },
     placeholder: { marginTop: 4, opacity: 0.7 },

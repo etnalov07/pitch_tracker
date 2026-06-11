@@ -131,11 +131,6 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
 
     if (!game) return null;
 
-    // When the tendencies side rail is showing, the main panel narrows — collapse
-    // the 50/50 charting split to a single stacked column so the zone + controls
-    // stay comfortably sized. Matches TendenciesSideRail's own render condition.
-    const tendenciesRailOpen = (showPitcherTendencies && !!currentPitcher) || (showHitterTendencies && !!currentBatter);
-
     const modalHandlers = {
         handleSelectPitcher,
         handleSelectBatter,
@@ -235,174 +230,156 @@ export default function LiveGameTablet({ ctl, actions }: LiveGameTabletProps) {
                 </ScrollView>
                 <ScrollView style={styles.mainPanel} contentContainerStyle={styles.mainPanelContent}>
                     <PitchTypeFilterBar ctl={ctl} />
-                    {/* 50/50 charting split — strike zone (target) on the left, pitch-type-above-result
-                        controls on the right, so the coach sees the full target and results at once. */}
-                    <View style={[styles.chartingRow, tendenciesRailOpen && styles.chartingRowStacked]}>
-                        <View style={[styles.chartingCol, tendenciesRailOpen && styles.chartingColStacked]}>
-                            {!isReadOnly && <ZoneTapHint ctl={ctl} />}
-                            <StrikeZone
-                                onLocationSelect={(x, y) => setPitchLocation({ x, y })}
-                                onTargetZoneSelect={setTargetZone}
-                                onTargetClear={() => {
-                                    setTargetZone(null);
-                                    setPitchLocation(null);
-                                }}
-                                targetZone={targetZone}
-                                previousPitches={isReadOnly ? filteredGamePitches : pitches}
-                                disabled={isReadOnly || isLogging}
-                                colorBy={isReadOnly ? 'pitchType' : 'result'}
-                                batterSide={
-                                    !isScoutingMode && gameMode === 'opp_pitcher'
-                                        ? (currentMyBatter?.player?.bats as 'R' | 'L' | 'S' | undefined)
-                                        : (currentBatter?.bats as 'R' | 'L' | 'S' | undefined)
-                                }
-                                pitcherThrows={
-                                    isScoutingMode || gameMode === 'opp_pitcher'
-                                        ? (currentOpposingPitcher?.throws as 'R' | 'L' | undefined)
-                                        : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
-                                }
-                                heatZones={effectivenessHeatZones}
-                                showHeatZones={!!effectivenessHeatZones}
-                            />
-                            {!isReadOnly && <ActualEqualsTargetButton ctl={ctl} />}
-                        </View>
-                        <View style={[styles.chartingCol, tendenciesRailOpen && styles.chartingColStacked]}>
-                            {!isReadOnly && (
-                                <PitchTypeGrid
-                                    selectedType={selectedPitchType}
-                                    onSelect={setSelectedPitchType}
-                                    availablePitchTypes={
-                                        gameMode !== 'opp_pitcher' && pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined
-                                    }
-                                    tintByPitchType={effectivenessTints}
-                                    disabled={isLogging}
-                                    variant="card"
-                                />
-                            )}
-                            {/* Send Call (optional, setting-gated) */}
-                            {!isReadOnly &&
-                                !isScoutingMode &&
-                                pitchCallingEnabled &&
-                                selectedPitchType &&
-                                targetZone &&
-                                !activeCall && (
-                                    <View style={[styles.callRow, { marginTop: 8 }]}>
-                                        <Button
-                                            mode="contained"
-                                            onPress={handleSendCall}
-                                            loading={sendingCall}
-                                            disabled={sendingCall}
-                                            style={styles.sendCallButton}
-                                            labelStyle={{ color: colors.primary[900], fontWeight: '800', letterSpacing: 0.5 }}
-                                        >
-                                            {sendingCall
-                                                ? 'SENDING...'
-                                                : `${changingCallId ? 'SEND CHANGE' : 'SEND'}: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
-                                        </Button>
-                                        <Pressable
-                                            style={[styles.talkHoldButton, walkieTalkieActive && styles.talkHoldButtonActive]}
-                                            onPressIn={handleTalkPressIn}
-                                            onPressOut={handleTalkPressOut}
-                                        >
-                                            <Text style={[styles.talkHoldIcon, walkieTalkieActive && styles.talkHoldIconActive]}>
-                                                🎙
-                                            </Text>
-                                            <Text style={[styles.talkHoldLabel, walkieTalkieActive && styles.talkHoldLabelActive]}>
-                                                {walkieTalkieActive ? 'TALKING...' : 'Hold to Talk'}
-                                            </Text>
-                                        </Pressable>
-                                        <TouchableOpacity
-                                            onPress={handleShake}
-                                            style={[styles.shakeBtnInline, { backgroundColor: theme.colors.surface }]}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Text style={styles.shakeBtnText}>SHAKE</Text>
-                                            {pendingShakeCount > 0 && (
-                                                <View style={styles.shakeBadge}>
-                                                    <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
-                                                </View>
-                                            )}
-                                        </TouchableOpacity>
+                    {/* iPhone-style single column — pitch types on top, strike zone (target) in the
+                        middle, results below. */}
+                    {!isReadOnly && (
+                        <PitchTypeGrid
+                            selectedType={selectedPitchType}
+                            onSelect={setSelectedPitchType}
+                            availablePitchTypes={
+                                gameMode !== 'opp_pitcher' && pitcherPitchTypes.length > 0 ? pitcherPitchTypes : undefined
+                            }
+                            tintByPitchType={effectivenessTints}
+                            disabled={isLogging}
+                            variant="card"
+                        />
+                    )}
+                    {!isReadOnly && <ZoneTapHint ctl={ctl} />}
+                    <StrikeZone
+                        onLocationSelect={(x, y) => setPitchLocation({ x, y })}
+                        onTargetZoneSelect={setTargetZone}
+                        onTargetClear={() => {
+                            setTargetZone(null);
+                            setPitchLocation(null);
+                        }}
+                        targetZone={targetZone}
+                        previousPitches={isReadOnly ? filteredGamePitches : pitches}
+                        disabled={isReadOnly || isLogging}
+                        colorBy={isReadOnly ? 'pitchType' : 'result'}
+                        batterSide={
+                            !isScoutingMode && gameMode === 'opp_pitcher'
+                                ? (currentMyBatter?.player?.bats as 'R' | 'L' | 'S' | undefined)
+                                : (currentBatter?.bats as 'R' | 'L' | 'S' | undefined)
+                        }
+                        pitcherThrows={
+                            isScoutingMode || gameMode === 'opp_pitcher'
+                                ? (currentOpposingPitcher?.throws as 'R' | 'L' | undefined)
+                                : (currentPitcher?.player?.throws as 'R' | 'L' | undefined)
+                        }
+                        heatZones={effectivenessHeatZones}
+                        showHeatZones={!!effectivenessHeatZones}
+                    />
+                    {!isReadOnly && <ActualEqualsTargetButton ctl={ctl} />}
+                    {/* Send Call (optional, setting-gated) */}
+                    {!isReadOnly && !isScoutingMode && pitchCallingEnabled && selectedPitchType && targetZone && !activeCall && (
+                        <View style={[styles.callRow, { marginTop: 8 }]}>
+                            <Button
+                                mode="contained"
+                                onPress={handleSendCall}
+                                loading={sendingCall}
+                                disabled={sendingCall}
+                                style={styles.sendCallButton}
+                                labelStyle={{ color: colors.primary[900], fontWeight: '800', letterSpacing: 0.5 }}
+                            >
+                                {sendingCall
+                                    ? 'SENDING...'
+                                    : `${changingCallId ? 'SEND CHANGE' : 'SEND'}: ${selectedPitchType.toUpperCase()} → ${PITCH_CALL_ZONE_LABELS[targetZone]}`}
+                            </Button>
+                            <Pressable
+                                style={[styles.talkHoldButton, walkieTalkieActive && styles.talkHoldButtonActive]}
+                                onPressIn={handleTalkPressIn}
+                                onPressOut={handleTalkPressOut}
+                            >
+                                <Text style={[styles.talkHoldIcon, walkieTalkieActive && styles.talkHoldIconActive]}>🎙</Text>
+                                <Text style={[styles.talkHoldLabel, walkieTalkieActive && styles.talkHoldLabelActive]}>
+                                    {walkieTalkieActive ? 'TALKING...' : 'Hold to Talk'}
+                                </Text>
+                            </Pressable>
+                            <TouchableOpacity
+                                onPress={handleShake}
+                                style={[styles.shakeBtnInline, { backgroundColor: theme.colors.surface }]}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={styles.shakeBtnText}>SHAKE</Text>
+                                {pendingShakeCount > 0 && (
+                                    <View style={styles.shakeBadge}>
+                                        <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
                                     </View>
                                 )}
-                            {!isReadOnly && !isScoutingMode && pitchCallingEnabled && activeCall && (
-                                <View style={styles.callBadge}>
-                                    <Text style={styles.callBadgeText}>
-                                        Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
-                                        {activeCall.bt_transmitted ? '  ✓ Received' : ''}
-                                    </Text>
-                                    <View style={styles.callActions}>
-                                        <Button
-                                            mode="contained"
-                                            onPress={handleResendCall}
-                                            compact
-                                            style={{ backgroundColor: colors.amber[500] }}
-                                            labelStyle={{ color: colors.primary[900], fontWeight: '700', fontSize: 12 }}
-                                        >
-                                            Re-send
-                                        </Button>
-                                        <Button mode="outlined" onPress={handleChangeCall} compact labelStyle={{ fontSize: 12 }}>
-                                            Change
-                                        </Button>
-                                        <Pressable
-                                            style={[styles.talkHoldSmall, walkieTalkieActive && styles.talkHoldButtonActive]}
-                                            onPressIn={handleTalkPressIn}
-                                            onPressOut={handleTalkPressOut}
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.talkHoldSmallLabel,
-                                                    walkieTalkieActive && styles.talkHoldLabelActive,
-                                                ]}
-                                            >
-                                                {walkieTalkieActive ? '🎙 TALKING...' : '🎙 Hold to Talk'}
-                                            </Text>
-                                        </Pressable>
-                                        <TouchableOpacity
-                                            onPress={handleShake}
-                                            style={[styles.shakeBtnInline, { backgroundColor: theme.colors.surface }]}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Text style={styles.shakeBtnText}>SHAKE</Text>
-                                            {pendingShakeCount > 0 && (
-                                                <View style={styles.shakeBadge}>
-                                                    <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
-                                                </View>
-                                            )}
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-                            )}
-                            {/* Velocity (optional, setting-gated) — before Result so it's entered before the pitch is logged */}
-                            {!isReadOnly && velocityEnabled && (
-                                <View style={styles.veloRow}>
-                                    <Text style={styles.veloLabel}>MPH</Text>
-                                    <TextInput
-                                        style={styles.veloInput}
-                                        value={velocity}
-                                        onChangeText={setVelocity}
-                                        keyboardType="numeric"
-                                        placeholder="—"
-                                        placeholderTextColor={colors.gray[400]}
-                                        maxLength={3}
-                                        selectTextOnFocus
-                                    />
-                                    {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
-                                </View>
-                            )}
-                            {!isReadOnly && (
-                                <ResultButtons
-                                    selectedResult={selectedResult}
-                                    onSelect={(r) => {
-                                        setSelectedResult(r);
-                                        handleLogPitch(r);
-                                    }}
-                                    disabled={isLogging}
-                                    variant="card"
-                                />
-                            )}
+                            </TouchableOpacity>
                         </View>
-                    </View>
+                    )}
+                    {!isReadOnly && !isScoutingMode && pitchCallingEnabled && activeCall && (
+                        <View style={styles.callBadge}>
+                            <Text style={styles.callBadgeText}>
+                                Call Sent: {activeCall.pitch_type} → {PITCH_CALL_ZONE_LABELS[activeCall.zone]}
+                                {activeCall.bt_transmitted ? '  ✓ Received' : ''}
+                            </Text>
+                            <View style={styles.callActions}>
+                                <Button
+                                    mode="contained"
+                                    onPress={handleResendCall}
+                                    compact
+                                    style={{ backgroundColor: colors.amber[500] }}
+                                    labelStyle={{ color: colors.primary[900], fontWeight: '700', fontSize: 12 }}
+                                >
+                                    Re-send
+                                </Button>
+                                <Button mode="outlined" onPress={handleChangeCall} compact labelStyle={{ fontSize: 12 }}>
+                                    Change
+                                </Button>
+                                <Pressable
+                                    style={[styles.talkHoldSmall, walkieTalkieActive && styles.talkHoldButtonActive]}
+                                    onPressIn={handleTalkPressIn}
+                                    onPressOut={handleTalkPressOut}
+                                >
+                                    <Text style={[styles.talkHoldSmallLabel, walkieTalkieActive && styles.talkHoldLabelActive]}>
+                                        {walkieTalkieActive ? '🎙 TALKING...' : '🎙 Hold to Talk'}
+                                    </Text>
+                                </Pressable>
+                                <TouchableOpacity
+                                    onPress={handleShake}
+                                    style={[styles.shakeBtnInline, { backgroundColor: theme.colors.surface }]}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={styles.shakeBtnText}>SHAKE</Text>
+                                    {pendingShakeCount > 0 && (
+                                        <View style={styles.shakeBadge}>
+                                            <Text style={styles.shakeBadgeText}>{pendingShakeCount}</Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+                    {/* Velocity (optional, setting-gated) — before Result so it's entered before the pitch is logged */}
+                    {!isReadOnly && velocityEnabled && (
+                        <View style={styles.veloRow}>
+                            <Text style={styles.veloLabel}>MPH</Text>
+                            <TextInput
+                                style={styles.veloInput}
+                                value={velocity}
+                                onChangeText={setVelocity}
+                                keyboardType="numeric"
+                                placeholder="—"
+                                placeholderTextColor={colors.gray[400]}
+                                maxLength={3}
+                                selectTextOnFocus
+                            />
+                            {radarEnabled && <RadarStatusPill status={radar.status} lastVelocity={radar.lastVelocity} />}
+                        </View>
+                    )}
+                    {!isReadOnly && (
+                        <ResultButtons
+                            selectedResult={selectedResult}
+                            onSelect={(r) => {
+                                setSelectedResult(r);
+                                handleLogPitch(r);
+                            }}
+                            disabled={isLogging}
+                            variant="card"
+                        />
+                    )}
                     <PitchBreakdown ctl={ctl} />
                     {/*
                         Undo + Previous At-Bats — both "between-pitches" affordances. SHAKE

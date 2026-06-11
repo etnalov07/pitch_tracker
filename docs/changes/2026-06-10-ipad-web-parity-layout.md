@@ -3,8 +3,8 @@
 - **Date:** 2026-06-10
 - **Type:** feat
 - **Commit SHA:** `b604ec1`; follow-ups `e0bcf8a` (50/50 charting split), `f63df9d` (stacked collapse),
-  `853c18e` (card-style pitch type + result)
-- **Version bumps:** `packages/mobile` 2.51.0 → 2.55.0; `app.json` 1.99.0 → 1.103.0
+  `853c18e` (card-style pitch type + result), _pending_ (iPhone-style single column)
+- **Version bumps:** `packages/mobile` 2.51.0 → 2.56.0; `app.json` 1.99.0 → 1.104.0
 
 ## Context
 
@@ -94,6 +94,17 @@ two-column layout.
   grid; selected = white ring. Ball bumped from the shared `gray[300]` to `gray[400]` (the mockup's
   medium gray) so the white label reads.
 - `app/game/[id]/LiveGameTablet.tsx`: pass `variant="card"` to both right-column components.
+
+#### Follow-up — iPhone-style single column
+- `app/game/[id]/LiveGameTablet.tsx`: replaced the 50/50 charting split with a single vertical column
+  in the main panel (mimicking the iPhone flow): **pitch types on top → strike zone (target) in the
+  middle → results below**, then PitchBreakdown + undo/prev. Removed the `tendenciesRailOpen`
+  stacked-collapse logic (no longer needed — always one column now).
+- `app/game/[id]/liveGameStyles.ts`: removed the now-unused `chartingRow`/`chartingCol`/
+  `chartingRowStacked`/`chartingColStacked` styles.
+- `src/components/live/PitchTypeGrid/PitchTypeGrid.tsx`: shrank the `card` button ~25% (abbrev
+  24→18, label 12→9, padding/basis/radius down proportionally) so more pitch types fit per row now
+  that the selector spans full width above the zone.
 
 ### packages/mobile — shared primitive
 - **New** `src/components/common/TwoColumnLayout.tsx` (sidebar + main row, ~340px sidebar, divider
