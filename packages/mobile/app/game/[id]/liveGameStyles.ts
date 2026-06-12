@@ -27,9 +27,9 @@ export const styles = StyleSheet.create({
     statsPlaceholder: { marginTop: 16 },
     mainPanel: { flex: 1 },
     mainPanelContent: { padding: 12, gap: 8 },
-    // iPad: bound + center the strike zone (~15% smaller, capped) so the single
+    // iPad: bound + center the strike zone (capped) so the single
     // pitch-type → zone → result column fits without scrolling on landscape iPad.
-    tabletZoneWrap: { width: '85%', maxWidth: 440, alignSelf: 'center' },
+    tabletZoneWrap: { width: '72%', maxWidth: 374, alignSelf: 'center' },
     phoneContent: { flex: 1 },
     phoneContentInner: { padding: 10, gap: 8 },
     placeholder: { marginTop: 4, opacity: 0.7 },

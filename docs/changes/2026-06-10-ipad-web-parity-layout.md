@@ -4,8 +4,8 @@
 - **Type:** feat
 - **Commit SHA:** `b604ec1`; follow-ups `e0bcf8a` (50/50 charting split), `f63df9d` (stacked collapse),
   `853c18e` (card-style pitch type + result), `1dbf624` (iPhone-style single column),
-  `e14a8fa` (size trim to remove scrolling)
-- **Version bumps:** `packages/mobile` 2.51.0 → 2.57.0; `app.json` 1.99.0 → 1.105.0
+  `e14a8fa` (size trim to remove scrolling), _pending_ (more size trim + In Play modal iPad layout)
+- **Version bumps:** `packages/mobile` 2.51.0 → 2.58.0; `app.json` 1.99.0 → 1.106.0
 
 ## Context
 
@@ -116,6 +116,18 @@ two-column layout.
 - `src/components/live/ResultButtons/ResultButtons.tsx`: trimmed the `card` buttons ~15%
   (minHeight 58→49, padding 14→12, label 15→13, radius/gap down) so the pitch-type → zone → result
   column fits without scrolling on landscape iPad.
+
+#### Follow-up — further size trim + In Play modal iPad layout
+- Another ~15% trim across the iPad live-game charting controls: strike-zone cap
+  (`tabletZoneWrap` 85%/440 → 72%/374), `PitchTypeGrid` card buttons (abbrev 18→15, label 9→8,
+  basis 68→58, padding/radius down), and `ResultButtons` card buttons (minHeight 49→42, label
+  13→11, padding/radius/gap down).
+- `src/components/live/InPlayModal/InPlayModal.tsx`: added a landscape-iPad layout — on tablet the
+  modal widens (`modalTablet` maxWidth 680) and lays out **hit-type full width on top, then the
+  field on the left and the result buttons on the right** (`tabletBody`/`tabletColumns`/`tabletLeft`/
+  `tabletRight`), so it stays short and wide instead of a tall scroll. Phone keeps the single
+  stacked ScrollView. Extracted the body into render consts (`hitTypeEl`/`instructionsEl`/`fieldEl`/
+  `resultsEl`/`cancelEl`) shared by both layouts.
 
 ### packages/mobile — shared primitive
 - **New** `src/components/common/TwoColumnLayout.tsx` (sidebar + main row, ~340px sidebar, divider

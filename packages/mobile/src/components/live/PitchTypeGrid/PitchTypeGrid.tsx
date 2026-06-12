@@ -222,17 +222,17 @@ const cardStyles = StyleSheet.create({
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
+        gap: 7,
     },
-    // ~25% smaller than the original card buttons so more pitch types fit per row
-    // now that the selector sits full-width above the strike zone.
+    // Compact buttons so the full-width selector above the strike zone packs many
+    // pitch types per row without forcing the column to scroll.
     button: {
         flexGrow: 1,
-        flexBasis: 68,
-        minWidth: 68,
-        paddingVertical: 12,
-        paddingHorizontal: 9,
-        borderRadius: 11,
+        flexBasis: 58,
+        minWidth: 58,
+        paddingVertical: 10,
+        paddingHorizontal: 8,
+        borderRadius: 9,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
@@ -241,11 +241,11 @@ const cardStyles = StyleSheet.create({
         opacity: 0.5,
     },
     abbrev: {
-        fontSize: 18,
+        fontSize: 15,
         fontWeight: '800',
     },
     label: {
-        fontSize: 9,
+        fontSize: 8,
         marginTop: 2,
     },
 });
