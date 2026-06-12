@@ -4,7 +4,7 @@
 - **Type:** feat
 - **Commit SHA:** `b604ec1`; follow-ups `e0bcf8a` (50/50 charting split), `f63df9d` (stacked collapse),
   `853c18e` (card-style pitch type + result), `1dbf624` (iPhone-style single column),
-  `e14a8fa` (size trim to remove scrolling), _pending_ (more size trim + In Play modal iPad layout)
+  `e14a8fa` (size trim to remove scrolling), `8560392` (more size trim + In Play modal iPad layout)
 - **Version bumps:** `packages/mobile` 2.51.0 → 2.58.0; `app.json` 1.99.0 → 1.106.0
 
 ## Context
