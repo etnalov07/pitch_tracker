@@ -60,4 +60,10 @@ export const organizationService = {
         const response = await api.put<Organization>(`/organizations/${orgId}`, { name });
         return response.data;
     },
+
+    // Update an organization's brand colors (owner/admin only)
+    updateColors: async (orgId: string, colors: { primary_color: string; secondary_color: string }): Promise<Organization> => {
+        const response = await api.put<Organization>(`/organizations/${orgId}/colors`, colors);
+        return response.data;
+    },
 };

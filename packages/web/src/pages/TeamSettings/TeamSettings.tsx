@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { LogoUploader, ColorPicker, TeamLogo } from '../../components/team';
-import { useTeamTheme } from '../../contexts';
 import { useAppDispatch, useAppSelector, fetchTeamById, uploadTeamLogo, updateTeamColors, deleteTeamLogo } from '../../state';
 import {
     Container,
@@ -22,7 +21,6 @@ const TeamSettings: React.FC = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { team_id } = useParams<{ team_id: string }>();
-    const { setActiveTeam, clearTheme } = useTeamTheme();
 
     const { selectedTeam: team, loading } = useAppSelector((state) => state.teams);
 
@@ -49,12 +47,10 @@ const TeamSettings: React.FC = () => {
                 secondary_color: team.secondary_color || '#1f2937',
                 accent_color: team.accent_color || '#22c55e',
             });
-            setActiveTeam(team);
         }
-        return () => {
-            clearTheme();
-        };
-    }, [team, setActiveTeam, clearTheme]);
+        // App-wide brand theming is driven centrally by <BrandSync>; saving colors
+        // updates redux selectedTeam, which BrandSync picks up to reskin the app.
+    }, [team]);
 
     const showSuccess = (message: string) => {
         setSuccessMessage(message);

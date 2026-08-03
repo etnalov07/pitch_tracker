@@ -43,6 +43,28 @@ export class OrganizationController {
         }
     }
 
+    async updateColors(req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { primary_color, secondary_color } = req.body;
+
+            // Same hex validation the team color endpoint uses.
+            const hexRegex = /^#[0-9A-Fa-f]{6}$/;
+            if (primary_color && !hexRegex.test(primary_color)) {
+                res.status(400).json({ error: 'Invalid primary color format. Use hex format like #FF0000' });
+                return;
+            }
+            if (secondary_color && !hexRegex.test(secondary_color)) {
+                res.status(400).json({ error: 'Invalid secondary color format. Use hex format like #FF0000' });
+                return;
+            }
+
+            const org = await organizationService.updateColors(req.params.org_id as string, { primary_color, secondary_color });
+            res.json(org);
+        } catch (error) {
+            next(error);
+        }
+    }
+
     async delete(req: RoleAwareRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             await organizationService.deleteOrganization(req.params.org_id as string);

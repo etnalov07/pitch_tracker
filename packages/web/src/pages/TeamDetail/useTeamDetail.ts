@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useTeamTheme } from '../../contexts';
 import api from '../../services/api';
 import {
     useAppDispatch,
@@ -27,7 +26,6 @@ export function useTeamDetail() {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { team_id } = useParams<{ team_id: string }>();
-    const { setActiveTeam, clearTheme } = useTeamTheme();
 
     const { selectedTeam: team, selectedTeamAccessLevel, roster: players = [], loading } = useAppSelector((state) => state.teams);
     // Org members who aren't on this team (access_level === 'org_view') see
@@ -47,14 +45,8 @@ export function useTeamDetail() {
         }
     }, [dispatch, team_id]);
 
-    useEffect(() => {
-        if (team) {
-            setActiveTeam(team);
-        }
-        return () => {
-            clearTheme();
-        };
-    }, [team, setActiveTeam, clearTheme]);
+    // App-wide brand theming (including this team's colors) is driven centrally
+    // by <BrandSync> off the route + redux selectedTeam — no per-page wiring here.
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({

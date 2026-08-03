@@ -22,6 +22,38 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
         <title>PitchChart</title>
+        <!--
+      No-FOUC theming bootstrap. Runs before first paint so the correct
+      light/dark mode AND any persisted org/team brand are applied before React
+      mounts (React's providers set these in a post-paint effect, which flashes).
+      It only sets data-theme and replays the derived var-map that
+      `contexts/TeamThemeContext.tsx` persisted via `deriveBrandTokens` — no color
+      math here, so there is nothing to keep in sync with `styles/colorMath.ts`.
+    -->
+        <script>
+            (function () {
+                try {
+                    var mode = localStorage.getItem('theme:mode');
+                    var effective = mode;
+                    if (mode !== 'light' && mode !== 'dark') {
+                        effective =
+                            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    }
+                    document.documentElement.setAttribute('data-theme', effective);
+
+                    var vars = localStorage.getItem('brand:vars');
+                    if (vars) {
+                        var tokens = JSON.parse(vars);
+                        var root = document.documentElement;
+                        Object.keys(tokens).forEach(function (key) {
+                            root.style.setProperty(key, tokens[key]);
+                        });
+                    }
+                } catch (e) {
+                    /* localStorage/JSON unavailable — fall through to CSS defaults. */
+                }
+            })();
+        </script>
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import packageJson from '../package.json';
+import { BrandSync } from './contexts';
 import { ConfirmProvider } from './hooks/useConfirm';
 import { ToastProvider } from './hooks/useToast';
 import Admin from './pages/Admin';
@@ -47,6 +48,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
 function App() {
     return (
         <Router>
+            <BrandSync />
             <ConfirmProvider>
                 <ToastProvider>
                     <Routes>

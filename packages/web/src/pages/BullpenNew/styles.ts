@@ -111,9 +111,9 @@ export const IntensityGroup = styled.div({
 
 export const IntensityButton = styled.button<{ selected?: boolean; intensity: 'low' | 'medium' | 'high' }>((props) => {
     const colors = {
-        low: { bg: '#dcfce7', border: '#16a34a', text: '#16a34a' },
-        medium: { bg: '#fef9c3', border: '#ca8a04', text: '#ca8a04' },
-        high: { bg: '#fee2e2', border: '#dc2626', text: '#dc2626' },
+        low: { bg: theme.semantic.successBg, border: theme.semantic.successBorder, text: theme.semantic.successText },
+        medium: { bg: theme.semantic.warningBg, border: theme.semantic.warningBorder, text: theme.semantic.warningText },
+        high: { bg: theme.semantic.errorBg, border: theme.semantic.errorBorder, text: theme.semantic.errorText },
     };
     const c = colors[props.intensity];
     return {

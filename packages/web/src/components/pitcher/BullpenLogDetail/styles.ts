@@ -64,9 +64,9 @@ export const CloseButton = styled.button({
 
 export const IntensityBadge = styled.span<{ intensity: 'low' | 'medium' | 'high' }>((props) => {
     const colors = {
-        low: { bg: '#dcfce7', text: '#16a34a' },
-        medium: { bg: '#fef9c3', text: '#ca8a04' },
-        high: { bg: '#fee2e2', text: '#dc2626' },
+        low: { bg: theme.semantic.successBg, text: theme.semantic.successText },
+        medium: { bg: theme.semantic.warningBg, text: theme.semantic.warningText },
+        high: { bg: theme.semantic.errorBg, text: theme.semantic.errorText },
     };
     const c = colors[props.intensity];
     return {

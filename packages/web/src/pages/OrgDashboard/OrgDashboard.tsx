@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ColorPicker } from '../../components/team';
+import { useTeamTheme } from '../../contexts';
 import { MyOrganization, OrgTeam, organizationService } from '../../services/organizationService';
 import { teamService } from '../../services/teamService';
 import { logout, useAppDispatch, useAppSelector } from '../../state';
@@ -56,6 +58,7 @@ const OrgDashboard: React.FC = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const user = useAppSelector((state) => state.auth.user);
+    const { setOrgBrand } = useTeamTheme();
 
     const [orgs, setOrgs] = useState<MyOrganization[] | null>(null);
     const [activeIdx, setActiveIdx] = useState(0);
@@ -69,6 +72,12 @@ const OrgDashboard: React.FC = () => {
     const [memberEmail, setMemberEmail] = useState('');
     const [memberRole, setMemberRole] = useState<OrgRole>('admin');
     const [renameValue, setRenameValue] = useState('');
+    const [orgColors, setOrgColors] = useState({
+        primary_color: '#486581',
+        secondary_color: '#1f2937',
+        accent_color: '#22c55e',
+    });
+    const [isSavingColors, setIsSavingColors] = useState(false);
     const [busy, setBusy] = useState(false);
     const [actionError, setActionError] = useState<string | null>(null);
     const [resentMemberIds, setResentMemberIds] = useState<Set<string>>(new Set());
@@ -112,6 +121,14 @@ const OrgDashboard: React.FC = () => {
     useEffect(() => {
         setRenameValue(activeOrg?.name ?? '');
     }, [activeOrg?.name]);
+
+    useEffect(() => {
+        setOrgColors({
+            primary_color: activeOrg?.primary_color || '#486581',
+            secondary_color: activeOrg?.secondary_color || '#1f2937',
+            accent_color: '#22c55e',
+        });
+    }, [activeOrg?.primary_color, activeOrg?.secondary_color]);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -175,6 +192,33 @@ const OrgDashboard: React.FC = () => {
             setActionError(errMsg(err, 'Could not resend the verification email.'));
         } finally {
             setBusy(false);
+        }
+    };
+
+    const handleSaveColors = async () => {
+        if (!activeOrgId) return;
+        setIsSavingColors(true);
+        setActionError(null);
+        try {
+            const updated = await organizationService.updateColors(activeOrgId, {
+                primary_color: orgColors.primary_color,
+                secondary_color: orgColors.secondary_color,
+            });
+            setOrgs((prev) =>
+                prev
+                    ? prev.map((o) =>
+                          o.id === activeOrgId
+                              ? { ...o, primary_color: updated.primary_color, secondary_color: updated.secondary_color }
+                              : o
+                      )
+                    : prev
+            );
+            // Reskin the app immediately off the new org baseline.
+            setOrgBrand(updated);
+        } catch (err) {
+            setActionError(errMsg(err, 'Could not save organization colors.'));
+        } finally {
+            setIsSavingColors(false);
         }
     };
 
@@ -379,6 +423,18 @@ const OrgDashboard: React.FC = () => {
                             </PrimaryButton>
                         </InlineForm>
                         <HelperText>Renaming the organization does not change its existing link.</HelperText>
+
+                        <SectionTitle>Organization Colors</SectionTitle>
+                        <HelperText>
+                            These brand the whole app for your organization. A team&apos;s own colors take over while you&apos;re
+                            viewing that team.
+                        </HelperText>
+                        <ColorPicker colors={orgColors} onChange={setOrgColors} showAccent={false} />
+                        {canManage && (
+                            <PrimaryButton onClick={handleSaveColors} disabled={isSavingColors}>
+                                {isSavingColors ? 'Saving…' : 'Save Colors'}
+                            </PrimaryButton>
+                        )}
                         {actionError && <ErrorText>{actionError}</ErrorText>}
                     </Section>
                 )}

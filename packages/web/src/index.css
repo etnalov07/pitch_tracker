@@ -246,55 +246,11 @@
     color-scheme: dark;
 }
 
-/* Respect OS preference if no explicit theme is set */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme='light']):not([data-theme='dark']) {
-        --color-primary-50: #1a2942;
-        --color-primary-100: #243b53;
-        --color-primary-200: #334e68;
-        --color-primary-300: #486581;
-        --color-primary-400: #627d98;
-        --color-primary-500: #829ab1;
-        --color-primary-600: #9fb3c8;
-        --color-primary-700: #bcccdc;
-        --color-primary-800: #d9e2ec;
-        --color-primary-900: #f0f4f8;
-
-        --color-gray-50: #1a2231;
-        --color-gray-100: #1f2937;
-        --color-gray-200: #2d3748;
-        --color-gray-300: #4b5563;
-        --color-gray-400: #6b7280;
-        --color-gray-500: #9ca3af;
-        --color-gray-600: #cbd5e1;
-        --color-gray-700: #e5e7eb;
-        --color-gray-800: #f1f5f9;
-        --color-gray-900: #f9fafb;
-
-        --color-green-400: #22c55e;
-        --color-green-500: #4ade80;
-        --color-green-600: #86efac;
-
-        --color-red-400: #ef4444;
-        --color-red-500: #f87171;
-        --color-red-600: #fca5a5;
-
-        --color-yellow-400: #eab308;
-        --color-yellow-500: #facc15;
-        --color-yellow-600: #fde047;
-
-        --surface-body: #0f172a;
-        --surface-card: #1f2937;
-        --surface-elevated: #2d3748;
-        --surface-text: #f1f5f9;
-        --surface-text-muted: #cbd5e1;
-        --surface-text-subtle: #9ca3af;
-        --surface-border: #374151;
-        --surface-border-strong: #4b5563;
-
-        color-scheme: dark;
-    }
-}
+/* Note: OS dark-mode preference is applied by the pre-paint bootstrap in
+   public/index.html, which sets data-theme='dark' before first paint (so the
+   full [data-theme='dark'] token set above always wins). The app requires JS
+   (see <noscript>), so no CSS-only prefers-color-scheme fallback is needed —
+   keeping one here only risked drifting out of sync with the block above. */
 
 * {
     box-sizing: border-box;

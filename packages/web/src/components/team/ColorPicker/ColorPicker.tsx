@@ -1,5 +1,6 @@
 import styled from '@emotion/styled';
 import React from 'react';
+import { getContrastRatio } from '../../../styles/colorMath';
 import { theme } from '../../../styles/theme';
 
 interface TeamColors {
@@ -11,6 +12,8 @@ interface TeamColors {
 interface ColorPickerProps {
     colors: TeamColors;
     onChange: (colors: TeamColors) => void;
+    // Orgs brand off primary + secondary only; hide the accent row for them.
+    showAccent?: boolean;
 }
 
 const Container = styled.div`
@@ -151,26 +154,7 @@ const PRESET_COLORS = [
     '#000000', // Black
 ];
 
-const getLuminance = (hex: string): number => {
-    const rgb = parseInt(hex.slice(1), 16);
-    const r = ((rgb >> 16) & 0xff) / 255;
-    const g = ((rgb >> 8) & 0xff) / 255;
-    const b = (rgb & 0xff) / 255;
-
-    const [rs, gs, bs] = [r, g, b].map((c) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)));
-
-    return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-};
-
-const getContrastRatio = (hex1: string, hex2: string): number => {
-    const l1 = getLuminance(hex1);
-    const l2 = getLuminance(hex2);
-    const lighter = Math.max(l1, l2);
-    const darker = Math.min(l1, l2);
-    return (lighter + 0.05) / (darker + 0.05);
-};
-
-const ColorPicker: React.FC<ColorPickerProps> = ({ colors, onChange }) => {
+const ColorPicker: React.FC<ColorPickerProps> = ({ colors, onChange, showAccent = true }) => {
     const handleColorChange = (key: keyof TeamColors, value: string) => {
         onChange({ ...colors, [key]: value });
     };
@@ -242,31 +226,33 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ colors, onChange }) => {
                 </PresetColors>
             </ColorRow>
 
-            <ColorRow>
-                <ColorLabel>Accent</ColorLabel>
-                <ColorInputWrapper>
-                    <ColorInput
-                        type="color"
-                        value={colors.accent_color}
-                        onChange={(e) => handleColorChange('accent_color', e.target.value)}
-                    />
-                    <HexInput
-                        value={colors.accent_color}
-                        onChange={(e) => handleHexInputChange('accent_color', e.target.value)}
-                        maxLength={7}
-                    />
-                </ColorInputWrapper>
-                <PresetColors>
-                    {PRESET_COLORS.slice(0, 5).map((color) => (
-                        <PresetColor
-                            key={color}
-                            color={color}
-                            onClick={() => handleColorChange('accent_color', color)}
-                            title={color}
+            {showAccent && (
+                <ColorRow>
+                    <ColorLabel>Accent</ColorLabel>
+                    <ColorInputWrapper>
+                        <ColorInput
+                            type="color"
+                            value={colors.accent_color}
+                            onChange={(e) => handleColorChange('accent_color', e.target.value)}
                         />
-                    ))}
-                </PresetColors>
-            </ColorRow>
+                        <HexInput
+                            value={colors.accent_color}
+                            onChange={(e) => handleHexInputChange('accent_color', e.target.value)}
+                            maxLength={7}
+                        />
+                    </ColorInputWrapper>
+                    <PresetColors>
+                        {PRESET_COLORS.slice(0, 5).map((color) => (
+                            <PresetColor
+                                key={color}
+                                color={color}
+                                onClick={() => handleColorChange('accent_color', color)}
+                                title={color}
+                            />
+                        ))}
+                    </PresetColors>
+                </ColorRow>
+            )}
 
             {hasLowContrast && (
                 <ContrastWarning>
@@ -279,7 +265,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ colors, onChange }) => {
                     Team Header Preview
                 </PreviewHeader>
                 <PreviewBody>
-                    <PreviewButton accent={colors.accent_color}>Action Button</PreviewButton>
+                    <PreviewButton accent={showAccent ? colors.accent_color : colors.primary_color}>Action Button</PreviewButton>
                 </PreviewBody>
             </Preview>
         </Container>

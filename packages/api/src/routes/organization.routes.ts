@@ -20,6 +20,9 @@ router.get('/:org_id', requireOrgMember, organizationController.getById.bind(org
 // Update organization (requires admin/owner)
 router.put('/:org_id', requireOrgRole('owner', 'admin'), organizationController.update.bind(organizationController));
 
+// Update organization brand colors (requires admin/owner)
+router.put('/:org_id/colors', requireOrgRole('owner', 'admin'), organizationController.updateColors.bind(organizationController));
+
 // Delete organization (requires owner)
 router.delete('/:org_id', requireOrgRole('owner'), organizationController.delete.bind(organizationController));
 

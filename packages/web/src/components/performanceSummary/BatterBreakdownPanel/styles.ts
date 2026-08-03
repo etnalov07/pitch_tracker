@@ -41,7 +41,7 @@ export const LegendDot = styled.div<{ bg: string; border: string; isEnding?: boo
 
 export const HintText = styled.p({
     fontSize: 11,
-    color: '#9ca3af',
+    color: theme.surfaces.textSubtle,
     margin: `0 0 ${theme.spacing.sm}`,
     fontStyle: 'italic',
 });

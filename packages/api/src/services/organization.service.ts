@@ -103,6 +103,27 @@ export class OrganizationService {
         return result.rows[0];
     }
 
+    // Persist an org's brand colors. Mirrors team.service.updateTeamColors —
+    // COALESCE so a caller can update either color independently.
+    async updateColors(orgId: string, colors: { primary_color?: string; secondary_color?: string }): Promise<Organization> {
+        const { primary_color, secondary_color } = colors;
+
+        const result = await query(
+            `UPDATE organizations
+             SET primary_color = COALESCE($1, primary_color),
+                 secondary_color = COALESCE($2, secondary_color)
+             WHERE id = $3
+             RETURNING *`,
+            [primary_color, secondary_color, orgId]
+        );
+
+        if (result.rows.length === 0) {
+            throw new Error('Organization not found');
+        }
+
+        return result.rows[0];
+    }
+
     async deleteOrganization(orgId: string): Promise<void> {
         // Unlink teams from org (don't delete them)
         await query('UPDATE teams SET organization_id = NULL WHERE organization_id = $1', [orgId]);
