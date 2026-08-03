@@ -25,7 +25,7 @@ jobs:
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: '18'
+                  node-version: '24.18.0'
                   cache: 'npm'
 
             - name: Install dependencies
@@ -49,6 +49,7 @@ jobs:
                   password: ${{ secrets.FTP_PASSWORD }}
                   protocol: ftps
                   port: 21
+                  timeout: 60000
                   local-dir: ./packages/web/build/
                   server-dir: ./${{ secrets.WEB_DIRECTORY || 'bt_web' }}/
                   dangerous-clean-slate: false
@@ -61,8 +62,8 @@ jobs:
             - name: Wait before FTP retry
               if: steps.ftp_deploy_1.outcome == 'failure'
               run: |
-                  echo "FTP attempt 1 failed — waiting 30s before retry..."
-                  sleep 30
+                  echo "FTP attempt 1 failed — waiting 120s before retry..."
+                  sleep 120
 
             - name: Retry FTP Deploy to Namecheap
               if: steps.ftp_deploy_1.outcome == 'failure'
@@ -73,6 +74,7 @@ jobs:
                   password: ${{ secrets.FTP_PASSWORD }}
                   protocol: ftps
                   port: 21
+                  timeout: 60000
                   local-dir: ./packages/web/build/
                   server-dir: ./${{ secrets.WEB_DIRECTORY || 'bt_web' }}/
                   dangerous-clean-slate: false
