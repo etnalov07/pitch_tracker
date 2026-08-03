@@ -50,28 +50,33 @@ describe('GameService', () => {
         it('creates a game successfully', async () => {
             const mockGame = { id: 'test-uuid', ...validGameData, status: 'scheduled' };
             mockFindOrCreate.mockResolvedValueOnce({ id: 'opp-1' } as any);
+            // createGame looks up the home team's type/age_division to inherit
+            // sanction defaults (query #1), then runs the INSERT (query #2).
+            mockQuery.mockResolvedValueOnce({ rows: [] } as any);
             mockQuery.mockResolvedValueOnce({ rows: [mockGame] } as any);
 
             const result = await service.createGame('user-1', validGameData);
             expect(result).toEqual(mockGame);
-            expect(mockQuery).toHaveBeenCalledTimes(1);
+            expect(mockQuery).toHaveBeenCalledTimes(2);
         });
 
         it('auto-creates an opponent_teams row when only opponent_name is provided', async () => {
             const opponent = { id: 'opp-uuid', team_id: 'team-1', name: 'Rival Team' };
             mockFindOrCreate.mockResolvedValueOnce(opponent as any);
+            mockQuery.mockResolvedValueOnce({ rows: [] } as any); // home-team lookup
             mockQuery.mockResolvedValueOnce({ rows: [{ id: 'test-uuid' }] } as any);
 
             await service.createGame('user-1', validGameData);
 
             expect(mockFindOrCreate).toHaveBeenCalledWith('team-1', 'Rival Team');
-            // 15th INSERT param is opponent_team_id
-            const insertParams = mockQuery.mock.calls[0][1] as unknown[];
+            // 15th INSERT param is opponent_team_id (INSERT is the 2nd query call)
+            const insertParams = mockQuery.mock.calls[1][1] as unknown[];
             expect(insertParams[14]).toBe('opp-uuid');
             expect(mockIncrementGameCount).toHaveBeenCalledWith('opp-uuid', '2025-06-15');
         });
 
         it('skips findOrCreate in scouting mode', async () => {
+            mockQuery.mockResolvedValueOnce({ rows: [] } as any); // home-team lookup
             mockQuery.mockResolvedValueOnce({ rows: [{ id: 'test-uuid' }] } as any);
 
             await service.createGame('user-1', {
@@ -83,11 +88,12 @@ describe('GameService', () => {
             } as any);
 
             expect(mockFindOrCreate).not.toHaveBeenCalled();
-            const insertParams = mockQuery.mock.calls[0][1] as unknown[];
+            const insertParams = mockQuery.mock.calls[1][1] as unknown[];
             expect(insertParams[14]).toBeNull();
         });
 
         it('respects an explicit opponent_team_id and does not call findOrCreate', async () => {
+            mockQuery.mockResolvedValueOnce({ rows: [] } as any); // home-team lookup
             mockQuery.mockResolvedValueOnce({ rows: [{ id: 'test-uuid' }] } as any);
 
             await service.createGame('user-1', {
@@ -96,7 +102,7 @@ describe('GameService', () => {
             } as any);
 
             expect(mockFindOrCreate).not.toHaveBeenCalled();
-            const insertParams = mockQuery.mock.calls[0][1] as unknown[];
+            const insertParams = mockQuery.mock.calls[1][1] as unknown[];
             expect(insertParams[14]).toBe('pre-existing-opp');
         });
 

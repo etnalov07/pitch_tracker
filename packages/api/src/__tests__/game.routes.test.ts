@@ -35,6 +35,9 @@ describe('Game Routes - /bt-api/games', () => {
 
         it('creates a game successfully', async () => {
             const mockGame = { id: 'test-game-id', ...gamePayload, status: 'scheduled' };
+            // createGame looks up the home team (sanction/age_division inheritance)
+            // before the INSERT, so feed the lookup first.
+            mockQuery.mockResolvedValueOnce({ rows: [] } as any);
             mockQuery.mockResolvedValueOnce({ rows: [mockGame] } as any);
 
             const res = await getAgent().post('/bt-api/games').set('Authorization', authHeader()).send(gamePayload);

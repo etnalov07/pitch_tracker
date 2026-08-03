@@ -3,15 +3,27 @@ import { getAgent, authHeader, resetMocks, mockQuery, mockTransaction, setupMock
 jest.mock('uuid', () => ({ v4: jest.fn(() => 'test-org-id') }));
 
 // Bypass role loading + enforcement so each test only mocks its handler's queries.
-jest.mock('../middleware/roles', () => ({
-    loadUserRoles: (_req: any, _res: any, next: any) => next(),
-    requireTeamRole: () => (_req: any, _res: any, next: any) => next(),
-    requireOrgRole: () => (_req: any, _res: any, next: any) => next(),
-    requirePlayerTeamRole: () => (_req: any, _res: any, next: any) => next(),
-    requireTeamRoleFromBody: () => (_req: any, _res: any, next: any) => next(),
-    requireTeamRoleFromJoinRequest: () => (_req: any, _res: any, next: any) => next(),
-    requireOrgMember: (_req: any, _res: any, next: any) => next(),
-}));
+jest.mock('../middleware/roles', () => {
+    // Spread the real module so this bypass mock does not go stale when new
+    // exports are added to middleware/roles (e.g. requireTeamReadAccess was
+    // added later and silently broke these suites). Only the enforcement
+    // helpers are overridden with no-ops.
+    const actual = jest.requireActual('../middleware/roles');
+    return {
+        ...actual,
+        loadUserRoles: (_req: any, _res: any, next: any) => next(),
+        requireTeamRole: () => (_req: any, _res: any, next: any) => next(),
+        requireOrgRole: () => (_req: any, _res: any, next: any) => next(),
+        requirePlayerTeamRole: () => (_req: any, _res: any, next: any) => next(),
+        requireTeamRoleFromBody: () => (_req: any, _res: any, next: any) => next(),
+        requireTeamRoleFromJoinRequest: () => (_req: any, _res: any, next: any) => next(),
+        requireOrgMember: (_req: any, _res: any, next: any) => next(),
+        requireTeamReadAccess: (_req: any, _res: any, next: any) => {
+            _req.teamAccessLevel = 'owner';
+            next();
+        },
+    };
+});
 
 describe('Organization Routes - /bt-api/organizations', () => {
     beforeEach(() => resetMocks());
