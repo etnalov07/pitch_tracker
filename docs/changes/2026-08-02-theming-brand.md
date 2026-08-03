@@ -2,7 +2,7 @@
 
 - **Date:** 2026-08-02
 - **Type:** feat
-- **Commit SHA:** _pending_
+- **Commit SHA:** `65d7a8e`
 - **Version bumps:** web `1.37.0 → 1.38.0`, api `1.27.0 → 1.28.0` (shared unchanged)
 
 ## Context
