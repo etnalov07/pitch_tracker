@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>PitchChart — LiveGame "Broadcast" Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ═══════════════════════════════════════════════════════
+     MODERN BROADCAST — dark-first, flat, signal-red accent
+     ═══════════════════════════════════════════════════════ */
+  :root {
+    /* Dark broadcast surfaces (DEFAULT) */
+    --surface:#0A0E14;
+    --surface-elevated:#131A24;
+    --surface-inset:#070A10;
+    --surface-glass:rgba(19,26,36,0.85);
+
+    --ink:#F4F6FA;
+    --ink-muted:#9099A8;
+    --ink-subtle:#5A6373;
+
+    /* Maroon — primary CTA / "act now" */
+    --accent:#9B2235;
+    --accent-deep:#641520;
+    --accent-soft:rgba(155,34,53,0.20);
+    --accent-glow:rgba(155,34,53,0.50);
+
+    /* Amber — demoted to count-light only */
+    --amber:#FFB438;
+    --amber-soft:rgba(255,180,56,0.16);
+
+    --brand:#0A0E14;
+    --brand-soft:#1C2433;
+
+    /* Team colors */
+    --team-home:#3265E0;     /* Knights royal */
+    --team-away:#E54B2C;     /* Hawks rust */
+
+    /* Pitch-type palette (Statcast-flavored) */
+    --pt-fb:#FF6B47;  --pt-sl:#3DA8E5;  --pt-ch:#5BC579;
+    --pt-cb:#9B6CE5;  --pt-ct:#E5A23D;  --pt-si:#C97A4B;
+
+    /* Semantic */
+    --success:#2BC579;
+    --success-soft:rgba(43,197,121,0.16);
+    --ball:#6B7585;
+    --ball-soft:rgba(107,117,133,0.16);
+    --foul:#F0C24A;
+    --foul-soft:rgba(240,194,74,0.18);
+    --danger:var(--accent);
+    --danger-soft:var(--accent-soft);
+    --in-play:#4287E5;
+    --in-play-soft:rgba(66,135,229,0.18);
+    --hbp:#B084E8;
+    --hbp-soft:rgba(176,132,232,0.18);
+
+    --border:rgba(244,246,250,0.10);
+    --border-strong:rgba(244,246,250,0.24);
+    --hairline:rgba(244,246,250,0.06);
+
+    --chalk:#F4F6FA;
+
+    --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 30px -12px rgba(0,0,0,0.70);
+    --shadow-lifted: 0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 50px -16px rgba(0,0,0,0.80);
+
+    --font-display:"Bebas Neue","Oswald","Arial Narrow",Impact,sans-serif;
+    --font-sans:"Inter",-apple-system,"Segoe UI",system-ui,sans-serif;
+    --font-mono:"JetBrains Mono","SF Mono",Menlo,monospace;
+
+    --motion-instant:80ms; --motion-quick:160ms; --motion-settled:240ms;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  [data-theme="light"] {
+    --surface:#F2F4F7;
+    --surface-elevated:#FFFFFF;
+    --surface-inset:#E6E9EE;
+    --surface-glass:rgba(255,255,255,0.85);
+
+    --ink:#0A0E14;
+    --ink-muted:#4A5363;
+    --ink-subtle:#8A95A8;
+
+    --accent:#7E1A2C;
+    --accent-deep:#5A0F1F;
+    --accent-soft:rgba(126,26,44,0.12);
+    --accent-glow:rgba(126,26,44,0.30);
+
+    --amber:#E89B2C;
+    --amber-soft:rgba(232,155,44,0.14);
+
+    --brand:#FFFFFF;
+    --brand-soft:#F2F4F7;
+
+    --success:#1E9B5E;
+    --success-soft:rgba(30,155,94,0.12);
+    --ball:#5E6B7A;
+    --ball-soft:rgba(94,107,122,0.12);
+    --foul:#C58A1A;
+    --foul-soft:rgba(197,138,26,0.14);
+
+    --border:rgba(10,14,20,0.10);
+    --border-strong:rgba(10,14,20,0.24);
+    --hairline:rgba(10,14,20,0.06);
+
+    --chalk:#0A0E14;
+
+    --shadow-card: 0 1px 0 rgba(10,14,20,0.02) inset, 0 10px 24px -12px rgba(10,14,20,0.18);
+    --shadow-lifted: 0 1px 0 rgba(10,14,20,0.03) inset, 0 20px 40px -16px rgba(10,14,20,0.30);
+  }
+
+  *,*::before,*::after { box-sizing:border-box; }
+  html,body { margin:0; padding:0; background:var(--surface); color:var(--ink);
+    font-family:var(--font-sans); font-size:15px; line-height:1.45;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    transition: background var(--motion-quick) var(--ease), color var(--motion-quick) var(--ease);
+    font-feature-settings:"ss01","cv11"; }
+
+  /* ───────────── Toolbar ───────────── */
+  .demo-bar { position:sticky; top:0; z-index:50; display:flex; align-items:center;
+    gap:12px; padding:10px 18px; background:var(--surface-glass);
+    backdrop-filter:saturate(140%) blur(12px); -webkit-backdrop-filter:saturate(140%) blur(12px);
+    border-bottom:1px solid var(--border); }
+  .wordmark { display:flex; align-items:baseline; gap:2px; }
+  .wordmark .pitch { font-family:var(--font-display); font-weight:400;
+    letter-spacing:0.04em; font-size:24px; color:var(--ink); text-transform:uppercase; }
+  .wordmark .chart { font-family:var(--font-display); font-weight:400;
+    letter-spacing:0.04em; font-size:24px; color:var(--accent); text-transform:uppercase; }
+  .demo-bar small { color:var(--ink-subtle); font-size:11px; margin-right:auto;
+    font-weight:600; letter-spacing:0.16em; text-transform:uppercase; }
+  .seg { display:inline-flex; background:var(--surface-inset); padding:3px; border-radius:8px;
+    border:1px solid var(--border); }
+  .seg button { all:unset; padding:6px 12px; font-size:11px; font-weight:600;
+    letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--ink-muted); border-radius:6px; cursor:pointer;
+    transition: all var(--motion-instant) var(--ease); }
+  .seg button.on { background:var(--surface-elevated); color:var(--ink);
+    box-shadow:0 1px 0 rgba(255,255,255,0.06) inset, 0 1px 3px rgba(0,0,0,0.25); }
+
+  /* ───────────── Stage ───────────── */
+  .stage { display:flex; justify-content:center; padding:20px 16px 80px; }
+  .frame { width:100%; max-width:1200px; transition: max-width var(--motion-settled) var(--ease); }
+  .frame.phone { max-width:402px; box-shadow:var(--shadow-lifted); border-radius:32px;
+    border:1px solid var(--border); padding:14px 10px 24px; background:var(--surface); }
+
+  /* ───────────── LIVE indicator ───────────── */
+  .live-strip { display:flex; align-items:center; gap:10px; padding:4px 4px 12px;
+    font-size:11px; font-weight:600; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--ink-subtle); }
+  .live-badge { display:inline-flex; align-items:center; gap:7px;
+    background:var(--accent-soft); color:var(--accent); padding:4px 9px;
+    border-radius:4px; font-weight:700; letter-spacing:0.18em;
+    border:1px solid rgba(155,34,53,0.30); }
+  .live-pulse { width:7px; height:7px; border-radius:50%; background:var(--accent);
+    box-shadow:0 0 0 0 var(--accent-glow); animation:pulse 1.8s ease-out infinite; }
+  @keyframes pulse {
+    0% { box-shadow:0 0 0 0 var(--accent-glow); }
+    70% { box-shadow:0 0 0 10px rgba(155,34,53,0); }
+    100% { box-shadow:0 0 0 0 rgba(155,34,53,0); }
+  }
+  .live-strip .sep { color:var(--ink-subtle); opacity:0.5; }
+
+  /* ───────────── Scoreboard header ───────────── */
+  .game-header { display:grid; grid-template-columns: 1fr auto 1fr; gap:18px; align-items:center;
+    background:var(--surface-elevated);
+    border:1px solid var(--border);
+    border-radius:14px; padding:22px 24px 18px;
+    box-shadow:var(--shadow-card); position:relative; overflow:hidden; }
+
+  /* Top hairline accent in red */
+  .game-header::before { content:""; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg, var(--team-home), transparent 30%, transparent 70%, var(--team-away)); }
+
+  .team-block { display:flex; align-items:center; gap:14px; min-width:0; }
+  .team-block.right { flex-direction:row-reverse; text-align:right; }
+  .team-stripe { width:5px; align-self:stretch; border-radius:3px; flex-shrink:0;
+    background:var(--team-home); min-height:64px; }
+  .team-block.right .team-stripe { background:var(--team-away); }
+  .team-info { display:flex; flex-direction:column; gap:0; min-width:0; }
+  .team-info.right { align-items:flex-end; }
+  .team-name { font-family:var(--font-sans); font-weight:700;
+    font-size:14px; letter-spacing:0.10em; text-transform:uppercase;
+    color:var(--ink-muted);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2; }
+  .team-record { font-family:var(--font-mono); font-weight:500; font-size:11px;
+    color:var(--ink-subtle); letter-spacing:0.04em; margin-top:2px; }
+  .team-score { font-family:var(--font-display); font-weight:400; font-size:72px; line-height:0.95;
+    letter-spacing:0.02em; color:var(--ink); font-feature-settings:"tnum";
+    margin-top:6px; }
+
+  .header-center { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:160px; }
+  .inning-cluster { display:flex; align-items:baseline; gap:6px; }
+  .inning-arrow { width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent;
+    border-bottom:9px solid var(--amber); margin-right:4px; transform:translateY(-4px); }
+  .inning-arrow.down { border-bottom:none; border-top:9px solid var(--amber); }
+  .inning-marker { font-family:var(--font-display); font-weight:400; font-size:44px;
+    color:var(--ink); letter-spacing:0.02em; line-height:1; }
+  .inning-half { font-family:var(--font-sans); font-weight:600;
+    font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-muted); }
+
+  .header-meta { display:flex; align-items:center; gap:18px; margin-top:6px; }
+  /* Base diamond */
+  .diamond { width:50px; height:50px; position:relative; transform:rotate(45deg); }
+  .base { position:absolute; width:16px; height:16px; border:1.5px solid var(--border-strong);
+    border-radius:2px; background:transparent; transition: all var(--motion-instant) var(--ease); }
+  .base.on { background:var(--amber); border-color:var(--amber);
+    box-shadow:0 0 12px var(--amber-soft); }
+  .base.first  { top:28px; left:28px; }
+  .base.second { top:0;    left:17px; }
+  .base.third  { top:28px; left:6px;  }
+  /* Outs */
+  .outs { display:flex; align-items:center; gap:5px; }
+  .outs-label { font-family:var(--font-sans); font-weight:700;
+    font-size:10px; letter-spacing:0.22em; color:var(--ink-subtle); text-transform:uppercase; }
+  .out-dot { width:10px; height:10px; border-radius:50%; border:1.5px solid var(--border-strong);
+    background:transparent; }
+  .out-dot.on { background:var(--amber); border-color:var(--amber);
+    box-shadow:0 0 8px var(--amber-soft); }
+
+  /* Count strip — broadcast LED */
+  .count-strip { display:flex; align-items:flex-end; justify-content:center; gap:28px;
+    padding:22px 0 4px; grid-column:1 / -1;
+    border-top:1px solid var(--hairline); margin-top:14px; }
+  .count-cell { display:flex; flex-direction:column; align-items:center; min-width:60px; }
+  .count-label { font-family:var(--font-sans); font-weight:700;
+    font-size:10px; letter-spacing:0.26em; text-transform:uppercase;
+    color:var(--ink-subtle); margin-bottom:4px; }
+  .count-digit { font-family:var(--font-display); font-weight:400; font-size:54px; line-height:1;
+    color:var(--ink); font-feature-settings:"tnum"; }
+  .count-digit.amber { color:var(--amber); text-shadow:0 0 18px rgba(255,180,56,0.45); }
+  .count-divider { width:1px; height:38px; background:var(--hairline); }
+
+  /* ───────────── Card primitive ───────────── */
+  .card { background:var(--surface-elevated); border:1px solid var(--border);
+    border-radius:12px; padding:22px; box-shadow:var(--shadow-card); position:relative; }
+  .card + .card { margin-top:12px; }
+  .card-title { font-family:var(--font-sans); font-weight:700; font-size:11px;
+    letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-subtle);
+    margin:0 0 16px; display:flex; align-items:center; gap:10px; }
+  .card-title::before { content:""; width:10px; height:2px; background:var(--accent);
+    display:inline-block; }
+
+  .row { margin-top:12px; display:grid; grid-template-columns: 1.1fr 1fr; gap:12px; }
+  .frame.phone .row { grid-template-columns: 1fr; }
+
+  /* ───────────── Matchup card ───────────── */
+  .matchup { display:grid; grid-template-columns: 1fr auto 1fr; gap:18px; align-items:center; }
+  .player { display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .player.right { text-align:right; align-items:flex-end; }
+  .player-role { font-family:var(--font-sans); font-weight:700;
+    font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-subtle); }
+  .player-name { font-family:var(--font-display); font-weight:400; font-size:34px; line-height:1.0;
+    letter-spacing:0.02em; color:var(--ink); text-transform:uppercase; margin-top:4px; }
+  .player-meta { display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-muted); margin-top:8px; font-weight:500; }
+  .hand-pill { font-family:var(--font-mono); font-weight:600; font-size:10px;
+    padding:2px 7px; border-radius:3px; background:var(--surface-inset);
+    border:1px solid var(--border); color:var(--ink-muted); letter-spacing:0.06em; }
+  .pitch-count-pill { font-family:var(--font-mono); font-weight:700; font-size:10px;
+    padding:2px 8px; border-radius:3px; background:var(--amber-soft);
+    color:var(--amber); border:1px solid rgba(255,180,56,0.25); }
+
+  /* Player avatar with team ring */
+  .avatar { width:54px; height:54px; border-radius:50%; background:var(--surface-inset);
+    border:2px solid var(--team-home);
+    display:grid; place-items:center; font-family:var(--font-display); font-weight:400;
+    font-size:22px; color:var(--ink-muted); flex-shrink:0; letter-spacing:0.04em;
+    position:relative; }
+  .avatar.away { border-color:var(--team-away); }
+
+  /* Matchup center divider */
+  .matchup-center { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .matchup-divider { width:1px; height:54px; background:var(--hairline); }
+
+  /* ───────────── Tendency line under players ───────────── */
+  .player-tendency { font-family:var(--font-sans); font-size:11px;
+    color:var(--ink-subtle); margin-top:8px; font-weight:500; letter-spacing:0.02em; }
+  .player-tendency b { color:var(--ink); font-weight:700;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.02em; }
+  .player-tendency::before { content:"◆"; color:var(--accent); margin-right:6px;
+    font-size:8px; vertical-align:middle; }
+
+  /* ───────────── Pitch-count radial gauge ───────────── */
+  .pc-gauge-wrap { display:inline-flex; align-items:center; gap:3px; }
+  .pc-gauge { display:block; flex-shrink:0; }
+  .pc-gauge text { font-family:var(--font-display); font-size:13px; font-weight:400;
+    fill:var(--ink); letter-spacing:0.04em; dominant-baseline:central; }
+  .pc-gauge-label { font-family:var(--font-mono); font-size:10px; font-weight:600;
+    color:var(--ink-subtle); }
+
+  /* ───────────── Arsenal donut + breakdown ───────────── */
+  .arsenal { display:inline-flex; align-items:center; gap:10px;
+    padding:5px 14px 5px 5px; background:var(--surface-inset);
+    border:1px solid var(--border); border-radius:22px; }
+  .arsenal-donut { flex-shrink:0; }
+  .ars-label { font-family:var(--font-sans); font-size:9px; font-weight:700;
+    letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-subtle); }
+  .ars-leg { display:inline-flex; gap:10px;
+    font-family:var(--font-mono); font-size:10px; font-weight:600;
+    color:var(--ink); letter-spacing:0.04em; }
+  .ars-leg .ars-seg { display:inline-flex; align-items:center; gap:4px; }
+  .ars-leg .ars-seg i { width:7px; height:7px; border-radius:50%; display:inline-block;
+    box-shadow:0 0 5px currentColor; }
+
+  /* ───────────── Trend badge (▼/▲ vs avg) ───────────── */
+  .trend-badge { display:inline-flex; align-items:center; gap:4px;
+    background:var(--accent-soft); color:var(--accent);
+    padding:2px 7px; border-radius:3px;
+    font-family:var(--font-mono); font-size:11px; font-weight:700;
+    letter-spacing:0.04em; border:1px solid rgba(155,34,53,0.32);
+    margin-left:6px; vertical-align:middle; }
+  .trend-badge.down::before { content:"▼"; font-size:9px; line-height:1; }
+  .trend-badge.up::before { content:"▲"; font-size:9px; line-height:1; }
+  .trend-badge.up { color:var(--success);
+    background:rgba(43,197,121,0.16); border-color:rgba(43,197,121,0.32); }
+
+  /* ───────────── Velocity card ───────────── */
+  .velo-bar { padding:20px 24px 14px;
+    background:var(--surface-elevated); border:1px solid var(--border); border-radius:12px;
+    box-shadow:var(--shadow-card); position:relative; }
+  .velo-bar-head { display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:12px; gap:12px; flex-wrap:wrap; }
+  .velo-bar-title { font-family:var(--font-sans); font-weight:700; font-size:11px;
+    letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-subtle);
+    display:flex; align-items:center; gap:10px; }
+  .velo-bar-title::before { content:""; width:10px; height:2px; background:var(--accent);
+    display:inline-block; }
+  .velo-bar-last { font-family:var(--font-sans); font-size:12px; color:var(--ink-muted);
+    font-weight:500; }
+  .velo-bar-last b { color:var(--ink); font-weight:600; }
+
+  /* Sparkline strip (inning trend, x = pitch order, y = velocity) */
+  .velo-spark { position:relative; height:56px; margin:6px 16px 4px;
+    color:var(--ink-muted); }
+  .velo-spark-label { position:absolute; top:-4px; left:0;
+    font-family:var(--font-sans); font-size:9px; font-weight:700;
+    letter-spacing:0.20em; text-transform:uppercase; color:var(--ink-subtle); }
+  .velo-spark-axis { position:absolute; right:-2px;
+    font-family:var(--font-mono); font-size:9px; font-weight:600;
+    color:var(--ink-subtle); letter-spacing:0.04em; }
+  .velo-spark-axis.top { top:6px; }
+  .velo-spark-axis.bot { bottom:8px; }
+  .velo-spark svg { width:calc(100% - 20px); height:100%; display:block;
+    margin-left:0; overflow:visible; }
+
+  /* Main range bar */
+  .velo-bar-track { position:relative; height:54px; margin:30px 16px 0; }
+  .velo-band { position:absolute; top:18px; height:14px; border-radius:2px;
+    border:1px dashed; }
+  .velo-band.fb  { background:rgba(255,107,71,0.10); border-color:rgba(255,107,71,0.50); }
+  .velo-band.off { background:rgba(61,168,229,0.10); border-color:rgba(61,168,229,0.45); }
+  .velo-band-label { position:absolute; top:-13px; left:50%; transform:translateX(-50%);
+    font-family:var(--font-sans); font-size:9px; font-weight:700;
+    letter-spacing:0.18em; text-transform:uppercase; white-space:nowrap;
+    background:var(--surface-elevated); padding:0 4px; }
+  .velo-band.fb .velo-band-label  { color:var(--pt-fb); }
+  .velo-band.off .velo-band-label { color:var(--pt-sl); }
+
+  /* Season avg vertical marker */
+  .velo-avg { position:absolute; top:14px; height:22px; width:0;
+    border-left:1.5px dashed var(--chalk); opacity:0.7; z-index:1; }
+  .velo-avg::after { content:"AVG 89"; position:absolute; top:-13px; left:50%;
+    transform:translateX(-50%);
+    font-family:var(--font-mono); font-size:9px; font-weight:600;
+    letter-spacing:0.04em; color:var(--ink-muted); white-space:nowrap;
+    background:var(--surface-elevated); padding:0 5px; }
+
+  /* Pitches plotted on range bar — colored by pitch type */
+  .velo-pitch { position:absolute; top:21px; width:10px; height:10px; border-radius:50%;
+    transform:translate(-50%, 0);
+    border:1.5px solid var(--surface-elevated); z-index:2; cursor:default; }
+  .velo-pitch.fb { background:var(--pt-fb); box-shadow:0 0 8px rgba(255,107,71,0.55); }
+  .velo-pitch.sl { background:var(--pt-sl); box-shadow:0 0 8px rgba(61,168,229,0.55); }
+  .velo-pitch.ch { background:var(--pt-ch); box-shadow:0 0 8px rgba(91,197,121,0.55); }
+  .velo-pitch.cb { background:var(--pt-cb); box-shadow:0 0 8px rgba(155,108,229,0.55); }
+  .velo-pitch.ct { background:var(--pt-ct); box-shadow:0 0 8px rgba(229,162,61,0.55); }
+  .velo-pitch.si { background:var(--pt-si); box-shadow:0 0 8px rgba(201,122,75,0.55); }
+
+  .velo-pitch.last { width:22px; height:22px; top:15px;
+    background:var(--accent); border:2px solid var(--surface-elevated);
+    box-shadow:0 0 0 4px var(--accent-soft), 0 0 18px var(--accent-glow);
+    z-index:4; }
+  .velo-callout { position:absolute; bottom:34px; left:50%; transform:translateX(-50%);
+    background:var(--accent); color:#FFF; padding:5px 10px; border-radius:4px;
+    font-family:var(--font-display); font-weight:400; font-size:20px;
+    letter-spacing:0.04em; line-height:1; white-space:nowrap;
+    box-shadow:0 6px 16px var(--accent-glow); }
+  .velo-callout::after { content:""; position:absolute; bottom:-3px; left:50%;
+    transform:translateX(-50%) rotate(45deg); width:8px; height:8px;
+    background:var(--accent); }
+  .velo-callout small { font-family:var(--font-sans); font-size:9px; font-weight:700;
+    letter-spacing:0.16em; margin-left:3px; opacity:0.85; text-transform:uppercase; }
+
+  /* Hover tooltip on historical pitches */
+  .velo-tip { position:absolute; bottom:20px; left:50%;
+    transform:translateX(-50%) translateY(6px);
+    background:var(--surface-inset); color:var(--ink);
+    padding:7px 10px; border-radius:6px;
+    font-family:var(--font-sans); font-size:11px; font-weight:500;
+    letter-spacing:0.02em; white-space:nowrap;
+    border:1px solid var(--border-strong);
+    box-shadow:0 12px 26px rgba(0,0,0,0.55);
+    opacity:0; pointer-events:none;
+    transition: all var(--motion-quick) var(--ease);
+    z-index:20; }
+  .velo-tip b { color:var(--ink); font-weight:700; font-family:var(--font-display);
+    font-size:13px; letter-spacing:0.04em; }
+  .velo-tip .pt-chip { display:inline-block; padding:1px 6px; margin:0 4px;
+    border-radius:3px; font-family:var(--font-mono); font-weight:700; font-size:10px;
+    color:#FFF; letter-spacing:0.04em; }
+  .velo-pitch:hover .velo-tip { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* Scale ticks */
+  .velo-ticks { position:absolute; bottom:0; left:0; right:0; height:14px;
+    border-top:1px solid var(--hairline); }
+  .velo-ticks span { position:absolute; transform:translateX(-50%);
+    font-family:var(--font-mono); font-size:9px; font-weight:600;
+    color:var(--ink-subtle); padding-top:5px; letter-spacing:0.04em; }
+  .velo-ticks span::before { content:""; position:absolute; top:0; left:50%;
+    width:1px; height:4px; background:var(--border-strong);
+    transform:translate(-50%, -2px); }
+
+  /* Pitch-type legend */
+  .velo-legend { display:flex; flex-wrap:wrap; gap:14px; margin:14px 16px 0;
+    padding-top:12px; border-top:1px solid var(--hairline);
+    font-family:var(--font-sans); font-size:10px; font-weight:700;
+    letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-muted); }
+  .velo-legend .ll { display:inline-flex; align-items:center; gap:6px; }
+  .velo-legend .ll-dot { width:9px; height:9px; border-radius:50%;
+    box-shadow:0 0 6px currentColor; flex-shrink:0; }
+
+  /* ───────────── Pitch type LED chips ───────────── */
+  .pitch-grid { display:grid; grid-template-columns: repeat(6, 1fr); gap:6px; }
+  .frame.phone .pitch-grid { grid-template-columns: repeat(4, 1fr); }
+  .chip { all:unset; cursor:pointer; padding:12px 6px; text-align:center;
+    background:var(--surface-inset); border:1px solid var(--border);
+    border-radius:6px; font-weight:600; color:var(--ink);
+    transition: all var(--motion-instant) var(--ease); user-select:none; }
+  .chip:hover { border-color:var(--border-strong); background:var(--surface-elevated); }
+  .chip.active { background:var(--accent); border-color:var(--accent);
+    color:var(--chalk); box-shadow:0 0 0 1px var(--accent-deep) inset, 0 6px 20px -6px var(--accent-glow); }
+  [data-theme="light"] .chip.active { color:#FFF; }
+  .chip .abbrev { font-family:var(--font-display); font-weight:400; font-size:22px;
+    letter-spacing:0.04em; display:block; line-height:1; }
+  .chip .full { font-family:var(--font-sans); font-size:9px;
+    color:var(--ink-subtle); font-weight:700; margin-top:4px; display:block;
+    text-transform:uppercase; letter-spacing:0.14em; }
+  .chip.active .full { color:rgba(255,255,255,0.85); }
+
+  /* ───────────── Strike zone — Statcast clean ───────────── */
+  .zone-wrap { display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .zone-svg { width:100%; max-width:380px; height:auto; display:block; }
+  .zone-legend { display:flex; gap:14px; font-size:10px; color:var(--ink-muted);
+    font-family:var(--font-sans); font-weight:700;
+    letter-spacing:0.18em; text-transform:uppercase; }
+  .zone-legend .swatch { display:inline-block; width:9px; height:9px; border-radius:50%;
+    margin-right:5px; vertical-align:middle; box-shadow:0 0 8px currentColor; }
+
+  /* ───────────── Result tiles ───────────── */
+  .results { display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-top:12px; }
+  .result-tile { all:unset; cursor:pointer; padding:14px 8px; text-align:center;
+    border-radius:6px; transition: all var(--motion-instant) var(--ease);
+    border:1px solid; position:relative; background:var(--surface-inset); }
+  .result-tile:hover { transform:translateY(-1px); }
+  .result-tile .glyph { display:block; font-family:var(--font-display); font-size:16px; font-weight:400;
+    letter-spacing:0.06em; opacity:0.85; margin-bottom:2px; }
+  .result-tile .lbl { font-family:var(--font-sans); font-size:11px; font-weight:700;
+    letter-spacing:0.16em; text-transform:uppercase; }
+  .r-ball   { border-color:rgba(107,117,133,0.40); color:var(--ball); }
+  .r-called { border-color:rgba(43,197,121,0.45);  color:var(--success); }
+  .r-swing  { border-color:rgba(255,61,46,0.45);   color:var(--accent); }
+  .r-foul   { border-color:rgba(240,194,74,0.45);  color:var(--foul); }
+  .r-hbp    { border-color:rgba(176,132,232,0.45); color:var(--hbp); }
+  .r-inplay { border-color:rgba(66,135,229,0.45);  color:var(--in-play); }
+  .result-tile:hover { box-shadow:0 0 0 1px currentColor inset, 0 8px 20px -8px currentColor; }
+
+  /* ───────────── Pitch sequence log ───────────── */
+  .log-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .log-head .hint { font-family:var(--font-sans); font-size:11px;
+    font-weight:500; color:var(--ink-subtle); text-transform:none; letter-spacing:0; }
+
+  .log { display:flex; gap:8px; overflow-x:auto; padding:4px 2px 12px; scroll-snap-type:x mandatory;
+    scrollbar-width:thin; }
+  .log::-webkit-scrollbar { height:5px; }
+  .log::-webkit-scrollbar-thumb { background:var(--border-strong); border-radius:3px; }
+  .pitch-card { flex:0 0 auto; min-width:148px; background:var(--surface-inset);
+    border:1px solid var(--border); border-radius:8px; padding:12px 14px;
+    position:relative; scroll-snap-align:start; transition:all var(--motion-instant) var(--ease);
+    cursor:default; }
+  .pitch-card:hover { border-color:var(--border-strong); }
+  .pitch-card .seq { font-family:var(--font-sans); font-size:9px; font-weight:700;
+    color:var(--ink-subtle); letter-spacing:0.22em; text-transform:uppercase; }
+  .pitch-card .res { font-family:var(--font-display); font-weight:400; font-size:18px; margin-top:6px;
+    color:var(--ink); letter-spacing:0.04em; text-transform:uppercase; line-height:1; }
+  .pitch-card .meta { font-family:var(--font-mono); font-size:11px; font-weight:600;
+    color:var(--ink-muted); margin-top:6px; font-feature-settings:"tnum"; }
+  .pitch-card .dot { position:absolute; top:14px; right:38px; width:8px; height:8px; border-radius:50%;
+    box-shadow:0 0 8px currentColor; }
+  .pitch-card .dot.strike { background:var(--success); color:var(--success); }
+  .pitch-card .dot.ball   { background:var(--ball); color:var(--ball); }
+  .pitch-card .dot.foul   { background:var(--foul); color:var(--foul); }
+  .pitch-card .dot.swing  { background:var(--danger); color:var(--danger); }
+  .pitch-card.last { border-color:var(--accent); background:rgba(255,61,46,0.04);
+    box-shadow:0 0 0 1px var(--accent-soft), 0 8px 24px -10px var(--accent-glow); }
+  .more-btn { position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:4px;
+    background:transparent; border:none; cursor:pointer; color:var(--ink-subtle);
+    display:grid; place-items:center; transition:background var(--motion-instant) var(--ease); }
+  .more-btn:hover { background:var(--surface-elevated); color:var(--ink); }
+
+  .popover { position:absolute; top:36px; right:6px; min-width:220px;
+    background:var(--surface-elevated); border:1px solid var(--border); border-radius:10px;
+    box-shadow:var(--shadow-lifted); padding:6px; z-index:40;
+    opacity:0; pointer-events:none; transform:translateY(-4px);
+    transition:all var(--motion-quick) var(--ease); }
+  .popover.open { opacity:1; pointer-events:auto; transform:translateY(0); }
+  .popover button { all:unset; display:flex; align-items:center; justify-content:space-between;
+    width:100%; padding:9px 12px; font-size:12px; font-weight:500; color:var(--ink); border-radius:6px;
+    cursor:pointer; box-sizing:border-box; font-family:var(--font-sans); }
+  .popover button:hover { background:var(--surface-inset); }
+  .popover button.danger { color:var(--accent); }
+  .popover hr { border:none; border-top:1px solid var(--border); margin:4px 6px; }
+  .popover .kbd { font-family:var(--font-mono); font-size:10px; color:var(--ink-subtle);
+    padding:1px 6px; background:var(--surface-inset); border:1px solid var(--border); border-radius:3px; }
+
+  /* ───────────── Action bar ───────────── */
+  .action-bar { display:flex; gap:8px; margin-top:16px; padding-top:14px;
+    border-top:1px solid var(--border); }
+  .frame.phone .action-bar { position:sticky; bottom:0; background:var(--surface);
+    margin:16px -10px -24px; padding:14px 10px calc(14px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--border); }
+  .btn { all:unset; cursor:pointer; padding:14px 16px; border-radius:6px; font-weight:700;
+    font-size:12px; text-align:center; transition:all var(--motion-instant) var(--ease);
+    box-sizing:border-box; font-family:var(--font-sans); letter-spacing:0.18em;
+    text-transform:uppercase; border:1px solid transparent; }
+  .btn-primary { background:var(--accent); color:#FFF; flex:2;
+    box-shadow:0 8px 22px -8px var(--accent-glow), 0 0 0 1px var(--accent-deep) inset; }
+  .btn-primary:hover { background:var(--accent-deep); }
+  .btn-ghost { color:var(--ink-muted); flex:1; border:1px solid var(--border-strong); background:transparent; }
+  .btn-ghost:hover { background:var(--surface-inset); color:var(--ink); }
+  .btn-navy { background:var(--surface-inset); color:var(--ink); flex:1; border:1px solid var(--border-strong); }
+  .btn-navy:hover { background:var(--surface-elevated); }
+
+  /* Toast */
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:var(--surface-elevated); color:var(--ink); padding:12px 18px; border-radius:6px;
+    font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:0.18em;
+    text-transform:uppercase;
+    box-shadow:var(--shadow-lifted);
+    transition: transform var(--motion-quick) var(--ease); z-index:100;
+    display:flex; align-items:center; gap:10px;
+    border:1px solid var(--border); }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+  .toast .dot { width:8px; height:8px; border-radius:50%; background:var(--accent);
+    box-shadow:0 0 8px var(--accent-glow); }
+
+  @media (max-width: 720px) {
+    .row { grid-template-columns: 1fr; }
+    .pitch-grid { grid-template-columns: repeat(4, 1fr); }
+    .team-score { font-size:56px; }
+    .player-name { font-size:26px; }
+    .count-digit { font-size:44px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Toolbar ─────────────────────────────────── -->
+<div class="demo-bar">
+  <div class="wordmark"><span class="pitch">Pitch</span><span class="chart">Chart</span></div>
+  <small>LiveGame &middot; Broadcast</small>
+  <div class="seg" id="device">
+    <button data-device="tablet" class="on">Tablet</button>
+    <button data-device="phone">Phone</button>
+  </div>
+  <div class="seg" id="theme">
+    <button data-theme="dark" class="on">Night</button>
+    <button data-theme="light">Day</button>
+  </div>
+</div>
+
+<!-- ── Stage ──────────────────────────────────── -->
+<div class="stage">
+  <div class="frame" id="frame">
+
+    <!-- ===== LIVE strip ===== -->
+    <div class="live-strip">
+      <span class="live-badge"><span class="live-pulse"></span>LIVE</span>
+      <span>Riverside @ Eastlake</span>
+      <span class="sep">&middot;</span>
+      <span>Top 5</span>
+      <span class="sep">&middot;</span>
+      <span>4:18 elapsed</span>
+    </div>
+
+    <!-- ===== Scoreboard header ===== -->
+    <div class="game-header">
+      <div class="team-block">
+        <div class="team-stripe"></div>
+        <div class="team-info">
+          <span class="team-name">Eastlake Knights</span>
+          <span class="team-record">12-4 &middot; HOME</span>
+          <span class="team-score">3</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="inning-cluster">
+          <div class="inning-arrow"></div>
+          <div class="inning-marker">5</div>
+        </div>
+        <div class="inning-half">Top of 5th</div>
+        <div class="header-meta">
+          <div class="outs">
+            <span class="outs-label">Out</span>
+            <span class="out-dot on"></span>
+            <span class="out-dot on"></span>
+            <span class="out-dot"></span>
+          </div>
+          <div class="diamond">
+            <div class="base second on"></div>
+            <div class="base first"></div>
+            <div class="base third on"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="team-block right">
+        <div class="team-stripe"></div>
+        <div class="team-info right">
+          <span class="team-name">Riverside Hawks</span>
+          <span class="team-record">10-6 &middot; AWAY</span>
+          <span class="team-score">5</span>
+        </div>
+      </div>
+
+      <!-- Count strip -->
+      <div class="count-strip">
+        <div class="count-cell"><span class="count-label">Balls</span><span class="count-digit amber">2</span></div>
+        <div class="count-divider"></div>
+        <div class="count-cell"><span class="count-label">Strikes</span><span class="count-digit amber">1</span></div>
+        <div class="count-divider"></div>
+        <div class="count-cell"><span class="count-label">Pitch</span><span class="count-digit">4</span></div>
+      </div>
+    </div>
+
+    <!-- ===== Matchup ===== -->
+    <div class="card" style="margin-top:12px;">
+      <div class="matchup">
+        <div class="player">
+          <span class="player-role">Pitching</span>
+          <span class="player-name">M. Reyes</span>
+          <span class="player-meta">
+            <span class="hand-pill">RHP</span>
+            <span class="pc-gauge-wrap" title="47 of typical 85 pitches">
+              <svg class="pc-gauge" viewBox="0 0 36 36" width="30" height="30" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="18" cy="18" r="14" fill="none" stroke="var(--border)" stroke-width="3"/>
+                <circle cx="18" cy="18" r="14" fill="none"
+                        stroke="var(--success)" stroke-width="3" stroke-linecap="round"
+                        stroke-dasharray="48.6 87.96"
+                        transform="rotate(-90 18 18)"
+                        style="filter:drop-shadow(0 0 4px rgba(43,197,121,0.45));"/>
+                <text x="18" y="18.5" text-anchor="middle">47</text>
+              </svg>
+              <span class="pc-gauge-label">/85</span>
+            </span>
+            <span style="color:var(--ink-subtle);">&middot; #24</span>
+          </span>
+          <span class="player-tendency">vs LHH <b>FB up-in 38%</b></span>
+        </div>
+        <div class="matchup-center">
+          <div class="avatar">MR</div>
+          <div class="matchup-divider"></div>
+          <div class="avatar away">JC</div>
+        </div>
+        <div class="player right">
+          <span class="player-role">At Bat &middot; 3rd PA</span>
+          <span class="player-name">J. Calloway</span>
+          <span class="player-meta">
+            <span style="color:var(--ink-subtle);">#7 &middot;</span>
+            <span class="hand-pill">LHH</span>
+            <span style="color:var(--ink-subtle);">2-for-2</span>
+          </span>
+          <span class="player-tendency">Chases <b>SL low-away 47%</b></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Velocity card (own row) ===== -->
+    <div class="velo-bar" style="margin-top:12px;">
+      <div class="velo-bar-head">
+        <div class="velo-bar-title">Velocity</div>
+        <div class="arsenal" title="Arsenal mix this game">
+          <svg class="arsenal-donut" viewBox="0 0 32 32" width="26" height="26" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="13" fill="none" stroke="var(--border)" stroke-width="3"/>
+            <circle cx="16" cy="16" r="13" fill="none" stroke="var(--pt-fb)" stroke-width="3"
+                    stroke-dasharray="50.64 81.68" stroke-dashoffset="0"
+                    transform="rotate(-90 16 16)"/>
+            <circle cx="16" cy="16" r="13" fill="none" stroke="var(--pt-sl)" stroke-width="3"
+                    stroke-dasharray="17.97 81.68" stroke-dashoffset="-50.64"
+                    transform="rotate(-90 16 16)"/>
+            <circle cx="16" cy="16" r="13" fill="none" stroke="var(--pt-ch)" stroke-width="3"
+                    stroke-dasharray="13.07 81.68" stroke-dashoffset="-68.61"
+                    transform="rotate(-90 16 16)"/>
+          </svg>
+          <span class="ars-label">Arsenal</span>
+          <span class="ars-leg">
+            <span class="ars-seg"><i style="background:var(--pt-fb);color:var(--pt-fb)"></i>FB 62</span>
+            <span class="ars-seg"><i style="background:var(--pt-sl);color:var(--pt-sl)"></i>SL 22</span>
+            <span class="ars-seg"><i style="background:var(--pt-ch);color:var(--pt-ch)"></i>CH 16</span>
+          </span>
+        </div>
+        <div class="velo-bar-last">Last <b>FB</b> low away &middot; called ball &middot; <b>88</b><span class="trend-badge down">1 mph</span></div>
+      </div>
+
+      <!-- Sparkline: last 11 pitches in inning, x = order, y = velo -->
+      <div class="velo-spark">
+        <div class="velo-spark-label">Inning 5 &middot; Last 11 Pitches</div>
+        <div class="velo-spark-axis top">95</div>
+        <div class="velo-spark-axis bot">70</div>
+        <svg viewBox="0 0 800 50" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-label="Velocity trend">
+          <line x1="0" y1="16" x2="800" y2="16" stroke="currentColor" stroke-opacity="0.06"/>
+          <line x1="0" y1="28" x2="800" y2="28" stroke="currentColor" stroke-opacity="0.06"/>
+          <line x1="0" y1="40" x2="800" y2="40" stroke="currentColor" stroke-opacity="0.06"/>
+          <polyline points="0,16 80,17.2 160,29.2 240,14.8 320,18.4 400,30.4 480,17.2 560,19.6 640,29.2 720,17.2 800,18.4"
+                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.35"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+          <g><circle cx="0"   cy="16"   r="3" fill="var(--pt-fb)" style="filter:drop-shadow(0 0 4px var(--pt-fb));"/><title>P1 · FB 90 mph</title></g>
+          <g><circle cx="80"  cy="17.2" r="3" fill="var(--pt-fb)" style="filter:drop-shadow(0 0 4px var(--pt-fb));"/><title>P2 · FB 89 mph</title></g>
+          <g><circle cx="160" cy="29.2" r="3" fill="var(--pt-sl)" style="filter:drop-shadow(0 0 4px var(--pt-sl));"/><title>P3 · SL 79 mph</title></g>
+          <g><circle cx="240" cy="14.8" r="3" fill="var(--pt-fb)" style="filter:drop-shadow(0 0 4px var(--pt-fb));"/><title>P4 · FB 91 mph</title></g>
+          <g><circle cx="320" cy="18.4" r="3" fill="var(--pt-fb)" style="filter:drop-shadow(0 0 4px var(--pt-fb));"/><title>P5 · FB 88 mph</title></g>
+          <g><circle cx="400" cy="30.4" r="3" fill="var(--pt-ch)" style="filter:drop-shadow(0 0 4px var(--pt-ch));"/><title>P6 · CH 78 mph</title></g>
+          <g><circle cx="480" cy="17.2" r="3" fill="var(--pt-fb)" style="filter:drop-shadow(0 0 4px var(--pt-fb));"/><title>P7 · FB 89 mph</title></g>
+          <g><circle cx="560" cy="19.6" r="3" fill="var(--pt-fb)" style="filter:drop-shadow(0 0 4px var(--pt-fb));"/><title>AB · 1 · FB 87 (called strike)</title></g>
+          <g><circle cx="640" cy="29.2" r="3" fill="var(--pt-sl)" style="filter:drop-shadow(0 0 4px var(--pt-sl));"/><title>AB · 2 · SL 79 (whiff)</title></g>
+          <g><circle cx="720" cy="17.2" r="3" fill="var(--pt-fb)" style="filter:drop-shadow(0 0 4px var(--pt-fb));"/><title>AB · 3 · FB 89 (foul)</title></g>
+          <g>
+            <circle cx="800" cy="18.4" r="5" fill="var(--accent)" stroke="var(--surface-elevated)" stroke-width="1.5"
+                    style="filter:drop-shadow(0 0 8px var(--accent-glow));"/>
+            <title>AB · 4 · FB 88 (ball) — LAST</title>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Main range bar -->
+      <div class="velo-bar-track">
+        <div class="velo-band off" style="left:24%;width:24%">
+          <span class="velo-band-label">Offspeed</span>
+        </div>
+        <div class="velo-band fb" style="left:64%;width:24%">
+          <span class="velo-band-label">Fastball</span>
+        </div>
+
+        <!-- Pitcher's season avg fastball (89 mph) -->
+        <div class="velo-avg" style="left:76%"></div>
+
+        <!-- Historical pitches colored by type, with hover tooltips -->
+        <div class="velo-pitch fb" style="left:68%">
+          <div class="velo-tip"><b>P1</b> <span class="pt-chip" style="background:var(--pt-fb)">FB</span> 87 mph &middot; Called Strike &middot; Inside</div>
+        </div>
+        <div class="velo-pitch sl" style="left:36%">
+          <div class="velo-tip"><b>P2</b> <span class="pt-chip" style="background:var(--pt-sl)">SL</span> 79 mph &middot; Whiff &middot; Away</div>
+        </div>
+        <div class="velo-pitch fb" style="left:76%">
+          <div class="velo-tip"><b>P3</b> <span class="pt-chip" style="background:var(--pt-fb)">FB</span> 89 mph &middot; Foul &middot; Middle</div>
+        </div>
+
+        <!-- Last pitch -->
+        <div class="velo-pitch last" style="left:72%">
+          <div class="velo-callout">88 <small>MPH</small></div>
+        </div>
+
+        <div class="velo-ticks">
+          <span style="left:0%">70</span>
+          <span style="left:20%">75</span>
+          <span style="left:40%">80</span>
+          <span style="left:60%">85</span>
+          <span style="left:80%">90</span>
+          <span style="left:100%">95</span>
+        </div>
+      </div>
+
+      <!-- Pitch-type legend -->
+      <div class="velo-legend">
+        <span class="ll"><span class="ll-dot" style="background:var(--pt-fb);color:var(--pt-fb)"></span>Fastball</span>
+        <span class="ll"><span class="ll-dot" style="background:var(--pt-sl);color:var(--pt-sl)"></span>Slider</span>
+        <span class="ll"><span class="ll-dot" style="background:var(--pt-ch);color:var(--pt-ch)"></span>Change</span>
+        <span class="ll"><span class="ll-dot" style="background:var(--pt-cb);color:var(--pt-cb)"></span>Curve</span>
+        <span class="ll"><span class="ll-dot" style="background:var(--pt-ct);color:var(--pt-ct)"></span>Cutter</span>
+        <span class="ll"><span class="ll-dot" style="background:var(--pt-si);color:var(--pt-si)"></span>Sinker</span>
+      </div>
+    </div>
+
+    <!-- ===== Pitch type + zone + results ===== -->
+    <div class="row">
+      <!-- Strike zone -->
+      <div class="card">
+        <div class="card-title">Location</div>
+        <div class="zone-wrap">
+          <svg class="zone-svg" viewBox="0 0 380 420" xmlns="http://www.w3.org/2000/svg" aria-label="Strike zone">
+            <defs>
+              <radialGradient id="haloGrad">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.55"/>
+                <stop offset="70%" stop-color="var(--accent)" stop-opacity="0.08"/>
+                <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+              </radialGradient>
+              <radialGradient id="heatGrad">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.50"/>
+                <stop offset="55%" stop-color="var(--accent)" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Outer panel -->
+            <rect x="10" y="10" width="360" height="400" rx="10" fill="var(--surface-inset)"
+                  stroke="var(--border-strong)" stroke-width="1"/>
+
+            <!-- Faint batter silhouette -->
+            <g opacity="0.18" fill="var(--ink-muted)">
+              <ellipse cx="305" cy="100" rx="14" ry="16"/>
+              <path d="M285 120 q20 -8 40 0 l-4 110 q-18 6 -32 0 z"/>
+              <path d="M290 230 l-6 130 l16 6 l8 -120 z"/>
+              <path d="M318 230 l4 130 l-14 8 l-4 -120 z"/>
+              <path d="M308 116 q40 -50 80 -54 l4 6 q-38 8 -76 56 z"/>
+            </g>
+
+            <!-- Strike zone (clean Statcast) -->
+            <rect x="80" y="100" width="220" height="240" rx="3"
+                  fill="transparent" stroke="var(--chalk)" stroke-width="1.5" stroke-opacity="0.7"/>
+            <!-- Batter heat zone: LHH chases low-away (47%) -->
+            <ellipse cx="258" cy="300" rx="68" ry="58" fill="url(#heatGrad)"/>
+            <text x="258" y="358" text-anchor="middle" font-family="Inter,sans-serif"
+                  font-size="9" font-weight="700" letter-spacing="2"
+                  fill="var(--accent)" opacity="0.85">CHASE 47%</text>
+            <!-- 3x3 grid -->
+            <line x1="153.3" y1="100" x2="153.3" y2="340" stroke="var(--chalk)" stroke-opacity="0.18"/>
+            <line x1="226.7" y1="100" x2="226.7" y2="340" stroke="var(--chalk)" stroke-opacity="0.18"/>
+            <line x1="80" y1="180" x2="300" y2="180" stroke="var(--chalk)" stroke-opacity="0.18"/>
+            <line x1="80" y1="260" x2="300" y2="260" stroke="var(--chalk)" stroke-opacity="0.18"/>
+
+            <!-- Corner ticks like broadcast graphic -->
+            <g stroke="var(--chalk)" stroke-width="1.5" stroke-opacity="0.6">
+              <path d="M70 100 H80 V90"/>
+              <path d="M310 100 H300 V90"/>
+              <path d="M70 340 H80 V350"/>
+              <path d="M310 340 H300 V350"/>
+            </g>
+
+            <!-- Home plate (chalk outline only) -->
+            <path d="M150 388 L230 388 L230 400 L190 410 L150 400 Z"
+                  fill="transparent" stroke="var(--chalk)" stroke-width="1.2" stroke-opacity="0.5"/>
+
+            <!-- Halo on last pitch -->
+            <circle cx="120" cy="295" r="44" fill="url(#haloGrad)"/>
+
+            <!-- Plotted pitches with bright color + soft glow -->
+            <g>
+              <circle cx="195" cy="140" r="14" fill="var(--success)" stroke="var(--surface-elevated)" stroke-width="2"
+                      style="filter:drop-shadow(0 0 8px rgba(43,197,121,0.6));"/>
+              <text x="195" y="146" text-anchor="middle" font-family="Bebas Neue,sans-serif"
+                    font-size="16" font-weight="400" fill="#FFF" letter-spacing="0.02em">1</text>
+            </g>
+            <g>
+              <circle cx="270" cy="290" r="14" fill="var(--danger)" stroke="var(--surface-elevated)" stroke-width="2"
+                      style="filter:drop-shadow(0 0 8px rgba(155,34,53,0.7));"/>
+              <text x="270" y="296" text-anchor="middle" font-family="Bebas Neue,sans-serif"
+                    font-size="16" font-weight="400" fill="#FFF" letter-spacing="0.02em">2</text>
+            </g>
+            <g>
+              <circle cx="180" cy="210" r="14" fill="var(--foul)" stroke="var(--surface-elevated)" stroke-width="2"
+                      style="filter:drop-shadow(0 0 8px rgba(240,194,74,0.6));"/>
+              <text x="180" y="216" text-anchor="middle" font-family="Bebas Neue,sans-serif"
+                    font-size="16" font-weight="400" fill="#0A0E14" letter-spacing="0.02em">3</text>
+            </g>
+            <g>
+              <circle cx="120" cy="295" r="15" fill="var(--ball)" stroke="var(--accent)" stroke-width="2.5"
+                      style="filter:drop-shadow(0 0 10px rgba(155,34,53,0.8));"/>
+              <text x="120" y="301" text-anchor="middle" font-family="Bebas Neue,sans-serif"
+                    font-size="16" font-weight="400" fill="#FFF" letter-spacing="0.02em">4</text>
+            </g>
+          </svg>
+          <div class="zone-legend">
+            <span style="color:var(--success);"><span class="swatch" style="background:var(--success);"></span><span style="color:var(--ink-muted);">Strike</span></span>
+            <span style="color:var(--ball);"><span class="swatch" style="background:var(--ball);"></span><span style="color:var(--ink-muted);">Ball</span></span>
+            <span style="color:var(--foul);"><span class="swatch" style="background:var(--foul);"></span><span style="color:var(--ink-muted);">Foul</span></span>
+            <span style="color:var(--accent);"><span class="swatch" style="background:var(--accent);"></span><span style="color:var(--ink-muted);">Whiff</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pitch type + results -->
+      <div class="card">
+        <div class="card-title">Pitch Type</div>
+        <div class="pitch-grid">
+          <button class="chip active"><span class="abbrev">FB</span><span class="full">Fastball</span></button>
+          <button class="chip"><span class="abbrev">SL</span><span class="full">Slider</span></button>
+          <button class="chip"><span class="abbrev">CH</span><span class="full">Change</span></button>
+          <button class="chip"><span class="abbrev">CB</span><span class="full">Curve</span></button>
+          <button class="chip"><span class="abbrev">CT</span><span class="full">Cutter</span></button>
+          <button class="chip"><span class="abbrev">SI</span><span class="full">Sinker</span></button>
+        </div>
+
+        <div class="card-title" style="margin-top:22px;">Result</div>
+        <div class="results">
+          <button class="result-tile r-ball"><span class="glyph">B</span><span class="lbl">Ball</span></button>
+          <button class="result-tile r-called"><span class="glyph">CS</span><span class="lbl">Called</span></button>
+          <button class="result-tile r-swing"><span class="glyph">K</span><span class="lbl">Whiff</span></button>
+          <button class="result-tile r-foul"><span class="glyph">F</span><span class="lbl">Foul</span></button>
+          <button class="result-tile r-hbp"><span class="glyph">HBP</span><span class="lbl">HBP</span></button>
+          <button class="result-tile r-inplay"><span class="glyph">IP</span><span class="lbl">In Play</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Pitch sequence log ===== -->
+    <div class="card">
+      <div class="log-head">
+        <div class="card-title" style="margin:0;">At-Bat Sequence</div>
+        <span class="hint">Tap &middot;&middot;&middot; to edit any pitch</span>
+      </div>
+      <div class="log">
+        <div class="pitch-card" data-id="p1">
+          <span class="dot strike"></span>
+          <span class="seq">Pitch 1</span>
+          <div class="res">Called Strike</div>
+          <div class="meta">FB &middot; 87 &middot; in</div>
+          <button class="more-btn" onclick="togglePop(this)" aria-label="Edit pitch 1">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+          </button>
+          <div class="popover">
+            <button>Edit result <span class="kbd">R</span></button>
+            <button>Edit velocity <span class="kbd">V</span></button>
+            <button>Edit type <span class="kbd">T</span></button>
+            <hr>
+            <button class="danger">Delete this pitch</button>
+          </div>
+        </div>
+        <div class="pitch-card" data-id="p2">
+          <span class="dot swing"></span>
+          <span class="seq">Pitch 2</span>
+          <div class="res">Swing &amp; Miss</div>
+          <div class="meta">SL &middot; 79 &middot; away</div>
+          <button class="more-btn" onclick="togglePop(this)" aria-label="Edit pitch 2">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+          </button>
+          <div class="popover">
+            <button>Edit result <span class="kbd">R</span></button>
+            <button>Edit velocity <span class="kbd">V</span></button>
+            <button>Edit type <span class="kbd">T</span></button>
+            <hr>
+            <button class="danger">Delete this pitch</button>
+          </div>
+        </div>
+        <div class="pitch-card" data-id="p3">
+          <span class="dot foul"></span>
+          <span class="seq">Pitch 3</span>
+          <div class="res">Foul</div>
+          <div class="meta">FB &middot; 89 &middot; mid</div>
+          <button class="more-btn" onclick="togglePop(this)" aria-label="Edit pitch 3">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+          </button>
+          <div class="popover">
+            <button>Edit result <span class="kbd">R</span></button>
+            <button>Edit velocity <span class="kbd">V</span></button>
+            <button>Edit type <span class="kbd">T</span></button>
+            <hr>
+            <button class="danger">Delete this pitch</button>
+          </div>
+        </div>
+        <div class="pitch-card last" data-id="p4">
+          <span class="dot ball"></span>
+          <span class="seq">Pitch 4 &middot; Last</span>
+          <div class="res">Ball</div>
+          <div class="meta">FB &middot; 88 &middot; low</div>
+          <button class="more-btn" onclick="togglePop(this)" aria-label="Edit pitch 4">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+          </button>
+          <div class="popover">
+            <button>Edit result <span class="kbd">R</span></button>
+            <button>Edit velocity <span class="kbd">V</span></button>
+            <button>Edit type <span class="kbd">T</span></button>
+            <hr>
+            <button class="danger">Delete this pitch</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Action bar ===== -->
+    <div class="action-bar">
+      <button class="btn btn-ghost" onclick="showToast('Undo armed')">Undo</button>
+      <button class="btn btn-primary" onclick="showToast('Call sent - FB - Low Away')">Send Call</button>
+      <button class="btn btn-navy" onclick="showToast('At-bat ended')">End At-Bat</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toastMsg">Hello</span></div>
+
+<script>
+  document.querySelectorAll('#theme button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#theme button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      document.documentElement.dataset.theme = b.dataset.theme;
+    });
+  });
+  document.querySelectorAll('#device button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#device button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      const frame = document.getElementById('frame');
+      frame.classList.toggle('phone', b.dataset.device === 'phone');
+    });
+  });
+  function togglePop(btn) {
+    const pop = btn.parentElement.querySelector('.popover');
+    document.querySelectorAll('.popover.open').forEach(p => { if (p !== pop) p.classList.remove('open'); });
+    pop.classList.toggle('open');
+    if (pop.classList.contains('open')) {
+      const onDoc = (e) => {
+        if (!pop.parentElement.contains(e.target)) {
+          pop.classList.remove('open');
+          document.removeEventListener('click', onDoc);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', onDoc), 0);
+    }
+  }
+  document.querySelectorAll('.popover button').forEach(b => {
+    b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const label = b.firstChild.textContent.trim();
+      const pitchCard = b.closest('.pitch-card');
+      const pitch = pitchCard?.querySelector('.seq')?.textContent || '';
+      showToast(label + ' - ' + pitch);
+      b.closest('.popover').classList.remove('open');
+    });
+  });
+  document.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.result-tile').forEach(t => {
+    t.addEventListener('click', () => {
+      const lbl = t.querySelector('.lbl').textContent;
+      showToast('Logged - ' + lbl);
+    });
+  });
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastMsg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window.__toastT);
+    window.__toastT = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+</script>
+</body>
+</html>

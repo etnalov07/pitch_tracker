@@ -163,7 +163,14 @@
       "PowerShell(npx prettier --write src/pages/LiveGame/ViewerDashboard.tsx src/components/live/PitcherStats/styles.ts src/components/live/CountBreakdownPanel/styles.ts src/components/live/ViewerTendenciesTab/ViewerTendenciesTab.tsx src/components/performanceSummary/PerformanceSummaryCard/styles.ts src/components/performanceSummary/BatterBreakdownPanel/styles.ts)",
       "PowerShell(npx tsc --noEmit)",
       "Bash(npx ts-node *)",
-      "Bash(start \"\" \"C:\\\\Projects\\\\pitch_tracker\\\\docs\\\\reports\\\\2026-05-11-game-b3224c08-strike-zone-plot.html\")"
+      "Bash(start \"\" \"C:\\\\Projects\\\\pitch_tracker\\\\docs\\\\reports\\\\2026-05-11-game-b3224c08-strike-zone-plot.html\")",
+      "Read(//c/c/Projects/pitch_tracker/packages/api/src/schema/**)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Projects\\\\pitch_tracker\\\\packages\\\\mobile\" -Recurse -Directory)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Expand-Archive *)",
+      "Bash(PowerShell *)",
+      "PowerShell(Get-ChildItem \"C:\\\\Projects\\\\pitch_tracker\\\\packages\\\\api\\\\src\\\\migrations\" | Sort-Object Name | Select-Object -First 10 | ForEach-Object { $_.Name })",
+      "PowerShell(Get-NetIPConfiguration | Where-Object { $_.NetAdapter.Status -eq 'Up' } | Select-Object InterfaceAlias, IPv4Address, IPv4DefaultGateway, DNSServer | Format-List)"
     ]
   },
   "hooks": {
